@@ -12,20 +12,15 @@ function App() {
 
   if (Component) return <Suspense><Component /></Suspense>
 
-  const formatter = new Intl.DateTimeFormat('en', {
-    dateStyle: 'full',
-    timeStyle: 'short'
-  })
   return (
     <>
       <h1>hello</h1>
       <hr />
-      {Object.entries(ROUTES).map(([route, { meta, git }]) => (
+      {Object.entries(ROUTES).map(([route, { meta }]) => (
         <div key={route}>
           <Link href={`/${route as Routes}`}>
             <h2 style={{ viewTransitionName: route }} className={styles.link}>{meta.title}</h2>
           </Link>
-          <p>Last modified: {formatter.format(git.lastModified)}</p>
           <hr />
         </div>
       ))}
