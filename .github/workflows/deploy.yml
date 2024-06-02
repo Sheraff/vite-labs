@@ -40,15 +40,19 @@ jobs:
           run_install: false
       - name: Get pnpm store directory
         shell: bash
+        id: get-store-path
         run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
+          echo "store-path=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
         with:
-          path: ${{ env.STORE_PATH }}
+          path: ${{ steps.get-store-path.outputs.store-path }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
+      - name: test
+        shell: bash
+        run: echo "${{ steps.get-store-path.outputs.store-path }}"
       - name: Install dependencies
         run: pnpm i --frozen-lockfile
       - name: Build
