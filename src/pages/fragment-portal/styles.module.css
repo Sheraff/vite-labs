@@ -1,0 +1,25 @@
+.main {
+	font-family: sans-serif;
+
+	ul {
+		list-style: none;
+		padding: 0;
+	}
+
+	video {
+		display: block;
+		margin: auto;
+	}
+}
+
+.grid {
+	text-align: center;
+
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
+	grid-auto-rows: 1fr;
+
+	>* {
+		border: 1px solid red;
+	}
+}

@@ -2,7 +2,7 @@
 /* eslint-disable */
 import { lazy } from "react"
 
-export type Routes = "quad-tree" | "pong-pang" | "paint-worklet" | "lightning"
+export type Routes = "quad-tree" | "pong-pang" | "paint-worklet" | "lightning" | "fragment-portal"
 
 export type RouteMeta = {
 	title: string
@@ -36,6 +36,12 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/lightning/index.tsx")),
 		meta: {
 			title: 'Lightning'
+		},
+	},
+	"fragment-portal": {
+		Component: lazy(() => import("./pages/fragment-portal/index.tsx")),
+		meta: {
+			title: 'Fragment Portal'
 		},
 	}
 } as const satisfies Record<Routes, Route>
