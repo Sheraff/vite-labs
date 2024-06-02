@@ -19,7 +19,6 @@ function App() {
   return (
     <>
       <h1>hello</h1>
-      <hr />
       {Object.entries(ROUTES)
         .sort(([a], [b]) => a.localeCompare(b))
         .sort((a, b) => b[1].git.firstAdded - a[1].git.firstAdded)
