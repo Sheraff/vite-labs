@@ -46,7 +46,7 @@ ${routes.map(([route, meta, git]) => `	"${route}": {
 async function getGitMeta(index: string) {
 	let dates: Promise<string>[] = []
 	for await (const file of glob(`${dirname(index)}/**/*`)) {
-		dates.push(new Promise<string>((resolve, reject) => exec(`git log -1 --pretty="format:%ci" "${file}"`, (error, stdout, stderr) => {
+		dates.push(new Promise<string>((resolve, reject) => exec(`git log -1 --pretty="format:%ai" "${file}"`, (error, stdout, stderr) => {
 			if (error || stderr) return reject(error || stderr)
 			resolve(stdout.trim())
 		})))

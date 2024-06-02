@@ -45,7 +45,7 @@ export const ROUTES = {
 		meta: {
 			title: 'Lightning'
 		},
-		git: {lastModified: 1717341556000},
+		git: {lastModified: 1717343301000},
 	},
 	"fragment-portal": {
 		Component: lazy(() => import("./pages/fragment-portal/index.tsx")),
