@@ -87,32 +87,36 @@ function fileNameToJSVariable(name: string) {
 }
 
 async function getMeta(key: string, index: string, ctx?: Context) {
-	const source = await readFile(index, 'utf-8')
-	const { ast, visitorKeys } = parseForESLint(source, {
-		comment: false,
-		filePath: index,
-		loc: true,
-		range: true,
-		tokens: false,
-	})
 	let meta = `{ title: "${key}" }`
 	let foundNode = false as TSESTree.ObjectExpression | false
 	const images: Image[] = []
-	const listener: TSESLint.RuleListener = ({
-		ExportNamedDeclaration(node) {
-			if (foundNode) return
-			if (node.declaration?.type !== 'VariableDeclaration') return
-			const decl = node.declaration.declarations[0]
-			if (decl.type !== 'VariableDeclarator') return
-			if (decl.id.type !== 'Identifier' || decl.id.name !== 'meta') return
-			if (decl.init?.type !== 'ObjectExpression') throw new Error('Expected ObjectExpression')
-			foundNode = decl.init
-		},
-	})
-	simpleTraverse(ast, {
-		visitorKeys,
-		visitors: listener as never,
-	})
+	const source = await readFile(index, 'utf-8')
+	try {
+		const { ast, visitorKeys } = parseForESLint(source, {
+			comment: false,
+			filePath: index,
+			loc: true,
+			range: true,
+			tokens: false,
+		})
+		const listener: TSESLint.RuleListener = ({
+			ExportNamedDeclaration(node) {
+				if (foundNode) return
+				if (node.declaration?.type !== 'VariableDeclaration') return
+				const decl = node.declaration.declarations[0]
+				if (decl.type !== 'VariableDeclarator') return
+				if (decl.id.type !== 'Identifier' || decl.id.name !== 'meta') return
+				if (decl.init?.type !== 'ObjectExpression') throw new Error('Expected ObjectExpression')
+				foundNode = decl.init
+			},
+		})
+		simpleTraverse(ast, {
+			visitorKeys,
+			visitors: listener as never,
+		})
+	} catch (e) {
+		console.error(e)
+	}
 	if (foundNode) {
 		const start = foundNode.range[0]
 		meta = source.slice(start, foundNode.range[1])
