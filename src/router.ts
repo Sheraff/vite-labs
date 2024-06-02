@@ -15,6 +15,7 @@ export type GitMeta = {
 export type Route = {
 	Component: React.LazyExoticComponent<() => JSX.Element>
 	meta: RouteMeta
+	git: GitMeta
 }
 
 export const ROUTES = {
@@ -23,29 +24,34 @@ export const ROUTES = {
 		meta: {
 			title: 'Quad Tree'
 		},
+		git: {lastModified: 1717341556000},
 	},
 	"pong-pang": {
 		Component: lazy(() => import("./pages/pong-pang/index.tsx")),
 		meta: {
 			title: 'Pong Pang'
 		},
+		git: {lastModified: 1717341556000},
 	},
 	"paint-worklet": {
 		Component: lazy(() => import("./pages/paint-worklet/index.tsx")),
 		meta: {
 			title: 'Paint Worklet'
 		},
+		git: {lastModified: 1717341556000},
 	},
 	"lightning": {
 		Component: lazy(() => import("./pages/lightning/index.tsx")),
 		meta: {
 			title: 'Lightning'
 		},
+		git: {lastModified: 1717343301000},
 	},
 	"fragment-portal": {
 		Component: lazy(() => import("./pages/fragment-portal/index.tsx")),
 		meta: {
 			title: 'Fragment Portal'
 		},
+		git: {lastModified: 1717341556000},
 	}
 } as const satisfies Record<Routes, Route>
