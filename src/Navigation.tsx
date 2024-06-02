@@ -25,7 +25,8 @@ declare global {
 function parseUrl(href: string) {
 	const url = new URL(href)
 	if (!url.pathname.startsWith(import.meta.env.BASE_URL)) return null
-	const key = url.pathname.slice(import.meta.env.BASE_URL.length)
+	let key = url.pathname.slice(import.meta.env.BASE_URL.length)
+	if (key.endsWith("/")) key = key.slice(0, -1)
 	if (key in ROUTES) {
 		return key as Routes
 	}
