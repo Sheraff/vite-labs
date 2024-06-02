@@ -7,8 +7,9 @@ import pong_pang_image from "./pages/pong-pang/screen.png"
 import paint_worklet_image from "./pages/paint-worklet/screen.png"
 import lightning_image from "./pages/lightning/screen.png"
 
+import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/screen.png"
 
-export type Routes = "spider-inverse-kinematics" | "quad-tree" | "pong-pang" | "paint-worklet" | "lightning" | "fragment-portal"
+export type Routes = "spider-inverse-kinematics" | "quad-tree" | "pong-pang" | "paint-worklet" | "lightning" | "fragment-portal" | "bird-inverse-kinematics"
 
 export type RouteMeta = {
 	title: string
@@ -35,8 +36,8 @@ export const ROUTES = {
 			image: spider_inverse_kinematics_image
 		},
 		git: {
-			lastModified: NaN,
-			firstAdded: NaN
+			lastModified: 1717364036000,
+			firstAdded: 1717339261000
 		},
 	},
 	"quad-tree": {
@@ -46,7 +47,7 @@ export const ROUTES = {
 			image: quad_tree_image
 		},
 		git: {
-			lastModified: 1717361196000,
+			lastModified: 1717364022000,
 			firstAdded: 1717339261000
 		},
 	},
@@ -91,6 +92,17 @@ export const ROUTES = {
 		git: {
 			lastModified: 1717341556000,
 			firstAdded: 1717340075000
+		},
+	},
+	"bird-inverse-kinematics": {
+		Component: lazy(() => import("./pages/bird-inverse-kinematics/index.tsx")),
+		meta: {
+			title: 'Bird Inverse Kinematics',
+			image: bird_inverse_kinematics_image
+		},
+		git: {
+			lastModified: NaN,
+			firstAdded: NaN
 		},
 	}
 } as const satisfies Record<Routes, Route>
