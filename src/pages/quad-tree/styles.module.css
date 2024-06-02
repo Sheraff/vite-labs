@@ -4,7 +4,7 @@
 	color: white;
 	touch-action: none;
 	width: 100vw;
-	height: var(--svh, 100vh);
+	height: 100svh;
 	padding: 1em;
 
 	canvas {
