@@ -1,0 +1,42 @@
+.main {
+	color: oklch(99% 12% 318 / 1);
+	background-color: oklch(11% 22% 145 / 1);
+	padding: 1em;
+
+	--time: 0;
+	--color: white;
+	--alpha: 0.8;
+	animation: time 20s linear infinite both;
+	background-image: paint(dotWaves);
+	background-attachment: fixed;
+	height: 100dvh;
+	width: 100dvw;
+}
+
+@property --time {
+	syntax: "<percentage>";
+	inherits: false;
+	initial-value: 0%;
+}
+
+@keyframes time {
+	from {
+		--time: 0%;
+	}
+
+	to {
+		--time: 100%;
+	}
+}
+
+@property --alpha {
+	syntax: "<number>";
+	inherits: false;
+	initial-value: 0;
+}
+
+@property --color {
+	syntax: "<color>";
+	inherits: false;
+	initial-value: white;
+}
