@@ -1,5 +1,5 @@
 # Simple workflow for deploying static content to GitHub Pages
-name: Deploy static content to Pages
+name: 🐙 Deploy static content to Pages
 
 on:
   # Runs on pushes targeting the default branch
@@ -24,43 +24,55 @@ jobs:
   # Single deploy job since we're just deploying
   deploy:
     environment:
-      name: github
+      name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: 🔱 Checkout
         uses: actions/checkout@v4
-      - name: Set up Node
+        with:
+          fetch-depth: 1
+
+      - name: ⚙️ Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Set up pnpm
+
+      - name: ⚙️ Set up pnpm
         uses: pnpm/action-setup@v4
         with:
           run_install: false
-      - name: Get pnpm store directory
+
+      - name: 📁 Get pnpm store directory
         shell: bash
         id: get-store-path
         run: |
           echo "store-path=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-      - name: Setup pnpm cache
+
+      - name: 📦 Setup pnpm cache
         uses: actions/cache@v4
         with:
           path: ${{ steps.get-store-path.outputs.store-path }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
-      - name: Install dependencies
+
+      - name: 🧰 Install dependencies
         run: pnpm i --frozen-lockfile
-      - name: Build
-        run: pnpm build
-      - name: Setup Pages
+
+      - name: 🏗️ Build
+        timeout-minutes: 1
+        run: pnpm build --base ${{ github.event.repository.name }}
+
+      - name: ⚙️ Setup Pages
         uses: actions/configure-pages@v4
-      - name: Upload artifact
+
+      - name: ⛵ Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           # Upload dist folder
           path: "./dist"
-      - name: Deploy to GitHub Pages
+
+      - name: 🦋 Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
