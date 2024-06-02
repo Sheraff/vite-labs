@@ -1,0 +1,26 @@
+.main {
+	position: relative;
+	padding: 1em;
+	margin: 0;
+	color: white;
+	touch-action: none;
+
+	canvas {
+		width: 100vw;
+		height: 100svh;
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+	}
+
+	form {
+		position: fixed;
+		top: 1em;
+		right: 1em;
+	}
+
+	label {
+		display: block;
+		margin: .5em 0;
+	}
+}
