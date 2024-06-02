@@ -1,0 +1,17 @@
+.main {
+	padding: 1em;
+	background-color: lch(0% 0 0);
+	height: 100dvh;
+	background: radial-gradient(circle, #451952 min(250px, 100dvmin), #F39F5A 200%);
+
+	canvas {
+		position: fixed;
+		inset: 0;
+		align-self: center;
+		justify-self: center;
+		width: 500px;
+		height: 500px;
+		max-width: 100dvmin;
+		max-height: 100dvmin;
+	}
+}
