@@ -17,7 +17,7 @@ function App() {
       <hr />
       {Object.entries(ROUTES).map(([route, { meta }]) => (
         <div key={route}>
-          <a href={`/${route}`}><h2>{meta.title}</h2></a>
+          <a href={`${import.meta.env.BASE_URL}${route}`}><h2>{meta.title}</h2></a>
           <hr />
         </div>
       ))}

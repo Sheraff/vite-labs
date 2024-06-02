@@ -9,5 +9,6 @@ export default defineConfig(async () => {
 	return ({
 		plugins: [react(), fileRouter(), viteTsconfigPaths()],
 		clearScreen: false,
+		base: '/vite-labs/'
 	})
 })
