@@ -45,6 +45,7 @@ export function fileRouter(): Plugin {
 		const suffix = '/index.tsx'
 		for await (const index of glob(`${prefix}*${suffix}`)) {
 			count++
+			const key = index.slice(prefix.length, -suffix.length)
 			const source = await readFile(index, 'utf-8')
 			const { ast, visitorKeys } = parseForESLint(source, {
 				comment: false,
@@ -53,7 +54,7 @@ export function fileRouter(): Plugin {
 				range: true,
 				tokens: false,
 			})
-			let meta = '{}'
+			let meta = `{ title: "${key}" }`
 			const listener: TSESLint.RuleListener = ({
 				ExportNamedDeclaration(node) {
 					if (node.declaration?.type !== 'VariableDeclaration') return
@@ -68,7 +69,7 @@ export function fileRouter(): Plugin {
 				visitorKeys,
 				visitors: listener as never
 			})
-			routes.push([index.slice(prefix.length, -suffix.length), meta])
+			routes.push([key, meta])
 		}
 		logger.info(`scanned ${count} routes in ${Date.now() - start} ms`, { timestamp: true })
 
