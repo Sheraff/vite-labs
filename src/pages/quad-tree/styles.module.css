@@ -1,0 +1,33 @@
+.main {
+	margin: 0;
+	background: #051016;
+	color: white;
+	touch-action: none;
+	width: 100vw;
+	height: var(--svh, 100vh);
+	padding: 1em;
+
+	canvas {
+		position: fixed;
+		inset: 0;
+		height: 100%;
+		width: 100%;
+	}
+
+	form {
+		position: fixed;
+		top: 1em;
+		right: 1em;
+	}
+
+	label {
+		display: block;
+		margin: .5em 0;
+	}
+
+	>:not(form, canvas) {
+		position: relative;
+		z-index: 1;
+		width: fit-content;
+	}
+}

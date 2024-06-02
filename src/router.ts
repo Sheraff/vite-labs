@@ -2,7 +2,7 @@
 /* eslint-disable */
 import { lazy } from "react"
 
-export type Routes = "pong-pang" | "paint-worklet" | "lightning"
+export type Routes = "quad-tree" | "pong-pang" | "paint-worklet" | "lightning"
 
 export type RouteMeta = {
 	title: string
@@ -14,6 +14,12 @@ export type Route = {
 }
 
 export const ROUTES = {
+	"quad-tree": {
+		Component: lazy(() => import("./pages/quad-tree/index.tsx")),
+		meta: {
+			title: 'Quad Tree'
+		},
+	},
 	"pong-pang": {
 		Component: lazy(() => import("./pages/pong-pang/index.tsx")),
 		meta: {
