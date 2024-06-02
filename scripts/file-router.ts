@@ -2,10 +2,11 @@ import { createLogger, type Plugin } from 'vite'
 import {
 	// @ts-expect-error -- glob is not in the types yet
 	glob,
+	mkdir,
 	readFile,
 	writeFile,
 } from 'node:fs/promises'
-import path from 'node:path'
+import path, { join } from 'node:path'
 import { parseForESLint } from '@typescript-eslint/parser'
 import { simpleTraverse } from '@typescript-eslint/typescript-estree'
 import type { TSESLint } from '@typescript-eslint/utils'
@@ -33,16 +34,16 @@ ${routes.map(([route, meta]) => `	"${route}": {
 } as const satisfies Record<Routes, Route>
 `
 
-export function fileRouter(): Plugin {
+export function fileRouter(): Plugin[] {
 	const logger = createLogger('info', { prefix: '[file-router]' })
 	let latestContent = ''
+	const prefix = 'src/pages/'
+	const suffix = '/index.tsx'
 
 	async function generate() {
 		const start = Date.now()
 		let count = 0
 		const routes: Array<[key: string, meta: string]> = []
-		const prefix = 'src/pages/'
-		const suffix = '/index.tsx'
 		for await (const index of glob(`${prefix}*${suffix}`)) {
 			count++
 			const key = index.slice(prefix.length, -suffix.length)
@@ -75,14 +76,18 @@ export function fileRouter(): Plugin {
 
 		const content = template(routes)
 
-		if (latestContent === content) return
+		if (latestContent === content) return routes
 		latestContent = content
 
 		await writeFile('./src/router.ts', content)
+
+		return routes
 	}
 
+	let routes: [key: string, meta: string][] = []
+	let dist = ''
 
-	return {
+	return [{
 		name: 'file-router',
 		enforce: 'pre',
 		configureServer(server) {
@@ -91,6 +96,30 @@ export function fileRouter(): Plugin {
 			server.watcher.on('change', listener)
 			server.watcher.on('unlink', listener)
 		},
-		buildStart: generate,
-	}
+		async buildStart() {
+			routes = await generate()
+		},
+	}, {
+		/*
+		 * In "build" mode, we want to copy the index.html to the all the routes, so that
+		 * a static file server can serve the routes.
+		 */
+		name: 'file-router-post',
+		enforce: 'post',
+		apply: 'build',
+		outputOptions(options) {
+			dist = options.dir!
+		},
+		async writeBundle() {
+			const html = await readFile(join(dist, 'index.html'), 'utf-8')
+			this.info('copying index.html to routes')
+			for (const [route] of routes) {
+				const dir = join(dist, route)
+				await mkdir(dir, { recursive: true })
+				const target = join(dir, 'index.html')
+				await writeFile(target, html)
+				this.info(target)
+			}
+		},
+	}]
 }

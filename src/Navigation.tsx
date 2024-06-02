@@ -24,8 +24,8 @@ declare global {
 
 function parseUrl(href: string) {
 	const url = new URL(href)
-	const key = url.searchParams.get('page')
-	if (!key) return null
+	if (!url.pathname.startsWith(import.meta.env.BASE_URL)) return null
+	const key = url.pathname.slice(import.meta.env.BASE_URL.length)
 	if (key in ROUTES) {
 		return key as Routes
 	}
@@ -62,6 +62,6 @@ export function useNavigation() {
 	return useContext(NavigationContext)
 }
 
-export function Link({ href, ...props }: Omit<ComponentPropsWithoutRef<"a">, "href"> & { href: Routes | '/' }) {
-	return <a {...props} href={href === '/' ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '?page=' + href} />
+export function Link({ href, ...props }: Omit<ComponentPropsWithoutRef<"a">, "href"> & { href: `/${Routes}` | '/' }) {
+	return <a {...props} href={import.meta.env.BASE_URL + href.slice(1)} />
 }

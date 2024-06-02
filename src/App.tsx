@@ -17,7 +17,7 @@ function App() {
       <hr />
       {Object.entries(ROUTES).map(([route, { meta }]) => (
         <div key={route}>
-          <Link href={route as Routes}><h2>{meta.title}</h2></Link>
+          <Link href={`/${route as Routes}`}><h2>{meta.title}</h2></Link>
           <hr />
         </div>
       ))}
