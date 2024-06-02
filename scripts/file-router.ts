@@ -120,7 +120,8 @@ export function fileRouter(): Plugin[] {
 		name: 'file-router',
 		enforce: 'pre',
 		configureServer(server) {
-			const listener = (file = '') => (file.includes(normalize('/src/pages/')) ? generate() : null)
+			const pagesDir = join((process.cwd()), 'src/pages')
+			const listener = (file: string) => file.startsWith(pagesDir) && file.endsWith('index.tsx') && generate()
 			server.watcher.on('add', listener)
 			server.watcher.on('change', listener)
 			server.watcher.on('unlink', listener)
