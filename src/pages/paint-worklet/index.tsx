@@ -2,7 +2,7 @@ import { useEffect } from "react"
 import { Link } from "~/Navigation"
 import type { RouteMeta } from "~/router"
 import styles from './styles.module.css'
-import worklet from './waves.worklet?url'
+import worklet from './waves.worklet.ts?url'
 
 export const meta: RouteMeta = {
 	title: 'Paint Worklet'
