@@ -1,8 +1,30 @@
 .link {
 	width: fit-content;
+	/* color: hsl(0, 0%, 0%, 0.6); */
+	mix-blend-mode: luminosity;
+
 }
 
 .route {
 	padding: 0 1em;
 	border-bottom: 1px solid;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	color: inherit;
+	text-decoration: none;
+
+	h2,
+	p {
+		mix-blend-mode: luminosity;
+	}
+}
+
+.bg {
+	position: absolute;
+	inset: 0;
+	object-fit: cover;
+	z-index: -1;
+	height: 100%;
+	width: 100%;
 }

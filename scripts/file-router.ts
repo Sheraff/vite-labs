@@ -6,10 +6,10 @@ import {
 	readFile,
 	writeFile,
 } from 'node:fs/promises'
-import { dirname, join, normalize } from 'node:path'
+import { dirname, join, relative } from 'node:path'
 import { parseForESLint } from '@typescript-eslint/parser'
 import { simpleTraverse } from '@typescript-eslint/typescript-estree'
-import type { TSESLint } from '@typescript-eslint/utils'
+import type { TSESLint, TSESTree } from '@typescript-eslint/utils'
 import { exec } from "node:child_process"
 
 type Route = [key: string, meta: string, git: string]
@@ -22,6 +22,8 @@ export type Routes = "${routes.map(r => r[0]).join('" | "')}"
 
 export type RouteMeta = {
 	title: string
+	image?: string | Promise<string>
+	description?: string
 }
 
 export type GitMeta = {
@@ -41,7 +43,7 @@ ${routes.map(([route, meta, git]) => `	"${route}": {
 		meta: ${meta.split('\n').join('\n\t\t')},
 		git: ${git},
 	}`).join(',\n')}
-} as const satisfies Record<Routes, Route>
+} as Record<Routes, Route>
 `
 
 async function getGitMeta(index: string) {
@@ -71,7 +73,14 @@ async function getGitMeta(index: string) {
 	return git
 }
 
-async function getMeta(key: string, index: string) {
+type Context = {
+	resolve: (source: string, importer?: string | undefined) => Promise<{ id: string } | null>
+	addWatchFile: (id: string) => void
+}
+
+const IMAGES = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.ico', '.bmp', '.tiff', '.avif']
+
+async function getMeta(key: string, index: string, ctx?: Context) {
 	const source = await readFile(index, 'utf-8')
 	const { ast, visitorKeys } = parseForESLint(source, {
 		comment: false,
@@ -81,20 +90,41 @@ async function getMeta(key: string, index: string) {
 		tokens: false,
 	})
 	let meta = `{ title: "${key}" }`
+	let foundNode = false as TSESTree.ObjectExpression | false
 	const listener: TSESLint.RuleListener = ({
 		ExportNamedDeclaration(node) {
+			if (foundNode) return
 			if (node.declaration?.type !== 'VariableDeclaration') return
 			const decl = node.declaration.declarations[0]
 			if (decl.type !== 'VariableDeclarator') return
 			if (decl.id.type !== 'Identifier' || decl.id.name !== 'meta') return
 			if (decl.init?.type !== 'ObjectExpression') throw new Error('Expected ObjectExpression')
-			meta = source.slice(decl.init.range[0], decl.init.range[1])
-		}
+			foundNode = decl.init
+		},
 	})
 	simpleTraverse(ast, {
 		visitorKeys,
 		visitors: listener as never
 	})
+	if (foundNode) {
+		const start = foundNode.range[0]
+		meta = source.slice(start, foundNode.range[1])
+		if (ctx?.resolve) {
+			for (let i = foundNode.properties.length - 1; i >= 0; i--) {
+				const prop = foundNode.properties[i]
+				if (prop.type === 'Property' && prop.value.type === 'Literal' && typeof prop.value.value === 'string') {
+					const value = prop.value.value
+					if (IMAGES.some(i => value.endsWith(i))) {
+						const resolved = await ctx.resolve(value, index)
+						if (!resolved) continue
+						const path = './' + relative(join(process.cwd(), 'src'), resolved.id)
+						meta = meta.slice(0, prop.value.range[0] - start) + `import("${path}").then(m => m.default)` + meta.slice(prop.value.range[1] - start)
+					}
+				}
+			}
+		}
+	}
+
 	return meta
 }
 
@@ -104,14 +134,14 @@ export function fileRouter(): Plugin[] {
 	const prefix = 'src/pages/'
 	const suffix = '/index.tsx'
 
-	async function generate() {
+	async function generate(ctx?: Context) {
 		const start = Date.now()
 		let count = 0
 		const routePromises: Promise<Route>[] = []
 		for await (const index of glob(`${prefix}*${suffix}`)) {
 			count++
 			const key = index.slice(prefix.length, -suffix.length)
-			routePromises.push(Promise.all([key, getMeta(key, index), getGitMeta(index)]))
+			routePromises.push(Promise.all([key, getMeta(key, index, ctx), getGitMeta(index)]))
 		}
 
 		const routes = await Promise.all(routePromises)
@@ -129,19 +159,21 @@ export function fileRouter(): Plugin[] {
 
 	let routes: Route[] = []
 	let dist = ''
+	let ctx: Context | undefined = undefined
 
 	return [{
 		name: 'file-router',
 		enforce: 'pre',
 		configureServer(server) {
 			const pagesDir = join((process.cwd()), 'src/pages')
-			const listener = (file: string) => file.startsWith(pagesDir) && file.endsWith('index.tsx') && generate()
+			const listener = (file: string) => file.startsWith(pagesDir) && file.endsWith('index.tsx') && generate(ctx)
 			server.watcher.on('add', listener)
 			server.watcher.on('change', listener)
 			server.watcher.on('unlink', listener)
 		},
 		async buildStart() {
-			routes = await generate()
+			ctx = this
+			routes = await generate(this)
 		},
 	}, {
 		/*

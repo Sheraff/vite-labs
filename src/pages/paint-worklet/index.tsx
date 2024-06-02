@@ -5,7 +5,8 @@ import worklet from './waves.worklet?worker&url'
 import { Head } from "~/components/Head"
 
 export const meta: RouteMeta = {
-	title: 'Paint Worklet'
+	title: 'Paint Worklet',
+	image: './screen.png'
 }
 
 declare global {

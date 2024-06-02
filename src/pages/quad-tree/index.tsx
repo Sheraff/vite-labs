@@ -2,9 +2,11 @@ import styles from './styles.module.css'
 import { useEffect, useRef } from "react"
 import { QuadTree } from "./QuadTree"
 import { Head } from "~/components/Head"
+import type { RouteMeta } from "~/router"
 
-export const meta = {
-	title: 'Quad Tree'
+export const meta: RouteMeta = {
+	title: 'Quad Tree',
+	image: './screen.png'
 }
 
 const CURSOR_RADIUS = 300

@@ -1,4 +1,4 @@
-import { Link, useNavigation } from "~/Navigation"
+import { Link, useNavigation } from "~/file-router/Navigation"
 import { ROUTES } from "~/router"
 import styles from './Head.module.css'
 

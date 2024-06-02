@@ -6,6 +6,8 @@ export type Routes = "quad-tree" | "pong-pang" | "paint-worklet" | "lightning" |
 
 export type RouteMeta = {
 	title: string
+	image?: string | Promise<string>
+	description?: string
 }
 
 export type GitMeta = {
@@ -23,41 +25,45 @@ export const ROUTES = {
 	"quad-tree": {
 		Component: lazy(() => import("./pages/quad-tree/index.tsx")),
 		meta: {
-			title: 'Quad Tree'
+			title: 'Quad Tree',
+			image: import("./pages/quad-tree/screen.png").then(m => m.default)
 		},
 		git: {
-			lastModified: 1717341556000,
-			firstAdded: 1717339261000
+			lastModified: NaN,
+			firstAdded: NaN
 		},
 	},
 	"pong-pang": {
 		Component: lazy(() => import("./pages/pong-pang/index.tsx")),
 		meta: {
-			title: 'Pong Pang'
+			title: 'Pong Pang',
+			image: import("./pages/pong-pang/screen.png").then(m => m.default)
 		},
 		git: {
-			lastModified: 1717341556000,
-			firstAdded: 1717337533000
+			lastModified: NaN,
+			firstAdded: NaN
 		},
 	},
 	"paint-worklet": {
 		Component: lazy(() => import("./pages/paint-worklet/index.tsx")),
 		meta: {
-			title: 'Paint Worklet'
+			title: 'Paint Worklet',
+			image: import("./pages/paint-worklet/screen.png").then(m => m.default)
 		},
 		git: {
-			lastModified: 1717341556000,
-			firstAdded: 1717321960000
+			lastModified: NaN,
+			firstAdded: NaN
 		},
 	},
 	"lightning": {
 		Component: lazy(() => import("./pages/lightning/index.tsx")),
 		meta: {
-			title: 'Lightning'
+			title: 'Lightning',
+			image: import("./pages/lightning/screen.png").then(m => m.default)
 		},
 		git: {
-			lastModified: 1717343301000,
-			firstAdded: 1717331001000
+			lastModified: NaN,
+			firstAdded: NaN
 		},
 	},
 	"fragment-portal": {
@@ -70,4 +76,4 @@ export const ROUTES = {
 			firstAdded: 1717340075000
 		},
 	}
-} as const satisfies Record<Routes, Route>
+} as Record<Routes, Route>

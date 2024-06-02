@@ -5,7 +5,8 @@ import Worker from "./worker?worker"
 import { Head } from "~/components/Head"
 
 export const meta = {
-	title: 'Pong Pang'
+	title: 'Pong Pang',
+	image: './screen.png'
 }
 
 export default function PongPang() {
