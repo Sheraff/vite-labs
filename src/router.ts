@@ -2,7 +2,7 @@
 /* eslint-disable */
 import { lazy } from "react"
 
-export type Routes = "paint-worklet" | "other" | "lightning" | "fifou"
+export type Routes = "paint-worklet" | "lightning"
 
 export type RouteMeta = {
 	title: string
@@ -20,22 +20,10 @@ export const ROUTES = {
 			title: 'Paint Worklet'
 		},
 	},
-	"other": {
-		Component: lazy(() => import("./pages/other/index.tsx")),
-		meta: {
-			title: 'Other'
-		},
-	},
 	"lightning": {
 		Component: lazy(() => import("./pages/lightning/index.tsx")),
 		meta: {
 			title: 'Lightning'
-		},
-	},
-	"fifou": {
-		Component: lazy(() => import("./pages/fifou/index.tsx")),
-		meta: {
-			title: 'Fifou'
 		},
 	}
 } as const satisfies Record<Routes, Route>
