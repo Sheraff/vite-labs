@@ -1,0 +1,9 @@
+{
+	"files.readonlyInclude": {
+		"src/router.ts": true,
+		"pnpm-lock.yaml": true
+	},
+	"workbench.editor.customLabels.patterns": {
+		"**/index.tsx": "[page] ${dirname}",
+	}
+}
