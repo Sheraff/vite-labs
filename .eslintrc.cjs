@@ -13,6 +13,7 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/no-namespace': 'off',
     '@typescript-eslint/ban-types': 'off',
+    'no-constant-condition': ['error', { checkLoops: 'allExceptWhileTrue' }],
     'react-refresh/only-export-components': [
       'warn',
       {
