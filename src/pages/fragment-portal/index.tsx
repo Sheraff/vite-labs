@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useFragment, Receptacle, Portal, type FragmentPortal } from './FragmentPortal'
 import styles from './styles.module.css'
-import { Link } from "~/Navigation"
+import { Head } from "~/components/Head"
 
 export const meta = {
 	title: 'Fragment Portal'
@@ -12,8 +12,7 @@ export default function () {
 
 	return (
 		<div className={styles.main}>
-			<Link href="/">back</Link>
-			<h1>{meta.title}</h1>
+			<Head />
 			<Slots fragment={fragment} />
 			<LiveComponents fragment={fragment} />
 		</div>

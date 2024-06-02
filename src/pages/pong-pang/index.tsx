@@ -1,8 +1,8 @@
-import { Link } from "~/Navigation"
 import styles from './styles.module.css'
 import { useEffect, useState } from "react"
 import type { Incoming } from "./worker"
 import Worker from "./worker?worker"
+import { Head } from "~/components/Head"
 
 export const meta = {
 	title: 'Pong Pang'
@@ -27,8 +27,7 @@ export default function PongPang() {
 	}, [offscreen])
 	return (
 		<div className={styles.main}>
-			<Link href="/">back</Link>
-			<h1>{meta.title}</h1>
+			<Head />
 			<canvas width="1000" height="1000" ref={c => {
 				if (c && c !== canvas) {
 					setCanvas(c)

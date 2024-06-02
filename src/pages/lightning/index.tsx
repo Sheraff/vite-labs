@@ -1,6 +1,6 @@
-import { Link } from "~/Navigation"
 import styles from './styles.module.css'
 import { useEffect, useRef } from "react"
+import { Head } from "~/components/Head"
 
 export const meta = {
 	title: 'Lightning'
@@ -27,8 +27,7 @@ export default function Lightning() {
 	}, [])
 	return (
 		<div className={styles.main}>
-			<Link href="/">back</Link>
-			<h1>{meta.title}</h1>
+			<Head />
 			<canvas ref={canvas} />
 		</div>
 	)

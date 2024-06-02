@@ -28,6 +28,5 @@
 	>:not(form, canvas) {
 		position: relative;
 		z-index: 1;
-		width: fit-content;
 	}
 }

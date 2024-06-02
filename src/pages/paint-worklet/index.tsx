@@ -1,8 +1,8 @@
 import { useEffect } from "react"
-import { Link } from "~/Navigation"
 import type { RouteMeta } from "~/router"
 import styles from './styles.module.css'
 import worklet from './waves.worklet?worker&url'
+import { Head } from "~/components/Head"
 
 export const meta: RouteMeta = {
 	title: 'Paint Worklet'
@@ -24,8 +24,7 @@ export default function PaintWorklet() {
 
 	return (
 		<div className={styles.main}>
-			<Link href="/">back</Link>
-			<h1>{meta.title}</h1>
+			<Head />
 		</div>
 	)
 }

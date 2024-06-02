@@ -1,7 +1,5 @@
 let nextHandle = 1 // Spec says greater than zero
 const tasksByHandle = new Map<number, () => void>()
-let currentlyRunningATask = false
-
 
 export function setImmediate(callback: () => void) {
 	// Copy function arguments
@@ -25,12 +23,10 @@ channel.port1.onmessage = function (event) {
 
 	var task = tasksByHandle.get(handle)
 	if (task) {
-		currentlyRunningATask = true
 		try {
 			task()
 		} finally {
 			clearImmediate(handle)
-			currentlyRunningATask = false
 		}
 	}
 }

@@ -1,7 +1,7 @@
-import { Link } from "~/Navigation"
 import styles from './styles.module.css'
 import { useEffect, useRef } from "react"
 import { QuadTree } from "./QuadTree"
+import { Head } from "~/components/Head"
 
 export const meta = {
 	title: 'Quad Tree'
@@ -27,8 +27,7 @@ export default function () {
 
 	return (
 		<div className={styles.main}>
-			<Link href="/">back</Link>
-			<h1>{meta.title}</h1>
+			<Head />
 			<canvas width="1000" height="1000" ref={canvas}>
 				Your browser does not support the HTML5 canvas tag.
 			</canvas>
@@ -233,19 +232,19 @@ function drawTree(ctx: CanvasRenderingContext2D, tree: QuadTree) {
 	ctx.restore()
 }
 
-function drawBranch(ctx: CanvasRenderingContext2D, quadrant: QuadTree) {
-	drawQuadrant(ctx, quadrant)
-	if (quadrant.parent) {
-		drawBranch(ctx, quadrant.parent)
-	}
-}
+// function drawBranch(ctx: CanvasRenderingContext2D, quadrant: QuadTree) {
+// 	drawQuadrant(ctx, quadrant)
+// 	if (quadrant.parent) {
+// 		drawBranch(ctx, quadrant.parent)
+// 	}
+// }
 
-function drawQuadrant(ctx: CanvasRenderingContext2D, quadrant: QuadTree) {
-	ctx.save()
-	ctx.fillStyle = '#8085'
-	// ctx.lineWidth = QuadTree.MAX_DEPTH - quadrant.depth
-	ctx.beginPath()
-	ctx.rect(quadrant.x, quadrant.y, quadrant.width, quadrant.height)
-	ctx.fill()
-	ctx.restore()
-}
+// function drawQuadrant(ctx: CanvasRenderingContext2D, quadrant: QuadTree) {
+// 	ctx.save()
+// 	ctx.fillStyle = '#8085'
+// 	// ctx.lineWidth = QuadTree.MAX_DEPTH - quadrant.depth
+// 	ctx.beginPath()
+// 	ctx.rect(quadrant.x, quadrant.y, quadrant.width, quadrant.height)
+// 	ctx.fill()
+// 	ctx.restore()
+// }

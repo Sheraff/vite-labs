@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 import { ROUTES, type Routes } from "./router"
 import { Link, useNavigation } from "./Navigation"
+import styles from './App.module.css'
 
 
 function App() {
@@ -17,7 +18,7 @@ function App() {
       <hr />
       {Object.entries(ROUTES).map(([route, { meta }]) => (
         <div key={route}>
-          <Link href={`/${route as Routes}`}><h2>{meta.title}</h2></Link>
+          <Link href={`/${route as Routes}`}><h2 style={{ viewTransitionName: route }} className={styles.link}>{meta.title}</h2></Link>
           <hr />
         </div>
       ))}

@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState, type ComponentPropsWithoutRef } from "react"
 import { ROUTES, type Routes } from "./router"
+import { flushSync } from "react-dom"
 
 
 type NavigationEvent = {
@@ -19,6 +20,9 @@ declare global {
 			addEventListener: (type: "navigate", listener: (event: NavigationEvent) => void) => void
 			removeEventListener: (type: "navigate", listener: (event: NavigationEvent) => void) => void
 		}
+	}
+	interface Document {
+		startViewTransition(callback: () => void): void
 	}
 }
 
@@ -43,7 +47,7 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
 			const key = parseUrl(event.destination.url)
 			event.intercept({
 				handler() {
-					setRoute(key)
+					document.startViewTransition(() => flushSync(() => setRoute(key)))
 				}
 			})
 		}
