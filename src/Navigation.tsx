@@ -19,6 +19,11 @@ declare global {
 		navigation: {
 			addEventListener: (type: "navigate", listener: (event: NavigationEvent) => void) => void
 			removeEventListener: (type: "navigate", listener: (event: NavigationEvent) => void) => void
+			canGoBack: boolean
+			back: () => {
+				committed: Promise<void>
+				finished: Promise<void>
+			}
 		}
 	}
 	interface Document {
