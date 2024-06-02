@@ -26,6 +26,7 @@ export type RouteMeta = {
 
 export type GitMeta = {
 	lastModified: number
+	firstAdded: number
 }
 
 export type Route = {
@@ -44,16 +45,29 @@ ${routes.map(([route, meta, git]) => `	"${route}": {
 `
 
 async function getGitMeta(index: string) {
-	let dates: Promise<string>[] = []
+	const lastAuthorTime: Promise<string>[] = []
+	const firstCommit: Promise<string>[] = []
 	for await (const file of glob(`${dirname(index)}/**/*`)) {
-		dates.push(new Promise<string>((resolve, reject) => exec(`git log -1 --pretty="format:%ai" "${file}"`, (error, stdout, stderr) => {
-			if (error || stderr) return reject(error || stderr)
-			resolve(stdout.trim())
-		})))
+		lastAuthorTime.push(new Promise<string>(
+			(resolve, reject) => exec(`git log -1 --pretty="format:%ai" "${file}"`, (error, stdout, stderr) => {
+				if (error || stderr) return reject(error || stderr)
+				resolve(stdout.trim())
+			})
+		))
+		firstCommit.push(new Promise<string>(
+			(resolve, reject) => exec(`git log --follow --pretty="format:%ad" "${file}" | tail -1`, (error, stdout, stderr) => {
+				if (error || stderr) return reject(error || stderr)
+				resolve(stdout.trim())
+			})
+		))
 	}
-	const timestamps = await Promise.all(dates)
-	const max = Math.max(...timestamps.map(t => new Date(t).getTime()))
-	const git = `{lastModified: ${max}}`
+	const lastModTime = await Promise.all(lastAuthorTime)
+	const max = Math.max(...lastModTime.map(t => new Date(t).getTime()))
+
+	const firstAddTime = await Promise.all(firstCommit)
+	const min = Math.min(...firstAddTime.map(t => new Date(t).getTime()))
+
+	const git = `{\n\t\t\tlastModified: ${max},\n\t\t\tfirstAdded: ${min}\n\t\t}`
 	return git
 }
 

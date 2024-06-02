@@ -1,3 +1,8 @@
 .link {
 	width: fit-content;
 }
+
+.route {
+	padding: 0 1em;
+	border-bottom: 1px solid;
+}

@@ -10,6 +10,7 @@ export type RouteMeta = {
 
 export type GitMeta = {
 	lastModified: number
+	firstAdded: number
 }
 
 export type Route = {
@@ -24,34 +25,49 @@ export const ROUTES = {
 		meta: {
 			title: 'Quad Tree'
 		},
-		git: {lastModified: 1717341556000},
+		git: {
+			lastModified: 1717341556000,
+			firstAdded: 1717339261000
+		},
 	},
 	"pong-pang": {
 		Component: lazy(() => import("./pages/pong-pang/index.tsx")),
 		meta: {
 			title: 'Pong Pang'
 		},
-		git: {lastModified: 1717341556000},
+		git: {
+			lastModified: 1717341556000,
+			firstAdded: 1717337533000
+		},
 	},
 	"paint-worklet": {
 		Component: lazy(() => import("./pages/paint-worklet/index.tsx")),
 		meta: {
 			title: 'Paint Worklet'
 		},
-		git: {lastModified: 1717341556000},
+		git: {
+			lastModified: 1717341556000,
+			firstAdded: 1717321960000
+		},
 	},
 	"lightning": {
 		Component: lazy(() => import("./pages/lightning/index.tsx")),
 		meta: {
 			title: 'Lightning'
 		},
-		git: {lastModified: 1717343301000},
+		git: {
+			lastModified: 1717343301000,
+			firstAdded: 1717331001000
+		},
 	},
 	"fragment-portal": {
 		Component: lazy(() => import("./pages/fragment-portal/index.tsx")),
 		meta: {
 			title: 'Fragment Portal'
 		},
-		git: {lastModified: 1717341556000},
+		git: {
+			lastModified: 1717341556000,
+			firstAdded: 1717340075000
+		},
 	}
 } as const satisfies Record<Routes, Route>
