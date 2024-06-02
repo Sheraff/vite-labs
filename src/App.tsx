@@ -1,6 +1,6 @@
 import { Suspense } from "react"
-import { ROUTES } from "./router"
-import { useNavigation } from "./Navigation"
+import { ROUTES, type Routes } from "./router"
+import { Link, useNavigation } from "./Navigation"
 
 
 function App() {
@@ -17,7 +17,7 @@ function App() {
       <hr />
       {Object.entries(ROUTES).map(([route, { meta }]) => (
         <div key={route}>
-          <a href={`${import.meta.env.BASE_URL}${route}`}><h2>{meta.title}</h2></a>
+          <Link href={route as Routes}><h2>{meta.title}</h2></Link>
           <hr />
         </div>
       ))}
