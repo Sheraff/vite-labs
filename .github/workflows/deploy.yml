@@ -50,9 +50,6 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
-      - name: test
-        shell: bash
-        run: echo "${{ steps.get-store-path.outputs.store-path }}"
       - name: Install dependencies
         run: pnpm i --frozen-lockfile
       - name: Build
