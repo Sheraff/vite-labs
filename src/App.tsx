@@ -29,7 +29,7 @@ function App() {
             <Link href={`/${route as Routes}`}>
               <h2 style={{ viewTransitionName: route }} className={styles.link}>{meta.title}</h2>
             </Link>
-            <p>Last modified: {formatter.format(git.lastModified)}</p>
+            <p>Last modified: {git.lastModified && formatter.format(git.lastModified)}</p>
           </div>
         ))
       }
