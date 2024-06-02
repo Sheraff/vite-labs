@@ -118,6 +118,16 @@ function animate(ctx: CanvasRenderingContext2D) {
 		[1000, 300],
 		{ color: 'red' }
 	)
+	const arc3 = makeArc(
+		[200, 300],
+		[1000, 300],
+		{ color: 'limegreen', impulseRange: [200, 400] }
+	)
+	const arc4 = makeArc(
+		[200, 500],
+		[1000, 500],
+		{ color: 'purple', impulseRange: [20, 50] }
+	)
 
 	let last = 0
 	let rafId = requestAnimationFrame(function step(time: DOMHighResTimeStamp) {
@@ -139,6 +149,8 @@ function animate(ctx: CanvasRenderingContext2D) {
 		arc.draw(time)
 
 		arc2.draw(time)
+		arc3.draw(time)
+		arc4.draw(time)
 	})
 	return () => cancelAnimationFrame(rafId)
 }
