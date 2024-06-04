@@ -80,8 +80,8 @@ export const ROUTES = {
 			title: 'Modern Modal',
 		},
 		git: {
-			lastModified: NaN,
-			firstAdded: NaN
+			lastModified: 1717538613000,
+			firstAdded: 1717538613000
 		},
 	},
 	"lightning": {

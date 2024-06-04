@@ -53,12 +53,14 @@ function animate(ctx: CanvasRenderingContext2D) {
 		normalRange?: number
 		/** color of the arc */
 		color?: string
+		width?: number
 	} = {}) => {
 		const {
 			impulseRange = [40, 150],
 			pointsSpacingRange = [30, 40],
 			normalRange = 20,
 			color = 'rgb(255 255 200)',
+			width = 1.5
 		} = options
 		let lastImpulse = 0
 		return {
@@ -104,7 +106,7 @@ function animate(ctx: CanvasRenderingContext2D) {
 				}
 
 				ctx.strokeStyle = color
-				ctx.lineWidth = 1.5
+				ctx.lineWidth = width
 				ctx.stroke(path)
 			}
 		}
@@ -115,11 +117,18 @@ function animate(ctx: CanvasRenderingContext2D) {
 		[width / 4, height / 3],
 		[3 * width / 4, 2 * height / 3],
 	)
+	const arcBlue = makeArc(
+		[width / 4, height / 3],
+		[3 * width / 4, 2 * height / 3],
+		{ color: 'deepskyblue', impulseRange: [300, 500], normalRange: 15, width: 4 }
+	)
+
 	const arc2 = makeArc(
 		[200, 300],
 		[1000, 300],
 		{ color: 'red' }
 	)
+
 	const arc3 = makeArc(
 		[200, 300],
 		[1000, 300],
@@ -148,9 +157,15 @@ function animate(ctx: CanvasRenderingContext2D) {
 		arc.a.y = height / 3
 		arc.b.x = 3 * width / 4
 		arc.b.y = 2 * height / 3
+		arcBlue.a.x = width / 4
+		arcBlue.a.y = height / 3
+		arcBlue.b.x = 3 * width / 4
+		arcBlue.b.y = 2 * height / 3
 		arc.draw(time)
+		arcBlue.draw(time)
 
 		arc2.draw(time)
+
 		arc3.draw(time)
 		arc4.draw(time)
 	})
