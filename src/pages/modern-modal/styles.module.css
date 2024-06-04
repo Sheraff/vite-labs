@@ -1,0 +1,173 @@
+.main {
+	padding: 1em;
+}
+
+.dialog {
+	opacity: 1;
+	position: fixed;
+	inset: 0;
+	box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.5);
+
+	animation: fade-out 0.5s forwards;
+
+	&[open] {
+		animation: fade-in 0.5s forwards;
+	}
+
+	&[open]::backdrop {
+		opacity: 1;
+	}
+}
+
+@keyframes fade-in {
+	from {
+		opacity: 0;
+		display: none;
+	}
+
+	to {
+		opacity: 1;
+		display: block;
+	}
+}
+
+@keyframes fade-out {
+	from {
+		opacity: 1;
+		display: block;
+	}
+
+	to {
+		opacity: 0;
+		display: none;
+	}
+}
+
+.drawer {
+	position: fixed;
+	inset: 0;
+	height: 100dvh;
+	width: 100dvw;
+	padding: 0;
+	max-width: none;
+	max-height: none;
+	border: 0;
+	overflow: hidden;
+	background: transparent;
+
+	&::backdrop {
+		display: none;
+	}
+
+	&:not([open]) {
+		animation: persist 0.5s forwards;
+	}
+
+	&>[data-bg] {
+		position: absolute;
+		inset: 0;
+		background: rgb(0 0 0 / 0.5);
+		opacity: 0;
+		animation: fade-out 0.5s forwards;
+	}
+
+	&[open]>[data-bg] {
+		animation: fade-in 0.5s forwards;
+	}
+
+	&>[data-panel] {
+		position: absolute;
+		top: 0;
+		right: 0;
+		padding: 1em;
+		width: 100%;
+		max-width: 400px;
+		height: 100%;
+		background-color: canvas;
+		border-left: 1px solid currentColor;
+		overflow: auto;
+		animation: slide-out 0.5s forwards;
+	}
+
+	&[open]>[data-panel] {
+		animation: slide-in 0.5s forwards;
+	}
+}
+
+@keyframes persist {
+	from {
+		display: block;
+	}
+}
+
+@keyframes slide-in {
+	from {
+		transform: translateX(100%);
+		display: none;
+	}
+}
+
+@keyframes slide-out {
+	to {
+		transform: translateX(100%);
+		display: none;
+	}
+}
+
+.tooltip {
+	&>[data-trigger] {
+		width: fit-content;
+	}
+
+	&>[data-content] {
+		pointer-events: none;
+		position: absolute;
+		position-visibility: no-overflow;
+		inset: initial;
+		top: anchor(bottom);
+		justify-self: anchor-center;
+		margin: 8px;
+		animation: fade-out 0.5s forwards;
+
+		&:popover-open {
+			animation: fade-in 0.5s forwards;
+		}
+	}
+}
+
+.toasts {
+	position: fixed;
+	inset: 0 0 auto;
+	margin: 0 auto;
+	padding: 1em;
+	background: transparent;
+	border: none;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 1em;
+	overflow: visible;
+}
+
+.toast {
+	padding: 1em;
+	background-color: canvas;
+	border-style: solid;
+	animation: slide-down 0.5s forwards;
+}
+
+@keyframes slide-down {
+	from {
+		transform: translateY(calc(-100% - 1em));
+		z-index: -1;
+		opacity: 0;
+		display: none;
+	}
+
+	to {
+		transform: translateY(0);
+		z-index: 1;
+		opacity: 1;
+		display: block;
+	}
+}

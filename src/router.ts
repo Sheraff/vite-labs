@@ -5,11 +5,12 @@ import spider_inverse_kinematics_image from "./pages/spider-inverse-kinematics/s
 import quad_tree_image from "./pages/quad-tree/screen.png"
 import pong_pang_image from "./pages/pong-pang/screen.png"
 import paint_worklet_image from "./pages/paint-worklet/screen.png"
+
 import lightning_image from "./pages/lightning/screen.png"
 
 import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/screen.png"
 
-export type Routes = "spider-inverse-kinematics" | "quad-tree" | "pong-pang" | "paint-worklet" | "lightning" | "fragment-portal" | "bird-inverse-kinematics"
+export type Routes = "spider-inverse-kinematics" | "quad-tree" | "pong-pang" | "paint-worklet" | "modern-modal" | "lightning" | "fragment-portal" | "bird-inverse-kinematics"
 
 export type RouteMeta = {
 	title: string
@@ -73,6 +74,16 @@ export const ROUTES = {
 			firstAdded: 1717321960000
 		},
 	},
+	"modern-modal": {
+		Component: lazy(() => import("./pages/modern-modal/index.tsx")),
+		meta: {
+			title: 'Modern Modal',
+		},
+		git: {
+			lastModified: NaN,
+			firstAdded: NaN
+		},
+	},
 	"lightning": {
 		Component: lazy(() => import("./pages/lightning/index.tsx")),
 		meta: {
@@ -101,8 +112,8 @@ export const ROUTES = {
 			image: bird_inverse_kinematics_image
 		},
 		git: {
-			lastModified: NaN,
-			firstAdded: NaN
+			lastModified: 1717365547000,
+			firstAdded: 1717339261000
 		},
 	}
 } as const satisfies Record<Routes, Route>
