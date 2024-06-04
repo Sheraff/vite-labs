@@ -21,12 +21,12 @@ function App() {
       <h1>hello</h1>
       {Object.entries(ROUTES)
         .sort(([a], [b]) => a.localeCompare(b))
-        .sort((a, b) => b[1].git.firstAdded - a[1].git.firstAdded)
         .sort((a, b) => b[1].git.lastModified - a[1].git.lastModified)
+        .sort((a, b) => b[1].git.firstAdded - a[1].git.firstAdded)
         .map(([route, { meta, git }]) => (
           <Link key={route} className={styles.route} href={`/${route as Routes}`}>
             <h2 style={{ viewTransitionName: route }} className={styles.link}>{meta.title}</h2>
-            <p>Last modified: {git.lastModified && formatter.format(git.lastModified)}</p>
+            <p>Created on: {git.firstAdded && formatter.format(git.firstAdded)}</p>
             {'image' in meta && meta.image && <img src={meta.image} className={styles.bg} />}
           </Link>
         ))
