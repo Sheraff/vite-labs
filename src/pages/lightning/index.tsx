@@ -114,29 +114,29 @@ function animate(ctx: CanvasRenderingContext2D) {
 
 	const { width, height } = ctx.canvas
 	const arc = makeArc(
-		[width / 4, height / 3],
-		[3 * width / 4, 2 * height / 3],
+		[width / 4, height / 2],
+		[3 * width / 4, 3 * height / 4],
 	)
 	const arcBlue = makeArc(
-		[width / 4, height / 3],
-		[3 * width / 4, 2 * height / 3],
+		[width / 4, height / 2],
+		[3 * width / 4, 3 * height / 4],
 		{ color: 'deepskyblue', impulseRange: [300, 500], normalRange: 15, width: 4 }
 	)
 
 	const arc2 = makeArc(
-		[200, 300],
-		[1000, 300],
+		[200, 400],
+		[1000, 400],
 		{ color: 'red' }
 	)
 
 	const arc3 = makeArc(
-		[200, 300],
-		[1000, 300],
+		[200, 400],
+		[1000, 400],
 		{ color: 'limegreen', impulseRange: [200, 400] }
 	)
 	const arc4 = makeArc(
-		[200, 500],
-		[1000, 500],
+		[200, 600],
+		[1000, 600],
 		{ color: 'purple', impulseRange: [20, 50] }
 	)
 
@@ -154,13 +154,13 @@ function animate(ctx: CanvasRenderingContext2D) {
 
 		// draw lightning
 		arc.a.x = width / 4
-		arc.a.y = height / 3
+		arc.a.y = height / 2
 		arc.b.x = 3 * width / 4
-		arc.b.y = 2 * height / 3
+		arc.b.y = 3 * height / 4
 		arcBlue.a.x = width / 4
-		arcBlue.a.y = height / 3
+		arcBlue.a.y = height / 2
 		arcBlue.b.x = 3 * width / 4
-		arcBlue.b.y = 2 * height / 3
+		arcBlue.b.y = 3 * height / 4
 		arc.draw(time)
 		arcBlue.draw(time)
 

@@ -1,3 +1,5 @@
 .both {
 	width: fit-content;
+	margin: 0 0 1rem;
+	display: block;
 }
