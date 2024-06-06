@@ -4,7 +4,7 @@ import { ROUTES, type Routes } from "~/router"
 
 import styles from './App.module.css'
 
-function App() {
+export default function App() {
 
   const route = useNavigation()
 
@@ -21,8 +21,8 @@ function App() {
       <h1>hello</h1>
       {Object.entries(ROUTES)
         .sort(([a], [b]) => a.localeCompare(b))
-        .sort((a, b) => b[1].git.lastModified - a[1].git.lastModified)
-        .sort((a, b) => b[1].git.firstAdded - a[1].git.firstAdded)
+        .sort((a, b) => sortDates(b[1].git.lastModified, a[1].git.lastModified))
+        .sort((a, b) => sortDates(b[1].git.firstAdded, a[1].git.firstAdded))
         .map(([route, { meta, git }]) => (
           <Link key={route} className={styles.route} href={`/${route as Routes}`}>
             <h2 style={{ viewTransitionName: route }} className={styles.link}>{meta.title}</h2>
@@ -36,5 +36,8 @@ function App() {
 }
 
 
-
-export default App
+function sortDates(a: number, b: number) {
+  if (Number.isNaN(a)) return 1
+  if (Number.isNaN(b)) return -1
+  return a - b
+}
