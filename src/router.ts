@@ -5,9 +5,7 @@ import spider_inverse_kinematics_image from "./pages/spider-inverse-kinematics/s
 import quad_tree_image from "./pages/quad-tree/screen.png"
 import pong_pang_image from "./pages/pong-pang/screen.png"
 import paint_worklet_image from "./pages/paint-worklet/screen.png"
-
 import lightning_image from "./pages/lightning/screen.png"
-
 import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/screen.png"
 
 export type Routes = "spider-inverse-kinematics" | "quad-tree" | "pong-pang" | "paint-worklet" | "modern-modal" | "lightning" | "fragment-portal" | "bird-inverse-kinematics"
@@ -91,7 +89,7 @@ export const ROUTES = {
 			image: lightning_image
 		},
 		git: {
-			lastModified: 1717539236000,
+			lastModified: 1717571804000,
 			firstAdded: 1717331001000
 		},
 	},
