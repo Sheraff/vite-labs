@@ -15,8 +15,8 @@ export default function () {
 	useEffect(() => {
 		if (!canvas.current) return
 		const ctx = canvas.current.getContext('2d')
-		canvas.current.width = window.innerWidth
-		canvas.current.height = window.innerHeight
+		canvas.current.width = window.innerWidth * ((devicePixelRatio - 1) / 2 + 1)
+		canvas.current.height = window.innerHeight * ((devicePixelRatio - 1) / 2 + 1)
 		if (!ctx) throw new Error('No context found')
 		const clear = start(ctx)
 		return () => clear()
@@ -32,21 +32,21 @@ export default function () {
 
 
 function start(ctx: CanvasRenderingContext2D) {
-	const width = 256 // Math.floor(ctx.canvas.width / 8)
-	const height = 256 // Math.floor(ctx.canvas.width / 8)
-	const depth = 10
-	const time = 10
+	const width = 128 // Math.floor(ctx.canvas.width / 8)
+	const height = 128 // Math.floor(ctx.canvas.width / 8)
+	const depth = 14
+	const time = 14
 
 	console.log(`init with ${width}x${height}x${depth}x${time} (${width * height * depth * time} values)`)
 
 	const noise = generate4dPerlinNoise(width, height, depth, time, {
-		x: 0.05,
-		y: 0.05,
-		z: 0.06,
-		t: 0.06,
+		x: 0.06,
+		y: 0.06,
+		z: 0.04,
+		t: 0.04,
 		resolution: 256
 	})
-	// const get = (x: number, y: number, z: number, t: number) => getValue(x, y, z, t, noise, width, height, depth, time)
+
 	const get = (x: number, y: number, z: number, t: number) => noise[t * width * height * depth + z * width * height + y * width + x]
 
 	const clear = draw(ctx, width, height, depth, time, get)
@@ -71,6 +71,8 @@ function draw(
 
 	const tempStore2d = new Float32Array(noiseW * noiseH)
 	const tempStore1d = new Float32Array(noiseH)
+	const imgStore = new Uint8ClampedArray(canvasW * canvasH)
+	const imageData = ctx.createImageData(canvasW, canvasH)
 
 	let lastTime = 0
 	let rafId = requestAnimationFrame(function loop(time) {
@@ -110,7 +112,6 @@ function draw(
 			}
 		}
 
-		const imageData = ctx.createImageData(canvasW, canvasH)
 		for (let cy = 0; cy < canvasH; cy++) {
 			const perlinY = cy / canvasH * noiseH
 			const beforeY = Math.floor(perlinY)
@@ -139,11 +140,49 @@ function draw(
 				const after = tempStore1d[afterX]
 				const value = lerp(progressX, before, after)
 
-				const index = (cy * canvasW + cx) * 4
-				imageData.data[index] = value * 255
-				imageData.data[index + 1] = value * 255
-				imageData.data[index + 2] = value * 255
-				imageData.data[index + 3] = 255
+				const i = (cy * canvasW + cx)
+				imgStore[i] = Math.floor(value * 255)
+			}
+		}
+
+		const thresholds = [125, 200, 250]
+		for (let y = 0; y < canvasH; y++) {
+			const mid = y > 0 && y < canvasH - 1
+			for (let x = 0; x < canvasW; x++) {
+				const i = (y * canvasW + x) * 4
+
+				vertical: if (mid) {
+					const top = imgStore[(y - 1) * canvasW + x]
+					const bottom = imgStore[(y + 1) * canvasW + x]
+					if (top === bottom) break vertical
+					const t = thresholds.find(t => (top <= t && bottom > t) || (top >= t && bottom < t))
+					if (t) {
+						imageData.data[i] = t
+						imageData.data[i + 1] = t
+						imageData.data[i + 2] = t
+						imageData.data[i + 3] = 255
+						continue
+					}
+				}
+
+				horizontal: if (x > 0 && x < canvasW - 1) {
+					const left = imgStore[y * canvasW + x - 1]
+					const right = imgStore[y * canvasW + x + 1]
+					if (left === right) break horizontal
+					const t = thresholds.find(t => (left <= t && right > t) || (left >= t && right < t))
+					if (t) {
+						imageData.data[i] = t
+						imageData.data[i + 1] = t
+						imageData.data[i + 2] = t
+						imageData.data[i + 3] = 255
+						continue
+					}
+				}
+
+				imageData.data[i] = 0
+				imageData.data[i + 1] = 0
+				imageData.data[i + 2] = 0
+				imageData.data[i + 3] = 255
 			}
 		}
 
@@ -263,8 +302,4 @@ function generate4dPerlinNoise(width: number, height: number, depth: number, tim
 		}
 	}
 	return data
-}
-
-function getValue(x: number, y: number, z: number, t: number, data: Float32Array, width: number, height: number, depth: number, time: number): number {
-	return data[t * width * height * depth + z * width * height + y * width + x]
 }
