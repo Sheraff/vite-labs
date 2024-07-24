@@ -12,10 +12,10 @@ function handleMessage(event: Incoming) {
 }
 
 async function start(ctx: OffscreenCanvasRenderingContext2D, _width: number, _height: number) {
-	const width = Math.floor(_width / 10)
-	const height = Math.floor(_height / 10)
-	const depth = 14
-	const time = 14
+	const width = Math.ceil(_width / 10)
+	const height = Math.ceil(_height / 10)
+	const depth = 56
+	const time = 56
 
 	console.log(`init with ${width}x${height}x${depth}x${time} (${width * height * depth * time} values)`)
 
@@ -23,35 +23,26 @@ async function start(ctx: OffscreenCanvasRenderingContext2D, _width: number, _he
 	ctx.rect(0, 0, _width, 10)
 	ctx.fillStyle = `rgb(${black})`
 	ctx.fill()
-	ctx.fillStyle = `rgb(${colors[125]})`
+	ctx.fillStyle = `rgb(${colors[thresholds[0]]})`
 
-	const noise = await generate4dPerlinNoise(width, height, depth, time, {
-		x: 0.06,
-		y: 0.06,
+	const get = generate4dPerlinNoise(width, height, depth, time, {
+		x: 0.03,
+		y: 0.03,
 		z: 0.04,
 		t: 0.04,
-		resolution: 256,
-	}, {
-		interval: 0.1,
-		progress: (p) => {
-			ctx.beginPath()
-			ctx.rect(0, _height / 2 - 10, _width * p, 20)
-			ctx.fill()
-		},
+		resolution: 512,
 	})
-
-	const get = (x: number, y: number, z: number, t: number) => noise[t * width * height * depth + z * width * height + y * width + x]
 
 	draw(ctx, width, height, depth, time, get)
 }
 
 const black = rgb(3, 0, 28)
 
-const thresholds = [125, 200, 250]
+const thresholds = [100, 165, 200]
 const colors: Record<typeof thresholds[number], [r: number, g: number, b: number]> = {
-	125: rgb(48, 30, 103),
-	200: rgb(91, 143, 185),
-	250: rgb(182, 234, 218),
+	[thresholds[0]]: rgb(48, 30, 103),
+	[thresholds[1]]: rgb(91, 143, 185),
+	[thresholds[2]]: rgb(182, 234, 218),
 }
 
 function draw(
@@ -75,9 +66,9 @@ function draw(
 	let lastTime = 0
 	let rafId = requestAnimationFrame(function loop(time) {
 		rafId = requestAnimationFrame(loop)
-		const delta = lastTime ? time - lastTime : 0
+		const delta = lastTime ? (time - lastTime) / 1000 : 0
 		lastTime = time
-		advancement += delta * 0.001
+		advancement += delta * 0.3
 		advancement = advancement % (2 * Math.PI)
 
 		const d = (Math.sin(advancement) * 0.5 + 0.5) * (noiseD - 1)
@@ -266,7 +257,7 @@ function permutations(resolution: number): Uint8Array {
 	return p
 }
 
-async function generate4dPerlinNoise(
+function generate4dPerlinNoise(
 	width: number,
 	height: number,
 	depth: number,
@@ -277,12 +268,8 @@ async function generate4dPerlinNoise(
 		z?: number
 		t?: number
 		resolution?: number
-	} = {},
-	generation: {
-		progress?: (p: number) => void
-		interval?: number
 	} = {}
-): Promise<Float32Array> {
+): ((x: number, y: number, z: number, t: number) => number) {
 	params.x ??= 0.05
 	params.y ??= 0.05
 	params.z ??= 0.05
@@ -293,41 +280,35 @@ async function generate4dPerlinNoise(
 	const data = new Float32Array(size)
 	const p = permutations(params.resolution) // Ensure this function can handle 4D.
 	const total = width * height * depth * time
+	for (let i = 0; i < total; i++) {
+		data[i] = -1
+	}
 
-	const mustYield = (generation.interval || generation.progress)
-	generation.interval ??= 0.1
-
-	let index = 0
-	let prevInterval = 0
-	for (let t = 0; t < time; t++) {
-		for (let z = 0; z < depth; z++) {
-			for (let y = 0; y < height; y++) {
-				for (let x = 0; x < width; x++) {
-					// Adjust the scale factor (0.05 here) as needed for your use case
-					const noiseValue = perlin(
-						p,
-						x * params.x,
-						y * params.y,
-						z * params.z,
-						t * params.t,
-						params.resolution
-					)
-					data[index++] = noiseValue
-
-					if (mustYield) {
-						const progress = index / total
-						const interval = Math.floor(progress / generation.interval)
-						if (interval !== prevInterval) {
-							prevInterval = interval
-							generation.progress?.(progress)
-							await new Promise(r => requestAnimationFrame(r))
-						}
-					}
-				}
+	function makePlane(t: number, z: number, i: number) {
+		for (let y = 0; y < height; y++) {
+			for (let x = 0; x < width; x++) {
+				// Adjust the scale factor (0.05 here) as needed for your use case
+				const noiseValue = perlin(
+					p,
+					x * params.x!,
+					y * params.y!,
+					z * params.z!,
+					t * params.t!,
+					params.resolution!
+				)
+				data[i++] = noiseValue
 			}
 		}
 	}
-	return data
+
+	return (x: number, y: number, z: number, t: number) => {
+		const i = t * width * height * depth + z * width * height
+		const index = i + y * width + x
+		const value = data[index]
+		if (value !== -1) return value
+		makePlane(t, z, i)
+		return data[index]
+	}
 }
 
 /** minor helper so I can copy/paste css strings and it works */
