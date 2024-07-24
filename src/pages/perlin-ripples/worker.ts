@@ -11,7 +11,7 @@ function handleMessage(event: Incoming) {
 	}
 }
 
-function start(ctx: OffscreenCanvasRenderingContext2D, _width: number, _height: number) {
+async function start(ctx: OffscreenCanvasRenderingContext2D, _width: number, _height: number) {
 	const width = Math.floor(_width / 10)
 	const height = Math.floor(_height / 10)
 	const depth = 14
@@ -19,12 +19,25 @@ function start(ctx: OffscreenCanvasRenderingContext2D, _width: number, _height: 
 
 	console.log(`init with ${width}x${height}x${depth}x${time} (${width * height * depth * time} values)`)
 
-	const noise = generate4dPerlinNoise(width, height, depth, time, {
+	ctx.beginPath()
+	ctx.rect(0, 0, _width, 10)
+	ctx.fillStyle = `rgb(${black})`
+	ctx.fill()
+	ctx.fillStyle = `rgb(${colors[125]})`
+
+	const noise = await generate4dPerlinNoise(width, height, depth, time, {
 		x: 0.06,
 		y: 0.06,
 		z: 0.04,
 		t: 0.04,
-		resolution: 256
+		resolution: 256,
+	}, {
+		interval: 0.1,
+		progress: (p) => {
+			ctx.beginPath()
+			ctx.rect(0, _height / 2 - 10, _width * p, 20)
+			ctx.fill()
+		},
 	})
 
 	const get = (x: number, y: number, z: number, t: number) => noise[t * width * height * depth + z * width * height + y * width + x]
@@ -253,22 +266,39 @@ function permutations(resolution: number): Uint8Array {
 	return p
 }
 
-function generate4dPerlinNoise(width: number, height: number, depth: number, time: number, params: {
-	x?: number
-	y?: number
-	z?: number
-	t?: number
-	resolution?: number
-} = {}): Float32Array {
+async function generate4dPerlinNoise(
+	width: number,
+	height: number,
+	depth: number,
+	time: number,
+	params: {
+		x?: number
+		y?: number
+		z?: number
+		t?: number
+		resolution?: number
+	} = {},
+	generation: {
+		progress?: (p: number) => void
+		interval?: number
+	} = {}
+): Promise<Float32Array> {
 	params.x ??= 0.05
 	params.y ??= 0.05
 	params.z ??= 0.05
 	params.t ??= 0.05
 	params.resolution ??= 256
+
 	const size = width * height * depth * time
 	const data = new Float32Array(size)
 	const p = permutations(params.resolution) // Ensure this function can handle 4D.
+	const total = width * height * depth * time
+
+	const mustYield = (generation.interval || generation.progress)
+	generation.interval ??= 0.1
+
 	let index = 0
+	let prevInterval = 0
 	for (let t = 0; t < time; t++) {
 		for (let z = 0; z < depth; z++) {
 			for (let y = 0; y < height; y++) {
@@ -283,6 +313,16 @@ function generate4dPerlinNoise(width: number, height: number, depth: number, tim
 						params.resolution
 					)
 					data[index++] = noiseValue
+
+					if (mustYield) {
+						const progress = index / total
+						const interval = Math.floor(progress / generation.interval)
+						if (interval !== prevInterval) {
+							prevInterval = interval
+							generation.progress?.(progress)
+							await new Promise(r => requestAnimationFrame(r))
+						}
+					}
 				}
 			}
 		}

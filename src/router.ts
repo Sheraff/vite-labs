@@ -69,8 +69,8 @@ export const ROUTES = {
 			image: perlin_ripples_image
 		},
 		git: {
-			lastModified: NaN,
-			firstAdded: NaN
+			lastModified: 1721840997000,
+			firstAdded: 1717339261000
 		},
 	},
 	"paint-worklet": {
