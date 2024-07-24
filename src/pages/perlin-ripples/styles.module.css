@@ -4,14 +4,25 @@
 	margin: 0;
 	color: white;
 	touch-action: none;
+	height: 100dvh;
+	width: 100dvw;
+
+	&::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background-color: black;
+		z-index: -2;
+	}
 
 	canvas {
-		width: 100svmin;
-		height: 100svmin;
+		width: 100svw;
+		height: 100svh;
 		position: absolute;
 		inset: 0;
 		pointer-events: none;
 		z-index: -1;
 		background-color: black;
+		place-self: center;
 	}
 }
