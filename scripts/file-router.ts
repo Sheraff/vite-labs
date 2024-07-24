@@ -154,7 +154,7 @@ export function fileRouter(): Plugin[] {
 		const start = Date.now()
 		let count = 0
 		const routePromises: Promise<Route>[] = []
-		for await (const index of glob(`${prefix}*${suffix}`)) {
+		for await (const index of glob(`${prefix}**${suffix}`)) {
 			count++
 			const key = index.slice(prefix.length, -suffix.length)
 			routePromises.push(Promise.all([key, getMeta(key, index, ctx), getGitMeta(index)]))
