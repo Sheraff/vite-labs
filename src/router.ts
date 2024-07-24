@@ -8,7 +8,7 @@ import paint_worklet_image from "./pages/paint-worklet/screen.png"
 import lightning_image from "./pages/lightning/screen.png"
 import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/screen.png"
 
-export type Routes = "spider-inverse-kinematics" | "quad-tree" | "pong-pang" | "paint-worklet" | "modern-modal" | "lightning" | "fragment-portal" | "bird-inverse-kinematics"
+export type Routes = "spider-inverse-kinematics" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "lightning" | "fragment-portal" | "bird-inverse-kinematics"
 
 export type RouteMeta = {
 	title: string
@@ -59,6 +59,16 @@ export const ROUTES = {
 		git: {
 			lastModified: 1717361196000,
 			firstAdded: 1717337533000
+		},
+	},
+	"perlin-ripples": {
+		Component: lazy(() => import("./pages/perlin-ripples/index.tsx")),
+		meta: {
+			title: 'Perlin ripples',
+		},
+		git: {
+			lastModified: NaN,
+			firstAdded: NaN
 		},
 	},
 	"paint-worklet": {
