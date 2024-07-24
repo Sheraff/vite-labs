@@ -4,6 +4,7 @@ import { lazy } from "react"
 import spider_inverse_kinematics_image from "./pages/spider-inverse-kinematics/screen.png"
 import quad_tree_image from "./pages/quad-tree/screen.png"
 import pong_pang_image from "./pages/pong-pang/screen.png"
+import perlin_ripples_image from "./pages/perlin-ripples/screen.png"
 import paint_worklet_image from "./pages/paint-worklet/screen.png"
 import lightning_image from "./pages/lightning/screen.png"
 import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/screen.png"
@@ -65,10 +66,11 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/perlin-ripples/index.tsx")),
 		meta: {
 			title: 'Perlin ripples',
+			image: perlin_ripples_image
 		},
 		git: {
-			lastModified: 1721836882000,
-			firstAdded: 1717339261000
+			lastModified: NaN,
+			firstAdded: NaN
 		},
 	},
 	"paint-worklet": {

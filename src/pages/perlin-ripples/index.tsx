@@ -7,6 +7,7 @@ import type { RouteMeta } from "~/router"
 
 export const meta: RouteMeta = {
 	title: 'Perlin ripples',
+	image: './screen.png'
 }
 
 export default function () {
