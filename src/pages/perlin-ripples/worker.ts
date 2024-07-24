@@ -29,11 +29,16 @@ function start(ctx: OffscreenCanvasRenderingContext2D, _width: number, _height: 
 
 	const get = (x: number, y: number, z: number, t: number) => noise[t * width * height * depth + z * width * height + y * width + x]
 
-	const clear = draw(ctx, width, height, depth, time, get)
+	draw(ctx, width, height, depth, time, get)
+}
 
-	return () => {
-		clear()
-	}
+const black = rgb(3, 0, 28)
+
+const thresholds = [125, 200, 250]
+const colors: Record<typeof thresholds[number], [r: number, g: number, b: number]> = {
+	125: rgb(48, 30, 103),
+	200: rgb(91, 143, 185),
+	250: rgb(182, 234, 218),
 }
 
 function draw(
@@ -125,7 +130,6 @@ function draw(
 			}
 		}
 
-		const thresholds = [125, 200, 250]
 		for (let y = 0; y < canvasH; y++) {
 			const mid = y > 0 && y < canvasH - 1
 			for (let x = 0; x < canvasW; x++) {
@@ -137,9 +141,10 @@ function draw(
 					if (top === bottom) break vertical
 					const t = thresholds.find(t => (top <= t && bottom > t) || (top >= t && bottom < t))
 					if (t) {
-						imageData.data[i] = t
-						imageData.data[i + 1] = t
-						imageData.data[i + 2] = t
+						const color = colors[t]
+						imageData.data[i] = color[0]
+						imageData.data[i + 1] = color[1]
+						imageData.data[i + 2] = color[2]
 						imageData.data[i + 3] = 255
 						continue
 					}
@@ -151,17 +156,18 @@ function draw(
 					if (left === right) break horizontal
 					const t = thresholds.find(t => (left <= t && right > t) || (left >= t && right < t))
 					if (t) {
-						imageData.data[i] = t
-						imageData.data[i + 1] = t
-						imageData.data[i + 2] = t
+						const color = colors[t]
+						imageData.data[i] = color[0]
+						imageData.data[i + 1] = color[1]
+						imageData.data[i + 2] = color[2]
 						imageData.data[i + 3] = 255
 						continue
 					}
 				}
 
-				imageData.data[i] = 0
-				imageData.data[i + 1] = 0
-				imageData.data[i + 2] = 0
+				imageData.data[i] = black[0]
+				imageData.data[i + 1] = black[1]
+				imageData.data[i + 2] = black[2]
 				imageData.data[i + 3] = 255
 			}
 		}
@@ -282,4 +288,9 @@ function generate4dPerlinNoise(width: number, height: number, depth: number, tim
 		}
 	}
 	return data
+}
+
+/** minor helper so I can copy/paste css strings and it works */
+function rgb(r: number, g: number, b: number): [r: number, g: number, b: number] {
+	return [r, g, b]
 }
