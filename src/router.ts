@@ -67,8 +67,8 @@ export const ROUTES = {
 			title: 'Perlin ripples',
 		},
 		git: {
-			lastModified: NaN,
-			firstAdded: NaN
+			lastModified: 1721823247000,
+			firstAdded: 1717339261000
 		},
 	},
 	"paint-worklet": {
