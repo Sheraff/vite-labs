@@ -9,7 +9,7 @@ import paint_worklet_image from "./pages/paint-worklet/screen.png"
 import lightning_image from "./pages/lightning/screen.png"
 import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/screen.png"
 
-export type Routes = "spider-inverse-kinematics" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "lightning" | "fragment-portal" | "bird-inverse-kinematics"
+export type Routes = "spider-inverse-kinematics" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "lightning" | "fragment-portal" | "bird-inverse-kinematics" | "artisan-td-calc"
 
 export type RouteMeta = {
 	title: string
@@ -69,7 +69,7 @@ export const ROUTES = {
 			image: perlin_ripples_image
 		},
 		git: {
-			lastModified: 1721843231000,
+			lastModified: 1721858837000,
 			firstAdded: 1717339261000
 		},
 	},
@@ -124,6 +124,16 @@ export const ROUTES = {
 		git: {
 			lastModified: 1717365547000,
 			firstAdded: 1717339261000
+		},
+	},
+	"artisan-td-calc": {
+		Component: lazy(() => import("./pages/artisan-td-calc/index.tsx")),
+		meta: {
+			title: 'Artisan TD calculator',
+		},
+		git: {
+			lastModified: NaN,
+			firstAdded: NaN
 		},
 	}
 } as const satisfies Record<Routes, Route>
