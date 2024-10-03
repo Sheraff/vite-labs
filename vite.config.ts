@@ -9,6 +9,12 @@ export default defineConfig(async () => {
 	return ({
 		plugins: [react(), fileRouter(), viteTsconfigPaths()],
 		clearScreen: false,
-		base: '/vite-labs/'
+		base: '/vite-labs/',
+		server: {
+			headers: {
+				'Cross-Origin-Opener-Policy': 'same-origin',
+				'Cross-Origin-Embedder-Policy': 'require-corp',
+			}
+		}
 	})
 })
