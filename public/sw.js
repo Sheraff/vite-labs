@@ -2,14 +2,13 @@
 
 const s = /** @type {ServiceWorkerGlobalScope} */(/** @type {unknown} */(self))
 
-s.addEventListener("install", () => s.skipWaiting())
+s.addEventListener("install", (event) => event.waitUntil(s.skipWaiting()))
 s.addEventListener("activate", (event) => event.waitUntil(s.clients.claim()))
 
 s.addEventListener("fetch", (event) => {
 	if (event.request.cache === "only-if-cached" && event.request.mode !== "same-origin") {
 		return
 	}
-
 	event.respondWith(
 		fetch(event.request)
 			.then((response) => {
