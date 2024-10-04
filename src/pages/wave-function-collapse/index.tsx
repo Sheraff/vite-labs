@@ -71,8 +71,8 @@ export default function () {
 			worker.postMessage({ type, data }, { transfer })
 		}
 
-		const height = 30
-		const width = 30
+		const height = 40
+		const width = 40
 		const drawX = ctx.canvas.width / width
 		const drawY = ctx.canvas.height / height
 		let map: Extract<Outgoing, { type: "started" }>["data"]["map"]
@@ -132,15 +132,15 @@ export default function () {
 		}
 
 		const seed = (count: number) => {
-			const forces: Array<[x: number, y: number, t: number]> = []
+			const forces: Array<[x: number, y: number]> = []
 			for (let i = 0; i < count; i++) {
-				forces.push([Math.floor(Math.random() * width), Math.floor(Math.random() * height), tiles[Math.floor(Math.random() * tiles.length)].name])
+				forces.push([Math.floor(Math.random() * width), Math.floor(Math.random() * height)])
 			}
 			return forces
 		}
 
 		worker.addEventListener('message', onMessage)
-		const force = seed(4)
+		const force = seed(10)
 		console.log(force)
 		post("start", { height, width, tiles, force })
 		return () => {

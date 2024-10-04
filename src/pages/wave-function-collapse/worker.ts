@@ -9,7 +9,7 @@ export type Tile = {
 }
 
 export type Incoming =
-	| { type: "start", data: { height: number, width: number, tiles: Pick<Tile, 'name' | 'sides'>[], force?: Array<[x: number, y: number, name: number]> } }
+	| { type: "start", data: { height: number, width: number, tiles: Pick<Tile, 'name' | 'sides'>[], force?: Array<[x: number, y: number]> } }
 
 export type Outgoing =
 	| { type: "started", data: { buffer: SharedArrayBuffer, map: Pick<Tile, 'name' | 'rotate'>[] } }
@@ -28,11 +28,11 @@ function handleMessage(event: Incoming) {
 		for (const tile of event.data.tiles) {
 			const clone = tiles.find((other) => other.sides.every((side, i) => side === tile.sides[i]))
 			if (clone) {
-				if (event.data.force) {
-					for (const forced of event.data.force) {
-						if (clone.name === forced[2]) forced[2] = tile.name
-					}
-				}
+				// if (event.data.force) {
+				// 	for (const forced of event.data.force) {
+				// 		if (clone.name === forced[2]) forced[2] = tile.name
+				// 	}
+				// }
 				continue
 			}
 			tiles.push({
@@ -41,11 +41,11 @@ function handleMessage(event: Incoming) {
 				rotate: 0
 			})
 		}
-		if (event.data.force) for (const forced of event.data.force) {
-			const t = tiles.findIndex((tile) => tile.name === forced[2])
-			if (t === -1) continue
-			forced[2] = t
-		}
+		// if (event.data.force) for (const forced of event.data.force) {
+		// 	const t = tiles.findIndex((tile) => tile.name === forced[2])
+		// 	if (t === -1) continue
+		// 	forced[2] = t
+		// }
 		for (let i = 0, l = tiles.length; i < l; i++) {
 			const tile = tiles[i]
 			for (let r = 1; r < tile.sides.length; r++) {
@@ -71,7 +71,7 @@ function handleMessage(event: Incoming) {
 			tiles,
 			buffer,
 			onDone,
-			force: event.data.force
+			force: event.data.force?.map(([x, y]) => [x, y, Math.floor(Math.random() * tiles.length)])
 		})
 	}
 }

@@ -37,8 +37,8 @@ export const ROUTES = {
 			image: wave_function_collapse_image
 		},
 		git: {
-			lastModified: NaN,
-			firstAdded: NaN
+			lastModified: 1727995709000,
+			firstAdded: 1727995709000
 		},
 	},
 	"spider-inverse-kinematics": {
