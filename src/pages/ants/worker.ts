@@ -170,25 +170,30 @@ async function start({
 
 					// compute the average angle of the pheromones and move the ant in that direction
 					const dot = isFood ? 0b11 : 0b01
+					let moved = false
 					if (angles.length > 0) {
 						const median = angles.length === 1 ? angles[0] : circularMedian(angles)
-						const dx = Math.round(Math.cos(median) * 1.4) * 3
-						const dy = Math.round(Math.sin(median) * 1.4) * 3
+						const dx = Math.round(Math.cos(median) * 1.4) * 5
+						const dy = Math.round(Math.sin(median) * 1.4) * 5
 						const nx = Math.min(Math.max(0, x + dx), width - 1)
 						const ny = Math.min(Math.max(0, y + dy), height - 1)
 						const j = ny * width + nx
-						if (array[j] & 0b00100001) continue
-						array[j] |= dot
-						value &= ~dot
-					} else {
-						const dx = (Math.floor(Math.random() * 3) - 1) * 3
-						const dy = (Math.floor(Math.random() * 3) - 1) * 3
+						if (!(array[j] & 0b00100001)) {
+							array[j] |= dot
+							value &= ~dot
+							moved = true
+						}
+					}
+					if (!moved) {
+						const dx = (Math.floor(Math.random() * 3) - 1) * 2
+						const dy = (Math.floor(Math.random() * 3) - 1) * 2
 						const nx = Math.min(Math.max(0, x + dx), width - 1)
 						const ny = Math.min(Math.max(0, y + dy), height - 1)
 						const j = ny * width + nx
-						if (array[j] & 0b00100001) continue
-						array[j] |= dot
-						value &= ~dot
+						if (!(array[j] & 0b00100001)) {
+							array[j] |= dot
+							value &= ~dot
+						}
 					}
 				}
 
