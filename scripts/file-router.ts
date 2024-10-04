@@ -66,10 +66,10 @@ async function getGitMeta(index: string) {
 		))
 	}
 	const lastModTime = await Promise.all(lastAuthorTime)
-	const max = Math.max(...lastModTime.map(t => new Date(t).getTime()))
+	const max = Math.max(...lastModTime.filter(Boolean).map(t => new Date(t).getTime()))
 
 	const firstAddTime = await Promise.all(firstCommit)
-	const min = Math.min(...firstAddTime.map(t => new Date(t).getTime()))
+	const min = Math.min(...firstAddTime.filter(Boolean).map(t => new Date(t).getTime()))
 
 	const git = `{\n\t\t\tlastModified: ${max},\n\t\t\tfirstAdded: ${min}\n\t\t}`
 	return git

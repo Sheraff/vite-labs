@@ -37,7 +37,7 @@ export const ROUTES = {
 			image: wave_function_collapse_image
 		},
 		git: {
-			lastModified: 1727995709000,
+			lastModified: 1728062827000,
 			firstAdded: 1727995709000
 		},
 	},
