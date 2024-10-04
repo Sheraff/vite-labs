@@ -37,7 +37,7 @@ export const ROUTES = {
 			image: wave_function_collapse_image
 		},
 		git: {
-			lastModified: 1728062827000,
+			lastModified: 1728081804000,
 			firstAdded: 1727995709000
 		},
 	},
@@ -154,8 +154,8 @@ export const ROUTES = {
 			title: 'Ants',
 		},
 		git: {
-			lastModified: 0,
-			firstAdded: 0
+			lastModified: 1728081821000,
+			firstAdded: 1727995709000
 		},
 	}
 } as const satisfies Record<Routes, Route>
