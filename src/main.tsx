@@ -5,7 +5,8 @@ import { NavigationProvider } from '~/file-router/Navigation'
 if (!window.isSecureContext) {
   console.log("Not registering service worker because the site is not hosted on HTTPS.")
 } else {
-  navigator.serviceWorker.register('./sw.js')
+  console.log("Registering service worker", import.meta.env.BASE_URL + 'sw.js')
+  navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js')
     .then(registration => {
       console.log(`Service worker registered: scope "${registration.scope}"`)
       registration.addEventListener("updatefound", () => window.location.reload())
