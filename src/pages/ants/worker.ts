@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-import circularMedian from "@ants/median-angle"
+import circularMedian from "./median-angle"
 
 type Params = {
 	height: number
