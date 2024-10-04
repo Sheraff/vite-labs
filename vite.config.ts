@@ -10,6 +10,12 @@ export default defineConfig(async () => {
 		plugins: [react(), fileRouter(), viteTsconfigPaths()],
 		clearScreen: false,
 		base: '/vite-labs/',
+		server: {
+			headers: {
+				'Cross-Origin-Opener-Policy': 'same-origin',
+				'Cross-Origin-Embedder-Policy': 'require-corp',
+			}
+		},
 		build: {
 			target: 'esnext',
 		}

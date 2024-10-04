@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-import * as utils from './utils'
+import * as utils from '@wave-function-collapse/utils'
 
 export type Tile = {
 	name: number
