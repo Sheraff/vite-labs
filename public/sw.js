@@ -13,6 +13,9 @@ s.addEventListener("fetch", (event) => {
 	event.respondWith(
 		fetch(event.request)
 			.then((response) => {
+				if (response.status === 0) {
+					return response
+				}
 				const newHeaders = new Headers(response.headers)
 				newHeaders.set("Cross-Origin-Opener-Policy", "same-origin")
 				newHeaders.set("Cross-Origin-Embedder-Policy", "require-corp")
