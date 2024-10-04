@@ -200,9 +200,11 @@ async function start({
 		return false
 	}
 
-	const choices: number[] = []
+	const choices: number[][] = []
 	let solved = false
+	let backtracks = -1
 	do {
+		backtracks++
 		resetBoard()
 		for (let i = 0; i < force.length; i++) {
 			const [x, y] = force[i]
@@ -224,18 +226,20 @@ async function start({
 			} else if (possible.length === 1) {
 				t = possible[0]
 			} else if (choiceIndex === choices.length) {
-				const i = possible.length - 1
-				choices.push(i)
+				const i = Math.floor(Math.random() * possible.length)
+				choices.push(Array.from({ length: possible.length - 1 }, (_, i) => i).filter((_, j) => j !== i))
 				choiceIndex++
 				t = possible[i]
-			} else if (choices.every((c, i) => i < choiceIndex || (i === choiceIndex && c > 0) || (i > choiceIndex && c === 0))) {
-				const i = choices[choiceIndex] - 1
-				choices[choiceIndex] = i
+			} else if (choices.every((c, i) => i < choiceIndex || (i === choiceIndex && c.length > 1) || (i > choiceIndex && c.length <= 1))) {
+				const indices = choices[choiceIndex]
+				const i = indices[Math.floor(Math.random() * indices.length)]
+				choices[choiceIndex] = indices.filter((_, j) => j !== i)
 				choices.length = choiceIndex + 1
 				choiceIndex++
 				t = possible[i]
 			} else {
-				const i = choices[choiceIndex]
+				const indices = choices[choiceIndex]
+				const i = possible.findIndex((t) => !indices.includes(t))
 				t = possible[i]
 				choiceIndex++
 			}
@@ -249,9 +253,9 @@ async function start({
 		} while (lowest !== -1)
 		console.log('loops', loops)
 		solved = isSolved()
-	} while (!solved && choices.some((c) => c > 0))
-
-	console.log('choices', choices.join(' '))
+	} while (!solved && choices.some((c) => c.length > 1))
+	console.log('backtracks', backtracks)
+	// console.log('choices', choices.join(' '))
 	onDone(solved, choices)
 }
 
