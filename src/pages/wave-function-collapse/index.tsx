@@ -1,8 +1,8 @@
 import styles from './styles.module.css'
 import { Head } from "~/components/Head"
 import type { RouteMeta } from "~/router"
-import type { Incoming, Outgoing } from "./worker"
-import Worker from "./worker?worker"
+import type { Incoming, Outgoing } from "./collapse.worker"
+import Worker from "./collapse.worker?worker"
 import { useEffect, useRef, useState } from "react"
 import * as utils from './utils'
 import * as config from './carcassonne/definition'
@@ -22,11 +22,11 @@ const equivalents = tiles.map((tile) => tiles.filter((other) => other.sides.ever
 
 
 function drawTile(ctx: CanvasRenderingContext2D, w: number, h: number, index: number, rotate: number, x: number, y: number) {
-	if (rotate === 1) x += 1
-	if (rotate === 2) y += 1, x += 1
-	if (rotate === 3) y += 1
+	// if (rotate === 1) x += 1
+	// if (rotate === 2) y += 1, x += 1
+	// if (rotate === 3) y += 1
 	ctx.save()
-	ctx.translate(x * w, y * h)
+	ctx.translate(x * w + w / 2, y * h + h / 2)
 	ctx.rotate(rotate * Math.PI / 2)
 	const setY = (index / config.params.grid.width) | 0
 	const setX = index % config.params.grid.width
@@ -36,8 +36,8 @@ function drawTile(ctx: CanvasRenderingContext2D, w: number, h: number, index: nu
 		setY * config.params.tile.height,
 		config.params.tile.width,
 		config.params.tile.height,
-		0,
-		0,
+		-w / 2,
+		-h / 2,
 		w,
 		h
 	)
