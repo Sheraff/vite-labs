@@ -17,22 +17,25 @@ export default function () {
 		const canvas = ref.current
 		if (!canvas) return
 		const side = Math.min(canvas.clientWidth, canvas.clientHeight)
-		canvas.width = side * window.devicePixelRatio
-		canvas.height = side * window.devicePixelRatio
+		canvas.width = side // * window.devicePixelRatio
+		canvas.height = side // * window.devicePixelRatio
 		const ctx = canvas.getContext("2d")!
 		if (!ctx) return
 
-		const worker = new Worker()
+		const workers = [new Worker()]
 		function post<I extends Incoming["type"]>(
+			i: number,
 			type: I,
 			data: Extract<Incoming, { type: I }>["data"],
 			transfer?: Transferable[]
 		) {
-			worker.postMessage({ type, data }, { transfer })
+			workers[i].postMessage({ type, data }, { transfer })
 		}
 
 		const width = ctx.canvas.width
 		const height = ctx.canvas.height
+		const vision = 20
+		const count = 10_000
 		let data: Uint8Array
 		let done = false
 
@@ -40,13 +43,13 @@ export default function () {
 		const image = ctx.createImageData(width, height, { colorSpace: 'srgb' })
 		const imageData = new Uint8Array(image.data.buffer)
 		const colors = {
-			ant: [0xaa, 0xaa, 0xaa, 0xff],
+			ant: [0xcc, 0xcc, 0xcc, 0xff],
 			antAndFood: [0xdd, 0xff, 0xdd, 0xff],
-			food: [0, 0xff, 0, 0xff],
-			pheromoneIn: [0, 0x80, 0, 0x80],
-			pheromoneOut: [0x80, 0, 0, 0x80],
-			pheromoneBoth: [0x80, 0x80, 0, 0x80],
-			anthill: [0xff, 0, 0, 0xff],
+			food: [0, 0x80, 0, 0xff],
+			pheromoneIn: [0x20, 0xff, 0x20, 0xff],
+			pheromoneOut: [0xa0, 0x20, 0x20, 0x80],
+			pheromoneBoth: [0x70, 0xff, 0x20, 0xff],
+			anthill: [0x80, 0, 0, 0xff],
 			obstacle: [0, 0, 0xff, 0xff],
 			void: [0, 0, 0, 0xff],
 		}
@@ -100,25 +103,43 @@ export default function () {
 		}
 		let rafId = requestAnimationFrame(loop)
 
+		function launch(buffer: SharedArrayBuffer) {
+			const parallelism = Math.max(1, navigator.hardwareConcurrency - 1)
+
+			console.log('parallelism', parallelism)
+
+			for (let i = 0; i < parallelism; i++) {
+				const from = Math.floor(i * height / parallelism)
+				const to = Math.floor((i + 1) * height / parallelism)
+				const whose = i === 0 ? 'main' : 'worker'
+				console.log(whose, 'from', from, 'to', to)
+				if (!workers[i]) workers[i] = new Worker()
+
+				const worker = new Worker()
+				worker.postMessage({ type: "share", data: { buffer, width, height, vision, from, to } })
+			}
+		}
+
 		const onMessage = (e: MessageEvent<Outgoing>) => {
 			if (e.data.type === "started") {
 				data = new Uint8Array(e.data.data.buffer)
+				launch(e.data.data.buffer)
 			} else if (e.data.type === "done") {
 				done = true
 				console.log("done")
 			}
 		}
 
-		worker.addEventListener('message', onMessage)
-		post("start", {
+		workers[0].addEventListener('message', onMessage)
+		post(0, "start", {
 			width,
 			height,
-			count: 10000,
-			vision: 20,
+			count,
 		})
 		return () => {
-			worker.terminate()
-			worker.removeEventListener('message', onMessage)
+			for (const worker of workers)
+				worker.terminate()
+			workers[0].removeEventListener('message', onMessage)
 			cancelAnimationFrame(rafId)
 		}
 	}, [])

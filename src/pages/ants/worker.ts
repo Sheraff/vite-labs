@@ -2,13 +2,6 @@
 
 import circularMedian from "./median-angle"
 
-type Params = {
-	height: number
-	width: number
-	count: number
-	vision: number
-}
-
 // buffer definition
 // 0b00000000
 //   ├┘│││││└─> ant
@@ -20,7 +13,8 @@ type Params = {
 //   └────────> pheromone expiration counter
 
 export type Incoming =
-	| { type: "start", data: Params }
+	| { type: "start", data: { height: number, width: number, count: number } }
+	| { type: "share", data: { buffer: SharedArrayBuffer, width: number, height: number, vision: number, from: number, to: number } }
 
 export type Outgoing =
 	| { type: "started", data: { buffer: SharedArrayBuffer } }
@@ -37,12 +31,12 @@ function handleMessage(event: Incoming) {
 		const buffer = new SharedArrayBuffer(event.data.height * event.data.width * Uint8Array.BYTES_PER_ELEMENT)
 		const array = new Uint8Array(buffer)
 
-		const { width, height, vision } = event.data
+		const { width, height } = event.data
 
 		const foodPosition = [width / 3, height / 3]
 		const foodRadius = Math.min(width, height) / 10
 
-		const anthillPosition = [width / 2, height / 2]
+		const anthillPosition = [width * 2 / 3, height * 2 / 3]
 		const anthillRadius = Math.min(width, height) / 10
 
 		const antDistance = [Math.min(width, height) / 20, Math.min(width, height) / 8]
@@ -83,7 +77,13 @@ function handleMessage(event: Incoming) {
 		}
 
 		postMessage({ type: "started", data: { buffer } })
-		start({ array, width, height, vision })
+		return
+	}
+
+	if (event.type === "share") {
+		const { buffer, width, height, vision, from, to } = event.data
+		const array = new Uint8Array(buffer)
+		start({ array, width, height, vision, from, to })
 	}
 }
 
@@ -94,11 +94,15 @@ async function start({
 	width,
 	height,
 	vision,
+	from = 0,
+	to = height,
 }: {
 	array: Uint8Array
 	width: number
 	height: number
 	vision: number
+	from?: number
+	to?: number
 }) {
 	let lastPheromoneTick = performance.now()
 	const pheromoneTickInterval = Math.round(pheromoneDuration / 0b11)
@@ -108,7 +112,7 @@ async function start({
 		const now = performance.now()
 		const isPheromoneTick = now - lastPheromoneTick > pheromoneTickInterval
 		if (isPheromoneTick) lastPheromoneTick = now
-		for (let y = 0; y < height; y++) {
+		for (let y = from; y < to; y++) {
 			for (let x = 0; x < width; x++) {
 				const i = y * width + x
 				let value = array[i]
@@ -155,6 +159,7 @@ async function start({
 					for (let dy = -vision; dy <= vision; dy++) {
 						const yComponent = (y + dy) * width
 						for (let dx = -vision; dx <= vision; dx++) {
+							if (dx === 0 && dy === 0) continue
 							const j = yComponent + (x + dx)
 							const isPheromone = array[j] & interestedMask
 							if (!isPheromone) continue
@@ -190,5 +195,7 @@ async function start({
 				array[i] = value
 			}
 		}
-	} while (foodCount)
+		await new Promise(resolve => requestAnimationFrame(resolve))
+		// } while (foodCount)
+	} while (true)
 }
