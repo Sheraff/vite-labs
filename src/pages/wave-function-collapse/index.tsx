@@ -3,7 +3,7 @@ import { Head } from "~/components/Head"
 import type { RouteMeta } from "~/router"
 import type { Incoming, Outgoing } from "./worker"
 import Worker from "./worker?worker"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import * as utils from './utils'
 import * as config from './carcassonne/definition'
 
@@ -45,6 +45,7 @@ function drawTile(ctx: CanvasRenderingContext2D, w: number, h: number, index: nu
 }
 
 export default function () {
+	const [available] = useState(window.crossOriginIsolated)
 	const ref = useRef<HTMLCanvasElement | null>(null)
 
 	// useEffect(() => {
@@ -97,8 +98,9 @@ export default function () {
 				for (let x = 0; x < width; x++) {
 					const indices = map.reduce((acc, _, t) => (get(x, y, t) && acc.push(t), acc), [] as number[])
 					if (indices.length === 0) continue
-					const index = indices[i % indices.length]
+					// const index = indices[i % indices.length]
 					// const index = indices[0]
+					const index = indices[Math.floor(Math.random() * indices.length)]
 					// grid[y][x] = indices.length
 					const tile = map[index]
 
@@ -140,7 +142,7 @@ export default function () {
 		}
 
 		worker.addEventListener('message', onMessage)
-		const force = seed(10)
+		const force = seed(20)
 		console.log(force)
 		post("start", { height, width, tiles, force })
 		return () => {
@@ -151,11 +153,14 @@ export default function () {
 	}, [])
 
 	return (
-		<div className={styles.main} >
-			<Head />
-			<canvas width="1000" height="1000" ref={ref}>
+		<div className={styles.main}>
+			<div className={styles.head}>
+				<Head />
+			</div>
+			{available && <canvas width="1000" height="1000" ref={ref}>
 				Your browser does not support the HTML5 canvas tag.
-			</canvas>
+			</canvas>}
+			{!available && <p>SharedArrayBuffer is not available, the service worker must have not auto-installed, try reloading the page.</p>}
 		</div>
 	)
 }

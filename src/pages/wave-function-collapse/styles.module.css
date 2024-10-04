@@ -8,8 +8,17 @@
 	padding: 1em;
 
 	canvas {
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
 		border: 1px solid white;
 		aspect-ratio: 1;
-		width: 100%;
+		width: 100lvmin;
 	}
+}
+
+.head {
+	position: relative;
+	z-index: 1;
 }
