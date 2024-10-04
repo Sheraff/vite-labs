@@ -10,7 +10,7 @@ import paint_worklet_image from "./pages/paint-worklet/screen.png"
 import lightning_image from "./pages/lightning/screen.png"
 import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/screen.png"
 
-export type Routes = "wave-function-collapse" | "spider-inverse-kinematics" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "lightning" | "fragment-portal" | "bird-inverse-kinematics" | "artisan-td-calc"
+export type Routes = "wave-function-collapse" | "spider-inverse-kinematics" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "lightning" | "fragment-portal" | "bird-inverse-kinematics" | "artisan-td-calc" | "ants"
 
 export type RouteMeta = {
 	title: string
@@ -146,6 +146,16 @@ export const ROUTES = {
 		git: {
 			lastModified: 1723588686000,
 			firstAdded: 1723588686000
+		},
+	},
+	"ants": {
+		Component: lazy(() => import("./pages/ants/index.tsx")),
+		meta: {
+			title: 'Ants',
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
 		},
 	}
 } as const satisfies Record<Routes, Route>
