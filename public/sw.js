@@ -6,9 +6,11 @@ s.addEventListener("install", (event) => event.waitUntil(s.skipWaiting()))
 s.addEventListener("activate", (event) => event.waitUntil(s.clients.claim()))
 
 s.addEventListener("fetch", (event) => {
-	if (event.request.cache === "only-if-cached" && event.request.mode !== "same-origin") {
+	if (event.request.cache === "only-if-cached" && event.request.mode !== "same-origin")
 		return
-	}
+	if (!event.request.url.endsWith('/') && !event.request.url.endsWith('.js'))
+		return
+
 	event.respondWith(
 		fetch(event.request)
 			.then((response) => {
