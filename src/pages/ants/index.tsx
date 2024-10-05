@@ -138,6 +138,8 @@ export default function () {
 			} else if (e.data.type === "collected") {
 				collected += e.data.data.count
 				console.log("collected", e.data.data.count, "total", collected)
+			} else {
+				console.log('unknown message', e.data)
 			}
 			// } else if (e.data.type === "done") {
 			// 	done = true
