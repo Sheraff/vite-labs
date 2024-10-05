@@ -9,8 +9,9 @@ import perlin_ripples_image from "./pages/perlin-ripples/screen.png"
 import paint_worklet_image from "./pages/paint-worklet/screen.png"
 import lightning_image from "./pages/lightning/screen.png"
 import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/screen.png"
+import ants_image from "./pages/ants/screen.png"
 
-export type Routes = "wave-function-collapse" | "spider-inverse-kinematics" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "lightning" | "fragment-portal" | "bird-inverse-kinematics" | "artisan-td-calc" | "ants"
+export type Routes = "wave-function-collapse" | "spider-inverse-kinematics" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "lightning" | "fragment-portal" | "bird-inverse-kinematics" | "ants"
 
 export type RouteMeta = {
 	title: string
@@ -138,23 +139,14 @@ export const ROUTES = {
 			firstAdded: 1717339261000
 		},
 	},
-	"artisan-td-calc": {
-		Component: lazy(() => import("./pages/artisan-td-calc/index.tsx")),
-		meta: {
-			title: 'Artisan TD calculator',
-		},
-		git: {
-			lastModified: 1723588686000,
-			firstAdded: 1723588686000
-		},
-	},
 	"ants": {
 		Component: lazy(() => import("./pages/ants/index.tsx")),
 		meta: {
 			title: 'Ants',
+			image: ants_image
 		},
 		git: {
-			lastModified: 1728127860000,
+			lastModified: 1728128584000,
 			firstAdded: 1727995709000
 		},
 	}
