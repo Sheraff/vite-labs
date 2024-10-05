@@ -1,16 +1,30 @@
 /// <reference lib="webworker" />
 
-import circularMedian from "./median-angle"
-
 // buffer definition
-// 0b00000000
-//   ├┘│││││└─> ant
-//   │ ││││└──> food
-//   │ │││└───> pheromone out // left by ants with food, followed by ants without food
-//   │ ││└────> pheromone in  // left by ants without food, followed by ants with food
-//   │ │└─────> anthill
-//   │ └──────> obstable
-//   └────────> pheromone expiration counter
+// 0b0000000000000000
+//       ├┴┴┘├┴┴┘│││└─> ant
+//       │   │   ││└──> food
+//       │   │   │└───> and and food
+//       │   │   └────> anthill
+//       │   └────────> pheromone to food expiration countdown (left by ants with food, followed by ants without food)
+//       └────────────> pheromone to anthill expiration countdown (left by ants without food, followed by ants with food)
+
+const TypedArray = Uint16Array
+type TypedArray = Uint16Array
+
+const masks = {
+	ant: 0b1,
+	food: 0b10,
+	antAndFood: 0b100,
+	anthill: 0b1000,
+	pheromoneToFood: 0b11110000,
+	pheromoneToHill: 0b111100000000,
+}
+
+const offsets = {
+	pheromoneToFood: 4,
+	pheromoneToHill: 8,
+}
 
 export type Incoming =
 	| { type: "start", data: { height: number, width: number, count: number } }
@@ -18,6 +32,7 @@ export type Incoming =
 
 export type Outgoing =
 	| { type: "started", data: { buffer: SharedArrayBuffer } }
+	| { type: "collected", data: { count: number } }
 
 console.log('ant worker started')
 
@@ -28,8 +43,8 @@ function postMessage(message: Outgoing) { self.postMessage(message) }
 function handleMessage(event: Incoming) {
 	console.log('handleMessage', event)
 	if (event.type === "start") {
-		const buffer = new SharedArrayBuffer(event.data.height * event.data.width * Uint8Array.BYTES_PER_ELEMENT)
-		const array = new Uint8Array(buffer)
+		const buffer = new SharedArrayBuffer(event.data.height * event.data.width * TypedArray.BYTES_PER_ELEMENT)
+		const array = new TypedArray(buffer)
 
 		const { width, height } = event.data
 
@@ -37,6 +52,8 @@ function handleMessage(event: Incoming) {
 		const foodRadius = Math.min(width, height) / 10
 
 		const anthillPosition = [width * 2 / 3, height * 2 / 3]
+		// const anthillPosition = [width / 7, height / 7]
+		// const anthillPosition = [width / 2, height / 2]
 		const anthillRadius = Math.min(width, height) / 10
 
 		const antDistance = [Math.min(width, height) / 20, Math.min(width, height) / 8]
@@ -49,14 +66,14 @@ function handleMessage(event: Incoming) {
 					const dy = y - foodPosition[1]
 					const distance = Math.sqrt(dx * dx + dy * dy)
 					if (distance < foodRadius)
-						array[i] |= 0b00000010
+						array[i] |= masks.food
 				}
 				{
 					const dx = x - anthillPosition[0]
 					const dy = y - anthillPosition[1]
 					const distance = Math.sqrt(dx * dx + dy * dy)
 					if (distance < anthillRadius)
-						array[i] |= 0b00010000
+						array[i] |= masks.anthill
 				}
 			}
 		}
@@ -68,12 +85,12 @@ function handleMessage(event: Incoming) {
 			const dy = Math.sin(angle) * distance
 			const x = Math.round(anthillPosition[0] + dx)
 			const y = Math.round(anthillPosition[1] + dy)
-			const isOccupied = array[y * width + x] & 0b00000001
+			const isOccupied = array[y * width + x] & masks.ant
 			if (isOccupied) {
 				i--
 				continue
 			}
-			array[y * width + x] |= 0b00000001
+			array[y * width + x] |= masks.ant
 		}
 
 		postMessage({ type: "started", data: { buffer } })
@@ -82,12 +99,16 @@ function handleMessage(event: Incoming) {
 
 	if (event.type === "share") {
 		const { buffer, width, height, vision, from, to } = event.data
-		const array = new Uint8Array(buffer)
-		start({ array, width, height, vision, from, to })
+		const array = new TypedArray(buffer)
+		const onCollected = (count: number) => {
+			console.log('onCollected', count)
+			postMessage({ type: "collected", data: { count } })
+		}
+		start({ array, width, height, vision, from, to, onCollected })
 	}
 }
 
-const pheromoneDuration = 15_000
+const pheromoneDuration = 10_000
 
 async function start({
 	array,
@@ -96,21 +117,26 @@ async function start({
 	vision,
 	from = 0,
 	to = height,
+	onCollected,
 }: {
-	array: Uint8Array
+	array: TypedArray
 	width: number
 	height: number
 	vision: number
 	from?: number
 	to?: number
+	onCollected: (count: number) => void
 }) {
 	let lastPheromoneTick = performance.now()
-	const pheromoneTickInterval = Math.round(pheromoneDuration / 0b11)
+	const pheromoneTickInterval = Math.round(pheromoneDuration / (masks.pheromoneToFood >> offsets.pheromoneToFood))
 	let foodCount
+	let collectedCount
 	do {
 		foodCount = 0
+		collectedCount = 0
 		const now = performance.now()
 		const isPheromoneTick = now - lastPheromoneTick > pheromoneTickInterval
+		const frame = new Promise(resolve => requestAnimationFrame(resolve))
 		if (isPheromoneTick) lastPheromoneTick = now
 		for (let y = from; y < to; y++) {
 			for (let x = 0; x < width; x++) {
@@ -119,88 +145,175 @@ async function start({
 
 				// pheromone expiration
 				if (isPheromoneTick) {
-					const isPheromone = value & 0b00001100
-					if (isPheromone) {
-						let expiration = value >> 6
-						expiration--
-						if (expiration === 0) {
-							value &= 0b00110011
-						} else {
-							value &= 0b00111111
-							value |= expiration << 6
-						}
-
-					}
+					value = pheromoneTickDown(
+						value,
+						masks.pheromoneToFood,
+						offsets.pheromoneToFood
+					)
+					value = pheromoneTickDown(
+						value,
+						masks.pheromoneToHill,
+						offsets.pheromoneToHill
+					)
 				}
 
-				const isAnt = value & 0b01
-				const isFood = value & 0b10
+				let isAnt = value & masks.ant
+				let isFood = value & masks.food
+				let isAntAndFood = value & masks.antAndFood
+				const isAnthill = value & masks.anthill
+
+				if (isAnt && isFood && !isAntAndFood) {
+					value |= masks.antAndFood
+					value &= ~masks.ant
+					value &= ~masks.food
+					isAnt = 0
+					isFood = 0
+					isAntAndFood = 1
+				}
 
 				if (isFood) foodCount++
+				if (isAntAndFood) foodCount++
 
 				// leave pheromone
-				if (isAnt && isFood) {
-					value |= 0b11000100
-					const isAnthill = value & 0b10000
-					if (isAnthill) {
-						value &= ~0b10
-						foodCount--
-					}
-				} else if (isAnt) {
-					value |= 0b11001000
+				if (isAnt && !isFood) {
+					value |= masks.pheromoneToHill
+				}
+				if (isAntAndFood && !isAnthill) {
+					value |= masks.pheromoneToFood
+				}
+
+				// collect food
+				if (isAntAndFood && isAnthill && !isAnt) {
+					value &= ~masks.antAndFood
+					value |= masks.ant
+					foodCount--
+					collectedCount++
 				}
 
 				// move
 				if (isAnt) {
-					const angles: number[] = []
-
-					// gather all angles (in radians) of the pheromones in the vision of the ant
-					const interestedMask = isFood ? 0b1000 : 0b0100
-					for (let dy = -vision; dy <= vision; dy++) {
-						const yComponent = (y + dy) * width
-						for (let dx = -vision; dx <= vision; dx++) {
-							if (dx === 0 && dy === 0) continue
-							const j = yComponent + (x + dx)
-							const isPheromone = array[j] & interestedMask
-							if (!isPheromone) continue
-							const angle = Math.atan2(dy, dx)
-							angles.push(angle)
-						}
-					}
-
-					// compute the average angle of the pheromones and move the ant in that direction
-					const dot = isFood ? 0b11 : 0b01
-					let moved = false
-					if (angles.length > 0) {
-						const median = angles.length === 1 ? angles[0] : circularMedian(angles)
-						const dx = Math.round(Math.cos(median) * 1.4) * 5
-						const dy = Math.round(Math.sin(median) * 1.4) * 5
-						const nx = Math.min(Math.max(0, x + dx), width - 1)
-						const ny = Math.min(Math.max(0, y + dy), height - 1)
-						const j = ny * width + nx
-						if (!(array[j] & 0b00100001)) {
-							array[j] |= dot
-							value &= ~dot
-							moved = true
-						}
-					}
-					if (!moved) {
-						const dx = (Math.floor(Math.random() * 3) - 1) * 2
-						const dy = (Math.floor(Math.random() * 3) - 1) * 2
-						const nx = Math.min(Math.max(0, x + dx), width - 1)
-						const ny = Math.min(Math.max(0, y + dy), height - 1)
-						const j = ny * width + nx
-						if (!(array[j] & 0b00100001)) {
-							array[j] |= dot
-							value &= ~dot
-						}
-					}
+					value = moveToGoal(
+						array,
+						width,
+						height,
+						vision,
+						x,
+						y,
+						value,
+						masks.ant,
+						masks.food,
+						masks.pheromoneToFood,
+						offsets.pheromoneToFood
+					)
+				}
+				if (isAntAndFood) {
+					value = moveToGoal(
+						array,
+						width,
+						height,
+						vision,
+						x,
+						y,
+						value,
+						masks.antAndFood,
+						masks.anthill,
+						masks.pheromoneToHill,
+						offsets.pheromoneToHill
+					)
 				}
 
 				array[i] = value
 			}
 		}
-		await new Promise(resolve => requestAnimationFrame(resolve))
-		// } while (foodCount)
+		await frame
+		if (collectedCount) onCollected(collectedCount)
 	} while (true)
+	// } while (foodCount)
+}
+
+function pheromoneTickDown(
+	value: number,
+	pheromone: number,
+	pheromoneOffset: number,
+): number {
+	const isPheromone = value & pheromone
+	if (isPheromone) {
+		let expiration = value >> pheromoneOffset
+		expiration--
+		value &= ~pheromone
+		if (expiration > 0) {
+			value |= expiration << pheromoneOffset
+		}
+	}
+	return value
+}
+
+function moveToGoal(
+	array: TypedArray,
+	width: number,
+	height: number,
+	vision: number,
+	x: number,
+	y: number,
+	value: number,
+	self: number,
+	goal: number,
+	pheromone: number,
+	pheromoneOffset: number,
+): number {
+	let sumX, sumY, count
+	sumX = sumY = count = 0
+	const low = -vision / 2
+	const high = vision / 2
+	check: for (let dy = -vision; dy <= vision; dy++) {
+		if (dy === low) dy = high
+		const yComponent = (y + dy) * width
+		for (let dx = -vision; dx <= vision; dx++) {
+			if (dx === low) dx = high
+			const j = yComponent + (x + dx)
+			const cell = array[j]
+			const cellIsGoal = cell & goal
+			if (cellIsGoal) {
+				const intensity = pheromone >> pheromoneOffset
+				sumX += dx * intensity
+				sumY += dy * intensity
+				count += intensity
+			}
+			const cellPheromone = cell & pheromone
+			if (cellPheromone) {
+				const intensity = cellPheromone >> pheromoneOffset
+				sumX += dx * intensity
+				sumY += dy * intensity
+				count += intensity
+			}
+		}
+	}
+	move: {
+		if (count) {
+			const divider = Math.abs(sumX) + Math.abs(sumY)
+			const dx = Math.round(sumX / divider * 2)
+			const dy = Math.round(sumY / divider * 2)
+			if (dx || dy) {
+				const nx = Math.min(Math.max(0, x + dx), width - 1)
+				const ny = Math.min(Math.max(0, y + dy), height - 1)
+
+				const j = ny * width + nx
+				if (!(array[j] & self)) {
+					array[j] |= self
+					value &= ~self
+					break move
+				}
+			}
+		}
+		const dx = (Math.floor(Math.random() * 7) - 3)
+		const dy = (Math.floor(Math.random() * 7) - 3)
+		const nx = Math.min(Math.max(0, x + dx), width - 1)
+		const ny = Math.min(Math.max(0, y + dy), height - 1)
+		const j = ny * width + nx
+		if (!(array[j] & self)) {
+			array[j] |= self
+			value &= ~self
+		}
+	}
+	return value
 }

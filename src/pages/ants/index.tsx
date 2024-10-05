@@ -34,23 +34,21 @@ export default function () {
 
 		const width = ctx.canvas.width
 		const height = ctx.canvas.height
-		const vision = 20
-		const count = 10_000
-		let data: Uint8Array
+		const vision = 24
+		const count = 25_000
+		let data: Uint16Array
 		let done = false
 
 		const channels = 4
 		const image = ctx.createImageData(width, height, { colorSpace: 'srgb' })
-		const imageData = new Uint8Array(image.data.buffer)
 		const colors = {
 			ant: [0xcc, 0xcc, 0xcc, 0xff],
-			antAndFood: [0xdd, 0xff, 0xdd, 0xff],
+			antAndFood: [0xee, 0x44, 0xee, 0xff],
 			food: [0, 0x80, 0, 0xff],
-			pheromoneIn: [0x20, 0xff, 0x20, 0xff],
-			pheromoneOut: [0xa0, 0x20, 0x20, 0x80],
+			pheromoneToFood: [0x20, 0xff, 0x20, 0xff],
+			pheromoneToHill: [0xa0, 0x20, 0x20, 0x80],
 			pheromoneBoth: [0x70, 0xff, 0x20, 0xff],
 			anthill: [0x80, 0, 0, 0xff],
-			obstacle: [0, 0, 0xff, 0xff],
 			void: [0, 0, 0, 0xff],
 		}
 
@@ -60,43 +58,53 @@ export default function () {
 			if (!data) return
 
 			i++
-
+			let antcount = 0
+			let foodcount = 0
+			let untouchedfoodcount = 0
 			for (let i = 0; i < data.length; i++) {
 				const point = data[i]
 				const isAnt
 					= point & 0b00000001
 				const isFood
 					= point & 0b00000010
-				const isPheromoneIn
+				const isAntAndFood
 					= point & 0b00000100
-				const isPheromoneOut
-					= point & 0b00001000
 				const isAnthill
-					= point & 0b00010000
-				const isObstacle
-					= point & 0b00100000
+					= point & 0b00001000
+				const isPheromoneToFood
+					= (point & 0b11110000) >> 4
+				const isPheromoneToHill
+					= (point & 0b111100000000) >> 8
 
 				const index = i * channels
 
-				if (isAnt && isFood) {
-					imageData.set(colors.antAndFood, index)
+				if (isAnt) antcount++
+				if (isAntAndFood) antcount++
+				if (isFood) foodcount++
+				if (isAntAndFood) foodcount++
+				if (isFood) untouchedfoodcount++
+
+				if (isAntAndFood) {
+					image.data.set(colors.antAndFood, index)
 				} else if (isAnt) {
-					imageData.set(colors.ant, index)
+					image.data.set(colors.ant, index)
 				} else if (isFood) {
-					imageData.set(colors.food, index)
-				} else if (isPheromoneIn && isPheromoneOut) {
-					imageData.set(colors.pheromoneBoth, index)
-				} else if (isPheromoneIn) {
-					imageData.set(colors.pheromoneIn, index)
-				} else if (isPheromoneOut) {
-					imageData.set(colors.pheromoneOut, index)
+					image.data.set(colors.food, index)
 				} else if (isAnthill) {
-					imageData.set(colors.anthill, index)
-				} else if (isObstacle) {
-					imageData.set(colors.obstacle, index)
+					image.data.set(colors.anthill, index)
+				} else if (isPheromoneToFood && isPheromoneToHill) {
+					image.data.set(colors.pheromoneBoth, index)
+				} else if (isPheromoneToFood) {
+					image.data.set(colors.pheromoneToFood, index)
+				} else if (isPheromoneToHill) {
+					image.data.set(colors.pheromoneToHill, index)
 				} else {
-					imageData.set(colors.void, index)
+					image.data.set(colors.void, index)
 				}
+			}
+
+			if (!(i % 100)) {
+				console.log('antcount', antcount, 'foodcount', foodcount, 'untouchedfoodcount', untouchedfoodcount)
 			}
 
 			ctx.putImageData(image, 0, 0)
@@ -113,21 +121,28 @@ export default function () {
 				const to = Math.floor((i + 1) * height / parallelism)
 				const whose = i === 0 ? 'main' : 'worker'
 				console.log(whose, 'from', from, 'to', to)
-				if (!workers[i]) workers[i] = new Worker()
-
+				if (!workers[i]) {
+					workers[i] = new Worker()
+					workers[i].addEventListener('message', onMessage)
+				}
 				const worker = new Worker()
 				worker.postMessage({ type: "share", data: { buffer, width, height, vision, from, to } })
 			}
 		}
 
+		let collected = 0
 		const onMessage = (e: MessageEvent<Outgoing>) => {
 			if (e.data.type === "started") {
-				data = new Uint8Array(e.data.data.buffer)
+				data = new Uint16Array(e.data.data.buffer)
 				launch(e.data.data.buffer)
-			} else if (e.data.type === "done") {
-				done = true
-				console.log("done")
+			} else if (e.data.type === "collected") {
+				collected += e.data.data.count
+				console.log("collected", e.data.data.count, "total", collected)
 			}
+			// } else if (e.data.type === "done") {
+			// 	done = true
+			// 	console.log("done")
+			// }
 		}
 
 		workers[0].addEventListener('message', onMessage)
@@ -137,9 +152,10 @@ export default function () {
 			count,
 		})
 		return () => {
-			for (const worker of workers)
+			for (const worker of workers) {
+				worker.removeEventListener('message', onMessage)
 				worker.terminate()
-			workers[0].removeEventListener('message', onMessage)
+			}
 			cancelAnimationFrame(rafId)
 		}
 	}, [])
