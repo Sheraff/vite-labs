@@ -122,7 +122,8 @@ function handleMessage(event: Incoming) {
 	}
 }
 
-const pheromoneDuration = 10_000
+const pheromoneToHillDuration = 1_000
+const pheromoneToFoodDuration = 5_000
 
 async function start({
 	array,
@@ -139,35 +140,41 @@ async function start({
 	range: { from: number, to: number }
 	onCollected: (count: number) => void
 }) {
-	let lastPheromoneTick = performance.now()
-	const pheromoneTickInterval = Math.round(pheromoneDuration / (masks.pheromoneToFood >> offsets.pheromoneToFood))
+	let lastPheromoneToHillTick = performance.now()
+	let lastPheromoneToFoodTick = performance.now()
+	const pheromoneToHillTickInterval = Math.round(pheromoneToHillDuration / (masks.pheromoneToFood >> offsets.pheromoneToFood))
+	const pheromoneToFoodTickInterval = Math.round(pheromoneToFoodDuration / (masks.pheromoneToHill >> offsets.pheromoneToHill))
 	let foodCount
 	let collectedCount
 	do {
 		foodCount = 0
 		collectedCount = 0
 		const now = performance.now()
-		const isPheromoneTick = now - lastPheromoneTick > pheromoneTickInterval
+		const isPheromoneToHillTick = now - lastPheromoneToHillTick > pheromoneToHillTickInterval
+		const isPheromoneToFoodTick = now - lastPheromoneToFoodTick > pheromoneToFoodTickInterval
 		const frame = new Promise(resolve => requestAnimationFrame(resolve))
-		if (isPheromoneTick) lastPheromoneTick = now
+		if (isPheromoneToHillTick) lastPheromoneToHillTick = now
+		if (isPheromoneToFoodTick) lastPheromoneToFoodTick = now
 		for (let i = range.from; i < range.to; i++) {
 			const y = Math.floor(i / width)
 			const x = i % width
 				let value = array[i]
 
-				// pheromone expiration
-				if (isPheromoneTick) {
-					value = pheromoneTickDown(
-						value,
-						masks.pheromoneToFood,
-						offsets.pheromoneToFood
-					)
-					value = pheromoneTickDown(
-						value,
-						masks.pheromoneToHill,
-						offsets.pheromoneToHill
-					)
-				}
+			// pheromone expiration
+			if (isPheromoneToFoodTick) {
+				value = pheromoneTickDown(
+					value,
+					masks.pheromoneToFood,
+					offsets.pheromoneToFood
+				)
+			}
+			if (isPheromoneToHillTick) {
+				value = pheromoneTickDown(
+					value,
+					masks.pheromoneToHill,
+					offsets.pheromoneToHill
+				)
+			}
 
 				let isAnt = value & masks.ant
 				let isFood = value & masks.food
