@@ -152,7 +152,7 @@ async function start({
 		if (isPheromoneTick) lastPheromoneTick = now
 		for (let i = range.from; i < range.to; i++) {
 			const y = Math.floor(i / width)
-			const x = i % width + x
+			const x = i % width
 				let value = array[i]
 
 				// pheromone expiration
