@@ -54,6 +54,7 @@ export default function () {
 		}
 
 		let i = 0
+		let previousAntCount = count
 		function loop() {
 			if (!done) rafId = requestAnimationFrame(loop)
 			if (!data) return
@@ -62,6 +63,9 @@ export default function () {
 			let antcount = 0
 			let foodcount = 0
 			let untouchedfoodcount = 0
+			const ranges = [0]
+			let range = 1
+			const rangeSize = Math.ceil(previousAntCount / (workers.length + 1))
 			for (let i = 0; i < data.length; i++) {
 				const point = data[i]
 				const isAnt
@@ -102,13 +106,28 @@ export default function () {
 				} else {
 					image.data.set(colors.void, index)
 				}
+
+				if (antcount > rangeSize * range) {
+					ranges.push(i)
+					range++
+				}
 			}
 
 			if (!(i % 100)) {
 				console.log('antcount', antcount, 'foodcount', foodcount, 'untouchedfoodcount', untouchedfoodcount)
 			}
 
+			previousAntCount = antcount
 			ctx.putImageData(image, 0, 0)
+
+			if (!(i % 100)) {
+				ranges[workers.length] = data.length
+				ranges.length = workers.length + 1
+				console.log('ranges', workers.length, ranges.length, data.length, ranges)
+				for (let i = 0; i < workers.length; i++) {
+					post(i, "range", { from: ranges[i], to: ranges[i + 1] })
+				}
+			}
 		}
 		let rafId = requestAnimationFrame(loop)
 
@@ -118,8 +137,8 @@ export default function () {
 			console.log('parallelism', parallelism)
 
 			for (let i = 0; i < parallelism; i++) {
-				const from = Math.floor(i * height / parallelism)
-				const to = Math.floor((i + 1) * height / parallelism)
+				const from = Math.floor(i * height / parallelism) * width
+				const to = Math.floor((i + 1) * height / parallelism) * width
 				const whose = i === 0 ? 'main' : 'worker'
 				console.log(whose, 'from', from, 'to', to)
 				if (!workers[i]) {

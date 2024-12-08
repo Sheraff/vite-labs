@@ -26,9 +26,15 @@ const offsets = {
 	pheromoneToHill: 8,
 }
 
+const range = {
+	from: 0,
+	to: 0,
+}
+
 export type Incoming =
 	| { type: "start", data: { height: number, width: number, count: number } }
 	| { type: "share", data: { buffer: SharedArrayBuffer, width: number, height: number, vision: number, from: number, to: number } }
+	| { type: "range", data: { from: number, to: number } }
 
 export type Outgoing =
 	| { type: "started", data: { buffer: SharedArrayBuffer } }
@@ -41,7 +47,6 @@ self.onmessage = (e: MessageEvent<Incoming>) => handleMessage(e.data)
 function postMessage(message: Outgoing) { self.postMessage(message) }
 
 function handleMessage(event: Incoming) {
-	console.log('handleMessage', event)
 	if (event.type === "start") {
 		const buffer = new SharedArrayBuffer(event.data.height * event.data.width * TypedArray.BYTES_PER_ELEMENT)
 		const array = new TypedArray(buffer)
@@ -104,7 +109,16 @@ function handleMessage(event: Incoming) {
 			console.log('onCollected', count)
 			postMessage({ type: "collected", data: { count } })
 		}
-		start({ array, width, height, vision, from, to, onCollected })
+		range.from = from
+		range.to = to
+		start({ array, width, height, vision, range, onCollected })
+		return
+	}
+
+	if (event.type === "range") {
+		range.from = event.data.from
+		range.to = event.data.to
+		return
 	}
 }
 
@@ -115,16 +129,14 @@ async function start({
 	width,
 	height,
 	vision,
-	from = 0,
-	to = height,
+	range,
 	onCollected,
 }: {
 	array: TypedArray
 	width: number
 	height: number
 	vision: number
-	from?: number
-	to?: number
+	range: { from: number, to: number }
 	onCollected: (count: number) => void
 }) {
 	let lastPheromoneTick = performance.now()
@@ -138,9 +150,9 @@ async function start({
 		const isPheromoneTick = now - lastPheromoneTick > pheromoneTickInterval
 		const frame = new Promise(resolve => requestAnimationFrame(resolve))
 		if (isPheromoneTick) lastPheromoneTick = now
-		for (let y = from; y < to; y++) {
-			for (let x = 0; x < width; x++) {
-				const i = y * width + x
+		for (let i = range.from; i < range.to; i++) {
+			const y = Math.floor(i / width)
+			const x = i % width + x
 				let value = array[i]
 
 				// pheromone expiration
@@ -223,7 +235,6 @@ async function start({
 				}
 
 				array[i] = value
-			}
 		}
 		await frame
 		if (collectedCount) onCollected(collectedCount)
