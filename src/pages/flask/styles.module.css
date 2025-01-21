@@ -14,6 +14,8 @@
 }
 
 .content {
+	--main: rgb(187, 0, 255);
+
 	position: fixed;
 	/* z-index: 0; */
 	inset: 0;
@@ -38,7 +40,7 @@
 }
 
 .bottle {
-	--degrees: 10deg;
+	--degrees: 15deg;
 	height: 300px;
 	width: 300px;
 	border-radius: 50%;
@@ -50,7 +52,8 @@
 
 	transform-origin: 50% 90%;
 	animation:
-		rock 2s infinite alternate ease-in-out;
+		roll 2s infinite alternate-reverse ease-in-out,
+		table 2s infinite alternate-reverse ease-in-out;
 
 	/* reflection */
 	&::after {
@@ -64,8 +67,11 @@
 		top: 8%;
 		left: 49%;
 		translate: -50% 0;
-		rotate: 38deg;
+		rotate: 45deg;
 		box-shadow: 0 -16px 0 -5px lightgray;
+		z-index: 1;
+
+		animation: roll 2s infinite alternate ease-in-out;
 	}
 }
 
@@ -75,11 +81,22 @@
 	left: 50%;
 	height: 10%;
 	width: 30%;
-	background-color: pink;
+	background-color: rgb(86, 86, 86);
 	border-radius: 50%;
 	transform: translate(-50%, -20%);
-	animation: roll 2s infinite alternate-reverse ease-in-out;
 	transform-origin: 50% 300px;
+	box-shadow: 0 5px 5px 0 rgba(0, 0, 0, 0.5);
+	z-index: 2;
+
+	&::after {
+		content: '';
+		display: block;
+		height: 100%;
+		width: 100%;
+		background-color: rgb(47, 47, 47);
+		border-radius: 50%;
+		transform: scale(0.7);
+	}
 }
 
 @keyframes roll {
@@ -92,18 +109,21 @@
 	}
 }
 
-@keyframes rock {
-	from {
-		translate: 30px 0;
+@keyframes table {
+
+	0%,
+	100% {
+		translate: 0 0;
 	}
 
-	to {
-		translate: -30px 0;
+	50% {
+		translate: 0 1%;
 	}
+
 }
 
 .liquid {
-	--degrees: 20deg;
+	--degrees: -10deg;
 	--pad: 14px;
 
 	position: absolute;
@@ -111,11 +131,11 @@
 	left: var(--pad);
 	height: calc(50% - var(--pad));
 	width: calc(100% - 2 * var(--pad));
-	background-color: red;
+	background-color: var(--main);
 	border-bottom-left-radius: 99999px;
 	border-bottom-right-radius: 99999px;
 
-	animation: roll 2s infinite -1.5s alternate ease-in-out;
+	animation: roll 2s infinite -2.5s alternate ease-in-out;
 	transform-origin: top center;
 
 	/* surface */
@@ -125,7 +145,7 @@
 		width: 100%;
 		height: 50%;
 		border-radius: 50%;
-		background-color: rgb(255, 69, 69);
+		background-color: lch(from var(--main) calc(l + 10) c h);
 		transform: translateY(-50%);
 	}
 }
@@ -141,6 +161,7 @@
 	opacity: 0.6;
 	filter: blur(10px);
 	transform: translate(-70%, -45%);
+	transform-origin: center;
 
 	animation:
 		rock 2s infinite alternate ease-in-out,
@@ -154,7 +175,16 @@
 	}
 
 	100% {
-		scale: 1.1 1.5;
+		scale: 1.4 1.4;
+	}
+}
+
+@keyframes rock {
+	from {
+		translate: 5px 0;
 	}
 
+	to {
+		translate: -5px 0;
+	}
 }
