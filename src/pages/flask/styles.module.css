@@ -188,3 +188,158 @@
 		translate: -5px 0;
 	}
 }
+
+.bubbles>* {
+	position: absolute;
+	z-index: 4;
+	top: 80%;
+	left: 50%;
+	height: 20px;
+	width: 20px;
+	border-radius: 50%;
+	opacity: 0.5;
+	transform: translate(-50%, -50%);
+	animation:
+		bubble var(--duration) infinite var(--delay) ease-in both,
+		disperse var(--duration) infinite var(--delay) ease-in both;
+
+	&:nth-child(1) {
+		--delay: 0s;
+		--duration: 7s;
+		--x0: 0;
+		--x10: 12px;
+		--x20: -3px;
+		--x30: 18px;
+		--x40: 5px;
+		--x50: 35px;
+		--x60: 25px;
+		--x70: 42px;
+		--x80: 30px;
+		--x90: 33px;
+		--x100: 20px;
+	}
+
+	&:nth-child(2) {
+		--delay: -2s;
+		--duration: 9s;
+		--x0: -30px;
+		--x10: -20px;
+		--x20: -40px;
+		--x30: -30px;
+		--x40: -50px;
+		--x50: -40px;
+		--x60: -60px;
+		--x70: -50px;
+		--x80: -70px;
+		--x90: -60px;
+		--x100: -50px;
+	}
+
+	&:nth-child(3) {
+		--delay: -4s;
+		--duration: 8s;
+		--x0: 50px;
+		--x10: 45px;
+		--x20: 40px;
+		--x30: 45px;
+		--x40: 30px;
+		--x50: 35px;
+		--x60: 40px;
+		--x70: 35px;
+		--x80: 30px;
+		--x90: 25px;
+		--x100: 20px;
+	}
+
+	&:nth-child(4) {
+		--delay: -6s;
+		--duration: 6s;
+		--x0: -20px;
+		--x10: -30px;
+		--x20: -40px;
+		--x30: -20px;
+		--x40: 0px;
+		--x50: 10px;
+		--x60: 20px;
+		--x70: 15px;
+		--x80: 30px;
+		--x90: 40px;
+		--x100: 50px;
+	}
+
+	&:nth-child(5) {
+		--delay: -8s;
+		--duration: 5s;
+		--x0: 37px;
+		--x10: 20px;
+		--x20: 10px;
+		--x30: 0px;
+		--x40: -10px;
+		--x50: -20px;
+		--x60: 8px;
+		--x70: 15px;
+		--x80: -14px;
+		--x90: -20px;
+		--x100: -30px;
+	}
+}
+
+@keyframes bubble {
+	from {
+		translate: 0 0;
+		scale: 0;
+		background-color: var(--main);
+	}
+
+	to {
+		translate: 0 -200px;
+		scale: 1;
+		background-color: white;
+	}
+}
+
+@keyframes disperse {
+	0% {
+		transform: translateX(var(--x0));
+	}
+
+	10% {
+		transform: translateX(var(--x10));
+	}
+
+	20% {
+		transform: translateX(var(--x20));
+	}
+
+	30% {
+		transform: translateX(var(--x30));
+	}
+
+	40% {
+		transform: translateX(var(--x40));
+	}
+
+	50% {
+		transform: translateX(var(--x50));
+	}
+
+	60% {
+		transform: translateX(var(--x60));
+	}
+
+	70% {
+		transform: translateX(var(--x70));
+	}
+
+	80% {
+		transform: translateX(var(--x80));
+	}
+
+	90% {
+		transform: translateX(var(--x90));
+	}
+
+	100% {
+		transform: translateX(var(--x100));
+	}
+}

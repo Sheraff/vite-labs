@@ -18,6 +18,13 @@ export default function Flask() {
 					<div className={styles.liquid}></div>
 					<div className={styles.lip}></div>
 				</div>
+				{/* <div className={styles.bubbles}>
+					<div />
+					<div />
+					<div />
+					<div />
+					<div />
+				</div> */}
 				<div className={styles.shadow}></div>
 			</div>
 		</div>
