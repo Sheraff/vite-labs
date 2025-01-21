@@ -146,7 +146,7 @@ export const ROUTES = {
 			image: ants_image
 		},
 		git: {
-			lastModified: 1728137860000,
+			lastModified: 1733684415000,
 			firstAdded: 1727995709000
 		},
 	}
