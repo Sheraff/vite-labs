@@ -11,7 +11,7 @@ import lightning_image from "./pages/lightning/screen.png"
 import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/screen.png"
 import ants_image from "./pages/ants/screen.png"
 
-export type Routes = "wave-function-collapse" | "spider-inverse-kinematics" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "lightning" | "fragment-portal" | "flask" | "bird-inverse-kinematics" | "ants"
+export type Routes = "wave-function-collapse" | "spider-inverse-kinematics" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "minesweeper" | "lightning" | "fragment-portal" | "flask" | "bird-inverse-kinematics" | "ants"
 
 export type RouteMeta = {
 	title: string
@@ -107,6 +107,16 @@ export const ROUTES = {
 			firstAdded: 1717538613000
 		},
 	},
+	"minesweeper": {
+		Component: lazy(() => import("./pages/minesweeper/index.tsx")),
+		meta: {
+			title: 'Minesweeper',
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
+		},
+	},
 	"lightning": {
 		Component: lazy(() => import("./pages/lightning/index.tsx")),
 		meta: {
@@ -134,7 +144,7 @@ export const ROUTES = {
 			title: 'Flask',
 		},
 		git: {
-			lastModified: 1737498930000,
+			lastModified: 1737500200000,
 			firstAdded: 1737497494000
 		},
 	},
