@@ -49,6 +49,8 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
 	useEffect(() => {
 		const onNavigate = (event: NavigationEvent) => {
 			if (!event.canIntercept) return
+			const next = new URL(event.destination.url)
+			if (next.pathname === location.pathname) return
 			const key = parseUrl(event.destination.url)
 			event.intercept({
 				handler() {
