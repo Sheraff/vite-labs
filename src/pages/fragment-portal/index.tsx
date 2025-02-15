@@ -74,7 +74,7 @@ function Video({ label }: { label?: string }) {
 		<>
 			<video width="320" height="240" controls loop muted autoPlay playsInline crossOrigin="anonymous" >
 				<source
-					src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+					src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
 					type="video/mp4"
 				/>
 			</video>
