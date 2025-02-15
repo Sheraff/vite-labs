@@ -27,6 +27,7 @@ function LiveComponents({ fragment }: { fragment: FragmentPortal }) {
 			<button onClick={() => rerender({})}>rerender: {i}</button>
 			<Video />
 			<Timer />
+			<input type="text" />
 		</Portal>
 	)
 }
@@ -71,7 +72,7 @@ function Video({ label }: { label?: string }) {
 	const i = useRef(0).current++
 	return (
 		<>
-			<video width="320" height="240" controls loop muted autoPlay playsInline>
+			<video width="320" height="240" controls loop muted autoPlay playsInline crossOrigin="anonymous" >
 				<source
 					src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
 					type="video/mp4"
