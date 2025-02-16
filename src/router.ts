@@ -11,7 +11,7 @@ import lightning_image from "./pages/lightning/screen.png"
 import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/screen.png"
 import ants_image from "./pages/ants/screen.png"
 
-export type Routes = "wave-function-collapse" | "spider-inverse-kinematics" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "minesweeper" | "lightning" | "fragment-portal" | "flask" | "bird-inverse-kinematics" | "ants"
+export type Routes = "wave-function-collapse" | "spider-inverse-kinematics" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "minesweeper" | "lightning" | "hacker-background" | "fragment-portal" | "flask" | "bird-inverse-kinematics" | "ants"
 
 export type RouteMeta = {
 	title: string
@@ -128,13 +128,23 @@ export const ROUTES = {
 			firstAdded: 1717331001000
 		},
 	},
+	"hacker-background": {
+		Component: lazy(() => import("./pages/hacker-background/index.tsx")),
+		meta: {
+			title: 'Hacker Background',
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
+		},
+	},
 	"fragment-portal": {
 		Component: lazy(() => import("./pages/fragment-portal/index.tsx")),
 		meta: {
 			title: 'Fragment Portal'
 		},
 		git: {
-			lastModified: 1739611018000,
+			lastModified: 1739611669000,
 			firstAdded: 1717340075000
 		},
 	},
