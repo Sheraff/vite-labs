@@ -49,7 +49,7 @@ export default function HackerBackground() {
 	)
 }
 
-const CHARS = ['·', '-', '+', '*', '#', '%', '✦']
+const CHARS = ['·', '-', '+', '*', '#', '%', '█']
 
 // const easing = (x: number) => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2
 const easing = (x: number) => 1 - Math.cos((x * Math.PI) / 2)
@@ -76,6 +76,8 @@ function start(
 
 	let init = false
 
+	const grid = Array.from({ length: rows }, () => Array.from({ length: columns }, () => CHARS[0]))
+
 	let rafId = requestAnimationFrame(function loop() {
 		rafId = requestAnimationFrame(loop)
 
@@ -99,16 +101,34 @@ function start(
 		const minY = Math.min(influenceY1, prevY1)
 		const maxY = Math.max(influenceY2, prevY2)
 
-		for (let row = minY; row <= maxY; row++) {
-			for (let col = minX; col <= maxX; col++) {
-				ctx.clearRect((col - 0.5) * reference.em, (row - 0.5) * reference.lh, reference.em, reference.lh)
-				const distance = Math.hypot(col * reference.em - mouse.x, row * reference.lh - mouse.y)
-				if (distance < influence) {
-					const normalized = 1 - distance / influence
-					const charIndex = Math.floor(easing(normalized) * (CHARS.length - 1)) + 1
-					ctx.fillText(CHARS[charIndex], (col - 0.5) * reference.em, (row + 0.5) * reference.lh)
-				} else {
-					ctx.fillText(CHARS[0], (col - 0.5) * reference.em, (row + 0.5) * reference.lh)
+		for (let row = 0; row < grid.length; row++) {
+			const gridRow = grid[row]
+			for (let col = 0; col < gridRow.length; col++) {
+				const current = gridRow?.[col] || CHARS[0]
+				const reachable = row >= minY && row <= maxY && col >= minX && col <= maxX
+				if (reachable) {
+					const distance = Math.hypot(col * reference.em - mouse.x, row * reference.lh - mouse.y)
+					if (distance < influence) {
+						const normalized = 1 - distance / influence
+						const charIndex = Math.floor(easing(normalized) * (CHARS.length - 1)) + 1
+						const currentIndex = CHARS.indexOf(current)
+						if (charIndex >= currentIndex) {
+							ctx.clearRect((col - 0.5) * reference.em, (row - 0.25) * reference.lh, reference.em, reference.lh)
+							ctx.fillText(CHARS[charIndex], (col - 0.5) * reference.em, (row + 0.5) * reference.lh)
+							gridRow[col] = CHARS[charIndex]
+							continue
+						}
+					}
+				}
+				if (current !== CHARS[0]) {
+					const index = CHARS.indexOf(current)
+					const decay = Math.random() < index / 100
+					if (decay) {
+						ctx.clearRect((col - 0.5) * reference.em, (row - 0.25) * reference.lh, reference.em, reference.lh)
+						const next = CHARS[index - 1]
+						gridRow[col] = next
+						ctx.fillText(next, (col - 0.5) * reference.em, (row + 0.5) * reference.lh)
+					}
 				}
 			}
 		}
@@ -118,12 +138,13 @@ function start(
 		prevY1 = influenceY1
 		prevY2 = influenceY2
 
-		if (Math.random() < 0.1) {
+		if (Math.random() < 0.2) {
 			const col = Math.floor(Math.random() * columns)
 			const row = Math.floor(Math.random() * rows)
-			const index = Math.floor(Math.random() * CHARS.length)
-			ctx.clearRect((col - 0.5) * reference.em, (row - 0.5) * reference.lh, reference.em, reference.lh)
+			const index = CHARS.length - 1
+			ctx.clearRect((col - 0.5) * reference.em, (row - 0.25) * reference.lh, reference.em, reference.lh)
 			ctx.fillText(CHARS[index], (col - 0.5) * reference.em, (row + 0.5) * reference.lh)
+			grid[row][col] = CHARS[index]
 		}
 
 

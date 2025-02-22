@@ -134,8 +134,8 @@ export const ROUTES = {
 			title: 'Hacker Background',
 		},
 		git: {
-			lastModified: 0,
-			firstAdded: 0
+			lastModified: 1739742825000,
+			firstAdded: 1739742825000
 		},
 	},
 	"fragment-portal": {
