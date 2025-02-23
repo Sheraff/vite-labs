@@ -20,23 +20,3 @@
 	inset: 0;
 	pointer-events: none;
 }
-
-.content {
-	font-family: monospace;
-	font-size: 14px;
-	line-height: 1;
-	color: #0f0;
-
-	/* Create a grid of characters */
-	display: grid;
-	word-break: break-all;
-	grid-template-columns: repeat(auto-fill, 1ch);
-	grid-template-rows: repeat(auto-fill, 1em);
-	grid-auto-flow: row;
-
-	/* Fill the container */
-	height: 100vh;
-	width: 100vw;
-	position: absolute;
-	inset: 0;
-}
