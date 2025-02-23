@@ -4,6 +4,7 @@ import type { RouteMeta } from "~/router"
 
 export const meta: RouteMeta = {
 	title: 'Flask',
+	image: './screen.png'
 }
 
 export default function Flask() {

@@ -7,7 +7,10 @@ import quad_tree_image from "./pages/quad-tree/screen.png"
 import pong_pang_image from "./pages/pong-pang/screen.png"
 import perlin_ripples_image from "./pages/perlin-ripples/screen.png"
 import paint_worklet_image from "./pages/paint-worklet/screen.png"
+import minesweeper_image from "./pages/minesweeper/screen.png"
 import lightning_image from "./pages/lightning/screen.png"
+import hacker_background_image from "./pages/hacker-background/screen.png"
+import flask_image from "./pages/flask/screen.png"
 import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/screen.png"
 import ants_image from "./pages/ants/screen.png"
 
@@ -111,6 +114,7 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/minesweeper/index.tsx")),
 		meta: {
 			title: 'Minesweeper',
+			image: minesweeper_image
 		},
 		git: {
 			lastModified: 1738530954000,
@@ -132,9 +136,10 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/hacker-background/index.tsx")),
 		meta: {
 			title: 'Hacker Background',
+			image: hacker_background_image
 		},
 		git: {
-			lastModified: 1739742825000,
+			lastModified: 1740265049000,
 			firstAdded: 1739742825000
 		},
 	},
@@ -152,6 +157,7 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/flask/index.tsx")),
 		meta: {
 			title: 'Flask',
+			image: flask_image
 		},
 		git: {
 			lastModified: 1737500200000,

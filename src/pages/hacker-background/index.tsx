@@ -5,6 +5,7 @@ import type { RouteMeta } from "~/router"
 
 export const meta: RouteMeta = {
 	title: 'Hacker Background',
+	image: './screen.png'
 }
 
 export default function HackerBackground() {
@@ -113,9 +114,13 @@ function start(
 						const charIndex = Math.floor(easing(normalized) * (CHARS.length - 1)) + 1
 						const currentIndex = CHARS.indexOf(current)
 						if (charIndex >= currentIndex) {
-							ctx.clearRect((col - 0.5) * reference.em, (row - 0.25) * reference.lh, reference.em, reference.lh)
-							ctx.fillText(CHARS[charIndex], (col - 0.5) * reference.em, (row + 0.5) * reference.lh)
-							gridRow[col] = CHARS[charIndex]
+							const nextIndex = Math.min(charIndex, currentIndex + 1)
+							const upcay = Math.random() < nextIndex / 20
+							if (upcay) {
+								ctx.clearRect((col - 0.5) * reference.em, (row - 0.25) * reference.lh, reference.em, reference.lh)
+								ctx.fillText(CHARS[nextIndex], (col - 0.5) * reference.em, (row + 0.5) * reference.lh)
+								gridRow[col] = CHARS[nextIndex]
+							}
 							continue
 						}
 					}
