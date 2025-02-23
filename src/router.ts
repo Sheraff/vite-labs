@@ -3,6 +3,7 @@
 import { lazy } from "react"
 import wave_function_collapse_image from "./pages/wave-function-collapse/screen.png"
 import spider_inverse_kinematics_image from "./pages/spider-inverse-kinematics/screen.png"
+import quad_tree_collisions_image from "./pages/quad-tree-collisions/screen.png"
 import quad_tree_image from "./pages/quad-tree/screen.png"
 import pong_pang_image from "./pages/pong-pang/screen.png"
 import perlin_ripples_image from "./pages/perlin-ripples/screen.png"
@@ -14,7 +15,7 @@ import flask_image from "./pages/flask/screen.png"
 import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/screen.png"
 import ants_image from "./pages/ants/screen.png"
 
-export type Routes = "wave-function-collapse" | "spider-inverse-kinematics" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "minesweeper" | "lightning" | "hacker-background" | "fragment-portal" | "flask" | "bird-inverse-kinematics" | "ants"
+export type Routes = "wave-function-collapse" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "minesweeper" | "lightning" | "hacker-background" | "fragment-portal" | "flask" | "bird-inverse-kinematics" | "ants"
 
 export type RouteMeta = {
 	title: string
@@ -54,6 +55,17 @@ export const ROUTES = {
 		git: {
 			lastModified: 1717364036000,
 			firstAdded: 1717339261000
+		},
+	},
+	"quad-tree-collisions": {
+		Component: lazy(() => import("./pages/quad-tree-collisions/index.tsx")),
+		meta: {
+			title: 'Quad Tree Collisions',
+			image: quad_tree_collisions_image
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
 		},
 	},
 	"quad-tree": {
@@ -117,7 +129,7 @@ export const ROUTES = {
 			image: minesweeper_image
 		},
 		git: {
-			lastModified: 1738530954000,
+			lastModified: 1740307562000,
 			firstAdded: 1738530954000
 		},
 	},
@@ -139,7 +151,7 @@ export const ROUTES = {
 			image: hacker_background_image
 		},
 		git: {
-			lastModified: 1740265049000,
+			lastModified: 1740312562000,
 			firstAdded: 1739742825000
 		},
 	},
@@ -160,7 +172,7 @@ export const ROUTES = {
 			image: flask_image
 		},
 		git: {
-			lastModified: 1737500200000,
+			lastModified: 1740307562000,
 			firstAdded: 1737497494000
 		},
 	},
