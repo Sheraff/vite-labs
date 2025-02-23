@@ -81,7 +81,7 @@ function start(
 		Math.random() * ctx.canvas.height,
 		Math.random() * 3 + 1,
 		`hsl(${Math.random() * 360}, 100%, 50%)`,
-		Math.random() * 50 + 1,
+		Math.random() * 70 + 10,
 		Math.random() * Math.PI * 2,
 		bounds
 	))
@@ -270,6 +270,8 @@ class TreeNode<T extends { x: number, y: number } = { x: number, y: number }> {
 	y: number
 	width: number
 	height: number
+	maxX: number
+	maxY: number
 	depth: number
 	parent: TreeNode<T> | null
 	children: [
@@ -297,6 +299,8 @@ class TreeNode<T extends { x: number, y: number } = { x: number, y: number }> {
 		this.height = height
 		this.depth = depth
 		this.parent = parent
+		this.maxX = x + width
+		this.maxY = y + height
 
 		if (depth < TreeNode.MAX_DEPTH) {
 			const halfWidth = width / 2
@@ -311,7 +315,7 @@ class TreeNode<T extends { x: number, y: number } = { x: number, y: number }> {
 	}
 
 	isInside(x: number, y: number) {
-		return x >= this.x && x <= this.x + this.width && y >= this.y && y <= this.y + this.height
+		return x >= this.x && x <= this.maxX && y >= this.y && y <= this.maxY
 	}
 
 	insert(obj: T) {
@@ -339,8 +343,8 @@ class TreeNode<T extends { x: number, y: number } = { x: number, y: number }> {
 	}
 
 	query(x: number, y: number, radius: number): Set<T> {
-		if (x + radius < this.x || x - radius > this.x + this.width ||
-			y + radius < this.y || y - radius > this.y + this.height) {
+		if (x + radius < this.x || x - radius > this.maxX ||
+			y + radius < this.y || y - radius > this.maxY) {
 			return new Set()
 		}
 		if (this.children) {
