@@ -30,7 +30,7 @@ function getState(): State | undefined {
 
 function setState(state: State) {
 	const next = btoa(JSON.stringify(state))
-	window.location.hash = next
+	window.location.replace(`#${next}`)
 	cache.set(window.location.hash, state)
 }
 
