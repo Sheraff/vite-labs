@@ -14,8 +14,9 @@ import hacker_background_image from "./pages/hacker-background/screen.png"
 import flask_image from "./pages/flask/screen.png"
 import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/screen.png"
 import ants_image from "./pages/ants/screen.png"
+import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "minesweeper" | "lightning" | "hacker-background" | "fragment-portal" | "flask" | "bird-inverse-kinematics" | "ants"
+export type Routes = "wave-function-collapse" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "minesweeper" | "lightning" | "hacker-background" | "fragment-portal" | "flask" | "bird-inverse-kinematics" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
@@ -64,7 +65,7 @@ export const ROUTES = {
 			image: quad_tree_collisions_image
 		},
 		git: {
-			lastModified: 1740318342000,
+			lastModified: 1740318653000,
 			firstAdded: 1739742825000
 		},
 	},
@@ -129,7 +130,7 @@ export const ROUTES = {
 			image: minesweeper_image
 		},
 		git: {
-			lastModified: 1740307562000,
+			lastModified: 1740477071000,
 			firstAdded: 1738530954000
 		},
 	},
@@ -196,6 +197,17 @@ export const ROUTES = {
 		git: {
 			lastModified: 1733684415000,
 			firstAdded: 1727995709000
+		},
+	},
+	"a-star": {
+		Component: lazy(() => import("./pages/a-star/index.tsx")),
+		meta: {
+			title: 'A*',
+			image: a_star_image
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
 		},
 	}
 } as const satisfies Record<Routes, Route>
