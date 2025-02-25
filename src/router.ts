@@ -14,11 +14,12 @@ import lightning_image from "./pages/lightning/screen.png"
 import hex_a_star_image from "./pages/hex-a-star/screen.png"
 import hacker_background_image from "./pages/hacker-background/screen.png"
 import flask_image from "./pages/flask/screen.png"
+import collision_threads_image from "./pages/collision-threads/screen.png"
 import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/screen.png"
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "fragment-portal" | "flask" | "bird-inverse-kinematics" | "ants" | "a-star"
+export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "fragment-portal" | "flask" | "collision-threads" | "bird-inverse-kinematics" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
@@ -56,7 +57,7 @@ export const ROUTES = {
 			image: wave_function_collapse_image
 		},
 		git: {
-			lastModified: 1728084880000,
+			lastModified: 1740492145000,
 			firstAdded: 1727995709000
 		},
 	},
@@ -165,7 +166,7 @@ export const ROUTES = {
 			image: hex_a_star_image
 		},
 		git: {
-			lastModified: 1740491184000,
+			lastModified: 1740492272000,
 			firstAdded: 1727995709000
 		},
 	},
@@ -199,6 +200,17 @@ export const ROUTES = {
 		git: {
 			lastModified: 1740307562000,
 			firstAdded: 1737497494000
+		},
+	},
+	"collision-threads": {
+		Component: lazy(() => import("./pages/collision-threads/index.tsx")),
+		meta: {
+			title: 'Collision Threads',
+			image: collision_threads_image
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
 		},
 	},
 	"bird-inverse-kinematics": {
