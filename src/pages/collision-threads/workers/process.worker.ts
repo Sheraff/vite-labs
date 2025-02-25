@@ -1,14 +1,6 @@
-
-
-/**
- * @typedef {Object} EntitySet
- * @property {(dx: number) => void} update
- * @property {(context: CanvasRenderingContext2D) => void} draw
- * @property {Object<string, SharedArrayBuffer>} buffers
- */
-
-import { getEntities, getUps, play as stepPlay, pause as stepPause, start } from "./stepLoop"
+import { getUps, play as stepPlay, pause as stepPause, start } from "./stepLoop"
 import type { Incoming as CanvasIncoming } from './canvas.worker'
+import { server } from "./entities"
 
 /// <reference lib="webworker" />
 
@@ -53,11 +45,10 @@ let port: MessagePort
 
 
 function dispatch(port: MessagePort) {
-	const entities = getEntities()
 	const interval = setInterval(() => {
 		const buffers: CanvasIncoming = {
 			type: 'buffers',
-			data: { entities: { balls: entities.balls.serialize() } }
+			data: { entities: server.serialize() }
 		}
 		port.postMessage(buffers)
 	}, 50)

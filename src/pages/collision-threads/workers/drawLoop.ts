@@ -1,20 +1,14 @@
-import { makeBalls, type Balls, type SerializedBalls } from "../classes/Balls"
+import { client } from "./entities"
 
 type Context = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
 type Contexts = { ui: Context, main: Context }
 
-type Entities = {
-	balls: Balls
-}
-
-
-const entities = {} as Entities
 let side: number
 let processUps: number
 
 export function start(_side: number, _: Contexts) {
 	side = _side
-	entities.balls = makeBalls(side)
+	client.init(side)
 }
 
 let fpsArray: number[] = []
@@ -32,6 +26,8 @@ export function loop({ main, ui }: Contexts) {
 			// timing
 			const dt = (time - lastTime) / 1000
 			lastTime = time
+
+			const entities = client.get()
 
 			// draw
 			main.clearRect(0, 0, side, side)
@@ -61,10 +57,6 @@ export function loop({ main, ui }: Contexts) {
 
 export function updateUps(ups: number) {
 	processUps = ups
-}
-
-export function updateEntities(bufferStructure: { balls: SerializedBalls }) {
-	entities.balls.hydrate(bufferStructure.balls)
 }
 
 export function pause() {

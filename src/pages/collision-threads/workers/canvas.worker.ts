@@ -1,5 +1,5 @@
-import type { SerializedBalls } from "../classes/Balls"
-import { play as stepPlay, pause as stepPause, start, updateUps, updateEntities } from "./drawLoop"
+import { client, type EntitiesMessage } from "./entities"
+import { play as stepPlay, pause as stepPause, start, updateUps } from "./drawLoop"
 import type { Incoming as ProcessIncoming } from './process.worker'
 
 /// <reference lib="webworker" />
@@ -8,7 +8,7 @@ export type Incoming =
 	| { type: 'init'; data: { side: number, main: OffscreenCanvas, ui: OffscreenCanvas } }
 	| { type: 'channel', data: { port: MessagePort } }
 	| { type: 'toggle', data: { status: boolean } }
-	| { type: 'buffers', data: { entities: { balls: SerializedBalls } } }
+	| { type: 'buffers', data: { entities: EntitiesMessage } }
 	| { type: 'ups', data: { ups: number } }
 
 let paused = false
@@ -49,7 +49,7 @@ function listen(port: MessagePort) {
 	port.onmessage = (e: MessageEvent<Incoming>) => handleMessage(e.data)
 	function handleMessage(event: Incoming) {
 		if (event.type === 'buffers') {
-			updateEntities(event.data.entities)
+			client.hydrate(event.data.entities)
 			const received: ProcessIncoming = { type: 'received', data: {} }
 			port.postMessage(received)
 			play()

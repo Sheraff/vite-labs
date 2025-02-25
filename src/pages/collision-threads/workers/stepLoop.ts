@@ -1,19 +1,11 @@
 
-import { makeBalls, type Balls } from "../classes/Balls"
+import { server } from "./entities"
 import { SUB_STEPS, TARGET_UPS } from "../utils/constants"
 
 let paused: boolean
 
-type Entities = {
-	balls: Balls
-}
-
-const entities = {} as Entities
-
 export function start(side: number) {
-	entities.balls = makeBalls(side)
-	entities.balls.init()
-	entities.balls.initValues()
+	server.init(side)
 }
 
 const upsArray: number[] = []
@@ -26,6 +18,7 @@ export function loop() {
 			const dt = (time - lastTime) / 1000
 			lastTime = time
 			const subDt = dt / SUB_STEPS
+			const entities = server.get()
 			for (let i = 0; i < SUB_STEPS; i++) {
 				Object.values(entities).forEach((entity) => entity.step(subDt, entities))
 
@@ -56,10 +49,6 @@ export function loop() {
 // 	}
 // 	asapChannel.port2.postMessage(null)
 // }
-
-export function getEntities() {
-	return entities
-}
 
 export function getUps() {
 	const ups = upsArray.length / upsArray.reduce((a, b) => a + b)
