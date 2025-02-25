@@ -12,13 +12,9 @@ const entities = {} as Entities
 let side: number
 let processUps: number
 
-export function start(_side: number, { ui }: Contexts) {
+export function start(_side: number, _: Contexts) {
 	side = _side
 	entities.balls = makeBalls(side)
-
-	ui.strokeStyle = "darkgray"
-	ui.rect(0, 0, side, side)
-	ui.stroke()
 }
 
 let fpsArray: number[] = []
