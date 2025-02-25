@@ -3,7 +3,7 @@ import { Head } from "~/components/Head"
 import type { RouteMeta } from "~/router"
 import type { Incoming, Outgoing } from "./worker"
 import Worker from "./worker?worker"
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import * as utils from '@wave-function-collapse/utils'
 import * as config from '@wave-function-collapse/carcassonne/definition'
 
@@ -44,16 +44,31 @@ function drawTile(ctx: CanvasRenderingContext2D, w: number, h: number, index: nu
 	ctx.restore()
 }
 
+const height = 40
+const width = 40
+
+const seed = (count: number) => {
+	const forces: Array<[x: number, y: number]> = []
+	for (let i = 0; i < count; i++) {
+		forces.push([Math.floor(Math.random() * width), Math.floor(Math.random() * height)])
+	}
+	return forces
+}
+
 export default function () {
 	const [available] = useState(window.crossOriginIsolated)
 	const ref = useRef<HTMLCanvasElement | null>(null)
 
-	// useEffect(() => {
-	// 	const ctx = ref.current?.getContext("2d")!
-	// 	if (!ctx) return
+	const [force, setForce] = useState(() => seed(20))
 
-	// 	drawTile(ctx, 100, 100, 3, 0, 2, 1)
-	// }, [])
+	const [worker] = useState(() => new Worker())
+	const post = useCallback(function post<I extends Incoming["type"]>(
+		type: I,
+		data: Extract<Incoming, { type: I }>["data"],
+		transfer?: Transferable[]
+	) {
+		worker.postMessage({ type, data }, { transfer })
+	}, [worker])
 
 	useEffect(() => {
 		const canvas = ref.current
@@ -63,25 +78,12 @@ export default function () {
 		const ctx = canvas.getContext("2d")!
 		if (!ctx) return
 
-		const worker = new Worker()
-		function post<I extends Incoming["type"]>(
-			type: I,
-			data: Extract<Incoming, { type: I }>["data"],
-			transfer?: Transferable[]
-		) {
-			worker.postMessage({ type, data }, { transfer })
-		}
-
-		const height = 40
-		const width = 40
 		const drawX = ctx.canvas.width / width
 		const drawY = ctx.canvas.height / height
 		let map: Extract<Outgoing, { type: "started" }>["data"]["map"]
 		let buffer: Extract<Outgoing, { type: "started" }>["data"]["buffer"]
 		let done = false
 		let get: (x: number, y: number, t: number) => 0 | 1
-
-
 
 		let i = 0
 		function loop() {
@@ -133,29 +135,23 @@ export default function () {
 			}
 		}
 
-		const seed = (count: number) => {
-			const forces: Array<[x: number, y: number]> = []
-			for (let i = 0; i < count; i++) {
-				forces.push([Math.floor(Math.random() * width), Math.floor(Math.random() * height)])
-			}
-			return forces
-		}
-
 		worker.addEventListener('message', onMessage)
-		const force = seed(20)
-		console.log(force)
 		post("start", { height, width, tiles, force })
 		return () => {
-			worker.terminate()
 			worker.removeEventListener('message', onMessage)
 			cancelAnimationFrame(rafId)
 		}
+	}, [force, worker, post])
+
+	useEffect(() => () => {
+		worker.terminate()
 	}, [])
 
 	return (
 		<div className={styles.main}>
 			<div className={styles.head}>
 				<Head />
+				<button type="button" onClick={() => setForce(seed(20))}>Retry with a new seed</button>
 			</div>
 			{available && <canvas width="1000" height="1000" ref={ref}>
 				Your browser does not support the HTML5 canvas tag.

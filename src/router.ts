@@ -165,8 +165,8 @@ export const ROUTES = {
 			image: hex_a_star_image
 		},
 		git: {
-			lastModified: 0,
-			firstAdded: 0
+			lastModified: 1740491184000,
+			firstAdded: 1727995709000
 		},
 	},
 	"hacker-background": {
