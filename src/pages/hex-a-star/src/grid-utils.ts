@@ -1,4 +1,4 @@
-import type { HexGrid } from "@hex-a-star/src/hex-structures"
+import type { HexGrid } from "./hex-structures"
 import type { PRNG } from "./seeded-random"
 
 type Cell = {
