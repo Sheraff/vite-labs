@@ -118,8 +118,9 @@ export function makeBalls(side: number) {
 		Atomics.store(base.color, i, randomInt(0, COLORS.length - 1))
 	}
 
+	const relativeGravity = [GRAVITY[0] * side / 1000, GRAVITY[1] * side / 1000]
 	function applyGravity() {
-		accelerate(...GRAVITY)
+		accelerate(relativeGravity[0], relativeGravity[1])
 	}
 
 	function solveCollisions() {
