@@ -50,12 +50,36 @@ export default function HackerBackground() {
 	)
 }
 
-const CHARS = ['·', '-', '+', '*', '#', '%', '█']
+const CHARS = [
+	'·',
+	'-',
+	'=',
+	'+',
+	'*',
+	'#',
+	'%',
+	// '&',
+	// '║',
+	// '■',
+	'█'
+]
 
-// const easing = (x: number) => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2
-const easing = (x: number) => 1 - Math.cos((x * Math.PI) / 2)
-// const easing = (x: number) => 1 - Math.sqrt(1 - Math.pow(x, 2))
-// const easing = (x: number) => x * x * x * x * x
+const cubicEaseInOut = (x: number) => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2
+const sineEaseOut = (x: number) => 1 - Math.cos((x * Math.PI) / 2)
+const circEaseOut = (x: number) => 1 - Math.sqrt(1 - Math.pow(x, 2))
+const quinticEaseIn = (x: number) => x * x * x * x * x
+
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t
+
+const getColor = (index: number, alpha: number = 1) => {
+	// oklch(0.15 0.18 244)
+	// oklch(0.35 0.18 328)
+	const ratio = index / (CHARS.length - 1)
+	const t = sineEaseOut(ratio)
+	const light = lerp(0.15, 0.35, t)
+	const hue = lerp(244, 328, ratio)
+	return `oklch(${light} 0.18 ${hue} / ${alpha})`
+}
 
 function start(
 	ctx: CanvasRenderingContext2D,
@@ -72,12 +96,37 @@ function start(
 	let prevY1 = 0
 	let prevY2 = rows
 
-	ctx.fillStyle = 'rgba(100, 0, 100)'
 	ctx.font = `${reference.em}px monospace`
 
 	let init = false
 
 	const grid = Array.from({ length: rows }, () => Array.from({ length: columns }, () => CHARS[0]))
+
+	const clearChar = (row: number, col: number) => {
+		ctx.clearRect((col - 0.7) * reference.em, (row - 0.23) * reference.lh, reference.em, reference.lh)
+	}
+
+
+	const drawChar = (row: number, col: number, index: number) => {
+		if (index > 0) {
+			const gradient = ctx.createRadialGradient(
+				(col - 0.2) * reference.em,
+				(row + 0.3) * reference.lh,
+				0,
+				(col - 0.2) * reference.em,
+				(row + 0.3) * reference.lh,
+				reference.em
+			)
+			const opacity = lerp(0.4, 0.8, index / (CHARS.length - 1))
+			gradient.addColorStop(0, getColor(index, opacity))
+			gradient.addColorStop(1, 'transparent')
+			ctx.fillStyle = gradient
+			ctx.fillRect((col - 0.7) * reference.em, (row - 0.23) * reference.lh, reference.em, reference.lh)
+		}
+		ctx.fillStyle = getColor(index)
+		const char = CHARS[index]
+		ctx.fillText(char, (col - 0.5) * reference.em, (row + 0.5) * reference.lh)
+	}
 
 	let rafId = requestAnimationFrame(function loop() {
 		rafId = requestAnimationFrame(loop)
@@ -85,7 +134,7 @@ function start(
 		if (!init) {
 			for (let row = 0; row <= rows; row++) {
 				for (let col = 0; col <= columns; col++) {
-					ctx.fillText(CHARS[0], (col - 0.5) * reference.em, (row + 0.5) * reference.lh)
+					drawChar(row, col, 0)
 				}
 			}
 			init = true
@@ -111,14 +160,15 @@ function start(
 					const distance = Math.hypot(col * reference.em - mouse.x, row * reference.lh - mouse.y)
 					if (distance < influence) {
 						const normalized = 1 - distance / influence
-						const charIndex = Math.floor(easing(normalized) * (CHARS.length - 1)) + 1
+						const charIndex = Math.floor(sineEaseOut(normalized) * (CHARS.length - 1)) + 1
 						const currentIndex = CHARS.indexOf(current)
-						if (charIndex >= currentIndex) {
+						if (charIndex === currentIndex) continue
+						if (charIndex > currentIndex) {
 							const nextIndex = Math.min(charIndex, currentIndex + 1)
 							const upcay = Math.random() < nextIndex / 20
 							if (upcay) {
-								ctx.clearRect((col - 0.5) * reference.em, (row - 0.25) * reference.lh, reference.em, reference.lh)
-								ctx.fillText(CHARS[nextIndex], (col - 0.5) * reference.em, (row + 0.5) * reference.lh)
+								clearChar(row, col)
+								drawChar(row, col, nextIndex)
 								gridRow[col] = CHARS[nextIndex]
 							}
 							continue
@@ -129,10 +179,11 @@ function start(
 					const index = CHARS.indexOf(current)
 					const decay = Math.random() < index / 100
 					if (decay) {
-						ctx.clearRect((col - 0.5) * reference.em, (row - 0.25) * reference.lh, reference.em, reference.lh)
-						const next = CHARS[index - 1]
+						clearChar(row, col)
+						const nextIndex = index - 1
+						const next = CHARS[nextIndex]
 						gridRow[col] = next
-						ctx.fillText(next, (col - 0.5) * reference.em, (row + 0.5) * reference.lh)
+						drawChar(row, col, nextIndex)
 					}
 				}
 			}
@@ -146,10 +197,10 @@ function start(
 		if (Math.random() < 0.2) {
 			const col = Math.floor(Math.random() * columns)
 			const row = Math.floor(Math.random() * rows)
-			const index = CHARS.length - 1
-			ctx.clearRect((col - 0.5) * reference.em, (row - 0.25) * reference.lh, reference.em, reference.lh)
-			ctx.fillText(CHARS[index], (col - 0.5) * reference.em, (row + 0.5) * reference.lh)
-			grid[row][col] = CHARS[index]
+			const nextIndex = CHARS.length - 1
+			clearChar(row, col)
+			drawChar(row, col, nextIndex)
+			grid[row][col] = CHARS[nextIndex]
 		}
 
 

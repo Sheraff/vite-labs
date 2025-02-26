@@ -209,8 +209,8 @@ export const ROUTES = {
 			image: collision_threads_image
 		},
 		git: {
-			lastModified: 0,
-			firstAdded: 0
+			lastModified: 1740505056000,
+			firstAdded: 1727995709000
 		},
 	},
 	"bird-inverse-kinematics": {
