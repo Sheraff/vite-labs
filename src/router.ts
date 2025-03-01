@@ -13,6 +13,7 @@ import minesweeper_image from "./pages/minesweeper/screen.png"
 import lightning_image from "./pages/lightning/screen.png"
 import hex_a_star_image from "./pages/hex-a-star/screen.png"
 import hacker_background_image from "./pages/hacker-background/screen.png"
+import flow_field_image from "./pages/flow-field/screen.png"
 import flask_image from "./pages/flask/screen.png"
 import collision_threads_image from "./pages/collision-threads/screen.png"
 import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/screen.png"
@@ -195,9 +196,10 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/flow-field/index.tsx")),
 		meta: {
 			title: 'Flow Field',
+			image: flow_field_image
 		},
 		git: {
-			lastModified: 1740833468000,
+			lastModified: 1740836489000,
 			firstAdded: 1727995709000
 		},
 	},
