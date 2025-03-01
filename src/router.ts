@@ -19,7 +19,7 @@ import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/scree
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "fragment-portal" | "flask" | "collision-threads" | "bird-inverse-kinematics" | "ants" | "a-star"
+export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "fragment-portal" | "flow-field" | "flask" | "collision-threads" | "bird-inverse-kinematics" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
@@ -177,7 +177,7 @@ export const ROUTES = {
 			image: hacker_background_image
 		},
 		git: {
-			lastModified: 1740312562000,
+			lastModified: 1740529871000,
 			firstAdded: 1739742825000
 		},
 	},
@@ -189,6 +189,16 @@ export const ROUTES = {
 		git: {
 			lastModified: 1739611669000,
 			firstAdded: 1717340075000
+		},
+	},
+	"flow-field": {
+		Component: lazy(() => import("./pages/flow-field/index.tsx")),
+		meta: {
+			title: 'Flow Field',
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
 		},
 	},
 	"flask": {
