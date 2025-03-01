@@ -272,13 +272,13 @@ export default function FragmentedAStar() {
 					path.length = 0
 					return
 				}
-				const current = openSet.has(lowestFScore) ? lowestFScore : Array.from(openSet).reduce<number | null>((min, cell) => {
+				const current = openSet.has(lowestFScore) ? lowestFScore : Array.from(openSet).reduce((min, cell) => {
 					if (!min || !fScore.has(min) || !fScore.get(cell))
 						return cell
-					return fScore.get(min)! < fScore.get(cell)!
-						? min
-						: cell
-				}, null)!
+					if (fScore.get(min)! < fScore.get(cell)!)
+						return min
+					return cell
+				}, null!)
 				lowestFScore = current
 
 				const x = current % SIDE
