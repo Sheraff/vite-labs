@@ -7,7 +7,7 @@ export const meta: RouteMeta = {
 	title: 'Flow Field',
 }
 
-const SIDE = 20
+const SIDE = 30
 
 export default function FlowFieldPage() {
 	const ref = useRef<HTMLCanvasElement | null>(null)
@@ -26,12 +26,19 @@ export default function FlowFieldPage() {
 		const ctx = canvas.getContext('2d')
 		if (!ctx) return
 
-		const gridBuffer = new ArrayBuffer(length * Uint8Array.BYTES_PER_ELEMENT)
-		const grid = new Uint8Array(gridBuffer).fill(0)
-		const integrationBuffer = new ArrayBuffer(length * Uint8Array.BYTES_PER_ELEMENT)
-		const integration = new Uint8Array(integrationBuffer).fill(0xffffff)
-		const fieldBuffer = new ArrayBuffer(length * Uint8Array.BYTES_PER_ELEMENT)
-		const field = new Uint8Array(fieldBuffer).fill(0)
+		const GridType = Uint8Array
+		const gridBuffer = new ArrayBuffer(length * GridType.BYTES_PER_ELEMENT)
+		const maxCost = 2 ** (GridType.BYTES_PER_ELEMENT * 8) - 1
+		const grid = new GridType(gridBuffer).fill(0)
+
+		const IntegrationType = Uint16Array
+		const integrationBuffer = new ArrayBuffer(length * IntegrationType.BYTES_PER_ELEMENT)
+		const maxIntegration = 2 ** (IntegrationType.BYTES_PER_ELEMENT * 8) - 1
+		const integration = new IntegrationType(integrationBuffer).fill(maxIntegration)
+
+		const FieldType = Uint8Array
+		const fieldBuffer = new ArrayBuffer(length * FieldType.BYTES_PER_ELEMENT)
+		const field = new FieldType(fieldBuffer).fill(0)
 
 		const goal = { x: Math.round(SIDE / 2), y: Math.round(SIDE / 2) }
 
@@ -45,20 +52,7 @@ export default function FlowFieldPage() {
 			if (!prev) return
 
 			ctx.clearRect(0, 0, side, side)
-
-			// field[0] = 0x00
-			// field[1] = 0x01
-			// field[2] = 0x02
-			// field[3] = 0x03
-			// field[4] = 0x04
-			// field[5] = 0x05
-			// field[6] = 0x06
-			// field[7] = 0x07
-			// field[8] = 0x08
-
-			const maxIntegration = Math.max(...integration)
-
-			// console.log('maxIntegration', maxIntegration)
+			const colorMaxInt = Math.min(maxIntegration, SIDE * SIDE / 2)
 
 			for (let y = 0; y < SIDE; y++) {
 				const row = y * SIDE
@@ -68,10 +62,10 @@ export default function FlowFieldPage() {
 
 					// draw background (cell cost)
 					const cost = grid[index]
-					const int = integration[index] / maxIntegration * 360
-					// ctx.fillStyle = `hsl(${int}, 50%, ${cost / 255 * 100}%)`
-					ctx.fillStyle = `hsl(${int}, 50%, ${cost / 255 * 50 + 50}%)`
-					// ctx.fillStyle = `oklch(${cost / 255 * 50 + 50}% 50% ${int})`
+					const int = integration[index] / colorMaxInt * 360
+					// ctx.fillStyle = `hsl(${int}, 50%, ${cost / maxCost * 100}%)`
+					ctx.fillStyle = `hsl(${int}, 50%, ${cost / maxCost * 50 + 50}%)`
+					// ctx.fillStyle = `oklch(${cost / maxCost * 50 + 50}% 50% ${int})`
 					ctx.fillRect(x * px, y * px, px, px)
 
 					// draw direction (flow field)
@@ -89,7 +83,7 @@ export default function FlowFieldPage() {
 						const centerY = y * px + px / 2
 						const xRatio = Math.cos(angle)
 						const yRatio = Math.sin(angle)
-						const endX = centerX + xRatio * length // End point in direction of flow
+						const endX = centerX + xRatio * length
 						const endY = centerY + yRatio * length
 						const startX = centerX - xRatio * length
 						const startY = centerY - yRatio * length
@@ -115,7 +109,6 @@ export default function FlowFieldPage() {
 					}
 				}
 			}
-			// cancelAnimationFrame(rafId)
 		})
 
 		function readField(x: number, y: number) {
@@ -134,7 +127,7 @@ export default function FlowFieldPage() {
 						field[index] = fieldMap[0][0]
 						continue
 					}
-					let min = 0xffffff
+					let min = maxIntegration
 					let minx = 0
 					let miny = 0
 					for (let i = -1; i <= 1; i++) {
@@ -145,7 +138,7 @@ export default function FlowFieldPage() {
 							const dy = y + j
 							if (dy < 0 || dy >= SIDE) continue
 							const cost = grid[dy * SIDE + dx]
-							if (cost === 255) continue
+							if (cost === maxCost) continue
 							const value = integration[dy * SIDE + dx]
 							if (value < min) {
 								min = value
@@ -163,58 +156,63 @@ export default function FlowFieldPage() {
 
 		function computeIntegration() {
 			const before = performance.now()
-			integration.fill(0xffffff)
+			integration.fill(maxIntegration)
 			const queue = [goal.x, goal.y]
 			integration[goal.y * SIDE + goal.x] = 0
+			// debugger
 			while (queue.length > 0) {
 				const x = queue.shift()!
 				const y = queue.shift()!
 				const index = y * SIDE + x
 				const value = integration[index]
 				west: {
-					if (x <= 0) break
-					const cost = grid[index - 1] || 1
-					if (cost !== 255) {
+					if (x === 0) break west
+					const neighbor = index - 1
+					const cost = grid[neighbor] || 1
+					if (cost !== maxCost) {
 						const next = value + cost
-						const prev = integration[index - 1]
+						const prev = integration[neighbor]
 						if (next < prev) {
-							integration[index - 1] = next
+							integration[neighbor] = next
 							queue.push(x - 1, y)
 						}
 					}
 				}
 				east: {
-					if (x >= SIDE - 1) break
-					const cost = grid[index + 1] || 1
-					if (cost !== 255) {
+					if (x === SIDE - 1) break east
+					const neighbor = index + 1
+					const cost = grid[neighbor] || 1
+					if (cost !== maxCost) {
 						const next = value + cost
-						const prev = integration[index + 1]
+						const prev = integration[neighbor]
 						if (next < prev) {
-							integration[index + 1] = next
+							integration[neighbor] = next
 							queue.push(x + 1, y)
 						}
 					}
 				}
 				north: {
-					if (y <= 0) break
-					const cost = grid[index - SIDE] || 1
-					if (cost !== 255) {
+					if (y === 0) break north
+					const neighbor = index - SIDE
+					const cost = grid[neighbor] || 1
+					if (cost !== maxCost) {
 						const next = value + cost
-						const prev = integration[index - SIDE]
+						const prev = integration[neighbor]
 						if (next < prev) {
-							integration[index - SIDE] = next
+							integration[neighbor] = next
 							queue.push(x, y - 1)
 						}
 					}
 				}
 				south: {
-					if (y >= SIDE - 1) break
-					const cost = grid[index + SIDE] || 1
-					if (cost !== 255) {
+					if (y === SIDE - 1) break south
+					const neighbor = index + SIDE
+					const cost = grid[neighbor] || 1
+					if (cost !== maxCost) {
 						const next = value + cost
-						const prev = integration[index + SIDE]
+						const prev = integration[neighbor]
 						if (next < prev) {
-							integration[index + SIDE] = next
+							integration[neighbor] = next
 							queue.push(x, y + 1)
 						}
 					}
@@ -223,12 +221,12 @@ export default function FlowFieldPage() {
 			const after = performance.now()
 			console.log('computeIntegration', after - before)
 			computeField()
-			const summary = integration.reduce<Record<number, number>>((acc, cur) => {
-				if (acc[cur] === undefined) acc[cur] = 0
-				acc[cur]++
-				return acc
-			}, {})
-			console.log('summary', summary)
+			// const summary = integration.reduce<Record<number, number>>((acc, cur) => {
+			// 	if (acc[cur] === undefined) acc[cur] = 0
+			// 	acc[cur]++
+			// 	return acc
+			// }, {})
+			// console.log('summary', summary)
 		}
 		computeIntegration()
 
@@ -251,15 +249,21 @@ export default function FlowFieldPage() {
 			down = value === 0 ? 1 : 0
 		}, { signal: controller.signal })
 
-		canvas.addEventListener('pointermove', (e) => {
+		canvas.addEventListener('pointermove', (event) => {
 			if (down === false) return
 			moved = true
-			const { x, y } = eventToPosition(e)
-			const index = y * SIDE + x
-			const next = down ? 255 : 0
-			const prev = grid[index]
-			if (prev !== undefined && prev !== next) {
-				grid[index] = next
+			let changed = false
+			for (const e of event.getCoalescedEvents()) {
+				const { x, y } = eventToPosition(e)
+				const index = y * SIDE + x
+				const next = down ? maxCost : 0
+				const prev = grid[index]
+				if (prev !== undefined && prev !== next) {
+					grid[index] = next
+					changed = true
+				}
+			}
+			if (changed) {
 				computeIntegration()
 			}
 		}, { signal: controller.signal })
@@ -272,7 +276,7 @@ export default function FlowFieldPage() {
 				const { x, y } = eventToPosition(e)
 				const index = y * SIDE + x
 				const prev = grid[index]
-				const next = prev === 0 ? 255 : 0
+				const next = prev === 0 ? maxCost : 0
 				if (prev !== undefined && prev !== next) {
 					grid[index] = next
 					computeIntegration()
@@ -296,6 +300,7 @@ export default function FlowFieldPage() {
 		canvas.addEventListener('pointermove', (e) => {
 			const { x, y } = eventToPosition(e)
 			if (x === goal.x && y === goal.y) return
+			if (grid[y * SIDE + x] === maxCost) return
 			goal.x = x
 			goal.y = y
 			computeIntegration()
@@ -321,30 +326,30 @@ export default function FlowFieldPage() {
 
 const fieldMap: Record<number, Record<number, number>> = {
 	'-1': {
-		'-1': 0x00,
-		'0': 0x01,
-		'1': 0x02,
+		'-1': 0,
+		'0': 1,
+		'1': 2,
 	},
 	0: {
-		'-1': 0x03,
-		'0': 0x04,
-		'1': 0x05,
+		'-1': 3,
+		'0': 4,
+		'1': 5,
 	},
 	1: {
-		'-1': 0x06,
-		'0': 0x07,
-		'1': 0x08,
+		'-1': 6,
+		'0': 7,
+		'1': 8,
 	},
 }
 
 const reverseFieldMap: Record<number, [x: number, y: number]> = {
-	0x00: [-1, -1],
-	0x01: [-1, 0],
-	0x02: [-1, 1],
-	0x03: [0, -1],
-	0x04: [0, 0],
-	0x05: [0, 1],
-	0x06: [1, -1],
-	0x07: [1, 0],
-	0x08: [1, 1],
+	0: [-1, -1],
+	1: [-1, 0],
+	2: [-1, 1],
+	3: [0, -1],
+	4: [0, 0],
+	5: [0, 1],
+	6: [1, -1],
+	7: [1, 0],
+	8: [1, 1],
 }
