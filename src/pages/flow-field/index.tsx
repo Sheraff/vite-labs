@@ -12,7 +12,11 @@ export const meta: RouteMeta = {
 }
 
 const SIDE = 64
-const workerCount = 16 // 1 | 4 | 16 | 64
+const workersPerRow = 16
+
+if (SIDE % workersPerRow !== 0) {
+	throw new Error(`SIDE must be divisible by workersPerRow, maybe try SIDE=${SIDE - (SIDE % workersPerRow)}, workersPerRow=${workersPerRow}`)
+}
 
 export default function FlowFieldPage() {
 	const ref = useRef<HTMLCanvasElement | null>(null)
@@ -31,7 +35,7 @@ export default function FlowFieldPage() {
 		const ctx = canvas.getContext('2d')
 		if (!ctx) return
 
-		const workersPerRow = Math.sqrt(workerCount)
+		const workerCount = workersPerRow ** 2
 		const workerSide = SIDE / workersPerRow
 		const layers = workerSide * workerSide
 		const layerLength = layers * workerCount
@@ -50,7 +54,24 @@ export default function FlowFieldPage() {
 		const fieldBuffer = new SharedArrayBuffer(length * FieldType.BYTES_PER_ELEMENT * layers)
 		new FieldType(fieldBuffer).fill(0)
 
-		// const goal = { x: Math.round(SIDE / 2), y: Math.round(SIDE / 2) }
+		{
+			// random obstacles
+			const count = Math.random() * SIDE / 2 + SIDE / 2
+			for (let i = 0; i < count; i++) {
+				const largeSide = Math.random() > 0.5
+				const x1 = Math.floor(Math.random() * SIDE)
+				const x2 = Math.floor(Math.random() * SIDE / (largeSide ? 30 : 8)) + x1
+				const y1 = Math.floor(Math.random() * SIDE)
+				const y2 = Math.floor(Math.random() * SIDE / (largeSide ? 8 : 30)) + y1
+				for (let y = y1; y < y2; y++) {
+					const row = y * SIDE
+					for (let x = x1; x < x2; x++) {
+						grid[row + x] = maxCost
+					}
+				}
+			}
+		}
+
 		const goal = { x: 15, y: 5 }
 
 		const workers = Array.from({ length: workerCount }, () => new FieldWorker())
