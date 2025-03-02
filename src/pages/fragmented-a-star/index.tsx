@@ -7,8 +7,8 @@ export const meta: RouteMeta = {
 	title: '[WIP] Fragmented A*',
 }
 
-const SIDE = 64
-const workersPerRow = 4
+const SIDE = 256
+const workersPerRow = 16
 
 if (SIDE % workersPerRow !== 0) {
 	throw new Error(`SIDE must be divisible by workersPerRow, maybe try SIDE=${SIDE - (SIDE % workersPerRow)}, workersPerRow=${workersPerRow}`)
@@ -42,8 +42,8 @@ export default function FragmentedAStar() {
 		const goal = { x: Math.round(SIDE * 1 / 8), y: Math.round(SIDE * 1 / 8) }
 		const from = { x: Math.round(SIDE * 7 / 8), y: Math.round(SIDE * 7 / 8) }
 
-		const graph: Array<Set<{ tiles: Set<number>, crossings: Set<number>[] }>> = []
-		const path: number[] = []
+		const graph: Map<number, { islands: Set<Island>, tiles: Map<number, Island> }> = new Map()
+		const path: Island[] = []
 
 		let lastTime = 0
 		let rafId = requestAnimationFrame(function loop(time) {
@@ -80,11 +80,11 @@ export default function FragmentedAStar() {
 					ctx.strokeRect(x * workerSide * px, y * workerSide * px, workerSide * px, workerSide * px)
 					ctx.lineWidth = 1
 
-					const node = graph[y * workersPerRow + x]
-					const islands = node.values()
-					for (let i = 0; i < node.size; i++) {
+					const node = graph.get(y * workersPerRow + x)!
+					const islands = node.islands.values()
+					for (let i = 0; i < node.islands.size; i++) {
 						const island = islands.next().value!
-						const hue = 360 / node.size * i
+						const hue = 360 / node.islands.size * i
 						ctx.fillStyle = `oklch(50% 50% ${hue})`
 						for (const tile of island.tiles) {
 							const ty = Math.floor(tile / SIDE)
@@ -100,12 +100,22 @@ export default function FragmentedAStar() {
 				ctx.strokeStyle = 'blue'
 				ctx.lineWidth = 2 * devicePixelRatio
 				ctx.beginPath()
-				ctx.moveTo(goal.x * px + px / 2, goal.y * px + px / 2)
+				ctx.lineTo(from.x * px + px / 2, from.y * px + px / 2)
 				for (let i = 0; i < path.length; i++) {
-					const x = path[i] % SIDE
-					const y = (path[i] - x) / SIDE
-					ctx.lineTo(x * px + px / 2, y * px + px / 2)
+					const island = path[i]
+					const [sumX, sumY] = Array.from(island.tiles.keys()).reduce<[x: number, y: number]>((acc, tile) => {
+						acc[0] += tile % SIDE
+						acc[1] += Math.floor(tile / SIDE)
+						return acc
+					}, [0, 0])
+					const avgX = sumX / island.tiles.size
+					const avgY = sumY / island.tiles.size
+					const x = avgX * px
+					const y = avgY * px
+
+					ctx.lineTo(x, y)
 				}
+				ctx.lineTo(goal.x * px + px / 2, goal.y * px + px / 2)
 				ctx.stroke()
 				ctx.lineWidth = 1
 			}
@@ -135,6 +145,7 @@ export default function FragmentedAStar() {
 		 * Store boundaries and islands in a way that allows for A* to be run on them
 		 */
 		function computeGraph() {
+			const before = performance.now()
 			let workerIndex = 0
 			for (let wy = 0; wy < workersPerRow; wy++) {
 				const y1 = wy * workerSide
@@ -144,29 +155,31 @@ export default function FragmentedAStar() {
 					const x2 = x1 + workerSide - 1
 
 					const seen = new Set<number>()
-					const workerIslands = new Set<{ tiles: Set<number>, crossings: Set<number>[] }>()
+					const workerIslands = new Set<Island>()
+					const workerTiles = new Map<number, Island>()
 					for (let y = y1; y <= y2; y++) {
 						const row = y * SIDE
 						for (let x = x1; x <= x2; x++) {
 							const index = row + x
 							if (seen.has(index)) continue
 							if (grid[index] === maxCost) continue
-							const island = new Set([index])
-							const crossings: [
-								north: Set<number>,
-								east: Set<number>,
-								south: Set<number>,
-								west: Set<number>,
-							] = [
-									new Set(),
-									new Set(),
-									new Set(),
-									new Set(),
-								]
-							workerIslands.add({
-								tiles: island,
+
+							const islandTiles = new Set<number>()
+							const northIndex = workerIndex - workersPerRow
+							const eastIndex = workerIndex + 1
+							const southIndex = workerIndex + workersPerRow
+							const westIndex = workerIndex - 1
+							const crossings: Map<Island, Set<number>> = new Map()
+							const island: Island = {
+								tiles: islandTiles,
 								crossings,
-							})
+								workerIndex,
+								wx,
+								wy,
+							}
+							workerTiles.set(index, island)
+							islandTiles.add(index)
+							workerIslands.add(island)
 							const queue = [x, y, index]
 							seen.add(index)
 							while (queue.length) {
@@ -176,101 +189,183 @@ export default function FragmentedAStar() {
 								north: {
 									const i = (y - 1) * SIDE + x
 									if (y === y1) {
-										if (y > 0 && grid[i] !== maxCost) crossings[0].add(index)
+										if (y > 0 && grid[i] !== maxCost) {
+											const neighbor = graph.get(northIndex)?.tiles.get(i)
+											if (neighbor) {
+												const nCrossings = neighbor.crossings.get(island)
+												if (nCrossings) {
+													nCrossings.add(i)
+												} else {
+													neighbor.crossings.set(island, new Set([i]))
+												}
+												const iCrossings = crossings.get(neighbor)
+												if (iCrossings) {
+													iCrossings.add(index)
+												} else {
+													crossings.set(neighbor, new Set([index]))
+												}
+											}
+										}
 										break north
 									}
 									if (!seen.has(i) && grid[i] !== maxCost) {
 										seen.add(i)
 										queue.push(x, y - 1, i)
-										island.add(i)
+										workerTiles.set(i, island)
+										islandTiles.add(i)
 									}
 								}
 								south: {
 									const i = (y + 1) * SIDE + x
 									if (y === y2) {
-										if (y < SIDE - 1 && grid[i] !== maxCost) crossings[2].add(index)
+										if (y < SIDE - 1 && grid[i] !== maxCost) {
+											const neighbor = graph.get(southIndex)?.tiles.get(i)
+											if (neighbor) {
+												const nCrossings = neighbor.crossings.get(island)
+												if (nCrossings) {
+													nCrossings.add(i)
+												} else {
+													neighbor.crossings.set(island, new Set([i]))
+												}
+												const iCrossings = crossings.get(neighbor)
+												if (iCrossings) {
+													iCrossings.add(index)
+												} else {
+													crossings.set(neighbor, new Set([index]))
+												}
+											}
+										}
 										break south
 									}
 									if (!seen.has(i) && grid[i] !== maxCost) {
 										seen.add(i)
 										queue.push(x, y + 1, i)
-										island.add(i)
+										workerTiles.set(i, island)
+										islandTiles.add(i)
 									}
 								}
 								west: {
 									const i = y * SIDE + (x - 1)
 									if (x === x1) {
-										if (x > 0 && grid[i] !== maxCost) crossings[3].add(index)
+										if (x > 0 && grid[i] !== maxCost) {
+											const neighbor = graph.get(westIndex)?.tiles.get(i)
+											if (neighbor) {
+												const nCrossings = neighbor.crossings.get(island)
+												if (nCrossings) {
+													nCrossings.add(i)
+												} else {
+													neighbor.crossings.set(island, new Set([i]))
+												}
+												const iCrossings = crossings.get(neighbor)
+												if (iCrossings) {
+													iCrossings.add(index)
+												} else {
+													crossings.set(neighbor, new Set([index]))
+												}
+											}
+										}
 										break west
 									}
 									if (!seen.has(i) && grid[i] !== maxCost) {
 										seen.add(i)
 										queue.push(x - 1, y, i)
-										island.add(i)
+										workerTiles.set(i, island)
+										islandTiles.add(i)
 									}
 								}
 								east: {
 									const i = y * SIDE + (x + 1)
 									if (x === x2) {
-										if (x < SIDE - 1 && grid[i] !== maxCost) crossings[1].add(index)
+										if (x < SIDE - 1 && grid[i] !== maxCost) {
+											const neighbor = graph.get(eastIndex)?.tiles.get(i)
+											if (neighbor) {
+												const nCrossings = neighbor.crossings.get(island)
+												if (nCrossings) {
+													nCrossings.add(i)
+												} else {
+													neighbor.crossings.set(island, new Set([i]))
+												}
+												const iCrossings = crossings.get(neighbor)
+												if (iCrossings) {
+													iCrossings.add(index)
+												} else {
+													crossings.set(neighbor, new Set([index]))
+												}
+											}
+										}
 										break east
 									}
 									if (!seen.has(i) && grid[i] !== maxCost) {
 										seen.add(i)
 										queue.push(x + 1, y, i)
-										island.add(i)
+										workerTiles.set(i, island)
+										islandTiles.add(i)
 									}
 								}
 							}
 						}
 					}
-					graph[workerIndex] = workerIslands
+					graph.set(workerIndex, { islands: workerIslands, tiles: workerTiles })
 					workerIndex++
 				}
 			}
+			const after = performance.now()
+			console.log(`computeGraph took ${after - before}ms`)
 		}
 		computeGraph()
 
 		function pathFinding() {
-			function h(index: number) {
-				const x = index % SIDE
-				const y = (index - x) / SIDE
-				return Math.hypot(x - goal.x, y - goal.y)
+			const before = performance.now()
+			path.length = 0
+
+			const goalIndex = goal.y * SIDE + goal.x
+			const workerGoalIndex = Math.floor(goal.x / workerSide) + Math.floor(goal.y / workerSide) * workersPerRow
+			const goalIsland = graph.get(workerGoalIndex)!.tiles.get(goalIndex)!
+
+			const fromIndex = from.y * SIDE + from.x
+			const workerFromIndex = Math.floor(from.x / workerSide) + Math.floor(from.y / workerSide) * workersPerRow
+			const fromIsland = graph.get(workerFromIndex)!.tiles.get(fromIndex)!
+
+			const done = () => {
+				const after = performance.now()
+				console.log(`pathFinding took ${(after - before).toFixed(2)}ms`)
 			}
-			function findIsland<T extends { tiles: Set<number> }>(node: Set<T>, index: number) {
-				for (const island of node) {
-					if (island.tiles.has(index))
-						return island
-				}
-				throw new Error('island not found')
+
+			if (goalIsland === fromIsland) {
+				path.push(goalIsland)
+				done()
+				return
+			} else if (goalIsland.crossings.size === 0 || fromIsland.crossings.size === 0) {
+				done()
+				return
 			}
-			function setPath(cameFrom: Map<number, number>, current: number) {
-				path.length = 0
+
+			function h(island: { wx: number, wy: number }) {
+				return Math.hypot(island.wx - goalIsland.wx, island.wy - goalIsland.wy)
+			}
+			function setPath(cameFrom: Map<Island, Island>, current: Island) {
 				let c = current
 				while (cameFrom.has(c)) {
 					path.push(c)
 					c = cameFrom.get(c)!
 				}
 				path.push(c)
+				path.reverse()
 			}
 
-			const goalIndex = goal.y * SIDE + goal.x
-			const workerGoalIndex = Math.floor(goal.x / workerSide) + Math.floor(goal.y / workerSide) * workersPerRow
-			const goalIsland = findIsland(graph[workerGoalIndex], goalIndex)
-			const start = from.y * SIDE + from.x
+			const start = fromIsland
 			const openSet = new Set([start])
-			const cameFrom = new Map<number, number>()
-			const gScore = new Map<number, number>()
+			const cameFrom = new Map<Island, Island>()
+			const gScore = new Map<Island, number>()
 			gScore.set(start, 0)
-			const fScore = new Map<number, number>()
+			const fScore = new Map<Island, number>()
 			fScore.set(start, h(start))
 
 			let lowestFScore = start
 			let counter = 0
 			while (openSet.size) {
 				if (++counter > 5000) {
-					path.length = 0
-					return
+					break
 				}
 				const current = openSet.has(lowestFScore) ? lowestFScore : Array.from(openSet).reduce((min, cell) => {
 					if (!min || !fScore.has(min) || !fScore.get(cell))
@@ -281,58 +376,35 @@ export default function FragmentedAStar() {
 				}, null!)
 				lowestFScore = current
 
-				const x = current % SIDE
-				const y = (current - x) / SIDE
-				const workerX = Math.floor(x / workerSide)
-				const workerY = Math.floor(y / workerSide)
-				const workerIndex = workerY * workersPerRow + workerX
-				const node = graph[workerIndex]
-				const island = findIsland(node, current)
-
-				if (island === goalIsland) {
+				if (current === goalIsland) {
 					setPath(cameFrom, current)
-					return
+					break
 				}
 
 				openSet.delete(current)
 
-				for (let direction = 0; direction < 4; direction++) {
-					const crossings = island.crossings[direction]
-					for (const crossing of crossings) {
-						const cx = crossing % SIDE
-						const cy = (crossing - cx) / SIDE
-						const toCrossing = Math.hypot(cx - x, cy - y)
-						const tentativeGScore = gScore.get(current)! + toCrossing + 1
-						let neighbor: number
-						if (direction === 0) { // top
-							neighbor = crossing - SIDE
-						} else if (direction === 1) { // right
-							neighbor = crossing + 1
-						} else if (direction === 2) { // bottom
-							neighbor = crossing + SIDE
-						} else { // left
-							neighbor = crossing - 1
-						}
+				for (const [crossing] of current.crossings) {
+					const tentativeGScore = gScore.get(current)! + Math.hypot(current.wx - crossing.wx, current.wy - crossing.wy)
 
-						if (!gScore.has(neighbor))
-							gScore.set(neighbor, Infinity)
+					if (!gScore.has(crossing))
+						gScore.set(crossing, Infinity)
 
-						if (tentativeGScore < gScore.get(neighbor)!) {
-							cameFrom.set(neighbor, current)
+					if (tentativeGScore < gScore.get(crossing)!) {
+						cameFrom.set(crossing, current)
 
-							gScore.set(neighbor, tentativeGScore)
-							const newFScore = gScore.get(neighbor)! + h(neighbor)
-							fScore.set(neighbor, newFScore)
+						gScore.set(crossing, tentativeGScore)
+						const newFScore = gScore.get(crossing)! + h(crossing)
+						fScore.set(crossing, newFScore)
 
-							if (newFScore < fScore.get(lowestFScore)!)
-								lowestFScore = neighbor
+						if (newFScore < fScore.get(lowestFScore)!)
+							lowestFScore = crossing
 
-							if (!openSet.has(neighbor) && newFScore < Infinity)
-								openSet.add(neighbor)
-						}
+						if (!openSet.has(crossing) && newFScore < Infinity)
+							openSet.add(crossing)
 					}
 				}
 			}
+			done()
 		}
 		pathFinding()
 
@@ -427,4 +499,13 @@ export default function FragmentedAStar() {
 			</canvas>
 		</div>
 	)
+}
+
+type Island = {
+	/** Connection points to neighboring workers, key: worker index, value: tile indices */
+	crossings: Map<Island, Set<number>>
+	workerIndex: number
+	wx: number
+	wy: number
+	tiles: Set<number>
 }
