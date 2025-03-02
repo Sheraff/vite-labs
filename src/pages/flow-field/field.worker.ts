@@ -116,9 +116,9 @@ function computeField(offset: number, goal: [x: number, y: number]) {
 				for (let j = -1; j <= 1; j++) {
 					if (i === 0 && j === 0) continue
 					const dx = x + i
-					if (dx < x1 || dx >= x2) continue
+					if (dx < x1 || dx > x2) continue
 					const dy = y + j
-					if (dy < y1 || dy >= y2) continue
+					if (dy < y1 || dy > y2) continue
 					const index = dy * side + dx
 					const cost = grid[index]
 					if (cost === maxCost) continue
