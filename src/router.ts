@@ -188,7 +188,7 @@ export const ROUTES = {
 			title: '[WIP] Fragmented A*',
 		},
 		git: {
-			lastModified: 1740872879000,
+			lastModified: 1740912450000,
 			firstAdded: 1727995709000
 		},
 	},

@@ -39,8 +39,30 @@ export default function FragmentedAStar() {
 		const maxCost = 2 ** (GridType.BYTES_PER_ELEMENT * 8) - 1
 		const grid = new GridType(gridBuffer).fill(0)
 
+		{
+			// random obstacles
+			const count = Math.random() * SIDE / 2 + SIDE / 2
+			for (let i = 0; i < count; i++) {
+				const largeSide = Math.random() > 0.5
+				const x1 = Math.floor(Math.random() * SIDE)
+				const x2 = Math.floor(Math.random() * SIDE / (largeSide ? 30 : 8)) + x1
+				const y1 = Math.floor(Math.random() * SIDE)
+				const y2 = Math.floor(Math.random() * SIDE / (largeSide ? 8 : 30)) + y1
+				for (let y = y1; y < y2; y++) {
+					const row = y * SIDE
+					for (let x = x1; x < x2; x++) {
+						grid[row + x] = maxCost
+					}
+				}
+			}
+		}
+
 		const goal = { x: Math.round(SIDE * 1 / 8), y: Math.round(SIDE * 1 / 8) }
-		const from = { x: Math.round(SIDE * 7 / 8), y: Math.round(SIDE * 7 / 8) }
+		const from = { x: 0, y: 0 }
+		do {
+			from.x = Math.floor(Math.random() * SIDE)
+			from.y = Math.floor(Math.random() * SIDE)
+		} while (grid[from.y * SIDE + from.x] === maxCost)
 
 		const graph: Map<number, { islands: Set<Island>, tiles: Map<number, Island> }> = new Map()
 		const path: Island[] = []
