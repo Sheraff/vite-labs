@@ -335,7 +335,7 @@ export default function FragmentedAStar() {
 				path.push(goalIsland)
 				done()
 				return
-			} else if (goalIsland.crossings.size === 0 || fromIsland.crossings.size === 0) {
+			} else if (!goalIsland || !fromIsland || goalIsland.crossings.size === 0 || fromIsland.crossings.size === 0) {
 				done()
 				return
 			}
