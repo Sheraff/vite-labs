@@ -9,7 +9,6 @@ export type Incoming =
 			side: number
 			grid: SharedArrayBuffer
 			field: SharedArrayBuffer
-			integration: SharedArrayBuffer
 			range: [x1: number, x2: number, y1: number, y2: number]
 			index: number
 			wx: number
@@ -20,93 +19,97 @@ export type Incoming =
 	| { type: "query", data: { x: number, y: number } }
 
 
-let side: number
 let grid: Uint8Array
 let field: Uint8Array
 let integration: Uint8Array
-let x1: number
-let x2: number
-let y1: number
-let y2: number
+let xLength: number
+let yLength: number
 let layers: number
-let layerLength: number
 let computed: boolean[]
-let selfSide: number
-let workerIndex: number
-let workerIndexX: number
-let workerIndexY: number
 
 const maxCost = 2 ** (Uint8Array.BYTES_PER_ELEMENT * 8) - 1
 const maxIntegration = 2 ** (Uint8Array.BYTES_PER_ELEMENT * 8) - 1
 
 {
+	let side: number
+	let x1: number
+	let x2: number
+	let y1: number
+	let y2: number
+	let gridBuffer: SharedArrayBuffer
+
 	self.onmessage = (e: MessageEvent<Incoming>) => handleMessage(e.data)
+
+	function copyGrid() {
+		const gridView = new Uint8Array(gridBuffer)
+		for (let y = y1; y <= y2; y++) {
+			const row = y * side
+			for (let x = x1; x <= x2; x++) {
+				const index = row + x
+				grid[(y - y1) * xLength + (x - x1)] = gridView[index]
+			}
+		}
+	}
 
 	function handleMessage(event: Incoming) {
 		if (event.type === "init") {
 			side = event.data.side
-			grid = new Uint8Array(event.data.grid)
-			field = new Uint8Array(event.data.field)
-			integration = new Uint8Array(event.data.integration)
 			x1 = event.data.range[0]
 			x2 = event.data.range[1]
 			y1 = event.data.range[2]
 			y2 = event.data.range[3]
-			selfSide = x2 - x1 + 1
-			layers = selfSide * (y2 - y1 + 1)
-			layerLength = side * side
+			xLength = x2 - x1 + 1
+			yLength = y2 - y1 + 1
+			layers = xLength * yLength
 			computed = new Array(layers).fill(false)
-			workerIndex = event.data.index
-			workerIndexX = event.data.wx
-			workerIndexY = event.data.wy
+			const workerIndex = event.data.index
+			const workerIndexX = event.data.wx
+			const workerIndexY = event.data.wy
+			field = new Uint8Array(event.data.field, workerIndex * layers * layers, layers * layers)
+			integration = new Uint8Array(layers * xLength * yLength).fill(maxIntegration)
+			grid = new Uint8Array(xLength * yLength)
+			gridBuffer = event.data.grid
+			copyGrid()
 			console.log('worker init', workerIndex, {
 				side,
 				x1,
 				x2,
 				y1,
 				y2,
-				selfSide,
 				layers,
-				layerLength,
 				workerIndex,
 				workerIndexX,
 				workerIndexY,
 			})
 		} else if (event.type === "clear") {
-			for (let l = 0; l < layers; l++) {
-				const layer = l * layerLength
-				computed[l] = false
-				for (let y = y1; y <= y2; y++) {
-					const row = y * side + layer
-					for (let x = x1; x <= x2; x++) {
-						const index = row + x
-						integration[index] = maxIntegration
-					}
-				}
-			}
+			integration.fill(maxIntegration)
+			computed.fill(false)
+			copyGrid()
 		} else if (event.type === "query") {
-			compute([event.data.x, event.data.y])
+			const localX = event.data.x - x1
+			const localY = event.data.y - y1
+			compute(localX, localY)
 		}
 	}
 }
 
-function compute(goal: [x: number, y: number]) {
-	const l = (goal[1] - y1) * selfSide + (goal[0] - x1)
+function compute(x: number, y: number) {
+	const l = y * xLength + x
 	if (computed[l]) return
-	const offset = l * layerLength
-	computeIntegration(offset, goal)
-	computeField(offset, goal)
+	const offset = l * layers
+	const integration = computeIntegration(offset, x, y)
+	computeField(offset, x, y, integration)
 	computed[l] = true
 }
 
-function computeField(offset: number, goal: [x: number, y: number]) {
+function computeField(offset: number, goalX: number, goalY: number, integration: Uint8Array) {
 	// const before = performance.now()
-	for (let y = y1; y <= y2; y++) {
-		const row = offset + y * side
-		for (let x = x1; x <= x2; x++) {
+	for (let y = 0; y < yLength; y++) {
+		const row = y * xLength
+		for (let x = 0; x < xLength; x++) {
 			const index = row + x
-			if (x === goal[0] && y === goal[1]) {
-				field[index] = fieldMap[0][0]
+			if (x === goalX && y === goalY) {
+				field[offset + index] = fieldMap[0][0]
 				continue
 			}
 			let min = maxIntegration
@@ -116,13 +119,13 @@ function computeField(offset: number, goal: [x: number, y: number]) {
 				for (let j = -1; j <= 1; j++) {
 					if (i === 0 && j === 0) continue
 					const dx = x + i
-					if (dx < x1 || dx > x2) continue
+					if (dx < 0 || dx >= xLength) continue
 					const dy = y + j
-					if (dy < y1 || dy > y2) continue
-					const index = dy * side + dx
+					if (dy < 0 || dy >= yLength) continue
+					const index = dy * xLength + dx
 					const cost = grid[index]
 					if (cost === maxCost) continue
-					const value = integration[offset + index]
+					const value = integration[index]
 					if (value < min) {
 						min = value
 						minx = i
@@ -130,76 +133,71 @@ function computeField(offset: number, goal: [x: number, y: number]) {
 					}
 				}
 			}
-			field[index] = fieldMap[minx][miny]
+			field[offset + index] = fieldMap[minx][miny]
 		}
 	}
 	// const after = performance.now()
 	// console.log('computeField', workerIndex, after - before)
 }
 
-function computeIntegration(offset: number, goal: [x: number, y: number]) {
+function computeIntegration(offset: number, goalX: number, goalY: number) {
+	const results = new Uint8Array(integration.buffer, offset, layers)
 	// const before = performance.now()
-	const queue = [goal[0], goal[1]]
-	integration[offset + goal[1] * side + goal[0]] = 0
-	// debugger
+	const queue = [goalX, goalY]
+	results[goalY * xLength + goalX] = 0
 	while (queue.length > 0) {
 		const x = queue.shift()!
 		const y = queue.shift()!
-		const gridIndex = y * side + x
-		const index = offset + gridIndex
-		const value = integration[index]
+		const index = y * xLength + x
+		const value = results[index]
 		west: {
-			if (x === x1) break west
-			const gridNeighbor = gridIndex - 1
-			const cost = grid[gridNeighbor] || 1
+			if (x === 0) break west
+			const neighbor = index - 1
+			const cost = grid[neighbor] || 1
 			if (cost !== maxCost) {
 				const next = value + cost
-				const neighbor = index - 1
-				const prev = integration[neighbor]
+				const prev = results[neighbor]
 				if (next < prev) {
-					integration[neighbor] = next
+					results[neighbor] = next
 					queue.push(x - 1, y)
 				}
 			}
 		}
 		east: {
-			if (x === x2) break east
-			const gridNeighbor = gridIndex + 1
-			const cost = grid[gridNeighbor] || 1
+			if (x === xLength - 1) break east
+			const neighbor = index + 1
+			const cost = grid[neighbor] || 1
 			if (cost !== maxCost) {
 				const next = value + cost
-				const neighbor = index + 1
-				const prev = integration[neighbor]
+				const prev = results[neighbor]
 				if (next < prev) {
-					integration[neighbor] = next
+					results[neighbor] = next
 					queue.push(x + 1, y)
 				}
 			}
 		}
 		north: {
-			if (y === y1) break north
-			const gridNeighbor = gridIndex - side
-			const cost = grid[gridNeighbor] || 1
+			if (y === 0) break north
+			const neighbor = index - xLength
+			const cost = grid[neighbor] || 1
 			if (cost !== maxCost) {
 				const next = value + cost
-				const neighbor = index - side
-				const prev = integration[neighbor]
+				const prev = results[neighbor]
 				if (next < prev) {
-					integration[neighbor] = next
+					results[neighbor] = next
 					queue.push(x, y - 1)
 				}
 			}
 		}
 		south: {
-			if (y === y2) break south
-			const gridNeighbor = gridIndex + side
-			const cost = grid[gridNeighbor] || 1
+			if (y === yLength - 1) break south
+			const neighbor = index + xLength
+			const cost = grid[neighbor] || 1
 			if (cost !== maxCost) {
 				const next = value + cost
-				const neighbor = index + side
-				const prev = integration[neighbor]
+				const prev = results[neighbor]
 				if (next < prev) {
-					integration[neighbor] = next
+					results[neighbor] = next
 					queue.push(x, y + 1)
 				}
 			}
@@ -207,4 +205,5 @@ function computeIntegration(offset: number, goal: [x: number, y: number]) {
 	}
 	// const after = performance.now()
 	// console.log('computeIntegration', workerIndex, after - before)
+	return results
 }

@@ -39,17 +39,11 @@ export default function FlowFieldPage() {
 		const workerCount = workersPerRow ** 2
 		const workerSide = SIDE / workersPerRow
 		const layers = workerSide * workerSide
-		const layerLength = layers * workerCount
 
 		const GridType = Uint8Array
 		const gridBuffer = new SharedArrayBuffer(length * GridType.BYTES_PER_ELEMENT)
 		const maxCost = 2 ** (GridType.BYTES_PER_ELEMENT * 8) - 1
 		const grid = new GridType(gridBuffer).fill(0)
-
-		const IntegrationType = Uint8Array
-		const integrationBuffer = new SharedArrayBuffer(length * IntegrationType.BYTES_PER_ELEMENT * layers)
-		const maxIntegration = 2 ** (IntegrationType.BYTES_PER_ELEMENT * 8) - 1
-		new IntegrationType(integrationBuffer).fill(maxIntegration)
 
 		const FieldType = Uint8Array
 		const fieldBuffer = new SharedArrayBuffer(length * FieldType.BYTES_PER_ELEMENT * layers)
@@ -100,7 +94,6 @@ export default function FlowFieldPage() {
 				postFieldWorker(worker, 'init', {
 					field: fieldBuffer,
 					grid: gridBuffer,
-					integration: integrationBuffer,
 					side: SIDE,
 					range: [x1, x2, y1, y2],
 					index: wy * workersPerRow + wx,
@@ -138,16 +131,15 @@ export default function FlowFieldPage() {
 			if (!prev) return
 
 			ctx.clearRect(0, 0, side, side)
-			const colorMaxInt = Math.min(maxIntegration, SIDE * SIDE / 2)
 
 			const goalWorkerX = Math.floor(goal.x / workerSide)
 			const goalWorkerY = Math.floor(goal.y / workerSide)
 			const withinWorkerX = goal.x - goalWorkerX * workerSide
 			const withinWorkerY = goal.y - goalWorkerY * workerSide
-			const offset = (withinWorkerY * workerSide + withinWorkerX) * layerLength
+			const goalWorkerIndex = goalWorkerY * workersPerRow + goalWorkerX
+			const offset = goalWorkerIndex * layers * layers + (withinWorkerY * workerSide + withinWorkerX) * layers
 
-			const goalField = new Uint8Array(fieldBuffer, offset, layerLength)
-			const goalIntegration = new Uint8Array(integrationBuffer, offset, layerLength)
+			const goalField = new Uint8Array(fieldBuffer, offset, layers)
 
 			// draw graph islands
 			for (let y = 0; y < workersPerRow; y++) {
@@ -174,19 +166,18 @@ export default function FlowFieldPage() {
 			}
 
 			// draw flow field
-			for (let y = goalWorkerY * workerSide; y < (goalWorkerY + 1) * workerSide; y++) {
+			for (let y = goalWorkerY * workerSide, localY = 0; y < (goalWorkerY + 1) * workerSide; y++, localY++) {
 				const row = y * SIDE
-				for (let x = goalWorkerX * workerSide; x < (goalWorkerX + 1) * workerSide; x++) {
+				for (let x = goalWorkerX * workerSide, localX = 0; x < (goalWorkerX + 1) * workerSide; x++, localX++) {
 					const index = row + x
 
 					const cost = grid[index]
-					const int = goalIntegration[index] / colorMaxInt * 360
-					ctx.fillStyle = `hsl(${int}, 50%, ${cost / maxCost * 50 + 50}%)`
+					ctx.fillStyle = `hsl(120, 50%, ${cost / maxCost * 50 + 50}%)`
 					ctx.fillRect(x * px, y * px, px, px)
 
 					ctx.strokeStyle = 'black'
 					ctx.fillStyle = 'black'
-					const [dx, dy] = readField(goalField, x, y)
+					const [dx, dy] = reverseFieldMap[goalField[localY * workerSide + localX]]
 					if (dx === 0 && dy === 0) {
 						ctx.beginPath()
 						ctx.arc(x * px + px / 2, y * px + px / 2, pointerLength / 4, 0, Math.PI * 2)
