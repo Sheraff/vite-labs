@@ -20,7 +20,7 @@ import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/scree
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "fragment-portal" | "flow-field" | "flask" | "collision-threads" | "bird-inverse-kinematics" | "ants" | "a-star"
+export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "fragmented-a-star" | "fragment-portal" | "flow-field" | "flask" | "collision-threads" | "bird-inverse-kinematics" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
@@ -180,6 +180,16 @@ export const ROUTES = {
 		git: {
 			lastModified: 1740529871000,
 			firstAdded: 1739742825000
+		},
+	},
+	"fragmented-a-star": {
+		Component: lazy(() => import("./pages/fragmented-a-star/index.tsx")),
+		meta: {
+			title: '[WIP] Fragmented A*',
+		},
+		git: {
+			lastModified: 1740912450000,
+			firstAdded: 1727995709000
 		},
 	},
 	"fragment-portal": {
