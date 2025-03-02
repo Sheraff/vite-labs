@@ -5,13 +5,14 @@ import { useEffect, useRef } from "react"
 import FieldWorker from './field.worker?worker'
 import type { Incoming as FieldIncoming } from './field.worker'
 import { reverseFieldMap } from "@flow-field/utils"
+import { type Graph, type Path, createGraphContext } from "./fragmented-a-star"
 
 export const meta: RouteMeta = {
 	title: 'Flow Field',
 	image: './screen.png'
 }
 
-const SIDE = 64
+const SIDE = 128
 const workersPerRow = 16
 
 if (SIDE % workersPerRow !== 0) {
@@ -73,6 +74,11 @@ export default function FlowFieldPage() {
 		}
 
 		const goal = { x: 15, y: 5 }
+		const from = { x: 0, y: 0 }
+		do {
+			from.x = Math.floor(Math.random() * SIDE)
+			from.y = Math.floor(Math.random() * SIDE)
+		} while (grid[from.y * SIDE + from.x] === maxCost)
 
 		const workers = Array.from({ length: workerCount }, () => new FieldWorker())
 		function postFieldWorker<I extends FieldIncoming["type"]>(
@@ -107,6 +113,21 @@ export default function FlowFieldPage() {
 		const getWorker = (x: number, y: number) => workers[Math.floor(y / workerSide) * workersPerRow + Math.floor(x / workerSide)]
 		postFieldWorker(getWorker(goal.x, goal.y), 'query', goal)
 
+		const graph: Graph = new Map()
+		const path: Path = []
+
+		const { computeGraph, pathFinding } = createGraphContext(
+			workersPerRow,
+			SIDE,
+			workerSide,
+			maxCost,
+			grid,
+			graph,
+		)
+
+		computeGraph()
+		pathFinding(path, from, goal)
+
 		let lastTime = 0
 		let rafId = requestAnimationFrame(function loop(time) {
 			rafId = requestAnimationFrame(loop)
@@ -128,70 +149,164 @@ export default function FlowFieldPage() {
 			const goalField = new Uint8Array(fieldBuffer, offset, layerLength)
 			const goalIntegration = new Uint8Array(integrationBuffer, offset, layerLength)
 
-			for (let y = 0; y < SIDE; y++) {
-				const row = y * SIDE
-				const wy = Math.floor(y / workerSide)
-				for (let x = 0; x < SIDE; x++) {
-					const index = row + x
-					const wx = Math.floor(x / workerSide)
-					const isInGoalWorkerCell = wx === goalWorkerX && wy === goalWorkerY
+			// draw graph islands
+			for (let y = 0; y < workersPerRow; y++) {
+				for (let x = 0; x < workersPerRow; x++) {
+					// draw sections (workers)
+					ctx.strokeStyle = 'purple'
+					ctx.lineWidth = 4 * devicePixelRatio
+					ctx.strokeRect(x * workerSide * px, y * workerSide * px, workerSide * px, workerSide * px)
+					ctx.lineWidth = 1
 
-					// draw background (cell cost)
-					if (isInGoalWorkerCell) {
-						const cost = grid[index]
-						const int = goalIntegration[index] / colorMaxInt * 360
-						ctx.fillStyle = `hsl(${int}, 50%, ${cost / maxCost * 50 + 50}%)`
-						ctx.fillRect(x * px, y * px, px, px)
-					} else {
-						const cost = grid[index]
-						const int = colorMaxInt
-						ctx.fillStyle = `hsl(${int}, 50%, ${cost / maxCost * 50 + 50}%)`
-						ctx.fillRect(x * px, y * px, px, px)
-					}
-
-					// draw direction (flow field)
-					if (isInGoalWorkerCell) {
-						ctx.strokeStyle = 'black'
-						ctx.fillStyle = 'black'
-						const [dx, dy] = readField(goalField, x, y)
-						if (dx === 0 && dy === 0) {
-							ctx.beginPath()
-							ctx.arc(x * px + px / 2, y * px + px / 2, pointerLength / 4, 0, Math.PI * 2)
-							ctx.fill()
-						} else {
-							const angle = Math.atan2(dy, dx)
-							const length = pointerLength / 2
-							const centerX = x * px + px / 2
-							const centerY = y * px + px / 2
-							const xRatio = Math.cos(angle)
-							const yRatio = Math.sin(angle)
-							const endX = centerX + xRatio * length
-							const endY = centerY + yRatio * length
-							const startX = centerX - xRatio * length
-							const startY = centerY - yRatio * length
-							ctx.beginPath()
-							ctx.moveTo(startX, startY)
-							ctx.lineTo(endX, endY)
-							ctx.stroke()
-							ctx.beginPath()
-							ctx.arc(endX, endY, length / 2, 0, Math.PI * 2)
-							ctx.fill()
+					const node = graph.get(y * workersPerRow + x)!
+					const islands = node.islands.values()
+					for (let i = 0; i < node.islands.size; i++) {
+						const island = islands.next().value!
+						const hue = 360 / node.islands.size * i
+						ctx.fillStyle = `oklch(50% 50% ${hue})`
+						for (const tile of island.tiles) {
+							const ty = Math.floor(tile / SIDE)
+							const tx = tile % SIDE
+							ctx.fillRect(tx * px, ty * px, px, px)
 						}
 					}
+				}
+			}
 
-					// draw walls (grid)
-					ctx.strokeStyle = 'white'
-					ctx.strokeRect(x * px, y * px, px, px)
+			// draw flow field
+			for (let y = goalWorkerY * workerSide; y < (goalWorkerY + 1) * workerSide; y++) {
+				const row = y * SIDE
+				for (let x = goalWorkerX * workerSide; x < (goalWorkerX + 1) * workerSide; x++) {
+					const index = row + x
 
-					// draw goal
-					if (x === goal.x && y === goal.y) {
-						ctx.fillStyle = 'red'
+					const cost = grid[index]
+					const int = goalIntegration[index] / colorMaxInt * 360
+					ctx.fillStyle = `hsl(${int}, 50%, ${cost / maxCost * 50 + 50}%)`
+					ctx.fillRect(x * px, y * px, px, px)
+
+					ctx.strokeStyle = 'black'
+					ctx.fillStyle = 'black'
+					const [dx, dy] = readField(goalField, x, y)
+					if (dx === 0 && dy === 0) {
 						ctx.beginPath()
-						ctx.arc(x * px + px / 2, y * px + px / 2, px / 4, 0, Math.PI * 2)
+						ctx.arc(x * px + px / 2, y * px + px / 2, pointerLength / 4, 0, Math.PI * 2)
+						ctx.fill()
+					} else {
+						const angle = Math.atan2(dy, dx)
+						const length = pointerLength / 2
+						const centerX = x * px + px / 2
+						const centerY = y * px + px / 2
+						const xRatio = Math.cos(angle)
+						const yRatio = Math.sin(angle)
+						const endX = centerX + xRatio * length
+						const endY = centerY + yRatio * length
+						const startX = centerX - xRatio * length
+						const startY = centerY - yRatio * length
+						ctx.beginPath()
+						ctx.moveTo(startX, startY)
+						ctx.lineTo(endX, endY)
+						ctx.stroke()
+						ctx.beginPath()
+						ctx.arc(endX, endY, length / 2, 0, Math.PI * 2)
 						ctx.fill()
 					}
 				}
 			}
+
+			// for (let y = 0; y < SIDE; y++) {
+			// 	const row = y * SIDE
+			// 	const wy = Math.floor(y / workerSide)
+			// 	for (let x = 0; x < SIDE; x++) {
+			// 		const index = row + x
+			// 		const wx = Math.floor(x / workerSide)
+			// 		const isInGoalWorkerCell = wx === goalWorkerX && wy === goalWorkerY
+
+			// 		// draw background (cell cost)
+			// 		if (isInGoalWorkerCell) {
+			// 			const cost = grid[index]
+			// 			const int = goalIntegration[index] / colorMaxInt * 360
+			// 			ctx.fillStyle = `hsl(${int}, 50%, ${cost / maxCost * 50 + 50}%)`
+			// 			ctx.fillRect(x * px, y * px, px, px)
+			// 		} else {
+			// 			const cost = grid[index]
+			// 			const int = colorMaxInt
+			// 			ctx.fillStyle = `hsl(${int}, 50%, ${cost / maxCost * 50 + 50}%)`
+			// 			ctx.fillRect(x * px, y * px, px, px)
+			// 		}
+
+			// 		// draw direction (flow field)
+			// 		if (isInGoalWorkerCell) {
+			// 			ctx.strokeStyle = 'black'
+			// 			ctx.fillStyle = 'black'
+			// 			const [dx, dy] = readField(goalField, x, y)
+			// 			if (dx === 0 && dy === 0) {
+			// 				ctx.beginPath()
+			// 				ctx.arc(x * px + px / 2, y * px + px / 2, pointerLength / 4, 0, Math.PI * 2)
+			// 				ctx.fill()
+			// 			} else {
+			// 				const angle = Math.atan2(dy, dx)
+			// 				const length = pointerLength / 2
+			// 				const centerX = x * px + px / 2
+			// 				const centerY = y * px + px / 2
+			// 				const xRatio = Math.cos(angle)
+			// 				const yRatio = Math.sin(angle)
+			// 				const endX = centerX + xRatio * length
+			// 				const endY = centerY + yRatio * length
+			// 				const startX = centerX - xRatio * length
+			// 				const startY = centerY - yRatio * length
+			// 				ctx.beginPath()
+			// 				ctx.moveTo(startX, startY)
+			// 				ctx.lineTo(endX, endY)
+			// 				ctx.stroke()
+			// 				ctx.beginPath()
+			// 				ctx.arc(endX, endY, length / 2, 0, Math.PI * 2)
+			// 				ctx.fill()
+			// 			}
+			// 		}
+
+			// 		// // draw walls (grid)
+			// 		// ctx.strokeStyle = 'white'
+			// 		// ctx.strokeRect(x * px, y * px, px, px)
+
+			// 	}
+			// }
+
+			// draw path
+			if (path.length > 1) {
+				ctx.strokeStyle = 'blue'
+				ctx.lineWidth = 2 * devicePixelRatio
+				ctx.beginPath()
+				ctx.lineTo(from.x * px + px / 2, from.y * px + px / 2)
+				for (let i = 0; i < path.length; i++) {
+					const island = path[i]
+					const [sumX, sumY] = Array.from(island.tiles.keys()).reduce<[x: number, y: number]>((acc, tile) => {
+						acc[0] += tile % SIDE
+						acc[1] += Math.floor(tile / SIDE)
+						return acc
+					}, [0, 0])
+					const avgX = sumX / island.tiles.size
+					const avgY = sumY / island.tiles.size
+					const x = avgX * px
+					const y = avgY * px
+
+					ctx.lineTo(x, y)
+				}
+				ctx.lineTo(goal.x * px + px / 2, goal.y * px + px / 2)
+				ctx.stroke()
+				ctx.lineWidth = 1
+			}
+
+			// draw from
+			ctx.fillStyle = 'green'
+			ctx.beginPath()
+			ctx.arc(from.x * px + px / 2, from.y * px + px / 2, px / 4, 0, Math.PI * 2)
+			ctx.fill()
+
+			// draw goal
+			ctx.fillStyle = 'red'
+			ctx.beginPath()
+			ctx.arc(goal.x * px + px / 2, goal.y * px + px / 2, px / 4, 0, Math.PI * 2)
+			ctx.fill()
 		})
 
 		function readField(array: Uint8Array, x: number, y: number) {
@@ -229,6 +344,7 @@ export default function FlowFieldPage() {
 			if (prev !== undefined && prev !== next) {
 				grid[index] = next
 				postFieldWorker(getWorker(x, y), 'clear', undefined)
+				computeGraph()
 			}
 		}, { signal: controller.signal })
 
@@ -244,22 +360,22 @@ export default function FlowFieldPage() {
 				if (prev !== undefined && prev !== next) {
 					grid[index] = next
 					postFieldWorker(getWorker(x, y), 'clear', undefined)
+					computeGraph()
 				}
 			}
 			moved = false
 		}, { signal: controller.signal })
 
 
-		// canvas.addEventListener('contextmenu', (e) => {
-		// 	e.preventDefault()
-		// 	down = false
-		// 	moved = false
-		// 	const { x, y } = eventToPosition(e)
-		// 	goal.x = x
-		// 	goal.y = y
-		// 	console.log('set goal', x, y)
-		// 	computeIntegration()
-		// }, { signal: controller.signal })
+		canvas.addEventListener('contextmenu', (e) => {
+			e.preventDefault()
+			down = false
+			moved = false
+			const { x, y } = eventToPosition(e)
+			from.x = x
+			from.y = y
+			pathFinding(path, from, goal)
+		}, { signal: controller.signal })
 
 		canvas.addEventListener('pointermove', (e) => {
 			const { x, y } = eventToPosition(e)
@@ -268,6 +384,7 @@ export default function FlowFieldPage() {
 			goal.x = x
 			goal.y = y
 			postFieldWorker(getWorker(x, y), 'query', goal)
+			pathFinding(path, from, goal)
 		}, { signal: controller.signal })
 
 		return () => {

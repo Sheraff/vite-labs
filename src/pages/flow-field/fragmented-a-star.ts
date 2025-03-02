@@ -39,7 +39,7 @@ export function createGraphContext(
 	 * Store boundaries and islands in a way that allows for A* to be run on them
 	 */
 	function computeGraph() {
-		const before = performance.now()
+		// const before = performance.now()
 		let workerIndex = 0
 		for (let wy = 0; wy < workersPerRow; wy++) {
 			const y1 = wy * workerSide
@@ -203,8 +203,8 @@ export function createGraphContext(
 				workerIndex++
 			}
 		}
-		const after = performance.now()
-		console.log(`computeGraph took ${after - before}ms`)
+		// const after = performance.now()
+		// console.log(`computeGraph took ${after - before}ms`)
 	}
 
 	function pathFinding(
@@ -212,7 +212,7 @@ export function createGraphContext(
 		from: { x: number, y: number },
 		goal: { x: number, y: number },
 	) {
-		const before = performance.now()
+		// const before = performance.now()
 		path.length = 0
 
 		const goalIndex = goal.y * SIDE + goal.x
@@ -223,17 +223,17 @@ export function createGraphContext(
 		const workerFromIndex = Math.floor(from.x / workerSide) + Math.floor(from.y / workerSide) * workersPerRow
 		const fromIsland = graph.get(workerFromIndex)!.tiles.get(fromIndex)!
 
-		const done = () => {
-			const after = performance.now()
-			console.log(`pathFinding took ${(after - before).toFixed(2)}ms`)
-		}
+		// const done = () => {
+		// 	const after = performance.now()
+		// 	console.log(`pathFinding took ${(after - before).toFixed(2)}ms`)
+		// }
 
 		if (goalIsland === fromIsland) {
 			path.push(goalIsland)
-			done()
+			// done()
 			return
 		} else if (!goalIsland || !fromIsland || goalIsland.crossings.size === 0 || fromIsland.crossings.size === 0) {
-			done()
+			// done()
 			return
 		}
 
@@ -301,7 +301,7 @@ export function createGraphContext(
 				}
 			}
 		}
-		done()
+		// done()
 	}
 
 	return {
