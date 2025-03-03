@@ -10,8 +10,8 @@ export type Island = {
 	id: number
 }
 
-export type Graph = Map<number, { islands: Set<Island>, tiles: Map<number, Island> }>
-export type Path = Island[]
+type Graph = Map<number, { islands: Set<Island>, tiles: Map<number, Island> }>
+type Path = Island[]
 
 export type Incoming =
 	| {
@@ -32,7 +32,9 @@ export type Incoming =
 			goal: { x: number, y: number }
 		}
 	}
+	| { type: 'request-graph', data: undefined }
 
+export type SerializedGraph = Array<{ index: number, islands: Array<{ wx: number, wy: number, tiles: number[] }> }>
 export type SerializedPath = Array<{ wx: number, wy: number, tiles: number[], crossings: number[] }>
 export type Outgoing =
 	| {
@@ -43,6 +45,7 @@ export type Outgoing =
 			goal: { x: number, y: number }
 		}
 	}
+	| { type: 'graph', data: { graph: SerializedGraph } }
 
 const graph: Graph = new Map()
 
@@ -85,6 +88,14 @@ let grid: Uint8Array
 				}
 				self.postMessage(response) // send the response back to the main thread
 			}, 1)
+		} else if (event.type === 'request-graph') {
+			const response: Outgoing = {
+				type: 'graph',
+				data: {
+					graph: serializeGraph()
+				}
+			}
+			self.postMessage(response)
 		}
 	}
 }
@@ -107,6 +118,19 @@ function serializePath(path: Path): SerializedPath {
 	return serialized
 }
 
+function serializeGraph(): SerializedGraph {
+	const serialized: SerializedGraph = []
+	for (const [index, { islands }] of graph.entries()) {
+		const serializedIslands = Array.from(islands).map(island => ({
+			wx: island.wx,
+			wy: island.wy,
+			tiles: Array.from(island.tiles),
+		}))
+		serialized.push({ index, islands: serializedIslands })
+	}
+	serialized.sort((a, b) => a.index - b.index)
+	return serialized
+}
 
 
 

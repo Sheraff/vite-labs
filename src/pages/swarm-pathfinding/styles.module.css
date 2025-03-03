@@ -15,6 +15,14 @@
 		border: 1px solid white;
 		aspect-ratio: 1;
 		width: 100lvmin;
+		z-index: 0;
+	}
+
+	form {
+		position: fixed;
+		top: 1em;
+		right: 1em;
+		z-index: 1;
 	}
 }
 

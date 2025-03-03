@@ -6,7 +6,12 @@ import FieldWorker from './field.worker?worker'
 import type { Incoming as FieldIncoming } from './field.worker'
 import { fieldMap, ratioFieldMap } from "./utils"
 import GraphWorker from "./fragmented-a-star.worker?worker"
-import { type Incoming as GraphIncoming, type Outgoing as GraphOutgoing, type SerializedPath } from "./fragmented-a-star.worker"
+import type {
+	Incoming as GraphIncoming,
+	Outgoing as GraphOutgoing,
+	SerializedGraph,
+	SerializedPath,
+} from "./fragmented-a-star.worker"
 
 export const meta: RouteMeta = {
 	title: 'Swarm Pathfinding',
@@ -22,6 +27,7 @@ if (SIDE % workersPerRow !== 0) {
 
 export default function SwarmPathfindingPage() {
 	const ref = useRef<HTMLCanvasElement | null>(null)
+	const formRef = useRef<HTMLFormElement | null>(null)
 
 	useEffect(() => {
 		const base = Math.min(window.innerWidth, window.innerHeight)
@@ -36,6 +42,11 @@ export default function SwarmPathfindingPage() {
 		canvas.height = side
 		const ctx = canvas.getContext('2d')
 		if (!ctx) return
+
+		const form = formRef.current
+		if (!form) return
+
+		const controller = new AbortController()
 
 		const workerCount = workersPerRow ** 2
 		const workerSide = SIDE / workersPerRow
@@ -74,6 +85,15 @@ export default function SwarmPathfindingPage() {
 			from.x = Math.floor(Math.random() * SIDE)
 			from.y = Math.floor(Math.random() * SIDE)
 		} while (grid[from.y * SIDE + from.x] === maxCost)
+
+		const options = {
+			geometry: true
+		}
+		const onForm = () => {
+			options.geometry = 'geometry' in form.elements && form.elements.geometry instanceof HTMLInputElement ? form.elements.geometry.checked : false
+		}
+		form.addEventListener('input', onForm)
+		onForm()
 
 		const pathFinding = createGraphWorkerCacheLayer({
 			grid,
@@ -129,6 +149,7 @@ export default function SwarmPathfindingPage() {
 				side,
 				workerSide,
 				pointerLength,
+				options,
 			})
 			entities.push(entity)
 		}
@@ -151,43 +172,53 @@ export default function SwarmPathfindingPage() {
 
 			ctx.clearRect(0, 0, side, side)
 
-			// // draw graph islands
-			// for (let y = 0; y < workersPerRow; y++) {
-			// 	for (let x = 0; x < workersPerRow; x++) {
-			// 		// draw sections (workers)
-			// 		ctx.strokeStyle = 'purple'
-			// 		ctx.lineWidth = 4 * devicePixelRatio
-			// 		ctx.strokeRect(x * workerSide * px, y * workerSide * px, workerSide * px, workerSide * px)
-			// 		ctx.lineWidth = 1
-
-			// 		const node = graph.get(y * workersPerRow + x)!
-			// 		const islands = node.islands.values()
-			// 		for (let i = 0; i < node.islands.size; i++) {
-			// 			const island = islands.next().value!
-			// 			const hue = 360 / node.islands.size * i
-			// 			ctx.fillStyle = `oklch(50% 50% ${hue})`
-			// 			for (const tile of island.tiles) {
-			// 				const ty = Math.floor(tile / SIDE)
-			// 				const tx = tile % SIDE
-			// 				ctx.fillRect(tx * px, ty * px, px, px)
-			// 			}
-			// 		}
-			// 	}
-			// }
-			for (let y = 0; y < SIDE; y++) {
-				const row = y * SIDE
-				for (let x = 0; x < SIDE; x++) {
-					const index = row + x
-					const cost = grid[index]
-					if (cost === maxCost) {
-						ctx.fillStyle = 'white'
-						ctx.fillRect(x * px + px / 4, y * px + px / 4, px / 2, px / 2)
+			if (options.geometry) {
+				// draw graph islands
+				const graph = pathFinding.getGraph()
+				if (graph) {
+					for (let y = 0; y < workersPerRow; y++) {
+						for (let x = 0; x < workersPerRow; x++) {
+							// draw sections (workers)
+							ctx.strokeStyle = 'purple'
+							ctx.lineWidth = 4 * devicePixelRatio
+							ctx.strokeRect(x * workerSide * px, y * workerSide * px, workerSide * px, workerSide * px)
+							ctx.lineWidth = 1
+							const nodeIndex = y * workersPerRow + x
+							const node = graph[nodeIndex]
+							const islands = node.islands
+							for (let i = 0; i < node.islands.length; i++) {
+								const island = islands[i]
+								const hue = 360 / node.islands.length * i
+								ctx.fillStyle = `oklch(50% 50% ${hue})`
+								for (const tile of island.tiles) {
+									const ty = Math.floor(tile / SIDE)
+									const tx = tile % SIDE
+									ctx.fillRect(tx * px, ty * px, px, px)
+								}
+							}
+						}
+					}
+				}
+			} else {
+				for (let y = 0; y < SIDE; y++) {
+					const row = y * SIDE
+					for (let x = 0; x < SIDE; x++) {
+						const index = row + x
+						const cost = grid[index]
+						if (cost === maxCost) {
+							ctx.fillStyle = 'white'
+							ctx.fillRect(x * px + px / 4, y * px + px / 4, px / 2, px / 2)
+						}
 					}
 				}
 			}
 
-			for (const entity of entities) {
-				entity.draw(ctx)
+			if (options.geometry) {
+				entities[0].draw(ctx)
+			} else {
+				for (const entity of entities) {
+					entity.draw(ctx)
+				}
 			}
 
 			// // draw flow field
@@ -263,8 +294,6 @@ export default function SwarmPathfindingPage() {
 			// ctx.arc(goal.x * px + px / 2, goal.y * px + px / 2, px / 4, 0, Math.PI * 2)
 			// ctx.fill()
 		})
-
-		const controller = new AbortController()
 
 		const eventToPosition = (e: PointerEvent | MouseEvent) => {
 			const { left, top } = canvas.getBoundingClientRect()
@@ -352,6 +381,15 @@ export default function SwarmPathfindingPage() {
 			<canvas width="1000" height="1000" ref={ref}>
 				Your browser does not support the HTML5 canvas tag.
 			</canvas>
+			<form ref={formRef}>
+				<fieldset>
+					<legend>options</legend>
+					<label>
+						<input type="checkbox" name="geometry" />
+						show geometry
+					</label>
+				</fieldset>
+			</form>
 		</div>
 	)
 }
@@ -365,6 +403,7 @@ function createGraphWorkerCacheLayer(init: {
 }) {
 	const worker = new GraphWorker()
 	const cache = new Map<string, SerializedPath | 'pending' | 'not-found'>()
+	let latestGraph: SerializedGraph | undefined
 
 	function postGraphWorker<I extends GraphIncoming["type"]>(
 		type: I,
@@ -381,6 +420,9 @@ function createGraphWorkerCacheLayer(init: {
 			if (cache.has(key)) {
 				cache.set(key, path || 'not-found')
 			}
+		} else if (e.data.type === 'graph') {
+			const { graph } = e.data.data
+			latestGraph = graph
 		}
 	})
 
@@ -403,6 +445,7 @@ function createGraphWorkerCacheLayer(init: {
 	function graph() {
 		postGraphWorker('graph', undefined)
 		cache.clear()
+		latestGraph = undefined
 	}
 	graph()
 
@@ -416,10 +459,16 @@ function createGraphWorkerCacheLayer(init: {
 		return 'pending'
 	}
 
+	function getGraph() {
+		if (latestGraph) return latestGraph
+		postGraphWorker('request-graph', undefined)
+	}
+
 	return {
 		kill,
 		graph,
 		query,
+		getGraph,
 	}
 }
 
@@ -547,6 +596,9 @@ function makeEntity(x: number, y: number, init: {
 	getWorker: (x: number, y: number) => ReturnType<typeof createFieldWorkerCacheLayer> | undefined,
 	pathFinding: ReturnType<typeof createGraphWorkerCacheLayer>
 	pointerLength: number
+	options: {
+		geometry: boolean
+	}
 }) {
 	// in pixels
 	const position = { x: x * init.px + init.px / 2, y: y * init.px + init.px / 2 }
@@ -688,75 +740,81 @@ function makeEntity(x: number, y: number, init: {
 	}
 
 	function draw(ctx: CanvasRenderingContext2D) {
-		// const { px, pointerLength, workerSide } = init
+		if (init.options.geometry) {
+			const { px, pointerLength, workerSide } = init
 
-		// // draw path
-		// if (path.length > 1) {
-		// 	ctx.strokeStyle = 'blue'
-		// 	ctx.lineWidth = 2 * devicePixelRatio
-		// 	ctx.beginPath()
-		// 	ctx.lineTo(start.x * px + px / 2, start.y * px + px / 2)
-		// 	for (let i = 0; i < path.length; i++) {
-		// 		const island = path[i]
-		// 		const [sumX, sumY] = Array.from(island.tiles.keys()).reduce<[x: number, y: number]>((acc, tile) => {
-		// 			acc[0] += tile % SIDE
-		// 			acc[1] += Math.floor(tile / SIDE)
-		// 			return acc
-		// 		}, [0, 0])
-		// 		const avgX = sumX / island.tiles.size
-		// 		const avgY = sumY / island.tiles.size
-		// 		const x = avgX * px
-		// 		const y = avgY * px
+			// draw path
+			let path = init.pathFinding.query(start, goal)
+			if (path === 'pending' && latestPath) {
+				path = latestPath
+			}
+			if (typeof path !== 'string' && path.length > 1) {
+				ctx.strokeStyle = 'blue'
+				ctx.lineWidth = 2 * devicePixelRatio
+				ctx.beginPath()
+				// ctx.lineTo(start.x * px + px / 2, start.y * px + px / 2)
+				for (let i = 0; i < path.length; i++) {
+					const island = path[i]
+					const [sumX, sumY] = island.tiles.reduce<[x: number, y: number]>((acc, tile) => {
+						acc[0] += tile % SIDE
+						acc[1] += Math.floor(tile / SIDE)
+						return acc
+					}, [0, 0])
+					const avgX = sumX / island.tiles.length
+					const avgY = sumY / island.tiles.length
+					const x = avgX * px
+					const y = avgY * px
 
-		// 		ctx.lineTo(x, y)
-		// 	}
-		// 	ctx.lineTo(goal.x * px + px / 2, goal.y * px + px / 2)
-		// 	ctx.stroke()
-		// 	ctx.lineWidth = 1
-		// }
+					ctx.lineTo(x, y)
+				}
+				// ctx.lineTo(goal.x * px + px / 2, goal.y * px + px / 2)
+				ctx.stroke()
+				ctx.lineWidth = 1
+			}
 
-		// // draw flow field
-		// const worker = latestWorker
-		// const field = latestField
-		// if (field && worker) {
-		// 	for (let y = worker.wy * workerSide, localY = 0; y < (worker.wy + 1) * workerSide; y++, localY++) {
-		// 		for (let x = worker.wx * workerSide, localX = 0; x < (worker.wx + 1) * workerSide; x++, localX++) {
-		// 			ctx.strokeStyle = 'white'
-		// 			ctx.fillStyle = 'white'
-		// 			const [dx, dy] = ratioFieldMap[field[localY * workerSide + localX]]
-		// 			if (dx === 0 && dy === 0) {
-		// 				ctx.beginPath()
-		// 				ctx.arc(x * px + px / 2, y * px + px / 2, pointerLength / 4, 0, Math.PI * 2)
-		// 				ctx.fill()
-		// 			} else {
-		// 				const length = pointerLength / 2
-		// 				const centerX = x * px + px / 2
-		// 				const centerY = y * px + px / 2
-		// 				const endX = centerX + dx * length
-		// 				const endY = centerY + dy * length
-		// 				const startX = centerX - dx * length
-		// 				const startY = centerY - dy * length
-		// 				ctx.beginPath()
-		// 				ctx.moveTo(startX, startY)
-		// 				ctx.lineTo(endX, endY)
-		// 				ctx.stroke()
-		// 				ctx.beginPath()
-		// 				ctx.arc(endX, endY, length / 2, 0, Math.PI * 2)
-		// 				ctx.fill()
-		// 			}
-		// 		}
-		// 	}
-		// }
+			// draw flow field
+			const worker = latestWorker
+			const field = latestField
+			if (field && worker) {
+				for (let y = worker.wy * workerSide, localY = 0; y < (worker.wy + 1) * workerSide; y++, localY++) {
+					for (let x = worker.wx * workerSide, localX = 0; x < (worker.wx + 1) * workerSide; x++, localX++) {
+						ctx.strokeStyle = 'white'
+						ctx.fillStyle = 'white'
+						const [dx, dy] = ratioFieldMap[field[localY * workerSide + localX]]
+						if (dx === 0 && dy === 0) {
+							ctx.beginPath()
+							ctx.arc(x * px + px / 2, y * px + px / 2, pointerLength / 4, 0, Math.PI * 2)
+							ctx.fill()
+						} else {
+							const length = pointerLength / 2
+							const centerX = x * px + px / 2
+							const centerY = y * px + px / 2
+							const endX = centerX + dx * length
+							const endY = centerY + dy * length
+							const startX = centerX - dx * length
+							const startY = centerY - dy * length
+							ctx.beginPath()
+							ctx.moveTo(startX, startY)
+							ctx.lineTo(endX, endY)
+							ctx.stroke()
+							ctx.beginPath()
+							ctx.arc(endX, endY, length / 2, 0, Math.PI * 2)
+							ctx.fill()
+						}
+					}
+				}
+			}
 
-		// ctx.fillStyle = 'blue'
-		// ctx.beginPath()
-		// ctx.arc(start.x * init.px + init.px / 2, start.y * init.px + init.px / 2, init.px / 4, 0, Math.PI * 2)
-		// ctx.fill()
+			ctx.fillStyle = 'blue'
+			ctx.beginPath()
+			ctx.arc(start.x * init.px + init.px / 2, start.y * init.px + init.px / 2, init.px / 4, 0, Math.PI * 2)
+			ctx.fill()
 
-		// ctx.fillStyle = 'red'
-		// ctx.beginPath()
-		// ctx.arc(goal.x * init.px + init.px / 2, goal.y * init.px + init.px / 2, init.px / 4, 0, Math.PI * 2)
-		// ctx.fill()
+			ctx.fillStyle = 'red'
+			ctx.beginPath()
+			ctx.arc(goal.x * init.px + init.px / 2, goal.y * init.px + init.px / 2, init.px / 4, 0, Math.PI * 2)
+			ctx.fill()
+		}
 
 		ctx.fillStyle = 'green'
 		ctx.beginPath()
