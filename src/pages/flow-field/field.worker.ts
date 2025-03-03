@@ -67,24 +67,24 @@ const maxIntegration = 2 ** (Uint8Array.BYTES_PER_ELEMENT * 8) - 1
 			yLength = y2 - y1 + 1
 			layers = xLength * yLength
 			const workerIndex = event.data.index
-			const workerIndexX = event.data.wx
-			const workerIndexY = event.data.wy
+			// const workerIndexX = event.data.wx
+			// const workerIndexY = event.data.wy
 			field = new Uint8Array(event.data.field, workerIndex * layers * layers, layers * layers)
 			integration = new Uint8Array(layers * xLength * yLength).fill(maxIntegration)
 			grid = new Uint8Array(xLength * yLength)
 			gridBuffer = event.data.grid
 			copyGrid()
-			console.log('worker init', workerIndex, {
-				side,
-				x1,
-				x2,
-				y1,
-				y2,
-				layers,
-				workerIndex,
-				workerIndexX,
-				workerIndexY,
-			})
+			// console.log('worker init', workerIndex, {
+			// 	side,
+			// 	x1,
+			// 	x2,
+			// 	y1,
+			// 	y2,
+			// 	layers,
+			// 	workerIndex,
+			// 	workerIndexX,
+			// 	workerIndexY,
+			// })
 		} else if (event.type === "clear") {
 			integration.fill(maxIntegration)
 			copyGrid()

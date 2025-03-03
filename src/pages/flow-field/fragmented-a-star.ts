@@ -6,6 +6,7 @@ export type Island = {
 	wx: number
 	wy: number
 	tiles: Set<number>
+	id: number
 }
 
 export type Graph = Map<number, { islands: Set<Island>, tiles: Map<number, Island> }>
@@ -26,6 +27,7 @@ export function createGraphContext(
 	graph: Graph,
 ) {
 
+	const cache = new Map<string, Path>()
 
 	/**
 	 * For each section (worker),
@@ -40,7 +42,9 @@ export function createGraphContext(
 	 */
 	function computeGraph() {
 		// const before = performance.now()
+		cache.clear()
 		let workerIndex = 0
+		let id = 0
 		for (let wy = 0; wy < workersPerRow; wy++) {
 			const y1 = wy * workerSide
 			const y2 = y1 + workerSide - 1
@@ -70,6 +74,7 @@ export function createGraphContext(
 							workerIndex,
 							wx,
 							wy,
+							id: id++,
 						}
 						workerTiles.set(index, island)
 						islandTiles.add(index)
@@ -212,7 +217,6 @@ export function createGraphContext(
 		from: { x: number, y: number },
 		goal: { x: number, y: number },
 	) {
-		// const before = performance.now()
 		path.length = 0
 
 		const goalIndex = goal.y * SIDE + goal.x
@@ -223,17 +227,21 @@ export function createGraphContext(
 		const workerFromIndex = Math.floor(from.x / workerSide) + Math.floor(from.y / workerSide) * workersPerRow
 		const fromIsland = graph.get(workerFromIndex)!.tiles.get(fromIndex)!
 
-		// const done = () => {
-		// 	const after = performance.now()
-		// 	console.log(`pathFinding took ${(after - before).toFixed(2)}ms`)
-		// }
+		const key = goalIsland && fromIsland && `${fromIsland.id},${goalIsland.id}`
+		if (key) {
+			const existing = cache.get(key)
+			if (existing) {
+				path.push(...existing)
+				return
+			}
+		}
 
 		if (goalIsland === fromIsland) {
 			path.push(goalIsland)
-			// done()
+			if (key) cache.set(key, [...path])
 			return
-		} else if (!goalIsland || !fromIsland || goalIsland.crossings.size === 0 || fromIsland.crossings.size === 0) {
-			// done()
+		} else if (!key || !goalIsland || !fromIsland || goalIsland.crossings.size === 0 || fromIsland.crossings.size === 0) {
+			if (key) cache.set(key, [])
 			return
 		}
 
@@ -248,6 +256,7 @@ export function createGraphContext(
 			}
 			path.push(c)
 			path.reverse()
+			cache.set(key, [...path])
 		}
 
 		const start = fromIsland
@@ -301,7 +310,6 @@ export function createGraphContext(
 				}
 			}
 		}
-		// done()
 	}
 
 	return {

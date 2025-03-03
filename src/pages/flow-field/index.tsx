@@ -4,7 +4,7 @@ import { Head } from "~/components/Head"
 import { useEffect, useRef } from "react"
 import FieldWorker from './field.worker?worker'
 import type { Incoming as FieldIncoming } from './field.worker'
-import { reverseFieldMap } from "@flow-field/utils"
+import { fieldMap, ratioFieldMap, reverseFieldMap } from "@flow-field/utils"
 import { type Graph, type Path, createGraphContext } from "./fragmented-a-star"
 
 export const meta: RouteMeta = {
@@ -47,11 +47,11 @@ export default function FlowFieldPage() {
 
 		const FieldType = Uint8Array
 		const fieldBuffer = new SharedArrayBuffer(length * FieldType.BYTES_PER_ELEMENT * layers)
-		new FieldType(fieldBuffer).fill(0)
+		new FieldType(fieldBuffer).fill(fieldMap[0][0])
 
 		{
 			// random obstacles
-			const count = Math.random() * SIDE / 2 + SIDE / 2
+			const count = Math.random() * SIDE * 2 + SIDE * 2
 			for (let i = 0; i < count; i++) {
 				const largeSide = Math.random() > 0.5
 				const x1 = Math.floor(Math.random() * SIDE)
@@ -112,16 +112,35 @@ export default function FlowFieldPage() {
 		)
 
 		computeGraph()
-		pathFinding(path, from, goal)
+		// pathFinding(path, from, goal)
+
+		const entity = makeEntity(from.x, from.y, {
+			SIDE,
+			getWorker,
+			grid,
+			maxCost,
+			pathFinding,
+			px,
+			side,
+			workerSide,
+			pointerLength,
+		})
 
 		let lastTime = 0
-		let rafId = requestAnimationFrame(function loop(time) {
+		console.log('------ start ------')
+		let rafId: number
+		const timeoutId = setTimeout(() => {
+			rafId = requestAnimationFrame(loop)
+		}, 1000)
+		function loop(time: number) {
 			rafId = requestAnimationFrame(loop)
 
 			const prev = lastTime
 			const dt = time - lastTime
 			lastTime = time
-			if (!prev) return
+			if (!prev || !ctx) return
+
+			entity.update(dt)
 
 			ctx.clearRect(0, 0, side, side)
 
@@ -149,75 +168,17 @@ export default function FlowFieldPage() {
 				}
 			}
 
-			// draw flow field
-			const worker = getWorker(goal.x, goal.y)
-			const goalField = worker?.read([[goal.x, goal.y]])
+			entity.draw(ctx)
 
-			if (goalField && worker)
-				for (let y = worker.wy * workerSide, localY = 0; y < (worker.wy + 1) * workerSide; y++, localY++) {
-					const row = y * SIDE
-					for (let x = worker.wx * workerSide, localX = 0; x < (worker.wx + 1) * workerSide; x++, localX++) {
-						const index = row + x
-
-						const cost = grid[index]
-						ctx.fillStyle = `hsl(120, 50%, ${cost / maxCost * 50 + 50}%)`
-						ctx.fillRect(x * px, y * px, px, px)
-
-						ctx.strokeStyle = 'black'
-						ctx.fillStyle = 'black'
-						const [dx, dy] = reverseFieldMap[goalField[localY * workerSide + localX]]
-						if (dx === 0 && dy === 0) {
-							ctx.beginPath()
-							ctx.arc(x * px + px / 2, y * px + px / 2, pointerLength / 4, 0, Math.PI * 2)
-							ctx.fill()
-						} else {
-							const angle = Math.atan2(dy, dx)
-							const length = pointerLength / 2
-							const centerX = x * px + px / 2
-							const centerY = y * px + px / 2
-							const xRatio = Math.cos(angle)
-							const yRatio = Math.sin(angle)
-							const endX = centerX + xRatio * length
-							const endY = centerY + yRatio * length
-							const startX = centerX - xRatio * length
-							const startY = centerY - yRatio * length
-							ctx.beginPath()
-							ctx.moveTo(startX, startY)
-							ctx.lineTo(endX, endY)
-							ctx.stroke()
-							ctx.beginPath()
-							ctx.arc(endX, endY, length / 2, 0, Math.PI * 2)
-							ctx.fill()
-						}
-					}
-				}
-
-			// for (let y = 0; y < SIDE; y++) {
-			// 	const row = y * SIDE
-			// 	const wy = Math.floor(y / workerSide)
-			// 	for (let x = 0; x < SIDE; x++) {
-			// 		const index = row + x
-			// 		const wx = Math.floor(x / workerSide)
-			// 		const isInGoalWorkerCell = wx === goalWorkerX && wy === goalWorkerY
-
-			// 		// draw background (cell cost)
-			// 		if (isInGoalWorkerCell) {
-			// 			const cost = grid[index]
-			// 			const int = goalIntegration[index] / colorMaxInt * 360
-			// 			ctx.fillStyle = `hsl(${int}, 50%, ${cost / maxCost * 50 + 50}%)`
-			// 			ctx.fillRect(x * px, y * px, px, px)
-			// 		} else {
-			// 			const cost = grid[index]
-			// 			const int = colorMaxInt
-			// 			ctx.fillStyle = `hsl(${int}, 50%, ${cost / maxCost * 50 + 50}%)`
-			// 			ctx.fillRect(x * px, y * px, px, px)
-			// 		}
-
-			// 		// draw direction (flow field)
-			// 		if (isInGoalWorkerCell) {
-			// 			ctx.strokeStyle = 'black'
-			// 			ctx.fillStyle = 'black'
-			// 			const [dx, dy] = readField(goalField, x, y)
+			// // draw flow field
+			// const worker = getWorker(goal.x, goal.y)
+			// const goalField = worker?.read([[goal.x, goal.y]])
+			// if (goalField && worker) {
+			// 	for (let y = worker.wy * workerSide, localY = 0; y < (worker.wy + 1) * workerSide; y++, localY++) {
+			// 		for (let x = worker.wx * workerSide, localX = 0; x < (worker.wx + 1) * workerSide; x++, localX++) {
+			// 			ctx.strokeStyle = 'white'
+			// 			ctx.fillStyle = 'white'
+			// 			const [dx, dy] = reverseFieldMap[goalField[localY * workerSide + localX]]
 			// 			if (dx === 0 && dy === 0) {
 			// 				ctx.beginPath()
 			// 				ctx.arc(x * px + px / 2, y * px + px / 2, pointerLength / 4, 0, Math.PI * 2)
@@ -242,51 +203,46 @@ export default function FlowFieldPage() {
 			// 				ctx.fill()
 			// 			}
 			// 		}
-
-			// 		// // draw walls (grid)
-			// 		// ctx.strokeStyle = 'white'
-			// 		// ctx.strokeRect(x * px, y * px, px, px)
-
 			// 	}
 			// }
 
-			// draw path
-			if (path.length > 1) {
-				ctx.strokeStyle = 'blue'
-				ctx.lineWidth = 2 * devicePixelRatio
-				ctx.beginPath()
-				ctx.lineTo(from.x * px + px / 2, from.y * px + px / 2)
-				for (let i = 0; i < path.length; i++) {
-					const island = path[i]
-					const [sumX, sumY] = Array.from(island.tiles.keys()).reduce<[x: number, y: number]>((acc, tile) => {
-						acc[0] += tile % SIDE
-						acc[1] += Math.floor(tile / SIDE)
-						return acc
-					}, [0, 0])
-					const avgX = sumX / island.tiles.size
-					const avgY = sumY / island.tiles.size
-					const x = avgX * px
-					const y = avgY * px
+			// // draw path
+			// if (path.length > 1) {
+			// 	ctx.strokeStyle = 'blue'
+			// 	ctx.lineWidth = 2 * devicePixelRatio
+			// 	ctx.beginPath()
+			// 	ctx.lineTo(from.x * px + px / 2, from.y * px + px / 2)
+			// 	for (let i = 0; i < path.length; i++) {
+			// 		const island = path[i]
+			// 		const [sumX, sumY] = Array.from(island.tiles.keys()).reduce<[x: number, y: number]>((acc, tile) => {
+			// 			acc[0] += tile % SIDE
+			// 			acc[1] += Math.floor(tile / SIDE)
+			// 			return acc
+			// 		}, [0, 0])
+			// 		const avgX = sumX / island.tiles.size
+			// 		const avgY = sumY / island.tiles.size
+			// 		const x = avgX * px
+			// 		const y = avgY * px
 
-					ctx.lineTo(x, y)
-				}
-				ctx.lineTo(goal.x * px + px / 2, goal.y * px + px / 2)
-				ctx.stroke()
-				ctx.lineWidth = 1
-			}
+			// 		ctx.lineTo(x, y)
+			// 	}
+			// 	ctx.lineTo(goal.x * px + px / 2, goal.y * px + px / 2)
+			// 	ctx.stroke()
+			// 	ctx.lineWidth = 1
+			// }
 
-			// draw from
-			ctx.fillStyle = 'green'
-			ctx.beginPath()
-			ctx.arc(from.x * px + px / 2, from.y * px + px / 2, px / 4, 0, Math.PI * 2)
-			ctx.fill()
+			// // draw from
+			// ctx.fillStyle = 'green'
+			// ctx.beginPath()
+			// ctx.arc(from.x * px + px / 2, from.y * px + px / 2, px / 4, 0, Math.PI * 2)
+			// ctx.fill()
 
-			// draw goal
-			ctx.fillStyle = 'red'
-			ctx.beginPath()
-			ctx.arc(goal.x * px + px / 2, goal.y * px + px / 2, px / 4, 0, Math.PI * 2)
-			ctx.fill()
-		})
+			// // draw goal
+			// ctx.fillStyle = 'red'
+			// ctx.beginPath()
+			// ctx.arc(goal.x * px + px / 2, goal.y * px + px / 2, px / 4, 0, Math.PI * 2)
+			// ctx.fill()
+		}
 
 		const controller = new AbortController()
 
@@ -347,7 +303,7 @@ export default function FlowFieldPage() {
 			const { x, y } = eventToPosition(e)
 			from.x = x
 			from.y = y
-			pathFinding(path, from, goal)
+			// pathFinding(path, from, goal)
 		}, { signal: controller.signal })
 
 		canvas.addEventListener('pointermove', (e) => {
@@ -356,13 +312,15 @@ export default function FlowFieldPage() {
 			if (grid[y * SIDE + x] === maxCost) return
 			goal.x = x
 			goal.y = y
-			getWorker(x, y)?.query([[goal.x, goal.y]])
-			pathFinding(path, from, goal)
+			// getWorker(x, y)?.query([[goal.x, goal.y]])
+			// pathFinding(path, from, goal)
 		}, { signal: controller.signal })
 
 		return () => {
 			cancelAnimationFrame(rafId)
 			controller.abort()
+			workers.forEach(worker => worker.kill())
+			clearTimeout(timeoutId)
 		}
 	}, [])
 
@@ -427,6 +385,8 @@ function createWorkerCacheLayer(
 	function clear() {
 		map.clear()
 		keys.length = 0
+		const all = new Uint8Array(init.fieldBuffer, init.offset, layers * layers * maxSize)
+		all.fill(fieldMap[0][0])
 		postFieldWorker(worker, 'clear', undefined)
 	}
 
@@ -436,7 +396,6 @@ function createWorkerCacheLayer(
 
 		// from cache
 		if (index !== undefined) {
-			// postFieldWorker(worker, 'query', { goals, layer: index })
 			return
 		}
 
@@ -447,6 +406,9 @@ function createWorkerCacheLayer(
 			map.delete(oldKey)
 			map.set(key, index)
 			keys.push(key)
+			const offset = init.offset + index * layers
+			const layer = new Uint8Array(init.fieldBuffer, offset * Uint8Array.BYTES_PER_ELEMENT, layers)
+			layer.fill(fieldMap[0][0])
 			postFieldWorker(worker, 'query', { goals, layer: index })
 			return
 		}
@@ -474,11 +436,243 @@ function createWorkerCacheLayer(
 		return layer
 	}
 
+	function kill() {
+		worker.terminate()
+	}
+
 	return {
 		query,
 		read,
 		clear,
+		kill,
 		wx: init.wx,
 		wy: init.wy,
+	}
+}
+
+function makeEntity(x: number, y: number, init: {
+	SIDE: number
+	workerSide: number
+	side: number
+	px: number
+	grid: Uint8Array
+	maxCost: number
+	getWorker: (x: number, y: number) => ReturnType<typeof createWorkerCacheLayer> | undefined,
+	pathFinding: ReturnType<typeof createGraphContext>['pathFinding']
+	pointerLength: number
+}) {
+	// in pixels
+	const position = { x: x * init.px + init.px / 2, y: y * init.px + init.px / 2 }
+	// in tiles
+	const goal = { x, y }
+	// in tiles
+	const start = { x, y }
+
+	const path: Path = []
+
+	const speed = 0.2
+
+	newGoal()
+
+	function pxToTile(px: number) {
+		return Math.max(Math.min(Math.floor(px / init.px), init.SIDE - 1), 0)
+	}
+
+	function newGoal() {
+		do {
+			goal.x = Math.floor(Math.random() * init.SIDE)
+			goal.y = Math.floor(Math.random() * init.SIDE)
+		} while (init.grid[goal.y * init.SIDE + goal.x] === init.maxCost)
+		start.x = pxToTile(position.x)
+		start.y = pxToTile(position.y)
+	}
+
+	let latestField: Uint8Array<SharedArrayBuffer> | undefined
+	let latestWorker: ReturnType<typeof createWorkerCacheLayer> | undefined
+
+	function update(dt: number) {
+		const x = pxToTile(position.x)
+		const y = pxToTile(position.y)
+		const currentTileIndex = y * init.SIDE + x
+		if (init.grid[currentTileIndex] === init.maxCost) {
+			const x = position.x / init.px
+			const y = position.y / init.px
+			const right = x % 1
+			const left = 1 - right
+			const bottom = y % 1
+			const top = 1 - bottom
+			const max = Math.max(right, left, bottom, top)
+			if (max === right) {
+				position.x += (left + 1) * speed * dt
+			} else if (max === left) {
+				position.x -= (right + 1) * speed * dt
+			} else if (max === bottom) {
+				position.y += (top + 1) * speed * dt
+			} else {
+				position.y -= (bottom + 1) * speed * dt
+			}
+			return
+		}
+
+		const isOnGoalTile = x === goal.x && y === goal.y
+		if (isOnGoalTile) {
+			newGoal()
+			return
+		}
+
+		const currentWorker = init.getWorker(x, y)
+		if (!currentWorker) {
+			throw new Error(`Worker not found at ${x}, ${y}`)
+		}
+
+		const goalWorker = init.getWorker(goal.x, goal.y)
+		const isOnGoalWorker = goalWorker && goalWorker === currentWorker
+		if (isOnGoalWorker) {
+			const workerKey = [[goal.x, goal.y]] as [number, number][]
+			goalWorker.query(workerKey)
+			const field = goalWorker.read(workerKey)
+			latestField = field
+			latestWorker = goalWorker
+			if (field) {
+				const localX = x % init.workerSide
+				const localY = y % init.workerSide
+				const index = localY * init.workerSide + localX
+				const [dx, dy] = ratioFieldMap[field[index]]
+				const mul = speed * dt
+				position.x += dx * mul
+				position.y += dy * mul
+			}
+			return
+		}
+
+		init.pathFinding(path, start, goal)
+		const currentIslandIndex = path.findIndex(island => island.wx === currentWorker.wx && island.wy === currentWorker.wy && island.tiles.has(currentTileIndex))
+		if (currentIslandIndex === -1) {
+			goal.x = x
+			goal.y = y
+			return
+		}
+
+
+		const currentIsland = path[currentIslandIndex]!
+		const nextIsland = path[currentIslandIndex + 1]
+		if (!nextIsland) {
+			throw new Error(`No next island found`)
+		}
+
+		const crossing = currentIsland.crossings.get(nextIsland)
+		if (!crossing) {
+			throw new Error(`No crossing found`)
+		}
+
+		if (crossing.has(currentTileIndex)) {
+			const [dx, dy] = ratioFieldMap[fieldMap[nextIsland.wx - currentIsland.wx][nextIsland.wy - currentIsland.wy]]
+			const mul = speed * dt
+			position.x += dx * mul
+			position.y += dy * mul
+			return
+		}
+
+		const workerKey = [] as [number, number][]
+		for (const tile of crossing) {
+			const ty = Math.floor(tile / init.SIDE)
+			const tx = tile % init.SIDE
+			workerKey.push([tx, ty])
+		}
+		currentWorker.query(workerKey)
+		const field = currentWorker.read(workerKey)
+		latestField = field
+		latestWorker = currentWorker
+		if (field) {
+			const localX = x % init.workerSide
+			const localY = y % init.workerSide
+			const index = localY * init.workerSide + localX
+			const [dx, dy] = ratioFieldMap[field[index]]
+			const mul = speed * dt
+			position.x += dx * mul
+			position.y += dy * mul
+		}
+	}
+
+	function draw(ctx: CanvasRenderingContext2D) {
+		const { px, pointerLength, workerSide } = init
+
+		// draw path
+		if (path.length > 1) {
+			ctx.strokeStyle = 'blue'
+			ctx.lineWidth = 2 * devicePixelRatio
+			ctx.beginPath()
+			ctx.lineTo(start.x * px + px / 2, start.y * px + px / 2)
+			for (let i = 0; i < path.length; i++) {
+				const island = path[i]
+				const [sumX, sumY] = Array.from(island.tiles.keys()).reduce<[x: number, y: number]>((acc, tile) => {
+					acc[0] += tile % SIDE
+					acc[1] += Math.floor(tile / SIDE)
+					return acc
+				}, [0, 0])
+				const avgX = sumX / island.tiles.size
+				const avgY = sumY / island.tiles.size
+				const x = avgX * px
+				const y = avgY * px
+
+				ctx.lineTo(x, y)
+			}
+			ctx.lineTo(goal.x * px + px / 2, goal.y * px + px / 2)
+			ctx.stroke()
+			ctx.lineWidth = 1
+		}
+
+		// draw flow field
+		const worker = latestWorker
+		const field = latestField
+		if (field && worker) {
+			for (let y = worker.wy * workerSide, localY = 0; y < (worker.wy + 1) * workerSide; y++, localY++) {
+				for (let x = worker.wx * workerSide, localX = 0; x < (worker.wx + 1) * workerSide; x++, localX++) {
+					ctx.strokeStyle = 'white'
+					ctx.fillStyle = 'white'
+					const [dx, dy] = ratioFieldMap[field[localY * workerSide + localX]]
+					if (dx === 0 && dy === 0) {
+						ctx.beginPath()
+						ctx.arc(x * px + px / 2, y * px + px / 2, pointerLength / 4, 0, Math.PI * 2)
+						ctx.fill()
+					} else {
+						const length = pointerLength / 2
+						const centerX = x * px + px / 2
+						const centerY = y * px + px / 2
+						const endX = centerX + dx * length
+						const endY = centerY + dy * length
+						const startX = centerX - dx * length
+						const startY = centerY - dy * length
+						ctx.beginPath()
+						ctx.moveTo(startX, startY)
+						ctx.lineTo(endX, endY)
+						ctx.stroke()
+						ctx.beginPath()
+						ctx.arc(endX, endY, length / 2, 0, Math.PI * 2)
+						ctx.fill()
+					}
+				}
+			}
+		}
+
+		ctx.fillStyle = 'blue'
+		ctx.beginPath()
+		ctx.arc(start.x * init.px + init.px / 2, start.y * init.px + init.px / 2, init.px / 4, 0, Math.PI * 2)
+		ctx.fill()
+
+		ctx.fillStyle = 'red'
+		ctx.beginPath()
+		ctx.arc(goal.x * init.px + init.px / 2, goal.y * init.px + init.px / 2, init.px / 4, 0, Math.PI * 2)
+		ctx.fill()
+
+		ctx.fillStyle = 'green'
+		ctx.beginPath()
+		ctx.arc(position.x, position.y, 10, 0, Math.PI * 2)
+		ctx.fill()
+	}
+
+	return {
+		update,
+		draw,
 	}
 }
