@@ -9,7 +9,7 @@ import GraphWorker from "./fragmented-a-star.worker?worker"
 import { type Incoming as GraphIncoming, type Outgoing as GraphOutgoing, type SerializedPath } from "./fragmented-a-star.worker"
 
 export const meta: RouteMeta = {
-	title: 'Flow Field',
+	title: 'Swarm Pathfinding',
 	image: './screen.png'
 }
 
@@ -20,7 +20,7 @@ if (SIDE % workersPerRow !== 0) {
 	throw new Error(`SIDE must be divisible by workersPerRow, maybe try SIDE=${SIDE - (SIDE % workersPerRow)}, workersPerRow=${workersPerRow}`)
 }
 
-export default function FlowFieldPage() {
+export default function SwarmPathfindingPage() {
 	const ref = useRef<HTMLCanvasElement | null>(null)
 
 	useEffect(() => {

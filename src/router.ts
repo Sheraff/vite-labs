@@ -3,6 +3,7 @@
 import { lazy } from "react"
 import wave_function_collapse_ascii_image from "./pages/wave-function-collapse-ascii/screen.png"
 import wave_function_collapse_image from "./pages/wave-function-collapse/screen.png"
+import swarm_pathfinding_image from "./pages/swarm-pathfinding/screen.png"
 import spider_inverse_kinematics_image from "./pages/spider-inverse-kinematics/screen.png"
 import quad_tree_collisions_image from "./pages/quad-tree-collisions/screen.png"
 import quad_tree_image from "./pages/quad-tree/screen.png"
@@ -13,14 +14,13 @@ import minesweeper_image from "./pages/minesweeper/screen.png"
 import lightning_image from "./pages/lightning/screen.png"
 import hex_a_star_image from "./pages/hex-a-star/screen.png"
 import hacker_background_image from "./pages/hacker-background/screen.png"
-import flow_field_image from "./pages/flow-field/screen.png"
 import flask_image from "./pages/flask/screen.png"
 import collision_threads_image from "./pages/collision-threads/screen.png"
 import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/screen.png"
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "fragment-portal" | "flow-field" | "flask" | "collision-threads" | "bird-inverse-kinematics" | "ants" | "a-star"
+export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "fragment-portal" | "flask" | "collision-threads" | "bird-inverse-kinematics" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
@@ -60,6 +60,17 @@ export const ROUTES = {
 		git: {
 			lastModified: 1740492145000,
 			firstAdded: 1727995709000
+		},
+	},
+	"swarm-pathfinding": {
+		Component: lazy(() => import("./pages/swarm-pathfinding/index.tsx")),
+		meta: {
+			title: 'Swarm Pathfinding',
+			image: swarm_pathfinding_image
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
 		},
 	},
 	"spider-inverse-kinematics": {
@@ -190,17 +201,6 @@ export const ROUTES = {
 		git: {
 			lastModified: 1739611669000,
 			firstAdded: 1717340075000
-		},
-	},
-	"flow-field": {
-		Component: lazy(() => import("./pages/flow-field/index.tsx")),
-		meta: {
-			title: 'Flow Field',
-			image: flow_field_image
-		},
-		git: {
-			lastModified: 1741022027000,
-			firstAdded: 1727995709000
 		},
 	},
 	"flask": {
