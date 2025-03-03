@@ -136,12 +136,7 @@ export default function SwarmPathfindingPage() {
 
 
 		let lastTime = 0
-		let rafId: number
-		const timeoutId = setTimeout(() => {
-			console.log('------ start ------')
-			rafId = requestAnimationFrame(loop)
-		}, 1000)
-		function loop(time: number) {
+		let rafId = requestAnimationFrame(function loop(time: number) {
 			rafId = requestAnimationFrame(loop)
 
 			const prev = lastTime
@@ -267,7 +262,7 @@ export default function SwarmPathfindingPage() {
 			// ctx.beginPath()
 			// ctx.arc(goal.x * px + px / 2, goal.y * px + px / 2, px / 4, 0, Math.PI * 2)
 			// ctx.fill()
-		}
+		})
 
 		const controller = new AbortController()
 
@@ -345,7 +340,6 @@ export default function SwarmPathfindingPage() {
 			cancelAnimationFrame(rafId)
 			controller.abort()
 			workers.forEach(worker => worker.kill())
-			clearTimeout(timeoutId)
 			pathFinding.kill()
 		}
 	}, [])
