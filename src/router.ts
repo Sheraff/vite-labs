@@ -14,13 +14,14 @@ import minesweeper_image from "./pages/minesweeper/screen.png"
 import lightning_image from "./pages/lightning/screen.png"
 import hex_a_star_image from "./pages/hex-a-star/screen.png"
 import hacker_background_image from "./pages/hacker-background/screen.png"
+import flow_field_image from "./pages/flow-field/screen.png"
 import flask_image from "./pages/flask/screen.png"
 import collision_threads_image from "./pages/collision-threads/screen.png"
 import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/screen.png"
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "fragment-portal" | "flask" | "collision-threads" | "bird-inverse-kinematics" | "ants" | "a-star"
+export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "fragment-portal" | "flow-field" | "flask" | "collision-threads" | "bird-inverse-kinematics" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
@@ -69,8 +70,8 @@ export const ROUTES = {
 			image: swarm_pathfinding_image
 		},
 		git: {
-			lastModified: 0,
-			firstAdded: 0
+			lastModified: 1741025883000,
+			firstAdded: 1727995709000
 		},
 	},
 	"spider-inverse-kinematics": {
@@ -201,6 +202,17 @@ export const ROUTES = {
 		git: {
 			lastModified: 1739611669000,
 			firstAdded: 1717340075000
+		},
+	},
+	"flow-field": {
+		Component: lazy(() => import("./pages/flow-field/index.tsx")),
+		meta: {
+			title: 'Flow Field',
+			image: flow_field_image
+		},
+		git: {
+			lastModified: 1741025883000,
+			firstAdded: 1740833468000
 		},
 	},
 	"flask": {
