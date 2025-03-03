@@ -346,6 +346,7 @@ export default function SwarmPathfindingPage() {
 			controller.abort()
 			workers.forEach(worker => worker.kill())
 			clearTimeout(timeoutId)
+			pathFinding.kill()
 		}
 	}, [])
 
