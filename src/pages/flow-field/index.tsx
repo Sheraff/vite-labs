@@ -4,16 +4,17 @@ import { Head } from "~/components/Head"
 import { useEffect, useRef } from "react"
 import FieldWorker from './field.worker?worker'
 import type { Incoming as FieldIncoming } from './field.worker'
-import { fieldMap, ratioFieldMap, reverseFieldMap } from "@flow-field/utils"
-import { type Graph, type Path, createGraphContext } from "./fragmented-a-star"
+import { fieldMap, ratioFieldMap } from "./utils"
+import GraphWorker from "./fragmented-a-star.worker?worker"
+import { type Incoming as GraphIncoming, type Outgoing as GraphOutgoing, type SerializedPath } from "./fragmented-a-star.worker"
 
 export const meta: RouteMeta = {
 	title: 'Flow Field',
 	image: './screen.png'
 }
 
-const SIDE = 240
-const workersPerRow = 12
+const SIDE = 200
+const workersPerRow = 10
 
 if (SIDE % workersPerRow !== 0) {
 	throw new Error(`SIDE must be divisible by workersPerRow, maybe try SIDE=${SIDE - (SIDE % workersPerRow)}, workersPerRow=${workersPerRow}`)
@@ -74,12 +75,20 @@ export default function FlowFieldPage() {
 			from.y = Math.floor(Math.random() * SIDE)
 		} while (grid[from.y * SIDE + from.x] === maxCost)
 
-		const workers: Array<ReturnType<typeof createWorkerCacheLayer>> = []
+		const pathFinding = createGraphWorkerCacheLayer({
+			grid,
+			maxCost,
+			SIDE,
+			workerSide,
+			workersPerRow,
+		})
+
+		const workers: Array<ReturnType<typeof createFieldWorkerCacheLayer>> = []
 
 		for (let wy = 0; wy < workersPerRow; wy++) {
 			for (let wx = 0; wx < workersPerRow; wx++) {
 				const offset = (wy * workersPerRow + wx) * layers * layers
-				const worker = createWorkerCacheLayer({
+				const worker = createFieldWorkerCacheLayer({
 					workerSide,
 					wx,
 					wy,
@@ -99,19 +108,7 @@ export default function FlowFieldPage() {
 			return workers[index]
 		}
 
-		const graph: Graph = new Map()
-		// const path: Path = []
-
-		const { computeGraph, pathFinding } = createGraphContext(
-			workersPerRow,
-			SIDE,
-			workerSide,
-			maxCost,
-			grid,
-			graph,
-		)
-
-		computeGraph()
+		// computeGraph()
 		// pathFinding(path, from, goal)
 
 		const entities: ReturnType<typeof makeEntity>[] = []
@@ -301,7 +298,7 @@ export default function FlowFieldPage() {
 			if (prev !== undefined && prev !== next) {
 				grid[index] = next
 				getWorker(x, y)?.clear()
-				computeGraph()
+				pathFinding.graph()
 			}
 		}, { signal: controller.signal })
 
@@ -317,7 +314,7 @@ export default function FlowFieldPage() {
 				if (prev !== undefined && prev !== next) {
 					grid[index] = next
 					getWorker(x, y)?.clear()
-					computeGraph()
+					pathFinding.graph()
 				}
 			}
 			moved = false
@@ -364,7 +361,74 @@ export default function FlowFieldPage() {
 	)
 }
 
-function createWorkerCacheLayer(
+function createGraphWorkerCacheLayer(init: {
+	grid: Uint8Array<SharedArrayBuffer>,
+	maxCost: number,
+	SIDE: number,
+	workerSide: number,
+	workersPerRow: number,
+}) {
+	const worker = new GraphWorker()
+	const cache = new Map<string, SerializedPath | 'pending' | 'not-found'>()
+
+	function postGraphWorker<I extends GraphIncoming["type"]>(
+		type: I,
+		data: Extract<GraphIncoming, { type: I }>["data"],
+		transfer?: Transferable[]
+	) {
+		worker.postMessage({ type, data }, { transfer })
+	}
+
+	worker.addEventListener('message', (e: MessageEvent<GraphOutgoing>) => {
+		if (e.data.type === 'response') {
+			const { from, goal, path } = e.data.data
+			const key = toKey(from, goal)
+			if (cache.has(key)) {
+				cache.set(key, path || 'not-found')
+			}
+		}
+	})
+
+	postGraphWorker('init', {
+		grid: init.grid.buffer,
+		maxCost: init.maxCost,
+		SIDE: init.SIDE,
+		workerSide: init.workerSide,
+		workersPerRow: init.workersPerRow,
+	})
+
+	function toKey(from: { x: number, y: number }, goal: { x: number, y: number }) {
+		return `${from.x},${from.y},${goal.x},${goal.y}`
+	}
+
+	function kill() {
+		worker.terminate()
+	}
+
+	function graph() {
+		postGraphWorker('graph', undefined)
+		cache.clear()
+	}
+	graph()
+
+	function query(from: { x: number, y: number }, goal: { x: number, y: number }) {
+		const key = toKey(from, goal)
+		const value = cache.get(key)
+		if (value) return value
+
+		cache.set(key, 'pending')
+		postGraphWorker('query', { from, goal })
+		return 'pending'
+	}
+
+	return {
+		kill,
+		graph,
+		query,
+	}
+}
+
+function createFieldWorkerCacheLayer(
 	init: {
 		workerSide: number,
 		wx: number,
@@ -485,8 +549,8 @@ function makeEntity(x: number, y: number, init: {
 	px: number
 	grid: Uint8Array
 	maxCost: number
-	getWorker: (x: number, y: number) => ReturnType<typeof createWorkerCacheLayer> | undefined,
-	pathFinding: ReturnType<typeof createGraphContext>['pathFinding']
+	getWorker: (x: number, y: number) => ReturnType<typeof createFieldWorkerCacheLayer> | undefined,
+	pathFinding: ReturnType<typeof createGraphWorkerCacheLayer>
 	pointerLength: number
 }) {
 	// in pixels
@@ -496,11 +560,7 @@ function makeEntity(x: number, y: number, init: {
 	// in tiles
 	const start = { x, y }
 
-	const path: Path = []
-
 	const speed = 0.2
-
-	newGoal()
 
 	function pxToTile(px: number) {
 		return Math.max(Math.min(Math.floor(px / init.px), init.SIDE - 1), 0)
@@ -513,10 +573,16 @@ function makeEntity(x: number, y: number, init: {
 		} while (init.grid[goal.y * init.SIDE + goal.x] === init.maxCost)
 		start.x = pxToTile(position.x)
 		start.y = pxToTile(position.y)
+		latestPath = undefined
+		latestField = undefined
+		latestWorker = undefined
 	}
 
 	let latestField: Uint8Array<SharedArrayBuffer> | undefined
-	let latestWorker: ReturnType<typeof createWorkerCacheLayer> | undefined
+	let latestWorker: ReturnType<typeof createFieldWorkerCacheLayer> | undefined
+	let latestPath: SerializedPath | undefined
+
+	newGoal()
 
 	function update(dt: number) {
 		const x = pxToTile(position.x)
@@ -553,14 +619,32 @@ function makeEntity(x: number, y: number, init: {
 			throw new Error(`Worker not found at ${x}, ${y}`)
 		}
 
-		const goalWorker = init.getWorker(goal.x, goal.y)
-		const isOnGoalWorker = goalWorker && goalWorker === currentWorker
-		if (isOnGoalWorker) {
+		let path = init.pathFinding.query(start, goal)
+		if (path === 'pending') {
+			if (latestPath) {
+				path = latestPath
+			} else {
+				return
+			}
+		}
+		if (path === 'not-found') {
+			newGoal()
+			return
+		}
+		latestPath = path
+		const currentIslandIndex = path.findIndex(island => island.wx === currentWorker.wx && island.wy === currentWorker.wy && island.tiles.includes(currentTileIndex))
+		if (currentIslandIndex === -1) {
+			newGoal()
+			return
+		}
+
+		const isOnGoalIsland = currentIslandIndex === path.length - 1
+		if (isOnGoalIsland) {
 			const workerKey = [[goal.x, goal.y]] as [number, number][]
-			goalWorker.query(workerKey)
-			const field = goalWorker.read(workerKey)
+			currentWorker.query(workerKey)
+			const field = currentWorker.read(workerKey)
 			latestField = field
-			latestWorker = goalWorker
+			latestWorker = currentWorker
 			if (field) {
 				const localX = x % init.workerSide
 				const localY = y % init.workerSide
@@ -573,27 +657,13 @@ function makeEntity(x: number, y: number, init: {
 			return
 		}
 
-		init.pathFinding(path, start, goal)
-		const currentIslandIndex = path.findIndex(island => island.wx === currentWorker.wx && island.wy === currentWorker.wy && island.tiles.has(currentTileIndex))
-		if (currentIslandIndex === -1) {
-			goal.x = x
-			goal.y = y
-			return
-		}
-
-
 		const currentIsland = path[currentIslandIndex]!
 		const nextIsland = path[currentIslandIndex + 1]
 		if (!nextIsland) {
 			throw new Error(`No next island found`)
 		}
 
-		const crossing = currentIsland.crossings.get(nextIsland)
-		if (!crossing) {
-			throw new Error(`No crossing found`)
-		}
-
-		if (crossing.has(currentTileIndex)) {
+		if (currentIsland.crossings.includes(currentTileIndex)) {
 			const [dx, dy] = ratioFieldMap[fieldMap[nextIsland.wx - currentIsland.wx][nextIsland.wy - currentIsland.wy]]
 			const mul = speed * dt
 			position.x += dx * mul
@@ -602,7 +672,7 @@ function makeEntity(x: number, y: number, init: {
 		}
 
 		const workerKey = [] as [number, number][]
-		for (const tile of crossing) {
+		for (const tile of currentIsland.crossings) {
 			const ty = Math.floor(tile / init.SIDE)
 			const tx = tile % init.SIDE
 			workerKey.push([tx, ty])
