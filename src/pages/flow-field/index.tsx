@@ -12,8 +12,8 @@ export const meta: RouteMeta = {
 	image: './screen.png'
 }
 
-const SIDE = 128
-const workersPerRow = 16
+const SIDE = 240
+const workersPerRow = 12
 
 if (SIDE % workersPerRow !== 0) {
 	throw new Error(`SIDE must be divisible by workersPerRow, maybe try SIDE=${SIDE - (SIDE % workersPerRow)}, workersPerRow=${workersPerRow}`)
@@ -51,7 +51,7 @@ export default function FlowFieldPage() {
 
 		{
 			// random obstacles
-			const count = Math.random() * SIDE * 2 + SIDE * 2
+			const count = Math.random() * SIDE * 1 + SIDE * 1
 			for (let i = 0; i < count; i++) {
 				const largeSide = Math.random() > 0.5
 				const x1 = Math.floor(Math.random() * SIDE)
@@ -100,7 +100,7 @@ export default function FlowFieldPage() {
 		}
 
 		const graph: Graph = new Map()
-		const path: Path = []
+		// const path: Path = []
 
 		const { computeGraph, pathFinding } = createGraphContext(
 			workersPerRow,
@@ -114,17 +114,29 @@ export default function FlowFieldPage() {
 		computeGraph()
 		// pathFinding(path, from, goal)
 
-		const entity = makeEntity(from.x, from.y, {
-			SIDE,
-			getWorker,
-			grid,
-			maxCost,
-			pathFinding,
-			px,
-			side,
-			workerSide,
-			pointerLength,
-		})
+		const entities: ReturnType<typeof makeEntity>[] = []
+		for (let i = 0; i < 10000; i++) {
+			let x: number
+			let y: number
+			do {
+				x = Math.floor(Math.random() * SIDE)
+				y = Math.floor(Math.random() * SIDE)
+			} while (grid[y * SIDE + x] === maxCost)
+			const entity = makeEntity(x, y, {
+				SIDE,
+				getWorker,
+				grid,
+				maxCost,
+				pathFinding,
+				px,
+				side,
+				workerSide,
+				pointerLength,
+			})
+			entities.push(entity)
+		}
+
+
 
 		let lastTime = 0
 		let rafId: number
@@ -136,39 +148,55 @@ export default function FlowFieldPage() {
 			rafId = requestAnimationFrame(loop)
 
 			const prev = lastTime
-			const dt = time - lastTime
+			const dt = Math.min(30, time - lastTime)
 			lastTime = time
 			if (!prev || !ctx) return
 
-			entity.update(dt)
+
+			for (const entity of entities) {
+				entity.update(dt)
+			}
 
 			ctx.clearRect(0, 0, side, side)
 
-			// draw graph islands
-			for (let y = 0; y < workersPerRow; y++) {
-				for (let x = 0; x < workersPerRow; x++) {
-					// draw sections (workers)
-					ctx.strokeStyle = 'purple'
-					ctx.lineWidth = 4 * devicePixelRatio
-					ctx.strokeRect(x * workerSide * px, y * workerSide * px, workerSide * px, workerSide * px)
-					ctx.lineWidth = 1
+			// // draw graph islands
+			// for (let y = 0; y < workersPerRow; y++) {
+			// 	for (let x = 0; x < workersPerRow; x++) {
+			// 		// draw sections (workers)
+			// 		ctx.strokeStyle = 'purple'
+			// 		ctx.lineWidth = 4 * devicePixelRatio
+			// 		ctx.strokeRect(x * workerSide * px, y * workerSide * px, workerSide * px, workerSide * px)
+			// 		ctx.lineWidth = 1
 
-					const node = graph.get(y * workersPerRow + x)!
-					const islands = node.islands.values()
-					for (let i = 0; i < node.islands.size; i++) {
-						const island = islands.next().value!
-						const hue = 360 / node.islands.size * i
-						ctx.fillStyle = `oklch(50% 50% ${hue})`
-						for (const tile of island.tiles) {
-							const ty = Math.floor(tile / SIDE)
-							const tx = tile % SIDE
-							ctx.fillRect(tx * px, ty * px, px, px)
-						}
+			// 		const node = graph.get(y * workersPerRow + x)!
+			// 		const islands = node.islands.values()
+			// 		for (let i = 0; i < node.islands.size; i++) {
+			// 			const island = islands.next().value!
+			// 			const hue = 360 / node.islands.size * i
+			// 			ctx.fillStyle = `oklch(50% 50% ${hue})`
+			// 			for (const tile of island.tiles) {
+			// 				const ty = Math.floor(tile / SIDE)
+			// 				const tx = tile % SIDE
+			// 				ctx.fillRect(tx * px, ty * px, px, px)
+			// 			}
+			// 		}
+			// 	}
+			// }
+			for (let y = 0; y < SIDE; y++) {
+				const row = y * SIDE
+				for (let x = 0; x < SIDE; x++) {
+					const index = row + x
+					const cost = grid[index]
+					if (cost === maxCost) {
+						ctx.fillStyle = 'white'
+						ctx.fillRect(x * px + px / 4, y * px + px / 4, px / 2, px / 2)
 					}
 				}
 			}
 
-			entity.draw(ctx)
+			for (const entity of entities) {
+				entity.draw(ctx)
+			}
 
 			// // draw flow field
 			// const worker = getWorker(goal.x, goal.y)
@@ -385,7 +413,7 @@ function createWorkerCacheLayer(
 	function clear() {
 		map.clear()
 		keys.length = 0
-		const all = new Uint8Array(init.fieldBuffer, init.offset, layers * layers * maxSize)
+		const all = new Uint8Array(init.fieldBuffer, init.offset, layers * maxSize)
 		all.fill(fieldMap[0][0])
 		postFieldWorker(worker, 'clear', undefined)
 	}
@@ -595,79 +623,79 @@ function makeEntity(x: number, y: number, init: {
 	}
 
 	function draw(ctx: CanvasRenderingContext2D) {
-		const { px, pointerLength, workerSide } = init
+		// const { px, pointerLength, workerSide } = init
 
-		// draw path
-		if (path.length > 1) {
-			ctx.strokeStyle = 'blue'
-			ctx.lineWidth = 2 * devicePixelRatio
-			ctx.beginPath()
-			ctx.lineTo(start.x * px + px / 2, start.y * px + px / 2)
-			for (let i = 0; i < path.length; i++) {
-				const island = path[i]
-				const [sumX, sumY] = Array.from(island.tiles.keys()).reduce<[x: number, y: number]>((acc, tile) => {
-					acc[0] += tile % SIDE
-					acc[1] += Math.floor(tile / SIDE)
-					return acc
-				}, [0, 0])
-				const avgX = sumX / island.tiles.size
-				const avgY = sumY / island.tiles.size
-				const x = avgX * px
-				const y = avgY * px
+		// // draw path
+		// if (path.length > 1) {
+		// 	ctx.strokeStyle = 'blue'
+		// 	ctx.lineWidth = 2 * devicePixelRatio
+		// 	ctx.beginPath()
+		// 	ctx.lineTo(start.x * px + px / 2, start.y * px + px / 2)
+		// 	for (let i = 0; i < path.length; i++) {
+		// 		const island = path[i]
+		// 		const [sumX, sumY] = Array.from(island.tiles.keys()).reduce<[x: number, y: number]>((acc, tile) => {
+		// 			acc[0] += tile % SIDE
+		// 			acc[1] += Math.floor(tile / SIDE)
+		// 			return acc
+		// 		}, [0, 0])
+		// 		const avgX = sumX / island.tiles.size
+		// 		const avgY = sumY / island.tiles.size
+		// 		const x = avgX * px
+		// 		const y = avgY * px
 
-				ctx.lineTo(x, y)
-			}
-			ctx.lineTo(goal.x * px + px / 2, goal.y * px + px / 2)
-			ctx.stroke()
-			ctx.lineWidth = 1
-		}
+		// 		ctx.lineTo(x, y)
+		// 	}
+		// 	ctx.lineTo(goal.x * px + px / 2, goal.y * px + px / 2)
+		// 	ctx.stroke()
+		// 	ctx.lineWidth = 1
+		// }
 
-		// draw flow field
-		const worker = latestWorker
-		const field = latestField
-		if (field && worker) {
-			for (let y = worker.wy * workerSide, localY = 0; y < (worker.wy + 1) * workerSide; y++, localY++) {
-				for (let x = worker.wx * workerSide, localX = 0; x < (worker.wx + 1) * workerSide; x++, localX++) {
-					ctx.strokeStyle = 'white'
-					ctx.fillStyle = 'white'
-					const [dx, dy] = ratioFieldMap[field[localY * workerSide + localX]]
-					if (dx === 0 && dy === 0) {
-						ctx.beginPath()
-						ctx.arc(x * px + px / 2, y * px + px / 2, pointerLength / 4, 0, Math.PI * 2)
-						ctx.fill()
-					} else {
-						const length = pointerLength / 2
-						const centerX = x * px + px / 2
-						const centerY = y * px + px / 2
-						const endX = centerX + dx * length
-						const endY = centerY + dy * length
-						const startX = centerX - dx * length
-						const startY = centerY - dy * length
-						ctx.beginPath()
-						ctx.moveTo(startX, startY)
-						ctx.lineTo(endX, endY)
-						ctx.stroke()
-						ctx.beginPath()
-						ctx.arc(endX, endY, length / 2, 0, Math.PI * 2)
-						ctx.fill()
-					}
-				}
-			}
-		}
+		// // draw flow field
+		// const worker = latestWorker
+		// const field = latestField
+		// if (field && worker) {
+		// 	for (let y = worker.wy * workerSide, localY = 0; y < (worker.wy + 1) * workerSide; y++, localY++) {
+		// 		for (let x = worker.wx * workerSide, localX = 0; x < (worker.wx + 1) * workerSide; x++, localX++) {
+		// 			ctx.strokeStyle = 'white'
+		// 			ctx.fillStyle = 'white'
+		// 			const [dx, dy] = ratioFieldMap[field[localY * workerSide + localX]]
+		// 			if (dx === 0 && dy === 0) {
+		// 				ctx.beginPath()
+		// 				ctx.arc(x * px + px / 2, y * px + px / 2, pointerLength / 4, 0, Math.PI * 2)
+		// 				ctx.fill()
+		// 			} else {
+		// 				const length = pointerLength / 2
+		// 				const centerX = x * px + px / 2
+		// 				const centerY = y * px + px / 2
+		// 				const endX = centerX + dx * length
+		// 				const endY = centerY + dy * length
+		// 				const startX = centerX - dx * length
+		// 				const startY = centerY - dy * length
+		// 				ctx.beginPath()
+		// 				ctx.moveTo(startX, startY)
+		// 				ctx.lineTo(endX, endY)
+		// 				ctx.stroke()
+		// 				ctx.beginPath()
+		// 				ctx.arc(endX, endY, length / 2, 0, Math.PI * 2)
+		// 				ctx.fill()
+		// 			}
+		// 		}
+		// 	}
+		// }
 
-		ctx.fillStyle = 'blue'
-		ctx.beginPath()
-		ctx.arc(start.x * init.px + init.px / 2, start.y * init.px + init.px / 2, init.px / 4, 0, Math.PI * 2)
-		ctx.fill()
+		// ctx.fillStyle = 'blue'
+		// ctx.beginPath()
+		// ctx.arc(start.x * init.px + init.px / 2, start.y * init.px + init.px / 2, init.px / 4, 0, Math.PI * 2)
+		// ctx.fill()
 
-		ctx.fillStyle = 'red'
-		ctx.beginPath()
-		ctx.arc(goal.x * init.px + init.px / 2, goal.y * init.px + init.px / 2, init.px / 4, 0, Math.PI * 2)
-		ctx.fill()
+		// ctx.fillStyle = 'red'
+		// ctx.beginPath()
+		// ctx.arc(goal.x * init.px + init.px / 2, goal.y * init.px + init.px / 2, init.px / 4, 0, Math.PI * 2)
+		// ctx.fill()
 
 		ctx.fillStyle = 'green'
 		ctx.beginPath()
-		ctx.arc(position.x, position.y, 10, 0, Math.PI * 2)
+		ctx.arc(position.x, position.y, init.px / 2, 0, Math.PI * 2)
 		ctx.fill()
 	}
 
