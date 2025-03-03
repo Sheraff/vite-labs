@@ -70,7 +70,7 @@ export const ROUTES = {
 			image: swarm_pathfinding_image
 		},
 		git: {
-			lastModified: 1741028295000,
+			lastModified: 1741030466000,
 			firstAdded: 1727995709000
 		},
 	},

@@ -635,7 +635,17 @@ function makeEntity(x: number, y: number, init: {
 
 	newGoal()
 
+	let paused = 0
+
 	function update(dt: number) {
+		if (paused) {
+			paused -= dt
+			if (paused > 0) return
+			paused = 0
+			newGoal()
+			return
+		}
+
 		const x = pxToTile(position.x)
 		const y = pxToTile(position.y)
 		const currentTileIndex = y * init.SIDE + x
@@ -661,7 +671,7 @@ function makeEntity(x: number, y: number, init: {
 
 		const isOnGoalTile = x === goal.x && y === goal.y
 		if (isOnGoalTile) {
-			newGoal()
+			paused = 1000
 			return
 		}
 
