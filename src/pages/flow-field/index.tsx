@@ -127,9 +127,9 @@ export default function FlowFieldPage() {
 		})
 
 		let lastTime = 0
-		console.log('------ start ------')
 		let rafId: number
 		const timeoutId = setTimeout(() => {
+			console.log('------ start ------')
 			rafId = requestAnimationFrame(loop)
 		}, 1000)
 		function loop(time: number) {

@@ -137,6 +137,9 @@ function computeField(offset: number, goals: Array<[x: number, y: number]>, inte
 						min = value
 						minx = i
 						miny = j
+					} else if (value === min && Math.abs(i) + Math.abs(j) < Math.abs(minx) + Math.abs(miny)) {
+						minx = i
+						miny = j
 					}
 				}
 			}
