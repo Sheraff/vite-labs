@@ -3,6 +3,7 @@
 import { lazy } from "react"
 import wave_function_collapse_ascii_image from "./pages/wave-function-collapse-ascii/screen.png"
 import wave_function_collapse_image from "./pages/wave-function-collapse/screen.png"
+import swarm_pathfinding_image from "./pages/swarm-pathfinding/screen.png"
 import spider_inverse_kinematics_image from "./pages/spider-inverse-kinematics/screen.png"
 import quad_tree_collisions_image from "./pages/quad-tree-collisions/screen.png"
 import quad_tree_image from "./pages/quad-tree/screen.png"
@@ -20,7 +21,7 @@ import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/scree
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "fragmented-a-star" | "fragment-portal" | "flow-field" | "flask" | "collision-threads" | "bird-inverse-kinematics" | "ants" | "a-star"
+export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "fragment-portal" | "flow-field" | "flask" | "collision-threads" | "bird-inverse-kinematics" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
@@ -59,6 +60,17 @@ export const ROUTES = {
 		},
 		git: {
 			lastModified: 1740492145000,
+			firstAdded: 1727995709000
+		},
+	},
+	"swarm-pathfinding": {
+		Component: lazy(() => import("./pages/swarm-pathfinding/index.tsx")),
+		meta: {
+			title: 'Swarm Pathfinding',
+			image: swarm_pathfinding_image
+		},
+		git: {
+			lastModified: 1741025883000,
 			firstAdded: 1727995709000
 		},
 	},
@@ -182,16 +194,6 @@ export const ROUTES = {
 			firstAdded: 1739742825000
 		},
 	},
-	"fragmented-a-star": {
-		Component: lazy(() => import("./pages/fragmented-a-star/index.tsx")),
-		meta: {
-			title: '[WIP] Fragmented A*',
-		},
-		git: {
-			lastModified: 1740912450000,
-			firstAdded: 1727995709000
-		},
-	},
 	"fragment-portal": {
 		Component: lazy(() => import("./pages/fragment-portal/index.tsx")),
 		meta: {
@@ -209,8 +211,8 @@ export const ROUTES = {
 			image: flow_field_image
 		},
 		git: {
-			lastModified: 1740837260000,
-			firstAdded: 1727995709000
+			lastModified: 1741025883000,
+			firstAdded: 1740833468000
 		},
 	},
 	"flask": {
