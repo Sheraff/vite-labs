@@ -16,7 +16,13 @@ export type Incoming =
 		}
 	}
 	| { type: "clear", data: undefined }
-	| { type: "query", data: { x: number, y: number } }
+	| {
+		type: "query",
+		data: {
+			goals: Array<[x: number, y: number]>,
+			layer: number
+		}
+	}
 
 
 let grid: Uint8Array
@@ -25,7 +31,6 @@ let integration: Uint8Array
 let xLength: number
 let yLength: number
 let layers: number
-let computed: boolean[]
 
 const maxCost = 2 ** (Uint8Array.BYTES_PER_ELEMENT * 8) - 1
 const maxIntegration = 2 ** (Uint8Array.BYTES_PER_ELEMENT * 8) - 1
@@ -61,7 +66,6 @@ const maxIntegration = 2 ** (Uint8Array.BYTES_PER_ELEMENT * 8) - 1
 			xLength = x2 - x1 + 1
 			yLength = y2 - y1 + 1
 			layers = xLength * yLength
-			computed = new Array(layers).fill(false)
 			const workerIndex = event.data.index
 			const workerIndexX = event.data.wx
 			const workerIndexY = event.data.wy
@@ -83,35 +87,38 @@ const maxIntegration = 2 ** (Uint8Array.BYTES_PER_ELEMENT * 8) - 1
 			})
 		} else if (event.type === "clear") {
 			integration.fill(maxIntegration)
-			computed.fill(false)
 			copyGrid()
 		} else if (event.type === "query") {
-			const localX = event.data.x - x1
-			const localY = event.data.y - y1
-			compute(localX, localY)
+			const goals = event.data.goals
+			for (let i = 0; i < goals.length; i++) {
+				goals[i][0] -= x1
+				goals[i][1] -= y1
+			}
+			compute(goals, event.data.layer)
 		}
 	}
 }
 
-function compute(x: number, y: number) {
-	const l = y * xLength + x
-	if (computed[l]) return
-	const offset = l * layers
-	const integration = computeIntegration(offset, x, y)
-	computeField(offset, x, y, integration)
-	computed[l] = true
+function compute(goals: Array<[x: number, y: number]>, layer: number) {
+	const offset = layer * layers
+	const integration = computeIntegration(offset, goals)
+	computeField(offset, goals, integration)
 }
 
-function computeField(offset: number, goalX: number, goalY: number, integration: Uint8Array) {
+function computeField(offset: number, goals: Array<[x: number, y: number]>, integration: Uint8Array) {
 	// const before = performance.now()
+	const seen = new Set()
+	for (let i = 0; i < goals.length; i++) {
+		const [x, y] = goals[i]
+		const index = y * xLength + x
+		field[offset + index] = fieldMap[0][0]
+		seen.add(index)
+	}
 	for (let y = 0; y < yLength; y++) {
 		const row = y * xLength
 		for (let x = 0; x < xLength; x++) {
 			const index = row + x
-			if (x === goalX && y === goalY) {
-				field[offset + index] = fieldMap[0][0]
-				continue
-			}
+			if (seen.has(index)) continue
 			let min = maxIntegration
 			let minx = 0
 			let miny = 0
@@ -140,11 +147,16 @@ function computeField(offset: number, goalX: number, goalY: number, integration:
 	// console.log('computeField', workerIndex, after - before)
 }
 
-function computeIntegration(offset: number, goalX: number, goalY: number) {
+function computeIntegration(offset: number, goals: Array<[x: number, y: number]>) {
 	const results = new Uint8Array(integration.buffer, offset, layers)
+	results.fill(maxIntegration)
 	// const before = performance.now()
-	const queue = [goalX, goalY]
-	results[goalY * xLength + goalX] = 0
+	const queue: number[] = []
+	for (let i = 0; i < goals.length; i++) {
+		const [x, y] = goals[i]
+		queue.push(x, y)
+		results[y * xLength + x] = 0
+	}
 	while (queue.length > 0) {
 		const x = queue.shift()!
 		const y = queue.shift()!

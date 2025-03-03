@@ -67,44 +67,37 @@ export default function FlowFieldPage() {
 			}
 		}
 
-		const goal = { x: 15, y: 5 }
+		const goal = { x: 1, y: 1 }
 		const from = { x: 0, y: 0 }
 		do {
 			from.x = Math.floor(Math.random() * SIDE)
 			from.y = Math.floor(Math.random() * SIDE)
 		} while (grid[from.y * SIDE + from.x] === maxCost)
 
-		const workers = Array.from({ length: workerCount }, () => new FieldWorker())
-		function postFieldWorker<I extends FieldIncoming["type"]>(
-			worker: Worker,
-			type: I,
-			data: Extract<FieldIncoming, { type: I }>["data"],
-			transfer?: Transferable[]
-		) {
-			worker.postMessage({ type, data }, { transfer })
-		}
+		const workers: Array<ReturnType<typeof createWorkerCacheLayer>> = []
 
 		for (let wy = 0; wy < workersPerRow; wy++) {
 			for (let wx = 0; wx < workersPerRow; wx++) {
-				const worker = workers[wy * workersPerRow + wx]
-				const x1 = workerSide * wx
-				const x2 = workerSide * (wx + 1) - 1
-				const y1 = workerSide * wy
-				const y2 = workerSide * (wy + 1) - 1
-				postFieldWorker(worker, 'init', {
-					field: fieldBuffer,
-					grid: gridBuffer,
-					side: SIDE,
-					range: [x1, x2, y1, y2],
-					index: wy * workersPerRow + wx,
+				const offset = (wy * workersPerRow + wx) * layers * layers
+				const worker = createWorkerCacheLayer({
+					workerSide,
 					wx,
-					wy
-				})
+					wy,
+					fieldBuffer,
+					gridBuffer,
+					offset,
+				}, layers, layers)
+				workers.push(worker)
 			}
 		}
 
-		const getWorker = (x: number, y: number) => workers[Math.floor(y / workerSide) * workersPerRow + Math.floor(x / workerSide)]
-		postFieldWorker(getWorker(goal.x, goal.y), 'query', goal)
+		const getWorker = (x: number, y: number) => {
+			if (x < 0 || x >= SIDE || y < 0 || y >= SIDE) return
+			const wy = Math.floor(y / workerSide)
+			const wx = Math.floor(x / workerSide)
+			const index = wy * workersPerRow + wx
+			return workers[index]
+		}
 
 		const graph: Graph = new Map()
 		const path: Path = []
@@ -132,15 +125,6 @@ export default function FlowFieldPage() {
 
 			ctx.clearRect(0, 0, side, side)
 
-			const goalWorkerX = Math.floor(goal.x / workerSide)
-			const goalWorkerY = Math.floor(goal.y / workerSide)
-			const withinWorkerX = goal.x - goalWorkerX * workerSide
-			const withinWorkerY = goal.y - goalWorkerY * workerSide
-			const goalWorkerIndex = goalWorkerY * workersPerRow + goalWorkerX
-			const offset = goalWorkerIndex * layers * layers + (withinWorkerY * workerSide + withinWorkerX) * layers
-
-			const goalField = new Uint8Array(fieldBuffer, offset, layers)
-
 			// draw graph islands
 			for (let y = 0; y < workersPerRow; y++) {
 				for (let x = 0; x < workersPerRow; x++) {
@@ -166,43 +150,47 @@ export default function FlowFieldPage() {
 			}
 
 			// draw flow field
-			for (let y = goalWorkerY * workerSide, localY = 0; y < (goalWorkerY + 1) * workerSide; y++, localY++) {
-				const row = y * SIDE
-				for (let x = goalWorkerX * workerSide, localX = 0; x < (goalWorkerX + 1) * workerSide; x++, localX++) {
-					const index = row + x
+			const worker = getWorker(goal.x, goal.y)
+			const goalField = worker?.read([[goal.x, goal.y]])
 
-					const cost = grid[index]
-					ctx.fillStyle = `hsl(120, 50%, ${cost / maxCost * 50 + 50}%)`
-					ctx.fillRect(x * px, y * px, px, px)
+			if (goalField && worker)
+				for (let y = worker.wy * workerSide, localY = 0; y < (worker.wy + 1) * workerSide; y++, localY++) {
+					const row = y * SIDE
+					for (let x = worker.wx * workerSide, localX = 0; x < (worker.wx + 1) * workerSide; x++, localX++) {
+						const index = row + x
 
-					ctx.strokeStyle = 'black'
-					ctx.fillStyle = 'black'
-					const [dx, dy] = reverseFieldMap[goalField[localY * workerSide + localX]]
-					if (dx === 0 && dy === 0) {
-						ctx.beginPath()
-						ctx.arc(x * px + px / 2, y * px + px / 2, pointerLength / 4, 0, Math.PI * 2)
-						ctx.fill()
-					} else {
-						const angle = Math.atan2(dy, dx)
-						const length = pointerLength / 2
-						const centerX = x * px + px / 2
-						const centerY = y * px + px / 2
-						const xRatio = Math.cos(angle)
-						const yRatio = Math.sin(angle)
-						const endX = centerX + xRatio * length
-						const endY = centerY + yRatio * length
-						const startX = centerX - xRatio * length
-						const startY = centerY - yRatio * length
-						ctx.beginPath()
-						ctx.moveTo(startX, startY)
-						ctx.lineTo(endX, endY)
-						ctx.stroke()
-						ctx.beginPath()
-						ctx.arc(endX, endY, length / 2, 0, Math.PI * 2)
-						ctx.fill()
+						const cost = grid[index]
+						ctx.fillStyle = `hsl(120, 50%, ${cost / maxCost * 50 + 50}%)`
+						ctx.fillRect(x * px, y * px, px, px)
+
+						ctx.strokeStyle = 'black'
+						ctx.fillStyle = 'black'
+						const [dx, dy] = reverseFieldMap[goalField[localY * workerSide + localX]]
+						if (dx === 0 && dy === 0) {
+							ctx.beginPath()
+							ctx.arc(x * px + px / 2, y * px + px / 2, pointerLength / 4, 0, Math.PI * 2)
+							ctx.fill()
+						} else {
+							const angle = Math.atan2(dy, dx)
+							const length = pointerLength / 2
+							const centerX = x * px + px / 2
+							const centerY = y * px + px / 2
+							const xRatio = Math.cos(angle)
+							const yRatio = Math.sin(angle)
+							const endX = centerX + xRatio * length
+							const endY = centerY + yRatio * length
+							const startX = centerX - xRatio * length
+							const startY = centerY - yRatio * length
+							ctx.beginPath()
+							ctx.moveTo(startX, startY)
+							ctx.lineTo(endX, endY)
+							ctx.stroke()
+							ctx.beginPath()
+							ctx.arc(endX, endY, length / 2, 0, Math.PI * 2)
+							ctx.fill()
+						}
 					}
 				}
-			}
 
 			// for (let y = 0; y < SIDE; y++) {
 			// 	const row = y * SIDE
@@ -300,18 +288,12 @@ export default function FlowFieldPage() {
 			ctx.fill()
 		})
 
-		function readField(array: Uint8Array, x: number, y: number) {
-			const index = y * SIDE + x
-			const value = array[index]
-			return reverseFieldMap[value]
-		}
-
 		const controller = new AbortController()
 
 		const eventToPosition = (e: PointerEvent | MouseEvent) => {
 			const { left, top } = canvas.getBoundingClientRect()
-			const x = Math.floor((e.clientX - left) / base * SIDE)
-			const y = Math.floor((e.clientY - top) / base * SIDE)
+			const x = Math.max(Math.min(Math.floor((e.clientX - left) / base * SIDE), SIDE - 1), 0)
+			const y = Math.max(Math.min(Math.floor((e.clientY - top) / base * SIDE), SIDE - 1), 0)
 			return { x, y }
 		}
 
@@ -334,7 +316,7 @@ export default function FlowFieldPage() {
 			const prev = grid[index]
 			if (prev !== undefined && prev !== next) {
 				grid[index] = next
-				postFieldWorker(getWorker(x, y), 'clear', undefined)
+				getWorker(x, y)?.clear()
 				computeGraph()
 			}
 		}, { signal: controller.signal })
@@ -350,7 +332,7 @@ export default function FlowFieldPage() {
 				const next = prev === 0 ? maxCost : 0
 				if (prev !== undefined && prev !== next) {
 					grid[index] = next
-					postFieldWorker(getWorker(x, y), 'clear', undefined)
+					getWorker(x, y)?.clear()
 					computeGraph()
 				}
 			}
@@ -374,7 +356,7 @@ export default function FlowFieldPage() {
 			if (grid[y * SIDE + x] === maxCost) return
 			goal.x = x
 			goal.y = y
-			postFieldWorker(getWorker(x, y), 'query', goal)
+			getWorker(x, y)?.query([[goal.x, goal.y]])
 			pathFinding(path, from, goal)
 		}, { signal: controller.signal })
 
@@ -394,4 +376,109 @@ export default function FlowFieldPage() {
 			</canvas>
 		</div>
 	)
+}
+
+function createWorkerCacheLayer(
+	init: {
+		workerSide: number,
+		wx: number,
+		wy: number,
+		fieldBuffer: SharedArrayBuffer,
+		gridBuffer: SharedArrayBuffer,
+		offset: number,
+	},
+	layers: number,
+	maxSize: number
+) {
+	type Goal = [x: number, y: number]
+
+	const keys: string[] = []
+	const map = new Map<string, number>()
+
+	const worker = new FieldWorker()
+
+	const x1 = init.workerSide * init.wx
+	const x2 = init.workerSide * (init.wx + 1) - 1
+	const y1 = init.workerSide * init.wy
+	const y2 = init.workerSide * (init.wy + 1) - 1
+	postFieldWorker(worker, 'init', {
+		field: init.fieldBuffer,
+		grid: init.gridBuffer,
+		side: SIDE,
+		range: [x1, x2, y1, y2],
+		index: init.wy * workersPerRow + init.wx,
+		wx: init.wx,
+		wy: init.wy
+	})
+
+	function postFieldWorker<I extends FieldIncoming["type"]>(
+		worker: Worker,
+		type: I,
+		data: Extract<FieldIncoming, { type: I }>["data"],
+		transfer?: Transferable[]
+	) {
+		worker.postMessage({ type, data }, { transfer })
+	}
+
+	function toKey(goals: Goal[]) {
+		return goals.toString()
+	}
+
+	function clear() {
+		map.clear()
+		keys.length = 0
+		postFieldWorker(worker, 'clear', undefined)
+	}
+
+	function query(goals: Goal[]) {
+		const key = toKey(goals)
+		const index = map.get(key)
+
+		// from cache
+		if (index !== undefined) {
+			// postFieldWorker(worker, 'query', { goals, layer: index })
+			return
+		}
+
+		// evict and replace
+		if (map.size === maxSize) {
+			const oldKey = keys.shift()!
+			const index = map.get(oldKey)!
+			map.delete(oldKey)
+			map.set(key, index)
+			keys.push(key)
+			postFieldWorker(worker, 'query', { goals, layer: index })
+			return
+		}
+
+		// add to cache
+		{
+			const index = map.size
+			map.set(key, index)
+			keys.push(key)
+			postFieldWorker(worker, 'query', { goals, layer: index })
+			return
+		}
+	}
+
+	const { offset, fieldBuffer } = init
+	const length = layers * Uint8Array.BYTES_PER_ELEMENT
+	function read(goals: Goal[]) {
+		const key = toKey(goals)
+		const index = map.get(key)
+
+		if (index === undefined) return
+
+		const goalOffset = offset + index * layers
+		const layer = new Uint8Array(fieldBuffer, goalOffset * Uint8Array.BYTES_PER_ELEMENT, length)
+		return layer
+	}
+
+	return {
+		query,
+		read,
+		clear,
+		wx: init.wx,
+		wy: init.wy,
+	}
 }
