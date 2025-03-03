@@ -166,8 +166,12 @@ export default function SwarmPathfindingPage() {
 			if (!prev || !ctx) return
 
 
-			for (const entity of entities) {
-				entity.update(dt)
+			if (options.geometry) {
+				entities[0].update(dt)
+			} else {
+				for (const entity of entities) {
+					entity.update(dt)
+				}
 			}
 
 			ctx.clearRect(0, 0, side, side)
