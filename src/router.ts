@@ -21,7 +21,7 @@ import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/scree
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "flow-field" | "flask" | "collision-threads" | "bird-inverse-kinematics" | "ants" | "a-star"
+export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "neat" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "flow-field" | "flask" | "collision-threads" | "bird-inverse-kinematics" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
@@ -140,6 +140,16 @@ export const ROUTES = {
 			firstAdded: 1717321960000
 		},
 	},
+	"neat": {
+		Component: lazy(() => import("./pages/neat/index.tsx")),
+		meta: {
+			title: 'N.E.A.T',
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
+		},
+	},
 	"modern-modal": {
 		Component: lazy(() => import("./pages/modern-modal/index.tsx")),
 		meta: {
@@ -200,8 +210,8 @@ export const ROUTES = {
 			title: 'Grainy Texture',
 		},
 		git: {
-			lastModified: 0,
-			firstAdded: 0
+			lastModified: 1741450768000,
+			firstAdded: 1741450768000
 		},
 	},
 	"fragment-portal": {
