@@ -20,49 +20,22 @@ export default function Neat() {
 		canvas.width = side
 		canvas.height = side
 
-		const entites = [
-			makeEntity(makeRandomGenome(), {
-				x: Math.random() * side,
-				y: Math.random() * side,
-				angle: Math.random() * Math.PI * 2,
-			}),
-			makeEntity(makeRandomGenome(), {
-				x: Math.random() * side,
-				y: Math.random() * side,
-				angle: Math.random() * Math.PI * 2,
-			}),
-			makeEntity(makeRandomGenome(), {
-				x: Math.random() * side,
-				y: Math.random() * side,
-				angle: Math.random() * Math.PI * 2,
-			}),
-			makeEntity(makeRandomGenome(), {
-				x: Math.random() * side,
-				y: Math.random() * side,
-				angle: Math.random() * Math.PI * 2,
-			}),
-			makeEntity(makeRandomGenome(), {
-				x: Math.random() * side,
-				y: Math.random() * side,
-				angle: Math.random() * Math.PI * 2,
-			}),
-			makeEntity(makeRandomGenome(), {
-				x: Math.random() * side,
-				y: Math.random() * side,
-				angle: Math.random() * Math.PI * 2,
-			}),
-			makeEntity(makeRandomGenome(), {
-				x: Math.random() * side,
-				y: Math.random() * side,
-				angle: Math.random() * Math.PI * 2,
-			})
-		]
+		const entities = Array.from({ length: 3000 }, () => makeEntity(makeRandomGenome(), {
+			x: Math.random() * side,
+			y: Math.random() * side,
+			angle: Math.random() * Math.PI * 2,
+		}))
 
+		let iterations = 0
 		let rafId = requestAnimationFrame(function loop() {
 			rafId = requestAnimationFrame(loop)
 			ctx.clearRect(0, 0, canvas.width, canvas.height)
+			iterations++
+			if (iterations % 100 === 0) {
+				console.log(iterations, 'ticks')
+			}
 
-			for (const entity of entites) {
+			for (const entity of entities) {
 				const ahead_future_x = entity.state.x + Math.cos(entity.state.angle) * 10
 				const ahead_future_y = entity.state.y + Math.sin(entity.state.angle) * 10
 				const has_wall_ahead = ahead_future_x < 0 || ahead_future_x > side || ahead_future_y < 0 || ahead_future_y > side
@@ -148,6 +121,8 @@ function makeEntity(genome: Type, state: { x: number, y: number, angle: number }
 		incoming: [from: number, weight: number][]
 	}> = []
 
+	const initial = { x: state.x, y: state.y }
+
 	for (let i = 0; i < genome.length; i++) {
 		const allele = genome[i]
 
@@ -214,7 +189,7 @@ function makeEntity(genome: Type, state: { x: number, y: number, angle: number }
 		memory.set(current)
 
 		state.angle += (current[7] - current[6]) * Math.PI / 180
-		const speed = Math.min(100, Math.max(0, current[8]))
+		const speed = Math.min(1, Math.max(0, current[8] / MAX))
 		if (speed > 0) {
 			state.x += Math.cos(state.angle) * speed
 			state.y += Math.sin(state.angle) * speed
@@ -241,6 +216,7 @@ function makeEntity(genome: Type, state: { x: number, y: number, angle: number }
 		tick,
 		draw,
 		state,
+		initial,
 	}
 }
 
@@ -415,35 +391,37 @@ function mutate(genome: Type): Type {
 			result[i + 3] = genome[i + 3]
 			i += 3 // skip gene
 		}
+		return result
 	}
 
 	// change connection weight
-	const result = new Type(genome.length)
-	const total = getConnectionCount()
-	const index = Math.floor(Math.random() * total)
-	let current = 0
-	for (let i = 0; i < genome.length; i++) {
-		if (genome[i] === 1) {
-			if (current === index) {
-				result[i] = genome[i]
-				result[i + 1] = genome[i + 1]
-				result[i + 2] = genome[i + 2]
-				result[i + 3] = Math.floor(Math.random() * MAX)
-				i += 3 // skip connection gene
-				current++
-				continue
-			} else {
-				current++
+	else {
+		const result = new Type(genome.length)
+		const total = getConnectionCount()
+		const index = Math.floor(Math.random() * total)
+		let current = 0
+		for (let i = 0; i < genome.length; i++) {
+			if (genome[i] === 1) {
+				if (current === index) {
+					result[i] = genome[i]
+					result[i + 1] = genome[i + 1]
+					result[i + 2] = genome[i + 2]
+					result[i + 3] = Math.floor(Math.random() * MAX)
+					i += 3 // skip connection gene
+					current++
+					continue
+				} else {
+					current++
+				}
 			}
+			result[i] = genome[i]
+			result[i + 1] = genome[i + 1]
+			result[i + 2] = genome[i + 2]
+			result[i + 3] = genome[i + 3]
+			i += 3 // skip gene
 		}
-		result[i] = genome[i]
-		result[i + 1] = genome[i + 1]
-		result[i + 2] = genome[i + 2]
-		result[i + 3] = genome[i + 3]
-		i += 3 // skip gene
+		return result
 	}
-	return result
-
 }
 
 function makeRandomGenome() {
@@ -462,6 +440,7 @@ function makeRandomGenome() {
 		genome[offset + i * 4 + 1] = Math.floor(Math.random() * nodes) // from
 		genome[offset + i * 4 + 2] = Math.floor(Math.random() * nodes) // to
 		genome[offset + i * 4 + 3] = Math.floor(Math.random() * MAX) // weight
+		if (genome[offset + i * 4 + 2] === 8) console.log('to forward node')
 	}
 	return genome
 }

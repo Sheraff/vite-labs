@@ -146,8 +146,8 @@ export const ROUTES = {
 			title: 'N.E.A.T',
 		},
 		git: {
-			lastModified: 0,
-			firstAdded: 0
+			lastModified: 1741456619000,
+			firstAdded: 1727995709000
 		},
 	},
 	"modern-modal": {
