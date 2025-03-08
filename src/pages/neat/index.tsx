@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from "react"
+import { useEffect, useRef } from "react"
 import styles from './styles.module.css'
 import { Head } from "~/components/Head"
 import type { RouteMeta } from "~/router"
@@ -20,49 +20,83 @@ export default function Neat() {
 		canvas.width = side
 		canvas.height = side
 
-		const entities = Array.from({ length: 3000 }, () => makeEntity(makeRandomGenome(), {
+		const start = (iterations: number, cb: () => void) => {
+			rafId = requestAnimationFrame(function loop() {
+				if (iterations === 0) return cb()
+				rafId = requestAnimationFrame(loop)
+				ctx.clearRect(0, 0, canvas.width, canvas.height)
+				iterations--
+				if (iterations % 100 === 0) {
+					console.log(iterations, 'ticks')
+				}
+
+				for (const entity of entities) {
+					const ahead_future_x = entity.state.x + Math.cos(entity.state.angle) * 10
+					const ahead_future_y = entity.state.y + Math.sin(entity.state.angle) * 10
+					const has_wall_ahead = ahead_future_x < 0 || ahead_future_x > side || ahead_future_y < 0 || ahead_future_y > side
+					const left_future_x = entity.state.x + Math.cos(entity.state.angle - Math.PI / 2) * 10
+					const left_future_y = entity.state.y + Math.sin(entity.state.angle - Math.PI / 2) * 10
+					const has_wall_left = left_future_x < 0 || left_future_x > side || left_future_y < 0 || left_future_y > side
+					const right_future_x = entity.state.x + Math.cos(entity.state.angle + Math.PI / 2) * 10
+					const right_future_y = entity.state.y + Math.sin(entity.state.angle + Math.PI / 2) * 10
+					const has_wall_right = right_future_x < 0 || right_future_x > side || right_future_y < 0 || right_future_y > side
+					entity.tick([
+						+has_wall_left,
+						+has_wall_ahead,
+						+has_wall_right,
+						0,
+						0,
+						0,
+					])
+					if (entity.state.x < 0) entity.state.x = 0
+					if (entity.state.x > side) entity.state.x = side
+					if (entity.state.y < 0) entity.state.y = 0
+					if (entity.state.y > side) entity.state.y = side
+					entity.draw(ctx)
+				}
+			})
+		}
+
+		const makeRandomStart = () => ({
 			x: Math.random() * side,
 			y: Math.random() * side,
 			angle: Math.random() * Math.PI * 2,
-		}))
-
-		let iterations = 0
-		let rafId = requestAnimationFrame(function loop() {
-			rafId = requestAnimationFrame(loop)
-			ctx.clearRect(0, 0, canvas.width, canvas.height)
-			iterations++
-			if (iterations % 100 === 0) {
-				console.log(iterations, 'ticks')
-			}
-
-			for (const entity of entities) {
-				const ahead_future_x = entity.state.x + Math.cos(entity.state.angle) * 10
-				const ahead_future_y = entity.state.y + Math.sin(entity.state.angle) * 10
-				const has_wall_ahead = ahead_future_x < 0 || ahead_future_x > side || ahead_future_y < 0 || ahead_future_y > side
-				const left_future_x = entity.state.x + Math.cos(entity.state.angle - Math.PI / 2) * 10
-				const left_future_y = entity.state.y + Math.sin(entity.state.angle - Math.PI / 2) * 10
-				const has_wall_left = left_future_x < 0 || left_future_x > side || left_future_y < 0 || left_future_y > side
-				const right_future_x = entity.state.x + Math.cos(entity.state.angle + Math.PI / 2) * 10
-				const right_future_y = entity.state.y + Math.sin(entity.state.angle + Math.PI / 2) * 10
-				const has_wall_right = right_future_x < 0 || right_future_x > side || right_future_y < 0 || right_future_y > side
-				entity.tick([
-					+has_wall_left,
-					+has_wall_ahead,
-					+has_wall_right,
-					0,
-					0,
-					0,
-				])
-				if (entity.state.x < 0) entity.state.x = 0
-				if (entity.state.x > side) entity.state.x = side
-				if (entity.state.y < 0) entity.state.y = 0
-				if (entity.state.y > side) entity.state.y = side
-				entity.draw(ctx)
-			}
-
 		})
+
+		const entities = Array.from({ length: 2000 }, () => makeEntity(makeRandomGenome(), makeRandomStart()))
+
+		let rafId: number
+		let rendered = true
+		void (async () => {
+			for (let iter = 0; iter < 100; iter++) {
+				await new Promise<void>(resolve => start(1000, resolve))
+				if (!rendered) return
+				const generation_size = 10
+				const best = entities.map(e => {
+					const score = Math.hypot(e.state.x - e.initial.x, e.state.y - e.initial.y)
+					return [score, e.genome] as const
+				}).filter(([score]) => score > 0).sort(([a], [b]) => b - a).slice(0, generation_size)
+				for (let i = best.length; i < generation_size; i++) {
+					best.push([0, makeRandomGenome()])
+				}
+				// const totalScore = best.reduce((accu, [score]) => accu + score, 0)
+				let i = 0
+				for (const [, genome] of best) {
+					for (let j = 0; j < 100; j++) {
+						entities[i] = makeEntity(genome, makeRandomStart())
+						i++
+					}
+					for (let j = 0; j < 100; j++) {
+						entities[i] = makeEntity(mutate(genome), makeRandomStart())
+						i++
+					}
+				}
+			}
+		})()
+
 		return () => {
 			cancelAnimationFrame(rafId)
+			rendered = false
 		}
 	}, [])
 
@@ -132,6 +166,9 @@ function makeEntity(genome: Type, state: { x: number, y: number, angle: number }
 			const index = genome[i + 1]
 			const aggregation = AGGREGATIONS[genome[i + 2]]
 			const activation = ACTIVATIONS[genome[i + 3]]
+			if (typeof activation !== "function") {
+				throw new Error(`Invalid activation function: ${activation} @ ${genome[i + 3]}`)
+			}
 			if (graph[index]) {
 				graph[index].activation = activation
 				graph[index].aggregation = aggregation
@@ -183,6 +220,10 @@ function makeEntity(genome: Type, state: { x: number, y: number, angle: number }
 				value += memory[from] * weight
 			}
 			value = node.aggregation([value, memory[i]])
+			if (typeof node.activation !== "function") {
+				console.log({ node, i, graph })
+				throw new Error(`Invalid activation function: ${node.activation} @ ${i}`)
+			}
 			value = node.activation(value)
 			current[i] = value
 		}
@@ -217,6 +258,7 @@ function makeEntity(genome: Type, state: { x: number, y: number, angle: number }
 		draw,
 		state,
 		initial,
+		genome,
 	}
 }
 
@@ -265,6 +307,7 @@ function mutate(genome: Type): Type {
 			if (genome[i] === 0 && genome[i + 1] === index) {
 				i += 3 // skip node gene
 				j -= 1
+				continue
 			}
 			result[j] = genome[i]
 			result[j + 1] = genome[i + 1]
@@ -301,6 +344,8 @@ function mutate(genome: Type): Type {
 				if (current === index) {
 					i += 3 // skip connection gene
 					j -= 1
+					current++
+					continue
 				}
 				current++
 			}
@@ -469,7 +514,7 @@ const ACTIVATIONS: Array<(x: number) => number> = [
 	/*'softplus': */ // x => x,
 	/*'square': */  x => Math.pow(x, 2),
 	/*'tanh': */    x => Math.tanh(x),
-	/*'binary': */  x => x < 0 ? 0 : 1,
+	/*'binary': */  x => x < 0 ? 0 : 1
 ]
 const AGGREGATIONS: Array<(arr: number[]) => number> = [
 	/* 'sum': */    arr => arr.reduce((accu, curr) => accu + curr, 0),
@@ -478,5 +523,5 @@ const AGGREGATIONS: Array<(arr: number[]) => number> = [
 	/* 'max': */    arr => Math.max(...arr),
 	/* 'min': */    arr => Math.min(...arr),
 	/* 'maxabs': */ arr => Math.max(...arr.map(Math.abs)),
-	/* 'median': */ arr => arr.sort()[Math.ceil(arr.length / 2)],
+	/* 'median': */ arr => arr.sort()[Math.ceil(arr.length / 2)]
 ]
