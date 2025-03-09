@@ -225,9 +225,6 @@ export function makeRandomGenome() {
 			? 8
 			: Math.floor(Math.random() * nodes) // to
 		genome[offset + i * 4 + 3] = Math.floor(Math.random() * MAX) // weight
-		if (genome[offset + i * 4 + 2] === 8) {
-			console.log('to forward node')
-		}
 	}
 	return genome
 }

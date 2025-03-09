@@ -14,11 +14,39 @@
 		transform: translate(-50%, -50%);
 		border: 1px solid white;
 		aspect-ratio: 1;
-		width: 100lvmin;
+		width: 100dvmin;
+		height: 100dvmin;
+		pointer-events: none;
 	}
 }
 
 .head {
 	position: relative;
 	z-index: 1;
+}
+
+.form {
+	width: fit-content;
+	font-variant-numeric: tabular-nums;
+
+	fieldset {
+		margin: 0;
+		border-style: solid;
+	}
+
+	input,
+	progress {
+		width: 100%;
+	}
+
+	hr {
+		margin: 1em -0.75em;
+		border-style: solid;
+		border-color: threedface;
+	}
+
+	label {
+		margin: 0;
+		display: block;
+	}
 }
