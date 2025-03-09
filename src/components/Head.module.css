@@ -3,3 +3,7 @@
 	margin: 0 0 1rem;
 	display: block;
 }
+
+.desc {
+	max-width: 40ch;
+}
