@@ -1,6 +1,5 @@
 import { createLogger, type Plugin } from 'vite'
 import {
-	// @ts-expect-error -- glob is not in the types yet
 	glob,
 	mkdir,
 	readFile,
