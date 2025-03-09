@@ -18,6 +18,7 @@ export const meta: RouteMeta = {
 		each with a genome (a neural network). After a time, we select the best 1% of entities and create
 		a new generation by copying them and mutating them.
 	`,
+	image: './screen.png'
 }
 
 /** The number of entities to simulate */

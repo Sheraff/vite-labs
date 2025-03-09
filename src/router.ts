@@ -10,6 +10,7 @@ import quad_tree_image from "./pages/quad-tree/screen.png"
 import pong_pang_image from "./pages/pong-pang/screen.png"
 import perlin_ripples_image from "./pages/perlin-ripples/screen.png"
 import paint_worklet_image from "./pages/paint-worklet/screen.png"
+import neat_image from "./pages/neat/screen.png"
 import minesweeper_image from "./pages/minesweeper/screen.png"
 import lightning_image from "./pages/lightning/screen.png"
 import hex_a_star_image from "./pages/hex-a-star/screen.png"
@@ -150,9 +151,10 @@ export const ROUTES = {
 				each with a genome (a neural network). After a time, we select the best 1% of entities and create
 				a new generation by copying them and mutating them.
 			`,
+			image: neat_image
 		},
 		git: {
-			lastModified: 1741558980000,
+			lastModified: 1741564181000,
 			firstAdded: 1727995709000
 		},
 	},
