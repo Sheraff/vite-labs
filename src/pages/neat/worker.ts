@@ -1,12 +1,12 @@
 /// <reference lib="webworker" />
 
-import type { Type } from "./constants"
+import type { Food, Type } from "./constants"
 import { makeEntity, makeStartState } from "./entity"
 import { evaluate } from "./evaluate"
 import { simulate } from "./simulate"
 
 export type Incoming =
-	| { type: "config", data: { side: number, iterations: number } }
+	| { type: "config", data: { side: number, iterations: number, food: Food } }
 	| { type: "evaluate", data: { genome: Type, id: number } }
 
 export type Outgoing =
@@ -20,12 +20,14 @@ export type Outgoing =
 	let config = false
 	let side = 0
 	let iterations = 0
+	let food: Food = []
 
 	function handleMessage(event: Incoming) {
 		if (event.type === "config") {
 			config = true
 			side = event.data.side
 			iterations = event.data.iterations
+			food = event.data.food
 			return
 		}
 
@@ -37,6 +39,7 @@ export type Outgoing =
 				entities: [entity],
 				iterations,
 				side,
+				food,
 			}, () => {
 				const score = evaluate(entity)
 				postMessage('evaluate', { id: event.data.id, score })

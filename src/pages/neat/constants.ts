@@ -36,6 +36,8 @@ export const INNATE_NODES = 9
 export const Type = Uint8Array
 export type Type = InstanceType<typeof Type>
 
+export type Food = ReadonlyArray<[x: number, y: number]>
+
 export const MAX = 2 ** (Type.BYTES_PER_ELEMENT * 8) - 1
 
 export const ACTIVATIONS: Array<(x: number) => number> = [
