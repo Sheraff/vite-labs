@@ -2,13 +2,13 @@ import { useEffect, useRef, useState } from "react"
 import styles from './styles.module.css'
 import { Head } from "~/components/Head"
 import type { RouteMeta } from "~/router"
-import { makeEntity, makeStartState, type Entity } from "@neat/entity"
-import { makeRandomGenome, mutate } from "@neat/random"
-import { simulate } from "@neat/simulate"
+import { makeEntity, makeStartState, type Entity } from "./entity"
+import { makeRandomGenome, mutate } from "./random"
+import { simulate } from "./simulate"
 import Worker from './worker?worker'
 import type { Incoming, Outgoing } from './worker'
-import { evaluate } from "@neat/evaluate"
-import type { Type } from "@neat/constants"
+import { evaluate } from "./evaluate"
+import type { Type } from "./constants"
 
 export const meta: RouteMeta = {
 	title: 'N.E.A.T',

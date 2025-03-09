@@ -1,4 +1,4 @@
-import { ACTIVATIONS, AGGREGATIONS, INNATE_NODES, MAX, type Type } from "@neat/constants"
+import { ACTIVATIONS, AGGREGATIONS, INNATE_NODES, MAX, type Type } from "./constants"
 
 export type Entity = ReturnType<typeof makeEntity>
 

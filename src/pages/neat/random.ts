@@ -1,4 +1,4 @@
-import { ACTIVATIONS, AGGREGATIONS, INNATE_NODES, MAX, Type } from "@neat/constants"
+import { ACTIVATIONS, AGGREGATIONS, INNATE_NODES, MAX, Type } from "./constants"
 
 export function mutate(genome: Type): Type {
 	const kind = Math.random()

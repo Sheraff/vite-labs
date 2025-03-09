@@ -1,9 +1,9 @@
 /// <reference lib="webworker" />
 
-import type { Type } from "@neat/constants"
-import { makeEntity, makeStartState } from "@neat/entity"
-import { evaluate } from "@neat/evaluate"
-import { simulate } from "@neat/simulate"
+import type { Type } from "./constants"
+import { makeEntity, makeStartState } from "./entity"
+import { evaluate } from "./evaluate"
+import { simulate } from "./simulate"
 
 export type Incoming =
 	| { type: "config", data: { side: number, iterations: number } }

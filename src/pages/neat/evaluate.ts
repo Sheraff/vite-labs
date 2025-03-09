@@ -1,4 +1,4 @@
-import type { Entity } from "@neat/entity"
+import type { Entity } from "./entity"
 
 export function evaluate(entity: Entity) {
 	if (!entity.state.alive) return 0

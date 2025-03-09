@@ -1,4 +1,4 @@
-import type { Entity } from "@neat/entity"
+import type { Entity } from "./entity"
 
 export async function simulate(opts: {
 	entities: Entity[],
