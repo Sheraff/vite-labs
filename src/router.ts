@@ -144,9 +144,14 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/neat/index.tsx")),
 		meta: {
 			title: 'N.E.A.T',
+			description: `
+				NeuroEvolution of Augmenting Topologies. A genetic algorithm that evolves neural networks to solve a task
+				(here: go the furthest). Every generation, we simulate 2000 entities, each with a genome (a neural network).
+				After a time, we select the best 1% of entities and create a new generation by copying them and mutating them.
+			`,
 		},
 		git: {
-			lastModified: 1741550311000,
+			lastModified: 1741557197000,
 			firstAdded: 1727995709000
 		},
 	},
