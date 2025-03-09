@@ -125,7 +125,9 @@ async function getMeta(key: string, index: string, ctx?: Context) {
 		if (ctx?.resolve) {
 			for (let i = foundNode.properties.length - 1; i >= 0; i--) {
 				const prop = foundNode.properties[i]
-				if (prop.type !== 'Property' || prop.value.type !== 'Literal') throw new Error('Expected Literal value in meta object for static analysis')
+				if (prop.type !== 'Property') throw new Error('Expected Property in meta object for static analysis')
+				if (prop.value.type === 'TemplateLiteral') continue // hopefully the expressions remain valid once we move this out
+				if (prop.value.type !== 'Literal') throw new Error('Expected Literal value in meta object for static analysis')
 				if (typeof prop.value.value === 'string') {
 					const k = prop.key.type === 'Identifier' && prop.key.name
 					if (!k) throw new Error('Expected Identifier key in meta object for static analysis')
