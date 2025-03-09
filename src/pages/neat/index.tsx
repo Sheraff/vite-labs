@@ -91,9 +91,9 @@ export default function Neat() {
 		const controller = new AbortController()
 
 		const makeRandomStart = () => ({
-			x: Math.random() * side,
-			y: Math.random() * side,
-			angle: Math.random() * Math.PI * 2,
+			x: side / 2,
+			y: side / 2,
+			angle: 0,
 		})
 
 		const count = 2000
@@ -117,8 +117,8 @@ export default function Neat() {
 				// }
 				// const totalScore = best.reduce((accu, [score]) => accu + score, 0)
 				let i = 0
-				const copies = 20
-				const mutations = 70
+				const copies = 1
+				const mutations = 90
 				for (const [, genome] of best) {
 					for (let j = 0; j < copies; j++) {
 						entities[i] = makeEntity(genome, makeRandomStart())
@@ -576,7 +576,7 @@ function mutate(genome: Type): Type {
 
 function makeRandomGenome() {
 	const nodes = Math.floor(Math.random() * 10) + 1
-	const connections = Math.floor(Math.random() * 10) + 1
+	const connections = Math.floor(Math.random() * 20) + 1
 	const genome = new Type(nodes * 4 + connections * 4).fill(0)
 	for (let i = 0; i < nodes; i++) {
 		genome[i * 4] = 0 // node gene
@@ -588,9 +588,13 @@ function makeRandomGenome() {
 	for (let i = 0; i < connections; i++) {
 		genome[offset + i * 4] = 1 // connection gene
 		genome[offset + i * 4 + 1] = Math.floor(Math.random() * nodes) // from
-		genome[offset + i * 4 + 2] = Math.floor(Math.random() * nodes) // to
+		genome[offset + i * 4 + 2] = i === 0
+			? 8
+			: Math.floor(Math.random() * nodes) // to
 		genome[offset + i * 4 + 3] = Math.floor(Math.random() * MAX) // weight
-		if (genome[offset + i * 4 + 2] === 8) console.log('to forward node')
+		if (genome[offset + i * 4 + 2] === 8) {
+			console.log('to forward node')
+		}
 	}
 	return genome
 }

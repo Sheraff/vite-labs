@@ -146,7 +146,7 @@ export const ROUTES = {
 			title: 'N.E.A.T',
 		},
 		git: {
-			lastModified: 1741462213000,
+			lastModified: 1741538070000,
 			firstAdded: 1727995709000
 		},
 	},
