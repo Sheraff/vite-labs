@@ -64,7 +64,7 @@ async function loop(
 	entities: Entity[],
 	workers: Worker[],
 ) {
-	const generation_size = Math.floor(entities.length * SURVIVE_PERCENT)
+	const survivorCount = Math.floor(entities.length * SURVIVE_PERCENT / 100)
 	for (let iter = 0; iter < GENERATIONS; iter++) {
 		console.log('Generation', iter)
 		if (controller.signal.aborted) return
@@ -78,7 +78,7 @@ async function loop(
 			.map((score, i) => [score, entities[i].genome] as const)
 			.filter(([score]) => score > 0)
 			.sort(([a], [b]) => b - a)
-			.slice(0, generation_size)
+			.slice(0, survivorCount)
 		let i = 0
 		const copies = 1
 		const mutations = 90
@@ -98,10 +98,14 @@ async function loop(
 	}
 }
 
+/** The number of entities to simulate */
 const POPULATION = 2000
+/** The number of iterations to simulate during 1 generation */
 const ITERATIONS = 1000
+/** The number of generations to simulate */
 const GENERATIONS = 1000
-const SURVIVE_PERCENT = 0.1
+/** The percentage of entities that will survive to the next generation */
+const SURVIVE_PERCENT = 20
 
 type BatchOpts = {
 	ctx: CanvasRenderingContext2D
