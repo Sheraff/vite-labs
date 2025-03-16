@@ -78,24 +78,19 @@ export function makeEntity(genome: Type, initial: { x: number, y: number, angle:
 	const current = new Float32Array(nodes + INNATE_NODES).fill(0)
 
 	function tick(inputs: number[]) {
+		current.fill(0)
 		for (let i = 0; i < inputs.length; i++) {
 			memory[i] = inputs[i]
+			current[i] = inputs[i]
 		}
-		current.fill(0)
 		for (let i = 0; i < graph.length; i++) {
 			const node = graph[i]
 			if (!node) continue
-			let value = 0
-			for (const [from, weight] of node.incoming) {
-				value += memory[from] * weight
-			}
-			value = node.aggregation([value, memory[i]])
-			if (typeof node.activation !== "function") {
-				console.log({ node, i, graph })
-				throw new Error(`Invalid activation function: ${node.activation} @ ${i}`)
-			}
-			value = node.activation(value)
-			current[i] = value
+			current[i] = node.activation(
+				node.aggregation(
+					node.incoming.map(([from, weight]) => memory[from] * weight)
+				)
+			)
 		}
 		memory.set(current)
 
@@ -136,5 +131,6 @@ export function makeEntity(genome: Type, initial: { x: number, y: number, angle:
 		state,
 		initial,
 		genome,
+		memory,
 	}
 }
