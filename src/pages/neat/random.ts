@@ -1,4 +1,4 @@
-import { ACTIVATIONS, AGGREGATIONS, INNATE_NODES, MAX, Type } from "./constants"
+import { ACTIVATIONS, AGGREGATIONS, INNATE_NODES, INPUT_NODES, MAX, OUTPUT_NODES, Type } from "./constants"
 
 export function mutate(genome: Type): Type {
 	const kind = Math.random()
@@ -220,10 +220,22 @@ export function makeRandomGenome() {
 	const offset = nodes * 4
 	for (let i = 0; i < connections; i++) {
 		genome[offset + i * 4] = 1 // connection gene
-		genome[offset + i * 4 + 1] = Math.floor(Math.random() * nodes) // from
-		genome[offset + i * 4 + 2] = i === 0
-			? 8
-			: Math.floor(Math.random() * nodes) // to
+		from: {
+			const rand = Math.floor(Math.random() * (nodes + INPUT_NODES.length))
+			if (rand < INPUT_NODES.length) {
+				genome[offset + i * 4 + 1] = rand
+			} else {
+				genome[offset + i * 4 + 1] = rand + OUTPUT_NODES.length
+			}
+		}
+		to: {
+			if (i === 0) {
+				genome[offset + i * 4 + 2] = 8 // move ahead
+			} else {
+				const rand = Math.floor(Math.random() * (nodes + OUTPUT_NODES.length)) + INPUT_NODES.length
+				genome[offset + i * 4 + 2] = rand
+			}
+		}
 		genome[offset + i * 4 + 3] = Math.floor(Math.random() * MAX) // weight
 	}
 	return genome
