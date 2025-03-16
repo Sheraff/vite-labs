@@ -8,7 +8,8 @@ import { simulate } from "./simulate"
 import Worker from './worker?worker'
 import type { Incoming, Outgoing } from './worker'
 import { evaluate } from "./evaluate"
-import type { Food, Type } from "./constants"
+import { type Food, type Type } from "./constants"
+import { GenomeViz } from "./GenomeViz"
 
 export const meta: RouteMeta = {
 	title: 'N.E.A.T',
@@ -28,7 +29,7 @@ const ITERATIONS = 1200
 /** The number of generations to simulate */
 const GENERATIONS = 1000
 /** The percentage of entities that will survive to the next generation */
-const SURVIVE_PERCENT = 10
+const SURVIVE_PERCENT = 5
 /** The number of food entities to simulate */
 const FOOD_COUNT = 200
 
@@ -68,84 +69,12 @@ export default function Neat() {
 		return () => controller.abort()
 	}, [generation, context])
 
-
-	// useEffect(() => {
-	// 	if (!context) return
-	// 	const controller = new AbortController()
-
-	// 	const mouse = { x: 0, y: 0 }
-	// 	window.addEventListener('mousemove', (e) => {
-	// 		const { left, top } = context.canvas.getBoundingClientRect()
-	// 		mouse.x = (e.clientX - left) * devicePixelRatio
-	// 		mouse.y = (e.clientY - top) * devicePixelRatio
-	// 	}, { signal: controller.signal })
-
-	// 	const entity = makeEntity(makeRandomGenome(), makeStartState(side))
-
-	// 	const food = Array.from({ length: 100 }, () => ([
-	// 		Math.random() * side,
-	// 		Math.random() * side,
-	// 	] as const))
-
-	// 	requestAnimationFrame(function loop() {
-	// 		if (controller.signal.aborted) return
-	// 		requestAnimationFrame(loop)
-	// 		context.clearRect(0, 0, side, side)
-	// 		context.fillStyle = 'red'
-	// 		context.fillRect(mouse.x - 5, mouse.y - 5, 10, 10)
-	// 		entity.state.x = mouse.x
-	// 		entity.state.y = mouse.y
-	// 		entity.draw(context)
-
-	// 		for (const [food_x, food_y] of food) {
-	// 			context.fillStyle = 'green'
-	// 			context.fillRect(food_x - 5, food_y - 5, 10, 10)
-	// 		}
-
-	// 		let closest_food_x = -1
-	// 		let closest_food_y = -1
-	// 		let closest_food_distance = Infinity
-	// 		for (let f = 0; f < food.length; f++) {
-	// 			const [food_x, food_y] = food[f]
-	// 			const distance = Math.hypot(entity.state.x - food_x, entity.state.y - food_y)
-	// 			if (distance < closest_food_distance) {
-	// 				closest_food_distance = distance
-	// 				closest_food_x = food_x
-	// 				closest_food_y = food_y
-	// 			}
-	// 		}
-	// 		let text = ''
-	// 		let has_food_ahead = false
-	// 		let has_food_left = false
-	// 		let has_food_right = false
-	// 		if (closest_food_distance < 100) {
-	// 			const angle_to_food = (Math.atan2(entity.state.y - closest_food_y, entity.state.x - closest_food_x) + Math.PI * 2) % (Math.PI * 2) - Math.PI
-	// 			text += `angle_to_food=${angle_to_food.toFixed(2)}`
-	// 			has_food_ahead = Math.abs(angle_to_food - entity.state.angle) < Math.PI / 5
-	// 			has_food_left = !has_food_ahead && angle_to_food < 0 && angle_to_food > - Math.PI / 2
-	// 			has_food_right = !has_food_ahead && angle_to_food > 0 && angle_to_food < Math.PI / 2
-	// 			context.fillStyle = 'pink'
-	// 			context.fillRect(closest_food_x - 5, closest_food_y - 5, 10, 10)
-	// 		}
-
-
-	// 		if (has_food_ahead) text += ' ahead'
-	// 		if (has_food_left) text += ' left'
-	// 		if (has_food_right) text += ' right'
-	// 		context.fillStyle = 'white'
-	// 		context.font = '20px sans-serif'
-	// 		context.fillText(text, 10, 20)
-	// 	})
-
-	// 	return () => controller.abort()
-	// }, [context])
-
 	return (
 		<div className={styles.main}>
 			<div className={styles.head}>
 				<Head />
 			</div>
-			<canvas width="1000" height="1000" ref={(element) => {
+			<canvas width="1000" height="1000" className={styles.canvas} ref={(element) => {
 				if (element && element !== canvas) {
 					setCanvas(element)
 					element.height = side
@@ -178,6 +107,9 @@ export default function Neat() {
 					<label htmlFor="range">Playing generation {selected.toString().padStart(2, '0')} of {displayGeneration.toString().padStart(2, '0')}</label>
 				</fieldset>
 			</form>
+			{generation && (
+				<GenomeViz genome={generation[0]} className={styles.graph} />
+			)}
 		</div>
 	)
 }
@@ -234,12 +166,13 @@ async function loop(
 				return ga.length - gb.length
 			})
 			.slice(0, survivorCount)
-			.map(([, genome]) => genome)
-		save(best)
+		console.log('Best score', best[0]?.[0])
+		const bestGenomes = best.map(([, genome]) => genome)
+		save(bestGenomes)
 		let i = 0
 		const copies = 1
 		const mutations = Math.floor((entities.length - best.length) / (best.length + 1))
-		for (const genome of best) {
+		for (const genome of bestGenomes) {
 			for (let j = 0; j < copies; j++) {
 				entities[i] = makeEntity(genome, makeStartState(side))
 				i++

@@ -31,6 +31,20 @@
  * ]
  */
 
+export const INPUT_NODES = [
+	'wall left',
+	'wall ahead',
+	'wall right',
+	'food left',
+	'food ahead',
+	'food right',
+]
+export const OUTPUT_NODES = [
+	'rotate left',
+	'rotate right',
+	'move ahead',
+]
+
 export const INNATE_NODES = 9
 
 export const Type = Uint8Array
