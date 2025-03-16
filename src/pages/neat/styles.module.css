@@ -48,6 +48,11 @@
 		margin: 0;
 		display: block;
 	}
+
+	button {
+		margin-top: 0.25em;
+		margin-inline: auto;
+	}
 }
 
 .graph {

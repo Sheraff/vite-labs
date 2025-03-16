@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import styles from './styles.module.css'
 import { Head } from "~/components/Head"
 import type { RouteMeta } from "~/router"
@@ -48,11 +48,13 @@ export default function Neat() {
 	const displayGeneration = Math.max(1, generations.length)
 	const selected = Math.min(_selected, displayGeneration)
 
+	const [pausedGen, setPausedGen] = useState(false)
+	const controls = useRef({ paused: pausedGen })
+
 	useEffect(() => {
 		if (!context) return
-		return start(side, context, food, setProgress, (genome) => {
-			setGenerations((prev) => [...prev, genome])
-		})
+		const save = (genome: Type[]) => setGenerations((prev) => [...prev, genome])
+		return start(side, context, food, controls.current, setProgress, save)
 	}, [context])
 
 	const autoplay = generations.length >= 2
@@ -61,6 +63,8 @@ export default function Neat() {
 
 	const [vizCanvas, setVizCanvas] = useState<HTMLCanvasElement>()
 	const [vizContext, setVizContext] = useState<CanvasRenderingContext2D>()
+	const [pausedPlay, setPausedPlay] = useState(false)
+	const controlsPlay = useRef({ paused: pausedPlay })
 	useEffect(() => {
 		if (!generation || !context || !vizContext) return
 		const entities = generation.map(genome => makeEntity(genome, makeStartState(side)))
@@ -68,7 +72,7 @@ export default function Neat() {
 		const viz = prepareViz(generation[0], vizContext)
 		drawnBatch(
 			entities,
-			{ ctx: context, side, controller, food },
+			{ ctx: context, side, controller, food, controls: controlsPlay.current },
 			() => viz.draw(entities[0].memory)
 		).then(() => {
 			if (controller.signal.aborted) return
@@ -99,20 +103,36 @@ export default function Neat() {
 					<legend>Controls</legend>
 					<progress value={progress} max={1} id="progress" />
 					<label htmlFor="progress">Simulating generation {(generations.length + 1).toString().padStart(2, '0')}</label>
-					<hr />
-					<input
-						id="range"
-						type="range"
-						min={1}
-						max={displayGeneration}
-						value={selected}
-						step={1}
-						disabled={!autoplay}
-						onChange={e => {
-							setSelected(Number(e.target.value))
-						}}
-					/>
-					<label htmlFor="range">Playing generation {selected.toString().padStart(2, '0')} of {displayGeneration.toString().padStart(2, '0')}</label>
+					<button type="button" onClick={() => {
+						setPausedGen(p => !p)
+						controls.current.paused = !controls.current.paused
+					}}>
+						{pausedGen ? '▶️ play' : '⏸️ pause'}
+					</button>
+					{autoplay && (
+						<>
+							<hr />
+							<input
+								id="range"
+								type="range"
+								min={1}
+								max={displayGeneration}
+								value={selected}
+								step={1}
+								disabled={!autoplay}
+								onChange={e => {
+									setSelected(Number(e.target.value))
+								}}
+							/>
+							<label htmlFor="range">Playing generation {selected.toString().padStart(2, '0')} of {displayGeneration.toString().padStart(2, '0')}</label>
+							<button type="button" disabled={!autoplay} onClick={() => {
+								setPausedPlay(p => !p)
+								controlsPlay.current.paused = !controlsPlay.current.paused
+							}}>
+								{pausedPlay ? '▶️ play' : '⏸️ pause'}
+							</button>
+						</>
+					)}
 				</fieldset>
 			</form>
 			<canvas className={styles.graph} ref={(element) => {
@@ -134,6 +154,7 @@ function start(
 	side: number,
 	ctx: CanvasRenderingContext2D,
 	food: Food,
+	controls: { paused: boolean },
 	progress: (progress: number) => void,
 	save: (genome: Type[]) => void,
 ) {
@@ -142,7 +163,7 @@ function start(
 	const entities = Array.from({ length: POPULATION }, () => makeEntity(makeRandomGenome(), makeStartState(side)))
 	const workers = Array.from({ length: Math.max(1, navigator.hardwareConcurrency - 1) }, () => new Worker())
 
-	loop(side, ctx, controller, entities, food, workers, progress, save)
+	loop(side, ctx, controller, entities, food, workers, controls, progress, save)
 
 	return () => {
 		controller.abort()
@@ -159,11 +180,12 @@ async function loop(
 	entities: Entity[],
 	food: Food,
 	workers: Worker[],
+	controls: { paused: boolean },
 	progress: (progress: number) => void,
 	save: (genome: Type[]) => void,
 ) {
 	const survivorCount = Math.floor(entities.length * SURVIVE_PERCENT / 100)
-	const batchOpts: BatchOpts = { ctx, side, controller, progress, food }
+	const batchOpts: BatchOpts = { ctx, side, controller, progress, food, controls }
 	for (let iter = 0; iter < GENERATIONS; iter++) {
 		console.log('Generation', iter)
 		if (controller.signal.aborted) return
@@ -185,6 +207,9 @@ async function loop(
 		console.log('Best score', best[0]?.[0])
 		const bestGenomes = best.map(([, genome]) => genome)
 		save(bestGenomes)
+		while (controls.paused) {
+			await new Promise(requestAnimationFrame)
+		}
 		let i = 0
 		const copies = 1
 		const mutations = Math.floor((entities.length - best.length) / (best.length + 1))
@@ -210,6 +235,7 @@ type BatchOpts = {
 	side: number
 	food: Food
 	controller: AbortController
+	controls?: { paused: boolean }
 	progress?: (progress: number) => void
 }
 
@@ -239,7 +265,9 @@ async function drawnBatch(entities: Entity[], opts: BatchOpts, onFrame?: () => v
 				ctx.fillRect(x - 5, y - 5, 10, 10)
 			}
 			onFrame?.()
-			await new Promise(requestAnimationFrame)
+			do {
+				await new Promise(requestAnimationFrame)
+			} while (opts.controls?.paused)
 			opts.progress?.((ITERATIONS - state.i) / ITERATIONS)
 		},
 	}, r))
