@@ -61,12 +61,12 @@ export function mutate(genome: Type): Type {
 	else if (kind < 0.3) {
 		const result = new Type(genome.length + 4)
 		const total = getNodeCount()
-		const from = Math.floor(Math.random() * total)
-		const to = Math.floor(Math.random() * total)
+		const from = Math.floor(Math.random() * total + INPUT_NODES.length)
+		const to = Math.floor(Math.random() * total + OUTPUT_NODES.length)
 		result.set(genome)
 		result[genome.length] = 1 // connection gene
-		result[genome.length + 1] = from // from
-		result[genome.length + 2] = to // to
+		result[genome.length + 1] = from < INPUT_NODES.length ? from : from + INNATE_NODES
+		result[genome.length + 2] = to + INPUT_NODES.length
 		result[genome.length + 3] = Math.floor(Math.random() * MAX) // weight
 		return result
 	}
