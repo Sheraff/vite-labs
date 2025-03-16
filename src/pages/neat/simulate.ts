@@ -85,12 +85,12 @@ export async function simulate(opts: {
 			}
 
 			entity.tick([
-				+has_wall_left,
-				+has_wall_ahead,
-				+has_wall_right,
 				+has_food_left,
 				+has_food_ahead,
 				+has_food_right,
+				+has_wall_left,
+				+has_wall_ahead,
+				+has_wall_right,
 			])
 
 			// if (iterations % 10 === 0) {

@@ -9,7 +9,7 @@ import Worker from './worker?worker'
 import type { Incoming, Outgoing } from './worker'
 import { evaluate } from "./evaluate"
 import { type Food, type Type } from "./constants"
-import { GenomeViz } from "./GenomeViz"
+import { prepareViz } from "./GenomeViz"
 
 export const meta: RouteMeta = {
 	title: 'N.E.A.T',
@@ -25,11 +25,11 @@ export const meta: RouteMeta = {
 /** The number of entities to simulate */
 const POPULATION = 2000
 /** The number of iterations to simulate during 1 generation */
-const ITERATIONS = 1200
+const ITERATIONS = 2000
 /** The number of generations to simulate */
 const GENERATIONS = 1000
 /** The percentage of entities that will survive to the next generation */
-const SURVIVE_PERCENT = 5
+const SURVIVE_PERCENT = 10
 /** The number of food entities to simulate */
 const FOOD_COUNT = 200
 
@@ -58,11 +58,19 @@ export default function Neat() {
 	const autoplay = generations.length >= 2
 	const generation = autoplay && generations[selected - 1]
 
+
+	const [vizCanvas, setVizCanvas] = useState<HTMLCanvasElement>()
+	const [vizContext, setVizContext] = useState<CanvasRenderingContext2D>()
 	useEffect(() => {
-		if (!generation || !context) return
+		if (!generation || !context || !vizContext) return
 		const entities = generation.map(genome => makeEntity(genome, makeStartState(side)))
 		const controller = new AbortController()
-		drawnBatch(entities, { ctx: context, side, controller, food }).then(() => {
+		const viz = prepareViz(generation[0], vizContext)
+		drawnBatch(
+			entities,
+			{ ctx: context, side, controller, food },
+			() => viz.draw(entities[0].memory)
+		).then(() => {
 			if (controller.signal.aborted) return
 			setSelected(p => p + 1)
 		})
@@ -107,9 +115,17 @@ export default function Neat() {
 					<label htmlFor="range">Playing generation {selected.toString().padStart(2, '0')} of {displayGeneration.toString().padStart(2, '0')}</label>
 				</fieldset>
 			</form>
-			{generation && (
-				<GenomeViz genome={generation[0]} className={styles.graph} />
-			)}
+			<canvas className={styles.graph} ref={(element) => {
+				if (element && element !== vizCanvas) {
+					setVizCanvas(element)
+					const { width, height } = element.getBoundingClientRect()
+					element.width = width * devicePixelRatio
+					element.height = height * devicePixelRatio
+					const vizContext = element.getContext('2d')
+					if (!vizContext) throw new Error('Failed to get canvas context')
+					setVizContext(vizContext)
+				}
+			}} />
 		</div>
 	)
 }
@@ -197,7 +213,7 @@ type BatchOpts = {
 	progress?: (progress: number) => void
 }
 
-async function drawnBatch(entities: Entity[], opts: BatchOpts) {
+async function drawnBatch(entities: Entity[], opts: BatchOpts, onFrame?: () => void) {
 	await new Promise<void>(r => simulate({
 		entities,
 		food: opts.food,
@@ -222,6 +238,7 @@ async function drawnBatch(entities: Entity[], opts: BatchOpts) {
 				ctx.fillStyle = eaten.has(i) ? 'green' : 'orange'
 				ctx.fillRect(x - 5, y - 5, 10, 10)
 			}
+			onFrame?.()
 			await new Promise(requestAnimationFrame)
 			opts.progress?.((ITERATIONS - state.i) / ITERATIONS)
 		},

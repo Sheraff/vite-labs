@@ -1,12 +1,12 @@
 /*
  * Innate nodes:
  * - inputs:
- *   - 0: wall left
- *   - 1: wall ahead
- *   - 2: wall right
- *   - 3: food left
- *   - 4: food ahead
- *   - 5: food right
+ *   - 0: food left
+ *   - 1: food ahead
+ *   - 2: food right
+ *   - 3: wall left
+ *   - 4: wall ahead
+ *   - 5: wall right
  * - outputs:
  *   - 6: rotate left
  *   - 7: rotate right
@@ -32,12 +32,12 @@
  */
 
 export const INPUT_NODES = [
-	'wall left',
-	'wall ahead',
-	'wall right',
 	'food left',
 	'food ahead',
 	'food right',
+	'wall left',
+	'wall ahead',
+	'wall right',
 ]
 export const OUTPUT_NODES = [
 	'rotate left',
