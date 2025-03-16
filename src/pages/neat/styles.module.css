@@ -51,6 +51,7 @@
 }
 
 .graph {
+	margin-top: 1em;
 	width: 40ch;
 	height: 40ch;
 }
