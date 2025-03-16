@@ -58,7 +58,7 @@ export function mutate(genome: Type): Type {
 	}
 
 	// add connection
-	else if (kind < 0.3) {
+	else if (kind < 0.4) {
 		const result = new Type(genome.length + 4)
 		const total = getNodeCount()
 		const from = Math.floor(Math.random() * total + INPUT_NODES.length)
@@ -72,7 +72,7 @@ export function mutate(genome: Type): Type {
 	}
 
 	// remove connection
-	else if (kind < 0.4) {
+	else if (kind < 0.5) {
 		const result = new Type(genome.length - 4)
 		const total = getConnectionCount()
 		const index = Math.floor(Math.random() * total)
@@ -98,7 +98,7 @@ export function mutate(genome: Type): Type {
 	}
 
 	// change node aggregation
-	else if (kind < 0.5) {
+	else if (kind < 0.6) {
 		const result = new Type(genome.length)
 		const total = getNodeCount()
 		const index = Math.floor(Math.random() * total)
@@ -121,7 +121,7 @@ export function mutate(genome: Type): Type {
 	}
 
 	// change node activation
-	else if (kind < 0.6) {
+	else if (kind < 0.7) {
 		const result = new Type(genome.length)
 		const total = getNodeCount()
 		const index = Math.floor(Math.random() * total)
@@ -144,7 +144,7 @@ export function mutate(genome: Type): Type {
 	}
 
 	// change connection nodes
-	else if (kind < 0.7) {
+	else if (kind < 0.9) {
 		const result = new Type(genome.length)
 		const total = getConnectionCount()
 		const index = Math.floor(Math.random() * total)
