@@ -24,11 +24,11 @@ export const meta: RouteMeta = {
 /** The number of entities to simulate */
 const POPULATION = 2000
 /** The number of iterations to simulate during 1 generation */
-const ITERATIONS = 1000
+const ITERATIONS = 1200
 /** The number of generations to simulate */
 const GENERATIONS = 1000
 /** The percentage of entities that will survive to the next generation */
-const SURVIVE_PERCENT = 1
+const SURVIVE_PERCENT = 10
 /** The number of food entities to simulate */
 const FOOD_COUNT = 200
 

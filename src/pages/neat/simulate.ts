@@ -12,6 +12,7 @@ export async function simulate(opts: {
 }, next: () => void) {
 	const { controller, entities, frame, side } = opts
 	let iterations = opts.iterations
+	const total_iterations = iterations
 	const eaten: Eaten = new Map(entities.map((_, i) => [i, new Set()]))
 	while (iterations > 0) {
 		if (controller?.signal.aborted) return
@@ -62,10 +63,7 @@ export async function simulate(opts: {
 				const [food_x, food_y] = opts.food[f]
 				const distance = Math.hypot(entity.state.x - food_x, entity.state.y - food_y)
 				if (distance < 20) {
-					if (entity.state.score < 100)
-						entity.state.score = 100
-					else
-						entity.state.score *= 10
+					entity.state.score += 100
 					eaten_entity.add(f)
 				} else if (distance < closest_food_distance) {
 					const angle = (Math.atan2(entity.state.y - food_y, entity.state.x - food_x) + Math.PI * 2) % (Math.PI * 2) - Math.PI
