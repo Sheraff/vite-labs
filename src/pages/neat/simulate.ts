@@ -63,7 +63,7 @@ export async function simulate(opts: {
 				const [food_x, food_y] = opts.food[f]
 				const distance = Math.hypot(entity.state.x - food_x, entity.state.y - food_y)
 				if (distance < 20) {
-					entity.state.score += 100
+					entity.state.score += 100 - distance
 					eaten_entity.add(f)
 				} else if (distance < closest_food_distance) {
 					const angle = (Math.atan2(entity.state.y - food_y, entity.state.x - food_x) + Math.PI * 2) % (Math.PI * 2) - Math.PI
