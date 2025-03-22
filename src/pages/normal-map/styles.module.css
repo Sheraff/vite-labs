@@ -10,7 +10,6 @@
 	canvas {
 		position: fixed;
 		inset: 0;
-		border: 1px solid white;
 		width: 100%;
 		height: 100%;
 	}
@@ -20,4 +19,31 @@
 	position: relative;
 	z-index: 1;
 	width: fit-content;
+}
+
+.form {
+	position: relative;
+	z-index: 1;
+	width: fit-content;
+
+	fieldset {
+		margin: 0;
+		border-style: solid;
+	}
+
+	input,
+	select {
+		width: 100%;
+	}
+
+	hr {
+		margin: 1em -0.75em;
+		border-style: solid;
+		border-color: threedface;
+	}
+
+	label {
+		margin: 0;
+		display: block;
+	}
 }
