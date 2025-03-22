@@ -8,7 +8,6 @@ import color_source from './world/color.jpg'
 import { easings, getImageData, inputs_length, makeSharedImageData, type Inputs } from "./utils"
 import DotWorker from './dot.worker?worker'
 import type { Incoming as DotIncoming } from './dot.worker'
-// import image from './bricks.png'
 
 const screen_width = window.innerWidth // * window.devicePixelRatio
 const screen_height = window.innerHeight // * window.devicePixelRatio
