@@ -3,8 +3,10 @@ import styles from './styles.module.css'
 import { Head } from "~/components/Head"
 import { useEffect, useRef } from "react"
 
+// textures from https://www.cgbookcase.com/textures
 import normal_source from './world/map.jpg'
 import color_source from './world/color.jpg'
+
 import { easings, getImageData, inputs_length, makeSharedImageData, type Inputs } from "./utils"
 import DotWorker from './dot.worker?worker'
 import type { Incoming as DotIncoming } from './dot.worker'
