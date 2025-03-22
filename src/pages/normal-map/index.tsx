@@ -39,7 +39,7 @@ export default function NormalMapPage() {
 
 		const notifier = new Int32Array(new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 1))
 
-		const [inputs, clearLightSource] = handleInputs(canvas, form, notifier)
+		const [inputs, clearInputs] = handleInputs(canvas, form, notifier)
 
 		const result = makeSharedImageData(normal_map.width, normal_map.height)
 		const local_copy = new ImageData(result.width, result.height)
@@ -90,7 +90,7 @@ export default function NormalMapPage() {
 
 		return () => {
 			cancelAnimationFrame(rafId)
-			clearLightSource()
+			clearInputs()
 			for (const worker of dot_workers) {
 				worker.terminate()
 			}
