@@ -100,20 +100,21 @@ export default function NormalMapPage() {
 				<fieldset>
 					<legend>Controls</legend>
 					<label htmlFor="z">Z Value:</label>
-					<input type="range" name="z" min="0" max="100" />
+					<input type="range" id="z" name="z" min="0" max="100" />
 					<hr />
 					<label htmlFor="falloff">Fall-off:</label>
-					<input type="range" name="falloff" min="0" max="100" />
+					<input type="range" id="falloff" name="falloff" min="0" max="100" />
 					<hr />
 					<label htmlFor="easing">Light easing:</label>
-					<select name="easing">
+					<select name="easing" id="easing">
 						{easings.map((easing, i) => (
 							<option key={i} value={i}>{easing.name}</option>
 						))}
 					</select>
 					<hr />
-					<label htmlFor="color">Color:</label>
-					<input type="checkbox" name="color" defaultChecked />
+					<label htmlFor="color">Color:
+						<input type="checkbox" name="color" id="color" defaultChecked />
+					</label>
 				</fieldset>
 			</form>
 			<canvas width="1000" height="1000" ref={ref}>
