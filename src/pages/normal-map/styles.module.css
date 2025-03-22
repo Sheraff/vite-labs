@@ -1,0 +1,23 @@
+.main {
+	margin: 0;
+	background: #051016;
+	color: white;
+	touch-action: none;
+	width: 100vw;
+	height: 100svh;
+	padding: 1em;
+
+	canvas {
+		position: fixed;
+		inset: 0;
+		border: 1px solid white;
+		width: 100%;
+		height: 100%;
+	}
+}
+
+.head {
+	position: relative;
+	z-index: 1;
+	width: fit-content;
+}

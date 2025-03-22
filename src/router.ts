@@ -10,6 +10,7 @@ import quad_tree_image from "./pages/quad-tree/screen.png"
 import pong_pang_image from "./pages/pong-pang/screen.png"
 import perlin_ripples_image from "./pages/perlin-ripples/screen.png"
 import paint_worklet_image from "./pages/paint-worklet/screen.png"
+import normal_map_image from "./pages/normal-map/screen.png"
 import neat_image from "./pages/neat/screen.png"
 import minesweeper_image from "./pages/minesweeper/screen.png"
 import lightning_image from "./pages/lightning/screen.png"
@@ -22,7 +23,7 @@ import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/scree
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "neat" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "flow-field" | "flask" | "collision-threads" | "bird-inverse-kinematics" | "ants" | "a-star"
+export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "flow-field" | "flask" | "collision-threads" | "bird-inverse-kinematics" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
@@ -141,6 +142,17 @@ export const ROUTES = {
 			firstAdded: 1717321960000
 		},
 	},
+	"normal-map": {
+		Component: lazy(() => import("./pages/normal-map/index.tsx")),
+		meta: {
+			title: 'Normal Map',
+			image: normal_map_image
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
+		},
+	},
 	"neat": {
 		Component: lazy(() => import("./pages/neat/index.tsx")),
 		meta: {
@@ -154,7 +166,7 @@ export const ROUTES = {
 			image: neat_image
 		},
 		git: {
-			lastModified: 1742162692000,
+			lastModified: 1742199245000,
 			firstAdded: 1727995709000
 		},
 	},
