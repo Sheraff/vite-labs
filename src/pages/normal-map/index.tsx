@@ -37,10 +37,13 @@ export default function NormalMapPage() {
 		canvas.width = screen_width
 		canvas.height = screen_height
 
-		const [inputs, clearLightSource] = handleInputs(canvas, form)
+		const notifier = new Int32Array(new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 1))
+
+		const [inputs, clearLightSource] = handleInputs(canvas, form, notifier)
 
 		const result = makeSharedImageData(normal_map.width, normal_map.height)
 		const local_copy = new ImageData(result.width, result.height)
+
 
 		const { width, height } = normal_map
 
@@ -72,6 +75,7 @@ export default function NormalMapPage() {
 						height: result.height,
 					},
 					range: [start, end],
+					notifier: notifier.buffer,
 				},
 			} satisfies DotIncoming)
 		}
@@ -129,7 +133,7 @@ export default function NormalMapPage() {
 }
 
 
-function handleInputs(canvas: HTMLCanvasElement, form: HTMLFormElement) {
+function handleInputs(canvas: HTMLCanvasElement, form: HTMLFormElement, notifier: Int32Array) {
 	let inputs: Float32Array<SharedArrayBuffer> & Inputs
 	{
 		const inputs_buffer = new SharedArrayBuffer(Float32Array.BYTES_PER_ELEMENT * inputs_length)
@@ -153,6 +157,7 @@ function handleInputs(canvas: HTMLCanvasElement, form: HTMLFormElement) {
 		const y = (event.clientY - top) / height * screen_height
 		inputs[0] = x
 		inputs[1] = y
+		Atomics.notify(notifier, 0)
 	}, { signal: controller.signal })
 
 	const getValue = <T,>(name: string): T | undefined => {
@@ -180,6 +185,7 @@ function handleInputs(canvas: HTMLCanvasElement, form: HTMLFormElement) {
 		inputs[4] = parseInt(easing)
 		inputs[5] = Number(color)
 		inputs[6] = ambient / 100 * 255
+		Atomics.notify(notifier, 0)
 	}, { signal: controller.signal })
 
 	return [

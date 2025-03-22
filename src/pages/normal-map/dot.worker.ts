@@ -10,6 +10,7 @@ export type Incoming =
 			color_map: { data: SharedArrayBuffer, width: number, height: number },
 			result: { data: SharedArrayBuffer, width: number, height: number },
 			range: [start: number, end: number],
+			notifier: SharedArrayBuffer,
 		}
 	}
 
@@ -22,12 +23,14 @@ export type Incoming =
 			const color_map = makeSharedImageData(event.data.color_map.width, event.data.color_map.height, event.data.color_map.data)
 			const result = makeSharedImageData(event.data.result.width, event.data.result.height, event.data.result.data)
 			const range = event.data.range
+			const notifier = new Int32Array(event.data.notifier)
 			start({
 				inputs,
 				normal_map,
 				color_map,
 				result,
 				range,
+				notifier,
 			})
 		} else {
 			throw new Error('Unknown message type ' + event.type)
@@ -41,21 +44,16 @@ function start({
 	color_map,
 	result,
 	range,
+	notifier,
 }: {
 	inputs: Inputs,
 	normal_map: ImageData,
 	color_map: ImageData,
 	result: ImageData,
 	range: [start: number, end: number],
+	notifier: Int32Array,
 }) {
-	let last_inputs: Inputs | null = null
-	requestAnimationFrame(function loop() {
-		requestAnimationFrame(loop)
-		if (last_inputs && last_inputs.every((v, i) => v === inputs[i])) {
-			return
-		}
-		last_inputs = [...inputs]
-
+	do {
 		const light_source_x = inputs[0]
 		const light_source_y = inputs[1]
 		const light_source_z = inputs[2]
@@ -93,7 +91,9 @@ function start({
 
 			applyFade(result, index, color_map, fade, ambient, color)
 		}
-	})
+	} while (Atomics.wait(notifier, 0, 0) === 'ok')
+	self.close()
+	throw new Error('Atomics.wait() failed, worker has been terminated')
 }
 
 function applyFade(
