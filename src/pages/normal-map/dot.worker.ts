@@ -62,6 +62,7 @@ function start({
 		const max_distance = inputs[3]
 		const easing = easings[inputs[4]].fn
 		const color = Boolean(inputs[5])
+		const ambient = inputs[6] / 255
 
 		for (let i = range[0]; i < range[1]; i++) {
 			const x = i % normal_map.width
@@ -73,20 +74,14 @@ function start({
 			const dy = y - light_source_y
 
 			if (Math.abs(dx) > max_distance || Math.abs(dy) > max_distance) {
-				result.data[index] = 0
-				result.data[index + 1] = 0
-				result.data[index + 2] = 0
-				result.data[index + 3] = 255
+				applyFade(result, index, color_map, 0, ambient, color)
 				continue
 			}
 
 			const distance = Math.hypot(dx, dy)
 
 			if (distance > max_distance) {
-				result.data[index] = 0
-				result.data[index + 1] = 0
-				result.data[index + 2] = 0
-				result.data[index + 3] = 255
+				applyFade(result, index, color_map, 0, ambient, color)
 				continue
 			}
 
@@ -96,17 +91,40 @@ function start({
 
 			const fade = dot * normalized_distance
 
-			if (color) {
-				result.data[index] = fade * color_map.data[index]
-				result.data[index + 1] = fade * color_map.data[index + 1]
-				result.data[index + 2] = fade * color_map.data[index + 2]
-				result.data[index + 3] = 255
-			} else {
-				result.data[index] = fade * 255
-				result.data[index + 1] = fade * 255
-				result.data[index + 2] = fade * 255
-				result.data[index + 3] = 255
-			}
+			applyFade(result, index, color_map, fade, ambient, color)
 		}
 	})
+}
+
+function applyFade(
+	image: ImageData,
+	index: number,
+	source: ImageData,
+	fade: number,
+	ambient: number,
+	color: boolean
+) {
+	if (ambient === 0 && fade === 0) {
+		image.data[index] = 0
+		image.data[index + 1] = 0
+		image.data[index + 2] = 0
+		image.data[index + 3] = 255
+		return
+	}
+
+	const mul = (1 - ambient) * fade + ambient
+
+	if (!color) {
+		const value = mul * 255
+		image.data[index] = value
+		image.data[index + 1] = value
+		image.data[index + 2] = value
+		image.data[index + 3] = 255
+		return
+	}
+
+	image.data[index] = mul * source.data[index]
+	image.data[index + 1] = mul * source.data[index + 1]
+	image.data[index + 2] = mul * source.data[index + 2]
+	image.data[index + 3] = 255
 }

@@ -20,8 +20,9 @@ export type Inputs = [
 	max_distance: number,
 	easing: number,
 	color: number,
+	ambient: number,
 ]
-export const inputs_length = 6
+export const inputs_length = 7
 
 export function computePixelShadow(map: ImageData, lx: number, ly: number, lz: number, x: number, y: number, index: number) {
 	const r = map.data[index]

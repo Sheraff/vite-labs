@@ -101,10 +101,10 @@ export default function NormalMapPage() {
 				<fieldset>
 					<legend>Controls</legend>
 					<label htmlFor="z">Z Value:</label>
-					<input type="range" id="z" name="z" min="0" max="100" />
+					<input type="range" id="z" name="z" min="0" max="100" defaultValue={50} />
 					<hr />
 					<label htmlFor="falloff">Fall-off:</label>
-					<input type="range" id="falloff" name="falloff" min="0" max="100" />
+					<input type="range" id="falloff" name="falloff" min="0" max="100" defaultValue={50} />
 					<hr />
 					<label htmlFor="easing">Light easing:</label>
 					<select name="easing" id="easing">
@@ -116,6 +116,9 @@ export default function NormalMapPage() {
 					<label htmlFor="color">Color:
 						<input type="checkbox" name="color" id="color" defaultChecked />
 					</label>
+					<hr />
+					<label htmlFor="ambient">Ambient:</label>
+					<input type="range" id="ambient" name="ambient" min="0" max="100" defaultValue={0} />
 				</fieldset>
 			</form>
 			<canvas width="1000" height="1000" ref={ref}>
@@ -137,6 +140,7 @@ function handleInputs(canvas: HTMLCanvasElement, form: HTMLFormElement) {
 		inputs[3] = Math.hypot(canvas.width, canvas.height) / 2 // falloff
 		inputs[4] = 0 // easing
 		inputs[5] = 1 // color
+		inputs[6] = 0 // ambient
 	}
 
 	const controller = new AbortController()
@@ -170,10 +174,12 @@ function handleInputs(canvas: HTMLCanvasElement, form: HTMLFormElement) {
 		const falloff = getValue<number>('falloff')!
 		const easing = getValue<string>('easing')!
 		const color = getValue<boolean>('color')!
+		const ambient = getValue<number>('ambient')!
 		inputs[2] = z * 500 / 100
 		inputs[3] = Math.hypot(canvas.width, canvas.height) * falloff / 100
 		inputs[4] = parseInt(easing)
 		inputs[5] = Number(color)
+		inputs[6] = ambient / 100 * 255
 	}, { signal: controller.signal })
 
 	return [
