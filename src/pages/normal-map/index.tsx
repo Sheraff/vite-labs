@@ -60,17 +60,17 @@ export default function NormalMapPage() {
 				data: {
 					inputs: inputs.buffer,
 					normal_map: {
-						data: normal_map.data.buffer as SharedArrayBuffer,
+						data: normal_map.data.buffer,
 						width: normal_map.width,
 						height: normal_map.height,
 					},
 					color_map: {
-						data: color_map.data.buffer as SharedArrayBuffer,
+						data: color_map.data.buffer,
 						width: color_map.width,
 						height: color_map.height,
 					},
 					result: {
-						data: result.data.buffer as SharedArrayBuffer,
+						data: result.data.buffer,
 						width: result.width,
 						height: result.height,
 					},

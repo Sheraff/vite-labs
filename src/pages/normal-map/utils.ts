@@ -1,4 +1,4 @@
-export function makeSharedImageData(width: number, height: number, buffer?: SharedArrayBuffer): ImageData {
+export function makeSharedImageData(width: number, height: number, buffer?: SharedArrayBuffer) {
 	const byteLength = width * height * Uint8ClampedArray.BYTES_PER_ELEMENT * 4
 	if (buffer && buffer.byteLength !== byteLength) {
 		throw new Error(`Buffer size mismatch: expected ${byteLength}, got ${buffer.byteLength}`)
@@ -10,7 +10,9 @@ export function makeSharedImageData(width: number, height: number, buffer?: Shar
 		width,
 		height,
 		colorSpace: 'srgb',
-	} as ImageData
+	} as ImageData & {
+		data: Uint8ClampedArray<SharedArrayBuffer>
+	}
 }
 
 export type Inputs = [
