@@ -16,7 +16,7 @@ export default function AntsShaderPage() {
 	useEffect(() => {
 		const canvas = ref.current
 		if (!canvas) return
-		const side = Math.min(canvas.clientWidth, canvas.clientHeight)
+		const side = Math.min(canvas.clientWidth, canvas.clientHeight) // * window.devicePixelRatio
 		canvas.width = side
 		canvas.height = side
 		const ctx = canvas.getContext("2d")
@@ -49,12 +49,15 @@ export default function AntsShaderPage() {
 		/** visualisation for 2D canvas */
 		const image = new ImageData(side, side, { colorSpace: 'srgb' })
 
-		init(frame.data, side, side, 25_000)
+		init(frame.data, side, side, 35_000)
 
 		const previous_frame_texture = gl.createTexture()
 		gl.bindTexture(gl.TEXTURE_2D, previous_frame_texture)
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, frame)
-		gl.generateMipmap(gl.TEXTURE_2D)
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
 		const texture_loc = gl.getUniformLocation(program, "previous_frame")
 		gl.uniform1i(texture_loc, 0)
 		gl.activeTexture(gl.TEXTURE0)
@@ -65,16 +68,23 @@ export default function AntsShaderPage() {
 		const resolution_loc = gl.getUniformLocation(program, "resolution")
 		gl.uniform2f(resolution_loc, side, side)
 
+		let counter = 0
+
 		let rafId = requestAnimationFrame(function loop() {
 			rafId = requestAnimationFrame(loop)
+
+			let antcount = 0
+			counter += 1
+			counter %= 10
 
 			// send previous frame to shader
 			gl.activeTexture(gl.TEXTURE0)
 			gl.bindTexture(gl.TEXTURE_2D, previous_frame_texture)
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, frame)
 
 			// send additional data to shader
-			gl.uniform1f(seed_loc, Math.random())
-			gl.uniform1f(decay_loc, 0)
+			gl.uniform1f(seed_loc, Math.random() * 100 - 50)
+			gl.uniform1f(decay_loc, +(counter === 0))
 
 			// compute new frame
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
@@ -106,8 +116,8 @@ export default function AntsShaderPage() {
 				const isPheromoneToHill
 					= frame.data[i + 2]
 
-				// if (isAnt) antcount++
-				// if (isAntAndFood) antcount++
+				if (isAnt) antcount++
+				if (isAntAndFood) antcount++
 				// if (isFood) foodcount++
 				// if (isAntAndFood) foodcount++
 				// if (isFood) untouchedfoodcount++
@@ -130,6 +140,8 @@ export default function AntsShaderPage() {
 					image.data.set(colors.void, i)
 				}
 			}
+
+			// console.log('ants:', antcount)
 
 			ctx.putImageData(image, 0, 0)
 		})
@@ -216,7 +228,7 @@ function init(array: Uint8ClampedArray, width: number, height: number, count: nu
 	const anthillPosition = [width * 2 / 3, height * 2 / 3]
 	const anthillRadius = Math.min(width, height) / 10
 
-	const antDistance = [Math.min(width, height) / 20, Math.min(width, height) / 8]
+	const antDistance = [Math.min(width, height) / 20, Math.min(width, height) / 7]
 
 	for (let y = 0; y < height; y++) {
 		for (let x = 0; x < width; x++) {

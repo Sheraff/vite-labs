@@ -250,6 +250,7 @@ Result antRandomMoveInto(vec2 xy, bool recurse) {
 
 
 void main() {
+	// vec2 uv = (gl_FragCoord.xy  + vec2(1.0, 0.0)) / resolution.xy;
 	vec2 uv = gl_FragCoord.xy / resolution.xy;
 
 	vec4 rgba = texture(previous_frame, uv);
@@ -257,7 +258,16 @@ void main() {
 	uint r = uint(rgba.x * 255.0);
 	uint g = uint(rgba.y * 255.0);
 	uint b = uint(rgba.z * 255.0);
-	// uint a = uint(rgba.a * 255.0); // unused
+	// uint a = uint(rgba.a * 255.0);
+
+	if (decay_pheromone > 0.0) {
+		if (g > 0u) {
+			g -= 1u;
+		}
+		if (b > 0u) {
+			b -= 1u;
+		}
+	}
 
 	bool isAnt = (r & ant) == 1u;
 	bool isFood = ((r & food) >> 1) == 1u;
@@ -272,6 +282,7 @@ void main() {
 		isAnt = false;
 		isFood = false;
 		isAntAndFood = true;
+
 	}
 
 	// leave pheromone trail
@@ -326,6 +337,30 @@ void main() {
 			}
 		}
 	}
+
+	// // DEBUG
+	// if (isAnt) {
+	// 	vec2 left = gl_FragCoord.xy + vec2(-1.0, 0.0);
+	// 	if (left.x >= 0.0) {
+	// 		vec4 left_rgba = texture(previous_frame, left / resolution.xy);
+	// 		uint left_r = uint(left_rgba.x * 255.0);
+	// 		bool left_isAnt = (left_r & ant) == 1u;
+	// 		if (!left_isAnt) {
+	// 			r &= ~ant;
+	// 		}
+	// 	}
+	// }
+	// if (!isAnt) {
+	// 	vec2 right = gl_FragCoord.xy + vec2(1.0, 0.0);
+	// 	if (right.x < resolution.x) {
+	// 		vec4 right_rgba = texture(previous_frame, right / resolution.xy);
+	// 		uint right_r = uint(right_rgba.x * 255.0);
+	// 		bool right_isAnt = (right_r & ant) == 1u;
+	// 		if (right_isAnt) {
+	// 			r |= ant;
+	// 		}
+	// 	}
+	// }
 
 	fragColor = vec4(
 		float(r) / 255.0,
