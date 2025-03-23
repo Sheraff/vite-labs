@@ -7,16 +7,13 @@ import { useEffect, useRef } from "react"
 import normal_source from './world/map.jpg'
 import color_source from './world/color.jpg'
 
-import { easings, getImageData, inputs_length, makeSharedImageData, type Inputs } from "./utils"
-import DotWorker from './dot.worker?worker'
-import type { Incoming as DotIncoming } from './dot.worker'
+import vertex from './vertex.glsl?raw'
+import fragment from './fragment.glsl?raw'
 
-const screen_width = window.innerWidth // * window.devicePixelRatio
-const screen_height = window.innerHeight // * window.devicePixelRatio
-const fit: 'contain' | 'cover' = 'cover'
+import { easings, getImageData } from "./utils"
 
-const normal_map = await getImageData(normal_source, { fit, width: screen_width, height: screen_height })
-const color_map = await getImageData(color_source, { fit, width: screen_width, height: screen_height })
+const normal_map = await getImageData(normal_source)
+const color_map = await getImageData(color_source)
 
 export const meta: RouteMeta = {
 	title: 'Normal Map',
@@ -29,71 +26,91 @@ export default function NormalMapPage() {
 	useEffect(() => {
 		const canvas = ref.current
 		if (!canvas) return
-		const ctx = canvas.getContext('2d')
-		if (!ctx) return
+		const gl = canvas.getContext('webgl2')
+		if (!gl) return
+		gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+		gl.clearColor(0, 0, 0, 0)
+		gl.clear(gl.COLOR_BUFFER_BIT)
 		const form = formRef.current
 		if (!form) return
 
-		canvas.width = screen_width
-		canvas.height = screen_height
+		const vertex_shader = createShader(gl, gl.VERTEX_SHADER, vertex)
+		const fragment_shader = createShader(gl, gl.FRAGMENT_SHADER, fragment)
+		const program = createProgram(gl, vertex_shader, fragment_shader)
+		gl.useProgram(program)
 
-		const notifier = new Int32Array(new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 1))
-
-		const [inputs, clearInputs] = handleInputs(canvas, form, notifier)
-
-		const result = makeSharedImageData(normal_map.width, normal_map.height)
-		const local_copy = new ImageData(result.width, result.height)
+		const { inputs, xyz, clear, screen } = handleInputs(canvas, form)
 
 
-		const { width, height } = normal_map
+		const resolution_loc = gl.getUniformLocation(program, "resolution")
 
-		const dot_workers: Worker[] = []
-		const concurrency = Math.max(1, navigator.hardwareConcurrency - 1)
-		for (let i = 0; i < concurrency; i++) {
-			const worker = new DotWorker()
-			const total = width * height
-			const segment = Math.ceil(total / concurrency)
-			const start = i * segment
-			const end = Math.min(start + segment, total)
-			worker.postMessage({
-				type: 'init',
-				data: {
-					inputs: inputs.buffer,
-					normal_map: {
-						data: normal_map.data.buffer,
-						width: normal_map.width,
-						height: normal_map.height,
-					},
-					color_map: {
-						data: color_map.data.buffer,
-						width: color_map.width,
-						height: color_map.height,
-					},
-					result: {
-						data: result.data.buffer,
-						width: result.width,
-						height: result.height,
-					},
-					range: [start, end],
-					notifier: notifier.buffer,
-				},
-			} satisfies DotIncoming)
-		}
+		const size_loc = gl.getUniformLocation(program, "u_texture_size")
+		gl.uniform2f(size_loc, color_map.width, color_map.height)
+
+		const buffer = gl.createBuffer()!
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
+		const arr = new Float32Array([-1, -1, -1, 1, 1, -1, 1, 1])
+		gl.bufferData(gl.ARRAY_BUFFER, arr, gl.STATIC_DRAW)
+		const position_loc = gl.getAttribLocation(program, "v_position")
+		gl.enableVertexAttribArray(position_loc)
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
+		gl.vertexAttribPointer(position_loc, 2, gl.FLOAT, false, 0, 0)
+
+		const color_texture = gl.createTexture()
+		gl.bindTexture(gl.TEXTURE_2D, color_texture)
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, color_map)
+		gl.generateMipmap(gl.TEXTURE_2D)
+		const texture_loc = gl.getUniformLocation(program, "u_texture")
+		gl.uniform1i(texture_loc, 0)
+
+		const normal_texture = gl.createTexture()
+		gl.bindTexture(gl.TEXTURE_2D, normal_texture)
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, normal_map)
+		gl.generateMipmap(gl.TEXTURE_2D)
+		const normal_loc = gl.getUniformLocation(program, "u_normal_map")
+		gl.uniform1i(normal_loc, 1)
+
+		const inputs_loc = gl.getUniformLocation(program, "u_light_position")
+		const max_distance_loc = gl.getUniformLocation(program, "max_distance")
+		const easing_loc = gl.getUniformLocation(program, "easing")
+		const color_flag_loc = gl.getUniformLocation(program, "color_flag")
+		const ambient_loc = gl.getUniformLocation(program, "ambient")
+
+		gl.activeTexture(gl.TEXTURE0)
+		gl.bindTexture(gl.TEXTURE_2D, color_texture)
+		gl.activeTexture(gl.TEXTURE1)
+		gl.bindTexture(gl.TEXTURE_2D, normal_texture)
+
 
 
 		let rafId = requestAnimationFrame(function loop() {
 			rafId = requestAnimationFrame(loop)
 
-			local_copy.data.set(result.data)
-			ctx.putImageData(local_copy, 0, 0)
+			gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+			gl.uniform2f(resolution_loc, screen.width, screen.height)
+
+			gl.uniform3fv(inputs_loc, xyz)
+
+			gl.uniform1f(max_distance_loc, Math.hypot(screen.width, screen.height) * inputs.falloff)
+			gl.uniform1f(easing_loc, inputs.easing)
+			gl.uniform1f(color_flag_loc, inputs.color)
+			gl.uniform1f(ambient_loc, inputs.ambient)
+
+			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 		})
 
+
 		return () => {
+			gl.useProgram(null)
+			gl.deleteBuffer(buffer)
+			gl.deleteProgram(program)
+			gl.deleteShader(vertex_shader)
+			gl.deleteShader(fragment_shader)
+			gl.deleteTexture(color_texture)
+			gl.deleteTexture(normal_texture)
+
 			cancelAnimationFrame(rafId)
-			clearInputs()
-			for (const worker of dot_workers) {
-				worker.terminate()
-			}
+			clear()
 		}
 	}, [])
 	return (
@@ -122,7 +139,7 @@ export default function NormalMapPage() {
 					</label>
 					<hr />
 					<label htmlFor="ambient">Ambient:</label>
-					<input type="range" id="ambient" name="ambient" min="0" max="100" defaultValue={0} />
+					<input type="range" id="ambient" name="ambient" min="0" max="100" defaultValue={10} />
 				</fieldset>
 			</form>
 			<canvas width="1000" height="1000" ref={ref}>
@@ -133,31 +150,38 @@ export default function NormalMapPage() {
 }
 
 
-function handleInputs(canvas: HTMLCanvasElement, form: HTMLFormElement, notifier: Int32Array) {
-	let inputs: Float32Array<SharedArrayBuffer> & Inputs
-	{
-		const inputs_buffer = new SharedArrayBuffer(Float32Array.BYTES_PER_ELEMENT * inputs_length)
-		inputs = new Float32Array(inputs_buffer) as never
-		inputs[0] = 125 // x
-		inputs[1] = 125 // y
-		inputs[2] = 50  // z
-		inputs[3] = Math.hypot(canvas.width, canvas.height) / 2 // falloff
-		inputs[4] = 0 // easing
-		inputs[5] = 1 // color
-		inputs[6] = 0 // ambient
+function handleInputs(canvas: HTMLCanvasElement, form: HTMLFormElement) {
+	const screen = {
+		width: window.innerWidth * window.devicePixelRatio,
+		height: window.innerHeight * window.devicePixelRatio,
+	}
+	canvas.width = screen.width
+	canvas.height = screen.height
+	const xyz = new Float32Array([125, 125, 50])
+	const inputs = {
+		falloff: 0.5,
+		easing: 0,
+		color: 1,
+		ambient: 0.1,
 	}
 
 	const controller = new AbortController()
+
+	window.addEventListener('resize', () => {
+		screen.width = window.innerWidth * window.devicePixelRatio
+		screen.height = window.innerHeight * window.devicePixelRatio
+		canvas.width = screen.width
+		canvas.height = screen.height
+	}, { signal: controller.signal })
 
 	window.addEventListener('pointermove', (e) => {
 		const event = e.getPredictedEvents().at(0) || e
 		const { left, top, width, height } = canvas.getBoundingClientRect()
 
-		const x = (event.clientX - left) / width * screen_width
-		const y = (event.clientY - top) / height * screen_height
-		inputs[0] = x
-		inputs[1] = y
-		Atomics.notify(notifier, 0)
+		const x = (event.clientX - left) / width * screen.width
+		const y = (event.clientY - top) / height * screen.height
+		xyz[0] = x
+		xyz[1] = y
 	}, { signal: controller.signal })
 
 	const getValue = <T,>(name: string): T | undefined => {
@@ -180,19 +204,60 @@ function handleInputs(canvas: HTMLCanvasElement, form: HTMLFormElement, notifier
 		const easing = getValue<string>('easing')!
 		const color = getValue<boolean>('color')!
 		const ambient = getValue<number>('ambient')!
-		inputs[2] = z * 500 / 100
-		inputs[3] = Math.hypot(canvas.width, canvas.height) * falloff / 100
-		inputs[4] = parseInt(easing)
-		inputs[5] = Number(color)
-		inputs[6] = ambient / 100 * 255
-		Atomics.notify(notifier, 0)
+		xyz[2] = z * 500 / 100
+		inputs.falloff = falloff / 100
+		inputs.easing = parseInt(easing)
+		inputs.color = Number(color)
+		inputs.ambient = ambient / 100
 	}, { signal: controller.signal })
 
-	return [
+	return {
+		xyz,
 		inputs,
-		() => {
+		screen,
+		clear: () => {
 			controller.abort()
 		}
-	] as const
+	}
 }
 
+
+
+function createShader(gl: WebGLRenderingContext, type: number, source: string) {
+	const shader = gl.createShader(type)
+
+	if (!shader) {
+		throw new Error('Unable to create shader')
+	}
+
+	gl.shaderSource(shader, source)
+	gl.compileShader(shader)
+
+	if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+		const info = gl.getShaderInfoLog(shader)
+		gl.deleteShader(shader)
+		throw new Error(`Failed to compile fragment shader: ${info}`)
+	}
+
+	return shader
+}
+
+function createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShader, fragmentShader: WebGLShader) {
+	const program = gl.createProgram()
+
+	if (!program) {
+		throw new Error('Unable to create program')
+	}
+
+	gl.attachShader(program, vertexShader)
+	gl.attachShader(program, fragmentShader)
+	gl.linkProgram(program)
+
+	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+		const info = gl.getProgramInfoLog(program)
+		gl.deleteProgram(program)
+		throw new Error(`Failed to link program: ${info}`)
+	}
+
+	return program
+}
