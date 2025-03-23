@@ -35,8 +35,219 @@ const uint maxPheromone = 255u;
 
 // random number [0,1] inclusive
 float rand(vec2 identity) {
-	return abs(sin(dot(identity, vec2(12.9898, 4.1414)) * seed));
+	return (sin(dot(identity, vec2(12.9898, 4.1414)) * seed) + 1.0) / 2.0;
 }
+
+
+struct Result {
+	bool found;
+	vec2 xy;
+	uint g;
+};
+
+// the `xy` pixel is available, return the position of the ant that wants to move here
+Result antMovesInto(vec2 xy, uint g) {
+	if (g == 0u) return Result(false, xy, g);
+	vec2 candidates[8];
+	int count = 0;
+	uint best_g = 255u;
+	for(int dy = -1; dy <= 1; dy++) {
+		for(int dx = -1; dx <= 1; dx++) {
+			if(dx == 0 && dy == 0) continue;
+			vec2 nxy = xy + vec2(dx, dy);
+			if (nxy.x < 0.0 || nxy.x >= resolution.x) continue;
+			if (nxy.y < 0.0 || nxy.y >= resolution.y) continue;
+			vec4 neighbor = texture(previous_frame, nxy / resolution.xy);
+			uint nr = uint(neighbor.x * 255.0);
+			bool isAnt = (nr & ant) == 1u;
+			if (!isAnt) continue;
+			uint ng = uint(neighbor.y * 255.0);
+			if (ng == 255u) continue;
+			if (ng > g) continue;
+			if (ng > best_g) continue;
+			if (ng < best_g) {
+				best_g = ng;
+				count = 0;
+			}
+			if (ng == g) {
+				candidates[count] = nxy;
+				count++;
+			}
+		}
+	}
+	if (count == 0) return Result(false, xy, g);
+	float best_r = 0.0;
+	vec2 best_candidate = xy;
+	for(int i = 0; i < count; i++) {
+		float r = rand(candidates[i]);
+		if (r > best_r) {
+			best_r = r;
+			best_candidate = candidates[i];
+		}
+	}
+	if (best_r == 0.0) return Result(false, xy, g);
+	return Result(true, best_candidate, best_g);
+}
+
+// an ant on `xy` want to move, return the new position
+Result antMovesAway(vec2 xy, uint g) {
+	vec2 candidates[8];
+	int count = 0;
+	uint best_g = 0u;
+	for(int dy = -1; dy <= 1; dy++) {
+		for(int dx = -1; dx <= 1; dx++) {
+			if(dx == 0 && dy == 0) continue;
+			vec2 nxy = xy + vec2(dx, dy);
+			if (nxy.x < 0.0 || nxy.x >= resolution.x) continue;
+			if (nxy.y < 0.0 || nxy.y >= resolution.y) continue;
+			vec4 neighbor = texture(previous_frame, nxy / resolution.xy);
+			uint nr = uint(neighbor.x * 255.0);
+			bool isAnt = (nr & ant) == 1u;
+			if (isAnt) continue;
+			uint ng = uint(neighbor.y * 255.0);
+			if (ng == 0u) continue;
+			if (ng < g) continue;
+			if (ng < best_g) continue;
+			if (ng > best_g) {
+				best_g = ng;
+				count = 0;
+			}
+			if (ng == g) {
+				candidates[count] = nxy;
+				count++;
+			}
+		}
+	}
+	if (count == 0) return Result(false, xy, g);
+	float best_r = 0.0;
+	vec2 best_candidate = xy;
+	for(int i = 0; i < count; i++) {
+		float r = rand(candidates[i]);
+		if (r > best_r) {
+			best_r = r;
+			best_candidate = candidates[i];
+		}
+	}
+	if (best_r == 0.0) return Result(false, xy, g);
+	return Result(true, best_candidate, best_g);
+}
+
+Result antMovesInto(vec2 xy, uint g, bool recurse) {
+	Result result = antMovesInto(xy, g);
+	if (!recurse) {
+		return result;
+	}
+	if (!result.found) {
+		return result;
+	}
+	Result mutual = antMovesAway(result.xy, result.g);
+	if (mutual.found && mutual.xy.x == xy.x && mutual.xy.y == xy.y) {
+		return result;
+	}
+	return Result(false, xy, g);
+}
+
+Result antMovesAway(vec2 xy, uint g, bool recurse) {
+	Result result = antMovesAway(xy, g);
+	if (!recurse) {
+		return result;
+	}
+	if (!result.found) {
+		return result;
+	}
+	Result mutual = antMovesInto(result.xy, result.g);
+	if (mutual.found && mutual.xy.x == xy.x && mutual.xy.y == xy.y) {
+		return result;
+	}
+	return Result(false, xy, g);
+}
+
+Result antRandomMoveAway(vec2 xy) {
+	float best_r = 0.0;
+	vec2 best_candidate = xy;
+
+	for(int dy = -1; dy <= 1; dy++) {
+		for(int dx = -1; dx <= 1; dx++) {
+			if(dx == 0 && dy == 0) continue;
+			vec2 nxy = xy + vec2(dx, dy);
+			if (nxy.x < 0.0 || nxy.x >= resolution.x) continue;
+			if (nxy.y < 0.0 || nxy.y >= resolution.y) continue;
+			float r = rand(nxy);
+			if (r <= best_r) continue;
+			vec4 neighbor = texture(previous_frame, nxy / resolution.xy);
+			uint nr = uint(neighbor.x * 255.0);
+			bool isAnt = (nr & ant) == 1u;
+			if (isAnt) continue;
+			uint ng = uint(neighbor.y * 255.0);
+			Result into = antMovesInto(nxy, ng, false);
+			if (into.found) continue;
+			best_r = r;
+			best_candidate = nxy;
+		}
+	}
+
+	if (best_r == 0.0) return Result(false, xy, 0u);
+	return Result(true, best_candidate, 0u);
+}
+
+Result antRandomMoveInto(vec2 xy) {
+	float best_r = 1.0;
+	vec2 best_candidate = xy;
+
+	for(int dy = -1; dy <= 1; dy++) {
+		for(int dx = -1; dx <= 1; dx++) {
+			if(dx == 0 && dy == 0) continue;
+			vec2 nxy = xy + vec2(dx, dy);
+			if (nxy.x < 0.0 || nxy.x >= resolution.x) continue;
+			if (nxy.y < 0.0 || nxy.y >= resolution.y) continue;
+			float r = rand(nxy);
+			if (r >= best_r) continue;
+			vec4 neighbor = texture(previous_frame, nxy / resolution.xy);
+			uint nr = uint(neighbor.x * 255.0);
+			bool isAnt = (nr & ant) == 1u;
+			if (!isAnt) continue;
+			uint ng = uint(neighbor.y * 255.0);
+			Result away = antMovesAway(nxy, ng, false);
+			if (away.found) continue;
+			best_r = r;
+			best_candidate = nxy;
+		}
+	}
+
+	if (best_r == 1.0) return Result(false, xy, 0u);
+	return Result(true, best_candidate, 0u);
+}
+
+Result antRandomMoveAway(vec2 xy, bool recurse) {
+	Result result = antRandomMoveAway(xy);
+	if (!recurse) {
+		return result;
+	}
+	if (!result.found) {
+		return result;
+	}
+	Result mutual = antRandomMoveInto(result.xy);
+	if (mutual.found && mutual.xy.x == xy.x && mutual.xy.y == xy.y) {
+		return result;
+	}
+	return Result(false, xy, 0u);
+}
+
+Result antRandomMoveInto(vec2 xy, bool recurse) {
+	Result result = antRandomMoveInto(xy);
+	if (!recurse) {
+		return result;
+	}
+	if (!result.found) {
+		return result;
+	}
+	Result mutual = antRandomMoveAway(result.xy);
+	if (mutual.found && mutual.xy.x == xy.x && mutual.xy.y == xy.y) {
+		return result;
+	}
+	return Result(false, xy, 0u);
+}
+
 
 void main() {
 	vec2 uv = gl_FragCoord.xy / resolution.xy;
@@ -82,72 +293,37 @@ void main() {
 	// move towards food
 	if (isAnt) {
 		// move away from this pixel
-		bool found = false;
-		for(int dy = -1; dy <= 1; dy++) {
-			for(int dx = -1; dx <= 1; dx++) {
-				if (found) continue;
-				if(dx == 0 && dy == 0) continue;
-				vec2 nxy = gl_FragCoord.xy + vec2(dx, dy);
-				vec4 neighbor = texture(previous_frame, nxy / resolution.xy);
-				uint ng = uint(neighbor.y * 255.0);
-				if (ng > g) {
-					// before moving, we need to make sure that this neighbor will not move *another* ant to them
-					found = true;
-					r &= ~ant;
-					isAnt = false;
-				}
+		Result destination = antMovesAway(gl_FragCoord.xy, g, true);
+		if (destination.found) {
+			r &= ~ant;
+			isAnt = false;
+		} else {
+			Result randomDestination = antRandomMoveAway(gl_FragCoord.xy, true);
+			if (randomDestination.found) {
+				r &= ~ant;
+				isAnt = false;
 			}
 		}
 	}
 	if (!isAnt) {
-		// "gather" from surrounding pixels (loop over 8 pixels, if one has an ant and that ant needs to move here, then move here)
 		bool found = false;
-		bool some = false;
 		// if we have some pheromone, neighbors might want to move here
 		if (g > 0u) {
-			for(int dy = -1; dy <= 1; dy++) {
-				for(int dx = -1; dx <= 1; dx++) {
-					if(dx == 0 && dy == 0) continue;
-					vec2 nxy = gl_FragCoord.xy + vec2(dx, dy);
-					vec4 neighbor = texture(previous_frame, nxy / resolution.xy);
-					uint nr = uint(neighbor.x * 255.0);
-					bool nIsAnt = (nr & ant) == 1u;
-					if (!nIsAnt) continue;
-					some = true;
-					uint ng = uint(neighbor.y * 255.0);
-					if (ng >= g) continue;
-					bool elsewhere_is_better = false;
-					for(int ndy = -1; ndy <= 1; ndy++) {
-						for(int ndx = -1; ndx <= 1; ndx++) {
-							if (elsewhere_is_better) continue;
-							if (ndx == 0 && ndy == 0) continue; // avoid neighbor itself
-							if (ndx == -dx && ndy == -dy) continue; // avoid current pixel
-							vec4 nn = texture(previous_frame, (nxy + vec2(ndx, ndy)) / resolution.xy);
-							uint nng = uint(nn.y * 255.0);
-							if (nng > g) {
-								elsewhere_is_better = true;
-							}
-						}
-					}
-					if (!elsewhere_is_better) {
-						// move here
-						// how can we move here, while ensuring that another pixel (with the exact same g value) doesn't move the same ant to them?
-						// to solve this, we need to be deterministic about which neighbor wins
-						// we can use the x,y coordinates of each candidate pixel to draw a random number
-						// the one w/ the highest random number wins (if it's not this current pixel, do nothing)
-						found = true;
-						r |= ant;
-						isAnt = true;
-					}
-				}
+			Result from = antMovesInto(gl_FragCoord.xy, g, true);
+			if (from.found) {
+				found = true;
+				r |= ant;
+				isAnt = true;
 			}
 		}
 		// if no neighbor moved here, move a random one
-		// how can we move a random one, while ensuring that another pixel doesn't move the same ant to them?
-		if (!found && some) {
-			// move random ant
-
-			// ...
+		if (!found) {
+			Result randomFrom = antRandomMoveInto(gl_FragCoord.xy, true);
+			if (randomFrom.found) {
+				found = true;
+				r |= ant;
+				isAnt = true;
+			}
 		}
 	}
 
