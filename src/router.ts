@@ -23,7 +23,7 @@ import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/scree
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "flow-field" | "flask" | "collision-threads" | "bird-inverse-kinematics" | "ants" | "a-star"
+export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "flow-field" | "flask" | "collision-threads" | "bird-inverse-kinematics" | "ants-shader" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
@@ -149,7 +149,7 @@ export const ROUTES = {
 			image: normal_map_image
 		},
 		git: {
-			lastModified: 1742677986000,
+			lastModified: 1742725117000,
 			firstAdded: 1727995709000
 		},
 	},
@@ -286,6 +286,16 @@ export const ROUTES = {
 		git: {
 			lastModified: 1717365547000,
 			firstAdded: 1717339261000
+		},
+	},
+	"ants-shader": {
+		Component: lazy(() => import("./pages/ants-shader/index.tsx")),
+		meta: {
+			title: 'Ants on shader',
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
 		},
 	},
 	"ants": {
