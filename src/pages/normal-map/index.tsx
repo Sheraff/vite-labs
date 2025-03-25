@@ -26,7 +26,7 @@ export default function NormalMapPage() {
 	useEffect(() => {
 		const canvas = ref.current
 		if (!canvas) return
-		const gl = canvas.getContext('webgl2')
+		const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true })
 		if (!gl) return
 		gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 		gl.clearColor(0, 0, 0, 0)
@@ -40,7 +40,6 @@ export default function NormalMapPage() {
 		gl.useProgram(program)
 
 		const { inputs, xyz, clear, screen } = handleInputs(canvas, form)
-
 
 		const resolution_loc = gl.getUniformLocation(program, "resolution")
 
@@ -85,6 +84,22 @@ export default function NormalMapPage() {
 
 		let rafId = requestAnimationFrame(function loop() {
 			rafId = requestAnimationFrame(loop)
+
+			const pixels = new Uint8ClampedArray(
+				gl.drawingBufferWidth * gl.drawingBufferHeight * 4,
+			)
+			gl.readPixels(
+				0,
+				0,
+				gl.drawingBufferWidth,
+				gl.drawingBufferHeight,
+				gl.RGBA,
+				gl.UNSIGNED_BYTE,
+				pixels,
+			)
+			const has_something = pixels.some((v) => v !== 0)
+			console.log(has_something)
+
 
 			gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 			gl.uniform2f(resolution_loc, screen.width, screen.height)
