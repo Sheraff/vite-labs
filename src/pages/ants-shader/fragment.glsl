@@ -35,7 +35,7 @@ const uint maxPheromone = 255u;
 
 // random number [0,1] inclusive
 float rand(vec2 identity) {
-	return (sin(dot(identity, vec2(12.9898, 4.1414)) * seed) + 1.0) / 2.0;
+	return fract(sin(dot(identity, vec2(12.9898, 4.1414)) * seed));
 }
 
 
