@@ -13,7 +13,7 @@
 	z-index: 1;
 }
 
-.stars {
+.radio {
 	display: flex;
 	align-items: center;
 	position: relative;
@@ -87,6 +87,56 @@
 	&:has(input:active) {
 		input:hover {
 			--color: var(--color-active) !important;
+		}
+	}
+}
+
+.range {
+	--size: 10rem;
+
+	input {
+		display: block;
+		-webkit-appearance: none;
+		appearance: none;
+		width: calc(5 * var(--size));
+		height: var(--size);
+		background: transparent;
+		cursor: pointer;
+		margin: 0;
+
+		background: var(--color);
+		mask-image: var(--svg-bg-image);
+		mask-position: left center;
+		mask-size: contain;
+		mask-repeat: repeat-x;
+
+		/* &::-moz-range-track */
+		&::-webkit-slider-runnable-track {
+			background-color: gray;
+			height: var(--size);
+		}
+
+		/* &::-moz-range-thumb */
+		&::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			appearance: none;
+			width: calc(var(--size) * var(--step));
+			height: var(--size);
+			background: red;
+			margin: 0;
+		}
+
+		position: relative;
+
+		&::after {
+			content: '';
+			width: 100vw;
+			height: 100%;
+			background-color: red;
+			position: absolute;
+			top: 0;
+			right: 0;
+			transform: translateX(calc(-100% + (var(--value) + 1.5) * var(--size)));
 		}
 	}
 }

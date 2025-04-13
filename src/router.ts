@@ -84,8 +84,8 @@ export const ROUTES = {
 			image: star_rating_image
 		},
 		git: {
-			lastModified: 0,
-			firstAdded: 0
+			lastModified: 1744563053000,
+			firstAdded: 1744563053000
 		},
 	},
 	"spider-inverse-kinematics": {
