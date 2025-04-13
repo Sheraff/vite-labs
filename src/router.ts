@@ -84,7 +84,7 @@ export const ROUTES = {
 			image: star_rating_image
 		},
 		git: {
-			lastModified: 1744563053000,
+			lastModified: 1744576061000,
 			firstAdded: 1744563053000
 		},
 	},

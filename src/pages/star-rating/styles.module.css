@@ -120,7 +120,7 @@
 		&::-webkit-slider-thumb {
 			-webkit-appearance: none;
 			appearance: none;
-			width: calc(var(--size) * var(--step));
+			width: var(--size);
 			height: var(--size);
 			background: red;
 			margin: 0;

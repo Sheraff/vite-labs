@@ -46,12 +46,11 @@ const RadioStarsInput = ({ name, label }: { name: string, label: string }) => {
 
 const RangeStarsInput = ({ name, label }: { name: string, label: string }) => {
 	const [value, setValue] = useState(1)
-	const step = 1
 	const onChange: ChangeEventHandler<HTMLInputElement> = (e) => setValue(Number(e.target.value))
 	return (
 		<div
 			className={styles.range}
-			style={{ '--svg-bg-image': img, '--value': value, '--step': step } as CSSProperties}
+			style={{ '--svg-bg-image': img, '--value': value } as CSSProperties}
 		>
 			<label htmlFor="range">{label}</label>
 			<input
@@ -60,7 +59,7 @@ const RangeStarsInput = ({ name, label }: { name: string, label: string }) => {
 				name={name}
 				min={1}
 				max={5}
-				step={step}
+				step={1}
 				onChange={onChange}
 				value={value}
 			/>
