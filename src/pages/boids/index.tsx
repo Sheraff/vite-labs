@@ -2,6 +2,7 @@ import type { RouteMeta } from "~/router"
 import styles from './styles.module.css'
 import { Head } from "~/components/Head"
 import { useEffect, useRef } from "react"
+import { TreeNode } from "@quad-tree-collisions/TreeNode"
 
 export const meta: RouteMeta = {
 	title: 'Boids',
@@ -19,7 +20,6 @@ export const meta: RouteMeta = {
  */
 
 function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: number): () => void {
-
 	type Boid = {
 		x: number
 		y: number
@@ -31,13 +31,19 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 		ySpeedNormal: number
 	}
 
-	const boids: Boid[] = Array.from({ length: 2000 }, () => {
+	const tree = new TreeNode<Boid>(0, 0, side, side, 6)
+
+	const COUNT = 8000
+
+	const boids: Boid[] = Array.from({ length: COUNT })
+
+	for (let i = 0; i < COUNT; i++) {
 		const radians = Math.random() * Math.PI * 2
 		const [xSpeedNormal, ySpeedNormal] = angleToVector(radians)
-		const speed = (10 + Math.random() * 50) * window.devicePixelRatio
+		const speed = (20 + Math.random() * 40) * window.devicePixelRatio
 		const x = Math.random() * side
 		const y = Math.random() * side
-		return {
+		const boid: Boid = {
 			x,
 			y,
 			radians,
@@ -45,17 +51,20 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 			xSpeedNormal,
 			ySpeedNormal,
 		}
-	})
+		boids[i] = (boid)
+		tree.insert(boid)
+	}
 
 	const params = {
 		/** How far a boid can see */
-		sight: 50,
+		sight: 30,
 		/** How close boids can get before they start to separate */
 		space: 10,
-		alignment: 1,
-		cohesion: 1,
-		separation: 3,
+		alignment: 2,
+		cohesion: 0.7,
+		separation: 4,
 		edge_avoidance: 3,
+		draw_tree: false,
 	}
 
 	let lastTime = 0
@@ -70,7 +79,9 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 
 		const max = Math.max(params.sight, params.space)
 
-		for (const boid of boids) {
+		for (let i = 0; i < boids.length; i++) {
+			const boid = boids[i]
+
 			// Avoid edges (no wrap around)
 			const going_up = boid.ySpeedNormal < 0
 			const going_left = boid.xSpeedNormal < 0
@@ -125,7 +136,9 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 				let centerX = 0
 				let centerY = 0
 
-				for (const other of boids) {
+				const neighbors = tree.query(boid.x, boid.y, max)
+
+				for (const other of neighbors) {
 					if (other === boid) continue
 					const dx = other.x - boid.x
 					if (dx > max || dx < -max) continue
@@ -194,6 +207,13 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 				}
 			}
 
+			// Normalize speed
+			const length = Math.hypot(boid.xSpeedNormal, boid.ySpeedNormal)
+			if (length !== 1) {
+				boid.xSpeedNormal /= length
+				boid.ySpeedNormal /= length
+			}
+
 			// Update position
 			boid.x += boid.xSpeedNormal * boid.speed * delta
 			boid.y += boid.ySpeedNormal * boid.speed * delta
@@ -210,7 +230,12 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 				boid.y = side
 			}
 
+			tree.update(boid)
+
 			drawTriangle(ctx, boid.x, boid.y, boid.radians)
+		}
+		if (params.draw_tree) {
+			drawTree(ctx, tree)
 		}
 	})
 
@@ -229,6 +254,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 		params.cohesion = getValue<number>(form, 'cohesion')!
 		params.separation = getValue<number>(form, 'separation')!
 		params.edge_avoidance = getValue<number>(form, 'edge_avoidance')!
+		params.draw_tree = getValue<boolean>(form, 'draw_tree') ?? false
 	}
 	onInput()
 	form.addEventListener('input', onInput, { signal: controller.signal })
@@ -283,7 +309,7 @@ export default function BoidsPage() {
 		const form = formRef.current
 		if (!form) return
 
-		const side = 1200 * window.devicePixelRatio
+		const side = 1600 * window.devicePixelRatio
 		canvas.height = side
 		canvas.width = side
 
@@ -313,7 +339,7 @@ export default function BoidsPage() {
 				<fieldset>
 					<legend>Controls</legend>
 					<label htmlFor="sight">Sight:</label>
-					<input type="range" id="sight" name="sight" min="10" max="200" defaultValue={50} step="1" />
+					<input type="range" id="sight" name="sight" min="10" max="200" defaultValue={30} step="1" />
 					<label htmlFor="space">Spacing:</label>
 					<input type="range" id="space" name="space" min="1" max="100" defaultValue={10} step="1" />
 					<hr />
@@ -322,11 +348,28 @@ export default function BoidsPage() {
 					<label htmlFor="cohesion">Cohesion:</label>
 					<input type="range" id="cohesion" name="cohesion" min="0" max="10" defaultValue={0.7} step="0.1" />
 					<label htmlFor="separation">Separation:</label>
-					<input type="range" id="separation" name="separation" min="0" max="10" defaultValue={3} step="0.1" />
+					<input type="range" id="separation" name="separation" min="0" max="10" defaultValue={4} step="0.1" />
 					<label htmlFor="edge_avoidance">Edge Avoidance:</label>
 					<input type="range" id="edge_avoidance" name="edge_avoidance" min="0" max="10" defaultValue={3} step="0.1" />
+					<hr />
+					<label htmlFor="draw_tree">Draw Tree:
+						<input type="checkbox" id="draw_tree" name="draw_tree" defaultChecked={false} />
+					</label>
 				</fieldset>
 			</form>
 		</div>
 	)
+}
+
+
+function drawTree(ctx: CanvasRenderingContext2D, tree: TreeNode) {
+	if (tree.children) {
+		for (const child of tree.children) {
+			if (child.isEmpty) continue
+			drawTree(ctx, child)
+		}
+	}
+	ctx.strokeStyle = 'white'
+	ctx.lineWidth = 1 / tree.depth
+	ctx.strokeRect(tree.x, tree.y, tree.width, tree.height)
 }
