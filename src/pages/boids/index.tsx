@@ -31,9 +31,9 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 		ySpeedNormal: number
 	}
 
-	const tree = new TreeNode<Boid>(0, 0, side, side, 6)
+	const tree = new TreeNode<Boid>(0, 0, side, side, 8)
 
-	const COUNT = 8000
+	const COUNT = 10000
 
 	const boids: Boid[] = Array.from({ length: COUNT })
 
@@ -167,12 +167,8 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 				// (alignment) Neighbor average angle
 				if (inSightCount > 0) {
 					const influence = params.alignment * delta
-					const x = xSpeedNormalSum / inSightCount * influence + boid.xSpeedNormal * (1 - influence)
-					const y = ySpeedNormalSum / inSightCount * influence + boid.ySpeedNormal * (1 - influence)
-					boid.radians = Math.atan2(y, x)
-					const [xSpeedNormal, ySpeedNormal] = angleToVector(boid.radians)
-					boid.xSpeedNormal = xSpeedNormal
-					boid.ySpeedNormal = ySpeedNormal
+					boid.xSpeedNormal = xSpeedNormalSum / inSightCount * influence + boid.xSpeedNormal * (1 - influence)
+					boid.ySpeedNormal = ySpeedNormalSum / inSightCount * influence + boid.ySpeedNormal * (1 - influence)
 				}
 
 				// (separation) Steer to avoid crowding local flockmates
@@ -180,12 +176,8 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 					const separationRadians = Math.atan2(separationY, separationX)
 					const [separationXSpeedNormal, separationYSpeedNormal] = angleToVector(separationRadians)
 					const influence = params.separation * delta
-					const x = separationXSpeedNormal * influence + boid.xSpeedNormal * (1 - influence)
-					const y = separationYSpeedNormal * influence + boid.ySpeedNormal * (1 - influence)
-					boid.radians = Math.atan2(y, x)
-					const [newXSpeedNormal, newYSpeedNormal] = angleToVector(boid.radians)
-					boid.xSpeedNormal = newXSpeedNormal
-					boid.ySpeedNormal = newYSpeedNormal
+					boid.xSpeedNormal = separationXSpeedNormal * influence + boid.xSpeedNormal * (1 - influence)
+					boid.ySpeedNormal = separationYSpeedNormal * influence + boid.ySpeedNormal * (1 - influence)
 				}
 
 				// (cohesion) Steer to move towards the average position of local flockmates
@@ -198,13 +190,11 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 					const cohesionRadians = Math.atan2(dy, dx)
 					const [cohesionXSpeedNormal, cohesionYSpeedNormal] = angleToVector(cohesionRadians)
 					const influence = params.cohesion * delta
-					const x = cohesionXSpeedNormal * influence + boid.xSpeedNormal * (1 - influence)
-					const y = cohesionYSpeedNormal * influence + boid.ySpeedNormal * (1 - influence)
-					boid.radians = Math.atan2(y, x)
-					const [newXSpeedNormal, newYSpeedNormal] = angleToVector(boid.radians)
-					boid.xSpeedNormal = newXSpeedNormal
-					boid.ySpeedNormal = newYSpeedNormal
+					boid.xSpeedNormal = cohesionXSpeedNormal * influence + boid.xSpeedNormal * (1 - influence)
+					boid.ySpeedNormal = cohesionYSpeedNormal * influence + boid.ySpeedNormal * (1 - influence)
 				}
+
+				boid.radians = Math.atan2(boid.ySpeedNormal, boid.xSpeedNormal)
 			}
 
 			// Normalize speed
