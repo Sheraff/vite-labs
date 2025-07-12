@@ -58,7 +58,7 @@ async function getGitMeta(index: string) {
 			})
 		))
 		firstCommit.push(new Promise<string>(
-			(resolve, reject) => exec(`git log --follow --pretty="format:%ad" "${file}" | tail -1`, (error, stdout, stderr) => {
+			(resolve, reject) => exec(`git log --diff-filter=A --format="%ad" --date=iso "${file}" | head -1`, (error, stdout, stderr) => {
 				if (error || stderr) return reject(error || stderr)
 				resolve(stdout.trim())
 			})
