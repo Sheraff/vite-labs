@@ -1,7 +1,7 @@
 import type { RouteMeta } from "~/router"
 import styles from './styles.module.css'
 import { Head } from "~/components/Head"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { TreeNode } from "@quad-tree-collisions/TreeNode"
 
 export const meta: RouteMeta = {
@@ -13,13 +13,15 @@ export const meta: RouteMeta = {
 	image: './screen.png'
 }
 
+const COUNT = 10000
+
 /**
  * separation: steer to avoid crowding local flockmates
  * alignment: steer towards the average heading of local flockmates
  * cohesion: steer to move towards the average position (center of mass) of local flockmates
  */
 
-function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: number): () => void {
+function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: number, onFrame: (delta: number) => void): () => void {
 	type Boid = {
 		x: number
 		y: number
@@ -32,8 +34,6 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 	}
 
 	const tree = new TreeNode<Boid>(0, 0, side, side, 8)
-
-	const COUNT = 10000
 
 	const boids: Boid[] = Array.from({ length: COUNT })
 
@@ -75,6 +75,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 		const delta = (time - lastTime) / 1000
 		lastTime = time
 		if (first) return
+		onFrame(delta)
 
 		ctx.clearRect(0, 0, side, side)
 
@@ -303,6 +304,7 @@ function getValue<T,>(form: HTMLFormElement, name: string): T | undefined {
 export default function BoidsPage() {
 	const ref = useRef<HTMLCanvasElement | null>(null)
 	const formRef = useRef<HTMLFormElement | null>(null)
+	const [fps, setFps] = useState(0)
 
 	useEffect(() => {
 		const canvas = ref.current
@@ -327,7 +329,7 @@ export default function BoidsPage() {
 		spaceInput.setAttribute('step', Number(spaceInput.getAttribute('step')) * window.devicePixelRatio + '')
 		spaceInput.value = (Number(spaceInput.value) * window.devicePixelRatio) + ''
 
-		return start(ctx, form, side)
+		return start(ctx, form, side, (delta) => setFps(Math.round(1 / delta)))
 	}, [])
 
 	return (
@@ -363,6 +365,10 @@ export default function BoidsPage() {
 					</label>
 				</fieldset>
 			</form>
+			<div className={styles.stats}>
+				<p>FPS: {fps}</p>
+				<p>Boids: {COUNT}</p>
+			</div>
 		</div>
 	)
 }
