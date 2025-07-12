@@ -48,8 +48,10 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 	})
 
 	const params = {
-		sight: 50, // How far a boid can see
-		space: 10, // How close boids can get before they start to separate
+		/** How far a boid can see */
+		sight: 50,
+		/** How close boids can get before they start to separate */
+		space: 10,
 		alignment: 1,
 		cohesion: 1,
 		separation: 3,
@@ -164,15 +166,13 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 				if (separationX !== 0 || separationY !== 0) {
 					const separationRadians = Math.atan2(separationY, separationX)
 					const [separationXSpeedNormal, separationYSpeedNormal] = angleToVector(separationRadians)
-					// Apply separation as a small adjustment to the boid's angle
-					boid.xSpeedNormal += separationXSpeedNormal * params.separation * delta
-					boid.ySpeedNormal += separationYSpeedNormal * params.separation * delta
-					// Normalize the speed vector
-					const length = Math.sqrt(boid.xSpeedNormal * boid.xSpeedNormal + boid.ySpeedNormal * boid.ySpeedNormal)
-					if (length > 0) {
-						boid.xSpeedNormal /= length
-						boid.ySpeedNormal /= length
-					}
+					const influence = params.separation * delta
+					const x = separationXSpeedNormal * influence + boid.xSpeedNormal * (1 - influence)
+					const y = separationYSpeedNormal * influence + boid.ySpeedNormal * (1 - influence)
+					boid.radians = Math.atan2(y, x)
+					const [newXSpeedNormal, newYSpeedNormal] = angleToVector(boid.radians)
+					boid.xSpeedNormal = newXSpeedNormal
+					boid.ySpeedNormal = newYSpeedNormal
 				}
 
 				// (cohesion) Steer to move towards the average position of local flockmates
@@ -181,20 +181,16 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 					centerY /= inSightCount
 					const dx = centerX - boid.x
 					const dy = centerY - boid.y
-					const distance = Math.sqrt(dx * dx + dy * dy)
-					if (distance > 0) {
-						const cohesionRadians = Math.atan2(dy, dx)
-						const [cohesionXSpeedNormal, cohesionYSpeedNormal] = angleToVector(cohesionRadians)
-						// Apply cohesion as a small adjustment to the boid's angle
-						boid.xSpeedNormal += cohesionXSpeedNormal * params.cohesion * delta
-						boid.ySpeedNormal += cohesionYSpeedNormal * params.cohesion * delta
-						// Normalize the speed vector
-						const length = Math.sqrt(boid.xSpeedNormal * boid.xSpeedNormal + boid.ySpeedNormal * boid.ySpeedNormal)
-						if (length > 0) {
-							boid.xSpeedNormal /= length
-							boid.ySpeedNormal /= length
-						}
-					}
+
+					const cohesionRadians = Math.atan2(dy, dx)
+					const [cohesionXSpeedNormal, cohesionYSpeedNormal] = angleToVector(cohesionRadians)
+					const influence = params.cohesion * delta
+					const x = cohesionXSpeedNormal * influence + boid.xSpeedNormal * (1 - influence)
+					const y = cohesionYSpeedNormal * influence + boid.ySpeedNormal * (1 - influence)
+					boid.radians = Math.atan2(y, x)
+					const [newXSpeedNormal, newYSpeedNormal] = angleToVector(boid.radians)
+					boid.xSpeedNormal = newXSpeedNormal
+					boid.ySpeedNormal = newYSpeedNormal
 				}
 			}
 
@@ -226,14 +222,16 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 		}
 	}, { signal: controller.signal })
 
-	form.addEventListener('input', () => {
+	const onInput = () => {
 		params.sight = getValue<number>(form, 'sight')!
 		params.space = getValue<number>(form, 'space')!
 		params.alignment = getValue<number>(form, 'alignment')!
 		params.cohesion = getValue<number>(form, 'cohesion')!
 		params.separation = getValue<number>(form, 'separation')!
 		params.edge_avoidance = getValue<number>(form, 'edge_avoidance')!
-	}, { signal: controller.signal })
+	}
+	onInput()
+	form.addEventListener('input', onInput, { signal: controller.signal })
 
 	return () => {
 		cancelAnimationFrame(rafId)
@@ -285,9 +283,20 @@ export default function BoidsPage() {
 		const form = formRef.current
 		if (!form) return
 
-		const side = 1400 * window.devicePixelRatio
+		const side = 1200 * window.devicePixelRatio
 		canvas.height = side
 		canvas.width = side
+
+		const sightInput = document.getElementById('sight') as HTMLInputElement
+		sightInput.setAttribute('min', Number(sightInput.getAttribute('min')) * window.devicePixelRatio + '')
+		sightInput.setAttribute('max', Number(sightInput.getAttribute('max')) * window.devicePixelRatio + '')
+		sightInput.setAttribute('step', Number(sightInput.getAttribute('step')) * window.devicePixelRatio + '')
+		sightInput.value = (Number(sightInput.value) * window.devicePixelRatio) + ''
+		const spaceInput = document.getElementById('space') as HTMLInputElement
+		spaceInput.setAttribute('min', Number(spaceInput.getAttribute('min')) * window.devicePixelRatio + '')
+		spaceInput.setAttribute('max', Number(spaceInput.getAttribute('max')) * window.devicePixelRatio + '')
+		spaceInput.setAttribute('step', Number(spaceInput.getAttribute('step')) * window.devicePixelRatio + '')
+		spaceInput.value = (Number(spaceInput.value) * window.devicePixelRatio) + ''
 
 		return start(ctx, form, side)
 	}, [])
@@ -309,9 +318,9 @@ export default function BoidsPage() {
 					<input type="range" id="space" name="space" min="1" max="100" defaultValue={10} step="1" />
 					<hr />
 					<label htmlFor="alignment">Alignment:</label>
-					<input type="range" id="alignment" name="alignment" min="0" max="10" defaultValue={1} step="0.1" />
+					<input type="range" id="alignment" name="alignment" min="0" max="10" defaultValue={2} step="0.1" />
 					<label htmlFor="cohesion">Cohesion:</label>
-					<input type="range" id="cohesion" name="cohesion" min="0" max="10" defaultValue={1} step="0.1" />
+					<input type="range" id="cohesion" name="cohesion" min="0" max="10" defaultValue={0.7} step="0.1" />
 					<label htmlFor="separation">Separation:</label>
 					<input type="range" id="separation" name="separation" min="0" max="10" defaultValue={3} step="0.1" />
 					<label htmlFor="edge_avoidance">Edge Avoidance:</label>
