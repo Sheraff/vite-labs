@@ -20,11 +20,12 @@ import hacker_background_image from "./pages/hacker-background/screen.png"
 import flow_field_image from "./pages/flow-field/screen.png"
 import flask_image from "./pages/flask/screen.png"
 import collision_threads_image from "./pages/collision-threads/screen.png"
+import boids_image from "./pages/boids/screen.png"
 import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/screen.png"
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "star-rating" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "flow-field" | "flask" | "collision-threads" | "bird-inverse-kinematics" | "ants" | "a-star"
+export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "star-rating" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "flow-field" | "flask" | "collision-threads" | "boids" | "bird-inverse-kinematics" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
@@ -84,7 +85,7 @@ export const ROUTES = {
 			image: star_rating_image
 		},
 		git: {
-			lastModified: 1744576138000,
+			lastModified: 1744577097000,
 			firstAdded: 1744563053000
 		},
 	},
@@ -287,6 +288,21 @@ export const ROUTES = {
 		git: {
 			lastModified: 1740505056000,
 			firstAdded: 1727995709000
+		},
+	},
+	"boids": {
+		Component: lazy(() => import("./pages/boids/index.tsx")),
+		meta: {
+			title: 'Boids',
+			description: `
+				Boids is an artificial life program which simulates the flocking behaviour of birds.
+				It is an example of emergent behavior; that is, the complexity of Boids arises from the interaction of individual agents adhering to a set of simple rules.
+			`,
+			image: boids_image
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
 		},
 	},
 	"bird-inverse-kinematics": {
