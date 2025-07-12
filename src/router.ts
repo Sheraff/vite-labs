@@ -301,8 +301,8 @@ export const ROUTES = {
 			image: boids_image
 		},
 		git: {
-			lastModified: 0,
-			firstAdded: 0
+			lastModified: 1752336310000,
+			firstAdded: 1727995709000
 		},
 	},
 	"bird-inverse-kinematics": {
