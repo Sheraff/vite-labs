@@ -65,6 +65,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 		separation: 4,
 		edge_avoidance: 3,
 		draw_tree: false,
+		draw_fov: false,
 	}
 
 	let lastTime = 0
@@ -223,6 +224,9 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 			tree.update(boid)
 
 			drawTriangle(ctx, boid.x, boid.y, boid.radians)
+			if (params.draw_fov) {
+				drawCircle(ctx, boid.x, boid.y, params.sight)
+			}
 		}
 		if (params.draw_tree) {
 			drawTree(ctx, tree)
@@ -245,6 +249,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 		params.separation = getValue<number>(form, 'separation')!
 		params.edge_avoidance = getValue<number>(form, 'edge_avoidance')!
 		params.draw_tree = getValue<boolean>(form, 'draw_tree') ?? false
+		params.draw_fov = getValue<boolean>(form, 'draw_fov') ?? false
 	}
 	onInput()
 	form.addEventListener('input', onInput, { signal: controller.signal })
@@ -271,6 +276,14 @@ function drawTriangle(ctx: CanvasRenderingContext2D, x: number, y: number, radia
 	ctx.fillStyle = 'white'
 	ctx.fill()
 	ctx.restore()
+}
+
+function drawCircle(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number) {
+	ctx.beginPath()
+	ctx.arc(x, y, radius, 0, Math.PI * 2)
+	ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)'
+	ctx.lineWidth = 1
+	ctx.stroke()
 }
 
 function getValue<T,>(form: HTMLFormElement, name: string): T | undefined {
@@ -344,6 +357,9 @@ export default function BoidsPage() {
 					<hr />
 					<label htmlFor="draw_tree">Draw Tree:
 						<input type="checkbox" id="draw_tree" name="draw_tree" defaultChecked={false} />
+					</label>
+					<label htmlFor="draw_fov">Draw Field of View:
+						<input type="checkbox" id="draw_fov" name="draw_fov" defaultChecked={false} />
 					</label>
 				</fieldset>
 			</form>
