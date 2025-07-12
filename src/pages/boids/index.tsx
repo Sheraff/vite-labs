@@ -57,7 +57,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 
 	const params = {
 		/** How far a boid can see */
-		sight: 30,
+		sight: 20,
 		/** How close boids can get before they start to separate */
 		space: 10,
 		alignment: 2,
@@ -344,7 +344,7 @@ export default function BoidsPage() {
 				<fieldset>
 					<legend>Controls</legend>
 					<label htmlFor="sight">Sight:</label>
-					<input type="range" id="sight" name="sight" min="10" max="200" defaultValue={30} step="1" />
+					<input type="range" id="sight" name="sight" min="1" max="100" defaultValue={20} step="1" />
 					<label htmlFor="space">Spacing:</label>
 					<input type="range" id="space" name="space" min="1" max="100" defaultValue={10} step="1" />
 					<hr />
