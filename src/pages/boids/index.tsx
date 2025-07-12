@@ -3,6 +3,7 @@ import styles from './styles.module.css'
 import { Head } from "~/components/Head"
 import { useEffect, useRef, useState } from "react"
 import { TreeNode } from "@quad-tree-collisions/TreeNode"
+import { webGLSetup } from "./canvas"
 
 export const meta: RouteMeta = {
 	title: 'Boids',
@@ -13,7 +14,16 @@ export const meta: RouteMeta = {
 	image: './screen.png'
 }
 
-const COUNT = 10000
+const COUNT = 12000
+
+type Boid = {
+	x: number
+	y: number
+	radians: number
+	speed: number
+	xSpeedNormal: number
+	ySpeedNormal: number
+}
 
 /**
  * separation: steer to avoid crowding local flockmates
@@ -21,22 +31,15 @@ const COUNT = 10000
  * cohesion: steer to move towards the average position (center of mass) of local flockmates
  */
 
-function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: number, onFrame: (delta: number) => void): () => void {
-	type Boid = {
-		x: number
-		y: number
-		radians: number
-		speed: number
-		/** pre-computed */
-		xSpeedNormal: number
-		/** pre-computed */
-		ySpeedNormal: number
-	}
-
+function start(
+	gl: WebGLRenderingContext,
+	ctx: CanvasRenderingContext2D,
+	form: HTMLFormElement,
+	side: number,
+	onFrame: (delta: number) => void
+): () => void {
 	const tree = new TreeNode<Boid>(0, 0, side, side, 8)
-
 	const boids: Boid[] = Array.from({ length: COUNT })
-
 	for (let i = 0; i < COUNT; i++) {
 		const radians = Math.random() * Math.PI * 2
 		const [xSpeedNormal, ySpeedNormal] = angleToVector(radians)
@@ -51,13 +54,13 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 			xSpeedNormal,
 			ySpeedNormal,
 		}
-		boids[i] = (boid)
+		boids[i] = boid
 		tree.insert(boid)
 	}
 
 	const params = {
 		/** How far a boid can see */
-		sight: 30,
+		sight: 20,
 		/** How close boids can get before they start to separate */
 		space: 10,
 		alignment: 2,
@@ -67,6 +70,9 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 		draw_tree: false,
 		draw_fov: false,
 	}
+
+	const canvas = webGLSetup(gl, side, COUNT)
+
 
 	let lastTime = 0
 	let rafId = requestAnimationFrame(function animate(time) {
@@ -211,24 +217,20 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 			boid.y += boid.ySpeedNormal * boid.speed * delta
 
 			// Out of bounds
-			if (boid.x < 0) {
-				boid.x = 0
-			} else if (boid.x > side) {
-				boid.x = side
-			}
-			if (boid.y < 0) {
-				boid.y = 0
-			} else if (boid.y > side) {
-				boid.y = side
-			}
-
+			if (boid.x < 0) boid.x = 0
+			else if (boid.x > side) boid.x = side
+			if (boid.y < 0) boid.y = 0
+			else if (boid.y > side) boid.y = side
 			tree.update(boid)
 
-			drawTriangle(ctx, boid.x, boid.y, boid.radians)
+			// Write per-boid data
+			canvas.update(i, boid)
 			if (params.draw_fov) {
 				drawCircle(ctx, boid.x, boid.y, params.sight)
 			}
 		}
+
+		canvas.draw()
 		if (params.draw_tree) {
 			drawTree(ctx, tree)
 		}
@@ -249,8 +251,8 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 		params.cohesion = getValue<number>(form, 'cohesion')!
 		params.separation = getValue<number>(form, 'separation')!
 		params.edge_avoidance = getValue<number>(form, 'edge_avoidance')!
-		params.draw_tree = getValue<boolean>(form, 'draw_tree') ?? false
-		params.draw_fov = getValue<boolean>(form, 'draw_fov') ?? false
+		params.draw_tree = getValue<boolean>(form, 'draw_tree')!
+		params.draw_fov = getValue<boolean>(form, 'draw_fov')!
 	}
 	onInput()
 	form.addEventListener('input', onInput, { signal: controller.signal })
@@ -258,6 +260,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 	return () => {
 		cancelAnimationFrame(rafId)
 		controller.abort()
+		canvas.destroy()
 	}
 }
 
@@ -265,21 +268,20 @@ function angleToVector(radians: number): [xSpeedNormal: number, ySpeedNormal: nu
 	return [Math.cos(radians), Math.sin(radians)]
 }
 
-function drawTriangle(ctx: CanvasRenderingContext2D, x: number, y: number, radians: number, size = 3 * window.devicePixelRatio) {
-	ctx.save()
-	ctx.translate(x, y)
-	ctx.rotate(radians)
-	ctx.beginPath()
-	ctx.moveTo(size, 0)
-	ctx.lineTo(-size, size / 2)
-	ctx.lineTo(-size, -size / 2)
-	ctx.closePath()
-	ctx.fillStyle = 'white'
-	ctx.fill()
-	ctx.restore()
+function drawTree(ctx: CanvasRenderingContext2D, tree: TreeNode) {
+	if (tree.children) {
+		for (const child of tree.children) {
+			if (child.isEmpty) continue
+			drawTree(ctx, child)
+		}
+	}
+	ctx.strokeStyle = 'white'
+	ctx.lineWidth = 1 / tree.depth
+	ctx.strokeRect(tree.x, ctx.canvas.height - tree.y - tree.height, tree.width, tree.height)
 }
 
 function drawCircle(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number) {
+	y = ctx.canvas.height - y
 	ctx.beginPath()
 	ctx.arc(x, y, radius, 0, Math.PI * 2)
 	ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)'
@@ -301,22 +303,28 @@ function getValue<T,>(form: HTMLFormElement, name: string): T | undefined {
 	}
 }
 
+
 export default function BoidsPage() {
 	const ref = useRef<HTMLCanvasElement | null>(null)
+	const overlay = useRef<HTMLCanvasElement | null>(null)
 	const formRef = useRef<HTMLFormElement | null>(null)
 	const [fps, setFps] = useState(0)
 
 	useEffect(() => {
 		const canvas = ref.current
-		if (!canvas) return
-		const ctx = canvas.getContext('2d')
-		if (!ctx) return
+		const overlayCanvas = overlay.current
+		if (!canvas || !overlayCanvas) return
+		const gl = canvas.getContext('webgl')
+		const ctx = overlayCanvas.getContext('2d')
+		if (!gl || !ctx) return
 		const form = formRef.current
 		if (!form) return
 
 		const side = 1600 * window.devicePixelRatio
 		canvas.height = side
 		canvas.width = side
+		overlayCanvas.height = side
+		overlayCanvas.width = side
 
 		const sightInput = document.getElementById('sight') as HTMLInputElement
 		sightInput.setAttribute('min', Number(sightInput.getAttribute('min')) * window.devicePixelRatio + '')
@@ -329,7 +337,7 @@ export default function BoidsPage() {
 		spaceInput.setAttribute('step', Number(spaceInput.getAttribute('step')) * window.devicePixelRatio + '')
 		spaceInput.value = (Number(spaceInput.value) * window.devicePixelRatio) + ''
 
-		return start(ctx, form, side, (delta) => setFps(Math.round(1 / delta)))
+		return start(gl, ctx, form, side, (delta) => setFps(1 / delta))
 	}, [])
 
 	return (
@@ -340,11 +348,14 @@ export default function BoidsPage() {
 			<canvas width="1000" height="1000" ref={ref}>
 				Your browser does not support the HTML5 canvas tag.
 			</canvas>
+			<canvas width="1000" height="1000" ref={overlay}>
+				Your browser does not support the HTML5 canvas tag.
+			</canvas>
 			<form ref={formRef} className={styles.form}>
 				<fieldset>
 					<legend>Controls</legend>
 					<label htmlFor="sight">Sight:</label>
-					<input type="range" id="sight" name="sight" min="10" max="200" defaultValue={30} step="1" />
+					<input type="range" id="sight" name="sight" min="1" max="100" defaultValue={20} step="1" />
 					<label htmlFor="space">Spacing:</label>
 					<input type="range" id="space" name="space" min="1" max="100" defaultValue={10} step="1" />
 					<hr />
@@ -366,22 +377,9 @@ export default function BoidsPage() {
 				</fieldset>
 			</form>
 			<div className={styles.stats}>
-				<p>FPS: {fps}</p>
+				<p>FPS: {fps.toFixed(1)}</p>
 				<p>Boids: {COUNT}</p>
 			</div>
 		</div>
 	)
-}
-
-
-function drawTree(ctx: CanvasRenderingContext2D, tree: TreeNode) {
-	if (tree.children) {
-		for (const child of tree.children) {
-			if (child.isEmpty) continue
-			drawTree(ctx, child)
-		}
-	}
-	ctx.strokeStyle = 'white'
-	ctx.lineWidth = 1 / tree.depth
-	ctx.strokeRect(tree.x, tree.y, tree.width, tree.height)
 }
