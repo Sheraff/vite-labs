@@ -13,6 +13,7 @@ export const meta: RouteMeta = {
 
 export default function CellularAutomataPage() {
 	const ref = useRef<HTMLCanvasElement | null>(null)
+	const formRef = useRef<HTMLFormElement | null>(null)
 	const [fps, setFps] = useState(0)
 
 	useEffect(() => {
@@ -20,6 +21,8 @@ export default function CellularAutomataPage() {
 		if (!canvas) return
 		const ctx = canvas.getContext('2d')
 		if (!ctx) return
+		const form = formRef.current
+		if (!form) return
 
 		const side = 1600 * window.devicePixelRatio
 		canvas.height = side
@@ -27,7 +30,7 @@ export default function CellularAutomataPage() {
 
 		const frameCounter = makeFrameCounter()
 
-		return start(ctx, side, (delta) => setFps(Math.round(frameCounter(delta))))
+		return start(ctx, side, form, (delta) => setFps(Math.round(frameCounter(delta))))
 	}, [])
 
 	return (
@@ -38,6 +41,17 @@ export default function CellularAutomataPage() {
 			<canvas width="1000" height="1000" ref={ref}>
 				Your browser does not support the HTML5 canvas tag.
 			</canvas>
+			<form ref={formRef} className={styles.form}>
+				<fieldset>
+					<legend>Controls</legend>
+					<label htmlFor="play" className={styles.play}>
+						<input type="checkbox" name="play" id="play" defaultChecked />
+					</label>
+					<hr />
+					<label htmlFor="speed">Speed</label>
+					<input type="range" name="speed" id="speed" min="1" max="120" defaultValue="30" />
+				</fieldset>
+			</form>
 			<div className={styles.stats}>
 				<p>FPS: {fps}</p>
 			</div>
@@ -124,7 +138,7 @@ const sand: Transform[] = [
 
 const transforms: Transform[] = conway
 
-function start(ctx: CanvasRenderingContext2D, side: number, onFrame: (delta: number) => void) {
+function start(ctx: CanvasRenderingContext2D, side: number, form: HTMLFormElement, onFrame: (delta: number) => void) {
 	const gridSize = 300
 	const pxSize = side / gridSize
 
@@ -134,11 +148,34 @@ function start(ctx: CanvasRenderingContext2D, side: number, onFrame: (delta: num
 	let current = a
 	let next = b
 
-	init: {
-		current[getIndex(3, 3)] = 1
-		current[getIndex(4, 3)] = 1
-		current[getIndex(5, 3)] = 1
-		current[getIndex(3, 4)] = 1
+	// init: {
+	// 	current[getIndex(3, 3)] = 1
+	// 	current[getIndex(4, 3)] = 1
+	// 	current[getIndex(5, 3)] = 1
+	// 	current[getIndex(3, 4)] = 1
+	// }
+
+	conwayInit: {
+		const gun = [
+			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0],
+			[0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0],
+			[0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0],
+			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+		]
+		if (gun.length > gridSize || gun[0].length > gridSize) break conwayInit
+		const yOffset = Math.floor((gridSize - gun.length) / 2)
+		const xOffset = Math.floor((gridSize - gun[0].length) / 2)
+		for (let y = 0; y < gun.length; y++) {
+			const row = gun[y]
+			if (y >= gridSize) continue
+			for (let x = 0; x < row.length; x++) {
+				if (x >= gridSize) continue
+				if (row[x] === 1) {
+					current[getIndex(x + xOffset, y + yOffset)] = 1
+				}
+			}
+		}
 	}
 
 	const sortedTransforms = Object.groupBy(transforms, (t) => t[0][0][0])
@@ -150,8 +187,8 @@ function start(ctx: CanvasRenderingContext2D, side: number, onFrame: (delta: num
 		const first = lastTime === 0
 		const delta = (time - lastTime) / 1000
 		onFrame(delta)
-		const update = delta > 0.1
-		if (update) lastTime = time
+		const update = delta > 1 / state.playback.speed
+		if (update || !state.playback.isPlaying) lastTime = time
 		if (first) return
 
 		ctx.clearRect(0, 0, side, side)
@@ -166,7 +203,7 @@ function start(ctx: CanvasRenderingContext2D, side: number, onFrame: (delta: num
 					ctx.fillRect(x * pxSize, y * pxSize, pxSize, pxSize)
 				}
 
-				if (update) {
+				if (update && state.playback.isPlaying) {
 					const transforms = sortedTransforms[cell]
 					if (transforms) {
 						transform: for (const [before, after] of transforms) {
@@ -231,8 +268,9 @@ function start(ctx: CanvasRenderingContext2D, side: number, onFrame: (delta: num
 	const controller = new AbortController()
 	const state = {
 		mouse: { x: -1, y: -1, down: false, color: 0 },
+		playback: { speed: 1, isPlaying: false }
 	}
-	window.addEventListener('mousedown', (e) => {
+	ctx.canvas.addEventListener('mousedown', (e) => {
 		state.mouse.down = true
 		const { x, y } = eventToPosition(e)
 		state.mouse.x = x
@@ -263,6 +301,13 @@ function start(ctx: CanvasRenderingContext2D, side: number, onFrame: (delta: num
 		return { x, y }
 	}
 
+	const onInput = () => {
+		state.playback.isPlaying = getValue<boolean>(form, 'play')!
+		state.playback.speed = getValue<number>(form, 'speed')!
+	}
+	onInput()
+	form.addEventListener('input', onInput, { signal: controller.signal })
+
 	return () => {
 		cancelAnimationFrame(rafId)
 		controller.abort()
@@ -291,5 +336,19 @@ function makeFrameCounter(over: number = 30) {
 			: frames.reduce((a, b, i) => i < pointer ? a + b : a, 0) / pointer
 		const fps = 1 / avg
 		return fps
+	}
+}
+
+function getValue<T,>(form: HTMLFormElement, name: string): T | undefined {
+	if (!(name in form.elements)) return undefined
+	const element = form.elements[name as keyof typeof form.elements]
+	if (element instanceof HTMLSelectElement) return element.value as T
+	if (element instanceof HTMLInputElement) {
+		if (element.type === 'range') {
+			return element.valueAsNumber as T
+		}
+		if (element.type === 'checkbox') {
+			return element.checked as T
+		}
 	}
 }

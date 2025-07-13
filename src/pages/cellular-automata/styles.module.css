@@ -50,6 +50,23 @@
 	}
 }
 
+.play {
+	cursor: pointer;
+
+	input {
+		display: none;
+	}
+
+	&::after {
+		content: '▶️ Play';
+		display: inline-block;
+	}
+
+	&:has(:checked)::after {
+		content: '⏸️ Pause';
+	}
+}
+
 .stats {
 	position: absolute;
 	top: 0;
