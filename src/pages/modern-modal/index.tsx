@@ -5,6 +5,7 @@ import { flushSync } from "react-dom"
 
 export const meta = {
 	title: 'Modern Modal',
+	tags: ['html', 'components']
 }
 
 declare module 'react' {

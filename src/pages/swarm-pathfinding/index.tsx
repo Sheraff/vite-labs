@@ -15,7 +15,8 @@ import type {
 
 export const meta: RouteMeta = {
 	title: 'Swarm Pathfinding',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['pathfinding', 'performance']
 }
 
 const SIDE = 200

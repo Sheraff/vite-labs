@@ -7,7 +7,8 @@ import { useEffect, useRef, useState } from "react"
 
 export const meta: RouteMeta = {
 	title: 'Ants',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['simulation', 'performance']
 }
 
 export default function () {

@@ -4,7 +4,8 @@ import type { RouteMeta } from "~/router"
 
 export const meta: RouteMeta = {
 	title: 'Minesweeper',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['game']
 }
 
 type State = {

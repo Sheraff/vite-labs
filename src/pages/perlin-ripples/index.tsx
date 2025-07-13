@@ -7,7 +7,8 @@ import Worker from "./worker?worker"
 
 export const meta: RouteMeta = {
 	title: 'Perlin ripples',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['random', 'animation']
 }
 
 export default function () {

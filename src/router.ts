@@ -25,12 +25,13 @@ import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/scree
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "star-rating" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "flow-field" | "flask" | "collision-threads" | "boids" | "bird-inverse-kinematics" | "ants" | "a-star"
+export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "star-rating" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "flow-field" | "flask" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
 	image?: string
 	description?: string
+	tags?: string[]
 }
 
 export type GitMeta = {
@@ -49,7 +50,8 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/wave-function-collapse-ascii/index.tsx")),
 		meta: {
 			title: 'Ascii wave function collapse',
-			image: wave_function_collapse_ascii_image
+			image: wave_function_collapse_ascii_image,
+			tags: ['procedural', 'random', 'ascii']
 		},
 		git: {
 			lastModified: 1740479450000,
@@ -60,7 +62,8 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/wave-function-collapse/index.tsx")),
 		meta: {
 			title: 'Wave Function Collapse',
-			image: wave_function_collapse_image
+			image: wave_function_collapse_image,
+			tags: ['procedural', 'random']
 		},
 		git: {
 			lastModified: 1740492145000,
@@ -71,7 +74,8 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/swarm-pathfinding/index.tsx")),
 		meta: {
 			title: 'Swarm Pathfinding',
-			image: swarm_pathfinding_image
+			image: swarm_pathfinding_image,
+			tags: ['pathfinding', 'performance']
 		},
 		git: {
 			lastModified: 1741038752000,
@@ -82,7 +86,8 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/star-rating/index.tsx")),
 		meta: {
 			title: 'Star Rating',
-			image: star_rating_image
+			image: star_rating_image,
+			tags: ['html', 'components']
 		},
 		git: {
 			lastModified: 1744577097000,
@@ -93,7 +98,8 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/spider-inverse-kinematics/index.tsx")),
 		meta: {
 			title: 'Spider Inverse Kinematics',
-			image: spider_inverse_kinematics_image
+			image: spider_inverse_kinematics_image,
+			tags: ['animation', 'procedural']
 		},
 		git: {
 			lastModified: 1717364036000,
@@ -104,7 +110,8 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/quad-tree-collisions/index.tsx")),
 		meta: {
 			title: 'Quad Tree Collisions',
-			image: quad_tree_collisions_image
+			image: quad_tree_collisions_image,
+			tags: ['data structures', 'performance']
 		},
 		git: {
 			lastModified: 1752341716000,
@@ -115,7 +122,8 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/quad-tree/index.tsx")),
 		meta: {
 			title: 'Quad Tree',
-			image: quad_tree_image
+			image: quad_tree_image,
+			tags: ['data structures', '101']
 		},
 		git: {
 			lastModified: 1717364022000,
@@ -126,7 +134,8 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/pong-pang/index.tsx")),
 		meta: {
 			title: 'Pong Pang',
-			image: pong_pang_image
+			image: pong_pang_image,
+			tags: ['game']
 		},
 		git: {
 			lastModified: 1717361196000,
@@ -137,7 +146,8 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/perlin-ripples/index.tsx")),
 		meta: {
 			title: 'Perlin ripples',
-			image: perlin_ripples_image
+			image: perlin_ripples_image,
+			tags: ['random', 'animation']
 		},
 		git: {
 			lastModified: 1721858837000,
@@ -148,7 +158,8 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/paint-worklet/index.tsx")),
 		meta: {
 			title: 'Paint Worklet',
-			image: paint_worklet_image
+			image: paint_worklet_image,
+			tags: ['css']
 		},
 		git: {
 			lastModified: 1717361196000,
@@ -159,7 +170,8 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/normal-map/index.tsx")),
 		meta: {
 			title: 'Normal Map',
-			image: normal_map_image
+			image: normal_map_image,
+			tags: ['webgl', 'lighting']
 		},
 		git: {
 			lastModified: 1742725117000,
@@ -176,7 +188,8 @@ export const ROUTES = {
 				each with a genome (a neural network). After a time, we select the best 1% of entities and create
 				a new generation by copying them and mutating them.
 			`,
-			image: neat_image
+			image: neat_image,
+			tags: ['simulation', 'genetic algorithm', 'neural network']
 		},
 		git: {
 			lastModified: 1742199245000,
@@ -187,6 +200,7 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/modern-modal/index.tsx")),
 		meta: {
 			title: 'Modern Modal',
+			tags: ['html', 'components']
 		},
 		git: {
 			lastModified: 1717538613000,
@@ -197,7 +211,8 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/minesweeper/index.tsx")),
 		meta: {
 			title: 'Minesweeper',
-			image: minesweeper_image
+			image: minesweeper_image,
+			tags: ['game']
 		},
 		git: {
 			lastModified: 1740477071000,
@@ -208,7 +223,8 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/lightning/index.tsx")),
 		meta: {
 			title: 'Lightning',
-			image: lightning_image
+			image: lightning_image,
+			tags: ['animation']
 		},
 		git: {
 			lastModified: 1717571804000,
@@ -219,7 +235,8 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/hex-a-star/index.tsx")),
 		meta: {
 			title: 'Hexagonal A*',
-			image: hex_a_star_image
+			image: hex_a_star_image,
+			tags: ['pathfinding', 'data structures']
 		},
 		git: {
 			lastModified: 1740492272000,
@@ -230,7 +247,8 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/hacker-background/index.tsx")),
 		meta: {
 			title: 'Hacker Background',
-			image: hacker_background_image
+			image: hacker_background_image,
+			tags: ['animation', 'ascii']
 		},
 		git: {
 			lastModified: 1740529871000,
@@ -241,6 +259,7 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/grainy-texture/index.tsx")),
 		meta: {
 			title: 'Grainy Texture',
+			tags: ['css', 'svg'],
 		},
 		git: {
 			lastModified: 1741450768000,
@@ -250,7 +269,8 @@ export const ROUTES = {
 	"fragment-portal": {
 		Component: lazy(() => import("./pages/fragment-portal/index.tsx")),
 		meta: {
-			title: 'Fragment Portal'
+			title: 'Fragment Portal',
+			tags: ['react']
 		},
 		git: {
 			lastModified: 1739611669000,
@@ -261,7 +281,8 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/flow-field/index.tsx")),
 		meta: {
 			title: 'Flow Field',
-			image: flow_field_image
+			image: flow_field_image,
+			tags: ['pathfinding', 'performance']
 		},
 		git: {
 			lastModified: 1740837260000,
@@ -272,7 +293,8 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/flask/index.tsx")),
 		meta: {
 			title: 'Flask',
-			image: flask_image
+			image: flask_image,
+			tags: ['animation', 'css']
 		},
 		git: {
 			lastModified: 1740307562000,
@@ -283,7 +305,8 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/collision-threads/index.tsx")),
 		meta: {
 			title: 'Collision Threads',
-			image: collision_threads_image
+			image: collision_threads_image,
+			tags: ['simulation', 'performance', 'physics']
 		},
 		git: {
 			lastModified: 1740505056000,
@@ -298,10 +321,11 @@ export const ROUTES = {
 				Boids is an artificial life program which simulates the flocking behaviour of birds.
 				It is an example of emergent behavior; that is, the complexity of Boids arises from the interaction of individual agents adhering to a set of simple rules.
 			`,
-			image: boids_image
+			image: boids_image,
+			tags: ['simulation', 'animation', 'performance']
 		},
 		git: {
-			lastModified: 1752343000000,
+			lastModified: 1752355641000,
 			firstAdded: 1752336310000
 		},
 	},
@@ -309,7 +333,8 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/bird-inverse-kinematics/index.tsx")),
 		meta: {
 			title: 'Bird Inverse Kinematics',
-			image: bird_inverse_kinematics_image
+			image: bird_inverse_kinematics_image,
+			tags: ['animation', 'procedural']
 		},
 		git: {
 			lastModified: 1717365547000,
@@ -320,7 +345,8 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/ants/index.tsx")),
 		meta: {
 			title: 'Ants',
-			image: ants_image
+			image: ants_image,
+			tags: ['simulation', 'performance']
 		},
 		git: {
 			lastModified: 1733684415000,
@@ -331,7 +357,8 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/a-star/index.tsx")),
 		meta: {
 			title: 'A*',
-			image: a_star_image
+			image: a_star_image,
+			tags: ['pathfinding', '101']
 		},
 		git: {
 			lastModified: 1740478315000,

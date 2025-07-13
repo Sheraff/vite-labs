@@ -9,7 +9,8 @@ import * as config from '@wave-function-collapse/carcassonne/definition'
 
 export const meta: RouteMeta = {
 	title: 'Wave Function Collapse',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['procedural', 'random']
 }
 
 const tiles = config.definition.map((row, y) => ({

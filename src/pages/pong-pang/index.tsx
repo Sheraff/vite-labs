@@ -6,7 +6,8 @@ import { Head } from "~/components/Head"
 
 export const meta = {
 	title: 'Pong Pang',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['game']
 }
 
 export default function PongPang() {

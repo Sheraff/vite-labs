@@ -6,7 +6,8 @@ import TILES, { type Tile } from './tiles'
 
 export const meta: RouteMeta = {
 	title: 'Ascii wave function collapse',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['procedural', 'random', 'ascii']
 }
 
 const GRID_SIZE = [70, 20] as const

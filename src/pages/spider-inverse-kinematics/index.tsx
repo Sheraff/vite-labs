@@ -8,7 +8,8 @@ const SPIDER_LEG_LERP_DURATION = 400
 
 export const meta: RouteMeta = {
 	title: 'Spider Inverse Kinematics',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['animation', 'procedural']
 }
 
 export default function () {

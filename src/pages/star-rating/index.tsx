@@ -5,7 +5,8 @@ import { useState, type ChangeEventHandler, type CSSProperties, type PointerEven
 
 export const meta: RouteMeta = {
 	title: 'Star Rating',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['html', 'components']
 }
 
 export default function StarRatingPage() {

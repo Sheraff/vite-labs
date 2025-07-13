@@ -17,7 +17,8 @@ const color_map = await getImageData(color_source)
 
 export const meta: RouteMeta = {
 	title: 'Normal Map',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['webgl', 'lighting']
 }
 
 export default function NormalMapPage() {

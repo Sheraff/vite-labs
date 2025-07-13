@@ -6,7 +6,8 @@ import { TreeNode } from "./TreeNode"
 
 export const meta: RouteMeta = {
 	title: 'Quad Tree Collisions',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['data structures', 'performance']
 }
 
 export default function QuadTreeCollisions() {

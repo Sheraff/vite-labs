@@ -15,7 +15,8 @@ const BIRD_MAX_SPEED = 12
 
 export const meta: RouteMeta = {
 	title: 'Bird Inverse Kinematics',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['animation', 'procedural']
 }
 
 export default function () {

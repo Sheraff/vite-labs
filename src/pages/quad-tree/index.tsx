@@ -6,7 +6,8 @@ import type { RouteMeta } from "~/router"
 
 export const meta: RouteMeta = {
 	title: 'Quad Tree',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['data structures', '101']
 }
 
 const CURSOR_RADIUS = 300

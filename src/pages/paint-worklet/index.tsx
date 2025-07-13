@@ -6,7 +6,8 @@ import { Head } from "~/components/Head"
 
 export const meta: RouteMeta = {
 	title: 'Paint Worklet',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['css']
 }
 
 declare global {

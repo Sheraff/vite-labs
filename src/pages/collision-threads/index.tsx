@@ -10,7 +10,8 @@ import type { Incoming as ProcessIncoming } from "./workers/process.worker"
 
 export const meta: RouteMeta = {
 	title: 'Collision Threads',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['simulation', 'performance', 'physics']
 }
 
 function usePost<const T extends { type: string; data: unknown }>(worker: Worker) {

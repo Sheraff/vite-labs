@@ -6,7 +6,8 @@ import aStar, { type Cell, type Matrix } from "./a-star"
 
 export const meta: RouteMeta = {
 	title: 'A*',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['pathfinding', '101']
 }
 
 export default function AStarPage() {

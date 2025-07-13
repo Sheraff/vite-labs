@@ -5,7 +5,8 @@ import { useEffect, useRef } from "react"
 
 export const meta: RouteMeta = {
 	title: 'Flow Field',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['pathfinding', 'performance']
 }
 
 const SIDE = 30

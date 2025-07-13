@@ -7,7 +7,8 @@ import type { Incoming } from "./canvas.worker"
 
 export const meta: RouteMeta = {
 	title: 'Hexagonal A*',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['pathfinding', 'data structures']
 }
 
 const setSeed = (state: string) => window.location.replace(`#${state}`)

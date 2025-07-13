@@ -5,7 +5,8 @@ import type { RouteMeta } from "~/router"
 
 export const meta: RouteMeta = {
 	title: 'Hacker Background',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['animation', 'ascii']
 }
 
 export default function HackerBackground() {

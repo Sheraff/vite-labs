@@ -25,6 +25,7 @@ export type RouteMeta = {
 	title: string
 	image?: string
 	description?: string
+	tags?: string[]
 }
 
 export type GitMeta = {
@@ -126,7 +127,8 @@ async function getMeta(key: string, index: string, ctx?: Context) {
 				const prop = foundNode.properties[i]
 				if (prop.type !== 'Property') throw new Error('Expected Property in meta object for static analysis')
 				if (prop.value.type === 'TemplateLiteral') continue // hopefully the expressions remain valid once we move this out
-				if (prop.value.type !== 'Literal') throw new Error('Expected Literal value in meta object for static analysis')
+				if (prop.value.type === 'ArrayExpression') continue // hopefully the elements remain valid once we move this out
+				if (prop.value.type !== 'Literal') throw new Error(`Expected Literal value in meta object for static analysis, got ${prop.value.type}`)
 				if (typeof prop.value.value === 'string') {
 					const k = prop.key.type === 'Identifier' && prop.key.name
 					if (!k) throw new Error('Expected Identifier key in meta object for static analysis')

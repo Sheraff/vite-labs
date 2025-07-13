@@ -10,7 +10,8 @@ export const meta: RouteMeta = {
 		Boids is an artificial life program which simulates the flocking behaviour of birds.
 		It is an example of emergent behavior; that is, the complexity of Boids arises from the interaction of individual agents adhering to a set of simple rules.
 	`,
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['simulation', 'animation', 'performance']
 }
 
 const COUNT = 10000

@@ -18,14 +18,16 @@ export default function App() {
   })
   return (
     <>
-      <h1>hello</h1>
+      <h1>🤍 none of this is useful 🤍</h1>
       {Object.entries(ROUTES)
+        .filter(([, { meta }]) => import.meta.env.PROD ? !('tags' in meta) || !meta.tags.includes('wip') : true)
         .sort(([a], [b]) => a.localeCompare(b))
         .sort((a, b) => sortDates(b[1].git.lastModified, a[1].git.lastModified))
         .sort((a, b) => sortDates(b[1].git.firstAdded, a[1].git.firstAdded))
         .map(([route, { meta, git }]) => (
           <Link key={route} className={styles.route} href={`/${route as Routes}`}>
             <h2 style={{ viewTransitionName: route }} className={styles.link}>{meta.title}</h2>
+            {'tags' in meta && meta.tags.length > 0 && (<p className={styles.tags}>{meta.tags.map(t => <span key={t}>{t}</span>)}</p>)}
             <p>Created on: {git.firstAdded && formatter.format(git.firstAdded)}</p>
             {'image' in meta && meta.image && <img src={meta.image} className={styles.bg} />}
           </Link>

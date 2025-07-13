@@ -5,7 +5,8 @@ import type { RouteMeta } from "~/router"
 
 export const meta: RouteMeta = {
 	title: 'Lightning',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['animation']
 }
 
 export default function Lightning() {

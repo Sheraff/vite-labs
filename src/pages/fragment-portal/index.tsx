@@ -4,7 +4,8 @@ import styles from './styles.module.css'
 import { Head } from "~/components/Head"
 
 export const meta = {
-	title: 'Fragment Portal'
+	title: 'Fragment Portal',
+	tags: ['react']
 }
 
 export default function () {
