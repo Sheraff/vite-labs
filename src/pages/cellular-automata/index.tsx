@@ -41,7 +41,7 @@ export default function CellularAutomataPage() {
 
 
 
-const transforms: Transform[] = [
+const sand: Transform[] = [
 	[
 		[
 			[1],
@@ -58,8 +58,8 @@ const transforms: Transform[] = [
 			[1, 1, 0],
 		],
 		[
-			[0, 0, 0],
-			[1, 1, 1],
+			[-1, 0, -1],
+			[-1, -1, 1],
 		]
 	],
 	[
@@ -68,8 +68,8 @@ const transforms: Transform[] = [
 			[0, 1, 1],
 		],
 		[
-			[0, 0, 0],
-			[1, 1, 1],
+			[-1, 0, -1],
+			[1, -1, -1],
 		]
 	],
 	[
@@ -78,8 +78,8 @@ const transforms: Transform[] = [
 			[1, 1, 0],
 		],
 		[
-			[1, 0, 0],
-			[1, 1, 1],
+			[-1, 0, -1],
+			[-1, -1, 1],
 		]
 	],
 	[
@@ -88,8 +88,8 @@ const transforms: Transform[] = [
 			[0, 1, 1],
 		],
 		[
-			[0, 0, 1],
-			[1, 1, 1],
+			[-1, 0, -1],
+			[1, -1, -1],
 		]
 	],
 	[
@@ -98,8 +98,8 @@ const transforms: Transform[] = [
 			[0, 1, 0],
 		],
 		[
-			[0, 0, 0],
-			[1, 1, 0],
+			[-1, 0, -1],
+			[1, -1, -1],
 		]
 	],
 	[
@@ -109,15 +109,17 @@ const transforms: Transform[] = [
 			[0, 1, 0],
 		],
 		[
-			[0, 0, 0],
-			[0, 1, 0],
-			[0, 1, 1],
+			[-1, 0, -1],
+			[-1, 1, -1],
+			[-1, -1, 1],
 		]
 	],
 ]
 
+const transforms: Transform[] = conway
+
 function start(ctx: CanvasRenderingContext2D, side: number) {
-	const gridSize = 300
+	const gridSize = 30
 	const pxSize = side / gridSize
 
 	const a = new Int16Array(gridSize * gridSize)
@@ -138,7 +140,7 @@ function start(ctx: CanvasRenderingContext2D, side: number) {
 		rafId = requestAnimationFrame(animate)
 		const first = lastTime === 0
 		const delta = (time - lastTime) / 1000
-		const update = delta > 0.01
+		const update = delta > 1
 		if (update) lastTime = time
 		if (first) return
 
@@ -164,7 +166,7 @@ function start(ctx: CanvasRenderingContext2D, side: number) {
 						for (let by = 0; by < h; by++) {
 							for (let bx = 0; bx < w; bx++) {
 								const cellIndex = getIndex(x + bx, y + by)
-								if (touched.has(cellIndex)) continue transform
+								// if (touched.has(cellIndex)) continue transform
 								if (before[by][bx] !== current[cellIndex]) {
 									continue transform
 								}
@@ -173,8 +175,10 @@ function start(ctx: CanvasRenderingContext2D, side: number) {
 						for (let by = 0; by < h; by++) {
 							for (let bx = 0; bx < w; bx++) {
 								const cellIndex = getIndex(x + bx, y + by)
+								const value = after[by][bx]
+								if (value === -1) continue
 								touched.add(cellIndex)
-								next[cellIndex] = after[by][bx]
+								next[cellIndex] = value
 							}
 						}
 					}
@@ -183,6 +187,14 @@ function start(ctx: CanvasRenderingContext2D, side: number) {
 				if (!touched.has(index)) {
 					next[index] = current[index]
 				}
+			}
+		}
+
+		if (state.mouse.down) {
+			const { x, y } = state.mouse
+			if (x >= 0 && x < gridSize && y >= 0 && y < gridSize) {
+				const index = getIndex(x, y)
+				next[index] = state.mouse.color
 			}
 		}
 
