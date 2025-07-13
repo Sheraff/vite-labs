@@ -10,11 +10,14 @@ export const meta: RouteMeta = {
 	tags: ['wip']
 }
 
+const GRID_SIZE = 80
+const INITIAL_SPEED = 5
+
 
 export default function CellularAutomataPage() {
 	const ref = useRef<HTMLCanvasElement | null>(null)
 	const formRef = useRef<HTMLFormElement | null>(null)
-	const [fps, setFps] = useState(0)
+	const [fps, setFps] = useState('')
 
 	useEffect(() => {
 		const canvas = ref.current
@@ -28,9 +31,9 @@ export default function CellularAutomataPage() {
 		canvas.height = side
 		canvas.width = side
 
-		const frameCounter = makeFrameCounter()
+		const frameCounter = makeFrameCounter(200)
 
-		return start(ctx, side, form, (delta) => setFps(Math.round(frameCounter(delta))))
+		return start(ctx, side, form, (delta) => setFps(frameCounter(delta).toPrecision(3)))
 	}, [])
 
 	return (
@@ -49,7 +52,7 @@ export default function CellularAutomataPage() {
 					</label>
 					<hr />
 					<label htmlFor="speed">Speed</label>
-					<input type="range" name="speed" id="speed" min="1" max="120" defaultValue="30" />
+					<input type="range" name="speed" id="speed" min="1" max="120" step="1" defaultValue={INITIAL_SPEED} />
 				</fieldset>
 			</form>
 			<div className={styles.stats}>
@@ -139,7 +142,7 @@ const sand: Transform[] = [
 const transforms: Transform[] = conway
 
 function start(ctx: CanvasRenderingContext2D, side: number, form: HTMLFormElement, onFrame: (delta: number) => void) {
-	const gridSize = 300
+	const gridSize = GRID_SIZE
 	const pxSize = side / gridSize
 
 	const a = new Int16Array(gridSize * gridSize)
@@ -268,7 +271,7 @@ function start(ctx: CanvasRenderingContext2D, side: number, form: HTMLFormElemen
 	const controller = new AbortController()
 	const state = {
 		mouse: { x: -1, y: -1, down: false, color: 0 },
-		playback: { speed: 1, isPlaying: false }
+		playback: { speed: INITIAL_SPEED, isPlaying: false }
 	}
 	ctx.canvas.addEventListener('mousedown', (e) => {
 		state.mouse.down = true
