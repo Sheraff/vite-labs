@@ -1,7 +1,7 @@
 import type { RouteMeta } from "~/router"
 import styles from './styles.module.css'
 import { Head } from "~/components/Head"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { transforms as conway } from './conway'
 import type { Transform } from "@cellular-automata/types"
 
@@ -13,6 +13,7 @@ export const meta: RouteMeta = {
 
 export default function CellularAutomataPage() {
 	const ref = useRef<HTMLCanvasElement | null>(null)
+	const [fps, setFps] = useState(0)
 
 	useEffect(() => {
 		const canvas = ref.current
@@ -24,7 +25,9 @@ export default function CellularAutomataPage() {
 		canvas.height = side
 		canvas.width = side
 
-		return start(ctx, side)
+		const frameCounter = makeFrameCounter()
+
+		return start(ctx, side, (delta) => setFps(Math.round(frameCounter(delta))))
 	}, [])
 
 	return (
@@ -35,6 +38,9 @@ export default function CellularAutomataPage() {
 			<canvas width="1000" height="1000" ref={ref}>
 				Your browser does not support the HTML5 canvas tag.
 			</canvas>
+			<div className={styles.stats}>
+				<p>FPS: {fps}</p>
+			</div>
 		</div>
 	)
 }
@@ -118,7 +124,7 @@ const sand: Transform[] = [
 
 const transforms: Transform[] = conway
 
-function start(ctx: CanvasRenderingContext2D, side: number) {
+function start(ctx: CanvasRenderingContext2D, side: number, onFrame: (delta: number) => void) {
 	const gridSize = 300
 	const pxSize = side / gridSize
 
@@ -143,6 +149,7 @@ function start(ctx: CanvasRenderingContext2D, side: number) {
 		rafId = requestAnimationFrame(animate)
 		const first = lastTime === 0
 		const delta = (time - lastTime) / 1000
+		onFrame(delta)
 		const update = delta > 0.1
 		if (update) lastTime = time
 		if (first) return
@@ -259,5 +266,30 @@ function start(ctx: CanvasRenderingContext2D, side: number) {
 	return () => {
 		cancelAnimationFrame(rafId)
 		controller.abort()
+	}
+}
+
+/**
+ * A simple frame counter that returns the average FPS over the last `over` frames.
+ * @param over - The number of frames to average over.
+ */
+function makeFrameCounter(over: number = 30) {
+	let pointer = 0
+	let full = false
+	const frames: number[] = Array(over).fill(0)
+
+	/**
+	 * @param delta - The time in seconds since the last frame.
+	 * @returns The current frames per second (FPS) based on the average of the last `over` frames.
+	 */
+	return (delta: number): number => {
+		frames[pointer] = delta
+		pointer = (pointer + 1) % over
+		if (pointer === 0) full = true
+		const avg = full
+			? frames.reduce((a, b) => a + b, 0) / over
+			: frames.reduce((a, b, i) => i < pointer ? a + b : a, 0) / pointer
+		const fps = 1 / avg
+		return fps
 	}
 }
