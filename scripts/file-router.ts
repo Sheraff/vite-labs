@@ -100,6 +100,7 @@ async function getMeta(key: string, index: string, ctx?: Context) {
 			loc: true,
 			range: true,
 			tokens: false,
+			warnOnUnsupportedTypeScriptVersion: false
 		})
 		const listener: TSESLint.RuleListener = ({
 			ExportNamedDeclaration(node) {
