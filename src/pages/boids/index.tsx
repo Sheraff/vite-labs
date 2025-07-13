@@ -61,8 +61,8 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 		sight: 20,
 		/** How close boids can get before they start to separate */
 		space: 10,
-		alignment: 2,
-		cohesion: 0.7,
+		alignment: 2.5,
+		cohesion: 1.3,
 		separation: 4,
 		edge_avoidance: 3,
 		draw_tree: false,
@@ -70,6 +70,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 	}
 
 	let lastTime = 0
+	let frame = 0
 	let rafId = requestAnimationFrame(function animate(time) {
 		rafId = requestAnimationFrame(animate)
 		const first = lastTime === 0
@@ -77,6 +78,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 		lastTime = time
 		if (first) return
 		onFrame(delta)
+		frame++
 
 		ctx.clearRect(0, 0, side, side)
 
@@ -223,7 +225,8 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 				boid.y = side
 			}
 
-			tree.update(boid)
+			if (frame % 5 === 0)
+				tree.update(boid)
 
 			drawTriangle(ctx, boid.x, boid.y, boid.radians)
 			if (params.draw_fov) {
@@ -330,7 +333,9 @@ export default function BoidsPage() {
 		spaceInput.setAttribute('step', Number(spaceInput.getAttribute('step')) * window.devicePixelRatio + '')
 		spaceInput.value = (Number(spaceInput.value) * window.devicePixelRatio) + ''
 
-		return start(ctx, form, side, (delta) => setFps(Math.round(1 / delta)))
+		const frameCounter = makeFrameCounter()
+
+		return start(ctx, form, side, (delta) => setFps(Math.round(frameCounter(delta))))
 	}, [])
 
 	return (
@@ -350,9 +355,9 @@ export default function BoidsPage() {
 					<input type="range" id="space" name="space" min="1" max="100" defaultValue={10} step="1" />
 					<hr />
 					<label htmlFor="alignment">Alignment:</label>
-					<input type="range" id="alignment" name="alignment" min="0" max="10" defaultValue={2} step="0.1" />
+					<input type="range" id="alignment" name="alignment" min="0" max="10" defaultValue={2.5} step="0.1" />
 					<label htmlFor="cohesion">Cohesion:</label>
-					<input type="range" id="cohesion" name="cohesion" min="0" max="10" defaultValue={0.7} step="0.1" />
+					<input type="range" id="cohesion" name="cohesion" min="0" max="10" defaultValue={1.3} step="0.1" />
 					<label htmlFor="separation">Separation:</label>
 					<input type="range" id="separation" name="separation" min="0" max="10" defaultValue={4} step="0.1" />
 					<label htmlFor="edge_avoidance">Edge Avoidance:</label>
@@ -385,4 +390,29 @@ function drawTree(ctx: CanvasRenderingContext2D, tree: TreeNode) {
 	ctx.strokeStyle = 'white'
 	ctx.lineWidth = 1 / tree.depth
 	ctx.strokeRect(tree.x, tree.y, tree.width, tree.height)
+}
+
+/**
+ * A simple frame counter that returns the average FPS over the last `over` frames.
+ * @param over - The number of frames to average over.
+ */
+function makeFrameCounter(over: number = 30) {
+	let pointer = 0
+	let full = false
+	const frames: number[] = Array(over).fill(0)
+
+	/**
+	 * @param delta - The time in seconds since the last frame.
+	 * @returns The current frames per second (FPS) based on the average of the last `over` frames.
+	 */
+	return (delta: number): number => {
+		frames[pointer] = delta
+		pointer = (pointer + 1) % over
+		if (pointer === 0) full = true
+		const avg = full
+			? frames.reduce((a, b) => a + b, 0) / over
+			: frames.reduce((a, b, i) => i < pointer ? a + b : a, 0) / pointer
+		const fps = 1 / avg
+		return fps
+	}
 }
