@@ -313,6 +313,17 @@ export const ROUTES = {
 			firstAdded: 1740501679000
 		},
 	},
+	"cellular-automata": {
+		Component: lazy(() => import("./pages/cellular-automata/index.tsx")),
+		meta: {
+			title: 'Cellular Automata',
+			tags: ['wip']
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
+		},
+	},
 	"boids": {
 		Component: lazy(() => import("./pages/boids/index.tsx")),
 		meta: {
