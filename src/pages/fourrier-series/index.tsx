@@ -39,13 +39,13 @@ export default function FourrierSeriesPage() {
 				<fieldset>
 					<legend>Controls</legend>
 					<label htmlFor="series">Series:</label>
-					<select name="series" id="series">
+					<select name="series" id="series" defaultValue="Square Wave">
 						{Object.keys(SERIES).map((name, i) => (
 							<option key={i} value={name}>{name}</option>
 						))}
 					</select>
 					<label htmlFor="speed">Speed</label>
-					<input type="range" name="speed" id="speed" min="1" max="100" defaultValue="10" />
+					<input type="range" name="speed" id="speed" min="1" max="100" defaultValue="20" />
 				</fieldset>
 			</form>
 		</div>
@@ -61,6 +61,8 @@ const SERIES = {
 	'E pentatonic': [329.63, 369.99, 415.30, 493.88, 554.37, 659.26],
 	'D octaves': [18.35, 36.71, 73.42, 146.83, 293.66, 587.33, 1174.66, 2349.32, 4698.64],
 	'G7 (orchestral)': [98.00, 293.66, 493.88, 698.46],
+	'Sawtooth': [440, 880, 1320, 1760, 2200, 2640, 3080, 3520, 3960, 4400],
+	'Square Wave': [100, 300, 500, 700, 900, 1100, 1300, 1500, 1700, 1900],
 }
 
 function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement) {
