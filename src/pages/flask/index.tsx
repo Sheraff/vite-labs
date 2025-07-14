@@ -1,6 +1,6 @@
 import styles from './styles.module.css'
-import { Head } from "~/components/Head"
-import type { RouteMeta } from "~/router"
+import { Head } from "#components/Head"
+import type { RouteMeta } from "#router"
 
 export const meta: RouteMeta = {
 	title: 'Flask',

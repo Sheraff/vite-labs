@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react"
 import styles from './styles.module.css'
-import { Head } from "~/components/Head"
-import type { RouteMeta } from "~/router"
+import { Head } from "#components/Head"
+import type { RouteMeta } from "#router"
 import { TreeNode } from "./TreeNode"
 
 export const meta: RouteMeta = {

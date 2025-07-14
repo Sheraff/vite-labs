@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
-import { Head } from "~/components/Head"
+import { Head } from "#components/Head"
 import styles from './styles.module.css'
-import type { RouteMeta } from "~/router"
+import type { RouteMeta } from "#router"
 import type { Incoming } from "./worker"
 import Worker from "./worker?worker"
 

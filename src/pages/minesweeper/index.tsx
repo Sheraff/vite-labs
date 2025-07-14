@@ -1,6 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from "react"
-import { Head } from "~/components/Head"
-import type { RouteMeta } from "~/router"
+import { Head } from "#components/Head"
+import type { RouteMeta } from "#router"
 
 export const meta: RouteMeta = {
 	title: 'Minesweeper',

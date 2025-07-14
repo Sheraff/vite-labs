@@ -10,6 +10,19 @@
     "preview": "vite preview",
     "tsc": "tsc"
   },
+  "imports": {
+    "#router": "./src/router.ts",
+    "#components/*": "./src/components/*.tsx",
+    "#file-router/*": "./src/file-router/*.tsx",
+    "#*": {
+      "types": [
+        "./src/pages/*.tsx",
+        "./src/pages/*.ts",
+        "./src/pages/*.css"
+      ],
+      "default": "./src/pages/*"
+    }
+  },
   "dependencies": {
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
@@ -28,8 +41,7 @@
     "eslint-plugin-react-refresh": "^0.4.12",
     "globals": "16.3.0",
     "typescript": "^5.8.3",
-    "vite": "^7.0.4",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite": "^7.0.4"
   },
   "packageManager": "pnpm@10.13.1"
 }

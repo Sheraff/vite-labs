@@ -1,6 +1,6 @@
 import { Suspense, useMemo } from "react"
-import { Link, useNavigation } from "~/file-router/Navigation"
-import { ROUTES, type Routes } from "~/router"
+import { Link, useNavigation } from "#file-router/Navigation"
+import { ROUTES, type Routes } from "#router"
 
 import styles from './App.module.css'
 

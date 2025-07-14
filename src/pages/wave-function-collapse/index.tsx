@@ -1,11 +1,11 @@
 import styles from './styles.module.css'
-import { Head } from "~/components/Head"
-import type { RouteMeta } from "~/router"
+import { Head } from "#components/Head"
+import type { RouteMeta } from "#router"
 import type { Incoming, Outgoing } from "./worker"
 import Worker from "./worker?worker"
 import { useCallback, useEffect, useRef, useState } from "react"
-import * as utils from '@wave-function-collapse/utils'
-import * as config from '@wave-function-collapse/carcassonne/definition'
+import * as utils from '#wave-function-collapse/utils'
+import * as config from '#wave-function-collapse/carcassonne/definition'
 
 export const meta: RouteMeta = {
 	title: 'Wave Function Collapse',

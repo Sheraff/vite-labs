@@ -1,6 +1,6 @@
 import ReactDOM from 'react-dom/client'
 import App from './App'
-import { NavigationProvider } from '~/file-router/Navigation'
+import { NavigationProvider } from '#file-router/Navigation'
 
 if (!window.isSecureContext) {
   console.log("Not registering service worker because the site is not hosted on HTTPS.")

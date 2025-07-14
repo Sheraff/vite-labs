@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react"
-import { Head } from "~/components/Head"
+import { Head } from "#components/Head"
 import styles from './styles.module.css'
-import type { RouteMeta } from "~/router"
+import type { RouteMeta } from "#router"
 
 const SPIDER_WIDTH = 60
 const SPIDER_LEG_LERP_DURATION = 400

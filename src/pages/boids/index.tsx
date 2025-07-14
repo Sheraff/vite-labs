@@ -1,8 +1,8 @@
-import type { RouteMeta } from "~/router"
+import type { RouteMeta } from "#router"
 import styles from './styles.module.css'
-import { Head } from "~/components/Head"
+import { Head } from "#components/Head"
 import { useEffect, useRef, useState } from "react"
-import { TreeNode } from "@quad-tree-collisions/TreeNode"
+import { TreeNode } from "#quad-tree-collisions/TreeNode"
 
 export const meta: RouteMeta = {
 	title: 'Boids',

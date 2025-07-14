@@ -1,9 +1,9 @@
-import type { RouteMeta } from "~/router"
+import type { RouteMeta } from "#router"
 import styles from './styles.module.css'
-import { Head } from "~/components/Head"
+import { Head } from "#components/Head"
 import { useEffect, useRef, useState } from "react"
 import { transforms as conway } from './conway'
-import type { Transform } from "@cellular-automata/types"
+import type { Transform } from "#cellular-automata/types"
 
 export const meta: RouteMeta = {
 	title: 'Cellular Automata',

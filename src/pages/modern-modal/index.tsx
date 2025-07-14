@@ -1,4 +1,4 @@
-import { Head } from "~/components/Head"
+import { Head } from "#components/Head"
 import styles from './styles.module.css'
 import { cloneElement, useEffect, useId, useRef, useState, type CSSProperties, type FocusEvent, type MouseEvent, type ReactElement, type ReactNode } from "react"
 import { flushSync } from "react-dom"

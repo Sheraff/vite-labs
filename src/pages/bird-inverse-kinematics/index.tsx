@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react"
-import { Head } from "~/components/Head"
+import { Head } from "#components/Head"
 import styles from './styles.module.css'
-import type { RouteMeta } from "~/router"
-import { Vector } from "@bird-inverse-kinematics/Vector"
+import type { RouteMeta } from "#router"
+import { Vector } from "#bird-inverse-kinematics/Vector"
 
 const UPPER_ARM_LENGTH = 55
 const FOREARM_LENGTH = 70

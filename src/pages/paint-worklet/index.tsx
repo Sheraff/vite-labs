@@ -1,8 +1,8 @@
 import { useEffect } from "react"
-import type { RouteMeta } from "~/router"
+import type { RouteMeta } from "#router"
 import styles from './styles.module.css'
 import worklet from './waves.worklet?worker&url'
-import { Head } from "~/components/Head"
+import { Head } from "#components/Head"
 
 export const meta: RouteMeta = {
 	title: 'Paint Worklet',

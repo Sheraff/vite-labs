@@ -1,6 +1,6 @@
 import styles from './styles.module.css'
-import { Head } from "~/components/Head"
-import type { RouteMeta } from "~/router"
+import { Head } from "#components/Head"
+import type { RouteMeta } from "#router"
 import type { Incoming, Outgoing } from "./worker"
 import Worker from "./worker?worker"
 import { useEffect, useRef, useState } from "react"

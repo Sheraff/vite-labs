@@ -8,6 +8,7 @@
       "DOM.Iterable"
     ],
     "module": "ESNext",
+    "rootDir": ".",
     "skipLibCheck": true,
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -21,14 +22,6 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
-    "paths": {
-      "@*": [
-        "./src/pages/*"
-      ],
-      "~/*": [
-        "./src/*"
-      ],
-    }
   },
   "include": [
     "src",

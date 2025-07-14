@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import styles from './styles.module.css'
-import { Head } from "~/components/Head"
-import type { RouteMeta } from "~/router"
+import { Head } from "#components/Head"
+import type { RouteMeta } from "#router"
 import { makeEntity, makeStartState, type Entity } from "./entity"
 import { makeRandomGenome, mutate } from "./random"
 import { simulate } from "./simulate"
