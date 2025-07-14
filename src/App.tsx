@@ -20,7 +20,7 @@ export default function App() {
 
   return (
     <>
-      <h1>🤍 none of this is useful 🤍</h1>
+      <h1 className={styles.h1}>🤍 none of this is useful 🤍</h1>
       {list.map(([route, { meta, git }]) => (
         <Link key={route} className={styles.route} href={`/${route as Routes}`}>
           <h2 style={{ viewTransitionName: route }} className={styles.link}>{meta.title}</h2>
