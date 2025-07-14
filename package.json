@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "echo \"node:$(node -v) pnpm:v$(pnpm -v)\" && vite",
+    "dev": "echo \"node:$(node -v) pnpm:v$(pnpm -v)\\n\" && vite",
     "build": "vite build",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
