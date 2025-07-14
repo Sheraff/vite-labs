@@ -286,8 +286,8 @@ export const ROUTES = {
 			image: fourrier_series_image
 		},
 		git: {
-			lastModified: 0,
-			firstAdded: 0
+			lastModified: 1752508497000,
+			firstAdded: 1752508497000
 		},
 	},
 	"flow-field": {
