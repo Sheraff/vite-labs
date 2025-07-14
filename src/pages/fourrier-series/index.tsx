@@ -77,7 +77,9 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement) {
 		speed: 0,
 	}
 
-	const store: number[] = []
+	const store = new Int32Array(ctx.canvas.width)
+	store.fill(ctx.canvas.height / 2)
+	let storePointer = 0
 	let initialTime = 0
 	let lastTime = 0
 	let paused = false
@@ -116,9 +118,9 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement) {
 			ctx.stroke()
 			ctx.closePath()
 		}
-		store.push(y)
-		if (store.length > 10000) {
-			store.shift()
+		store[storePointer++] = y
+		if (storePointer > store.length) {
+			storePointer = 0
 		}
 
 		const offset = state.left * 2
@@ -136,7 +138,8 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement) {
 		ctx.beginPath()
 		ctx.moveTo(offset, y)
 		for (let i = store.length - 2; i >= 0; i--) {
-			const y = store[i]
+			const index = (storePointer + i) % store.length
+			const y = store[index]
 			ctx.lineTo(offset + (store.length - i - 1), y)
 		}
 		ctx.stroke()

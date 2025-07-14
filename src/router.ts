@@ -286,7 +286,7 @@ export const ROUTES = {
 			image: fourrier_series_image
 		},
 		git: {
-			lastModified: 1752508497000,
+			lastModified: 1752509402000,
 			firstAdded: 1752508497000
 		},
 	},
