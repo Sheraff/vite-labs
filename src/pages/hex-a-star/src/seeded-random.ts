@@ -62,7 +62,7 @@ export default function seedrandom(seed: string = autoseed(), options: Options =
 	mixkey(options.entropy ? [seed, tostring(pool)] : seed, key)
 
 	// Use the seed to initialize an ARC4 generator.
-	const arc4 = new ARC4(key) as Arc4
+	const arc4 = new (ARC4 as any)(key) as Arc4
 
 	// This function returns a random double in [0, 1) that contains
 	// randomness in every bit of the mantissa of the IEEE 754 value.

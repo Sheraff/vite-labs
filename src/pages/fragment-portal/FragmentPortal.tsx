@@ -46,7 +46,7 @@ export function Receptacle({ fragment, props, type = 'div', slot }: {
 	type?: ElementType
 	slot?: React.MutableRefObject<HTMLElement | null>
 }) {
-	const div = useRef<HTMLElement>()
+	const div = useRef<HTMLElement>(null)
 
 	useLayoutEffect(() => {
 		if (!fragment) return

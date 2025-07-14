@@ -23,9 +23,9 @@ const equivalents = tiles.map((tile) => tiles.filter((other) => other.sides.ever
 
 
 function drawTile(ctx: CanvasRenderingContext2D, w: number, h: number, index: number, rotate: number, x: number, y: number) {
-	if (rotate === 1) x += 1
-	if (rotate === 2) y += 1, x += 1
-	if (rotate === 3) y += 1
+	if (rotate === 1) { x += 1 }
+	if (rotate === 2) { y += 1; x += 1 }
+	if (rotate === 3) { y += 1 }
 	ctx.save()
 	ctx.translate(x * w, y * h)
 	ctx.rotate(rotate * Math.PI / 2)
@@ -56,7 +56,7 @@ const seed = (count: number) => {
 	return forces
 }
 
-export default function () {
+export default function Wave() {
 	const [available] = useState(window.crossOriginIsolated)
 	const ref = useRef<HTMLCanvasElement | null>(null)
 

@@ -63,7 +63,7 @@ function randomInitialState(width: number, height: number, mines: number): State
 
 const cache = new Map<string, State>()
 
-export default function () {
+export default function MineSweeper() {
 	const state = useSyncExternalStore(
 		(sub) => {
 			window.addEventListener('hashchange', sub)

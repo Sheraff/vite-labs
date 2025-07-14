@@ -9,7 +9,7 @@ export type Incoming =
 	| { type: 'channel', data: { port: MessagePort } }
 	| { type: 'toggle', data: { status: boolean } }
 	| { type: 'mouse', data: { mouse: { x: number, y: number } | null } }
-	| { type: 'received', data: {} }
+	| { type: 'received', data: object }
 
 let paused = false
 let port: MessagePort

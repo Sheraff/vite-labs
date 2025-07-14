@@ -12,7 +12,7 @@ export const meta: RouteMeta = {
 	tags: ['animation', 'procedural']
 }
 
-export default function () {
+export default function SpiderIK() {
 	const form = useRef<HTMLFormElement>(null)
 	const canvas = useRef<HTMLCanvasElement>(null)
 

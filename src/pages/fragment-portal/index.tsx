@@ -8,7 +8,7 @@ export const meta = {
 	tags: ['react']
 }
 
-export default function () {
+export default function FragmentPortal() {
 	const fragment = useFragment('div')
 
 	return (

@@ -11,7 +11,7 @@ export const meta: RouteMeta = {
 	tags: ['simulation', 'performance']
 }
 
-export default function () {
+export default function AntsPage() {
 	const [available] = useState(window.crossOriginIsolated)
 	const ref = useRef<HTMLCanvasElement | null>(null)
 

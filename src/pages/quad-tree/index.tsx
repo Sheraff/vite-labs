@@ -12,7 +12,7 @@ export const meta: RouteMeta = {
 
 const CURSOR_RADIUS = 300
 
-export default function () {
+export default function QuadTree() {
 	const canvas = useRef<HTMLCanvasElement | null>(null)
 	const form = useRef<HTMLFormElement | null>(null)
 

@@ -11,7 +11,7 @@ export const meta: RouteMeta = {
 	tags: ['random', 'animation']
 }
 
-export default function () {
+export default function Perlin() {
 	const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null)
 	const [offscreen, setOffscreen] = useState<OffscreenCanvas | null>(null)
 

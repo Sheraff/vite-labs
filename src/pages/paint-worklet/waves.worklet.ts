@@ -8,7 +8,7 @@ type PaintSize = {
 declare global {
 	interface WorkerGlobalScope {
 		registerPaint: (name: string, Class: {
-			new(): {}
+			new(): object
 		}) => void
 	}
 }

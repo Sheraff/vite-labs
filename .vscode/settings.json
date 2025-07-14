@@ -6,5 +6,6 @@
 	"workbench.editor.customLabels.patterns": {
 		"**/index.tsx": "[page] ${dirname}",
 		"**/styles.module.css": "[styles] ${dirname}",
-	}
+	},
+	"typescript.tsdk": "node_modules/typescript/lib"
 }
