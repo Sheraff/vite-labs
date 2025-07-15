@@ -69,6 +69,23 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 		draw_fov: false,
 	}
 
+	const drawTriangle = (() => {
+		const size = 3 * window.devicePixelRatio
+		const triangle = new Path2D()
+		triangle.moveTo(size, 0)
+		triangle.lineTo(-size, size / 2)
+		triangle.lineTo(-size, -size / 2)
+		triangle.closePath()
+		return (x: number, y: number, radians: number) => {
+			ctx.save()
+			ctx.translate(x, y)
+			ctx.rotate(radians)
+			ctx.fillStyle = 'white'
+			ctx.fill(triangle)
+			ctx.restore()
+		}
+	})()
+
 	let lastTime = 0
 	let frame = 0
 	let rafId = requestAnimationFrame(function animate(time) {
@@ -228,7 +245,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 			if (frame % 5 === 0)
 				tree.update(boid)
 
-			drawTriangle(ctx, boid.x, boid.y, boid.radians)
+			drawTriangle(boid.x, boid.y, boid.radians)
 			if (params.draw_fov) {
 				drawCircle(ctx, boid.x, boid.y, params.sight)
 			}
@@ -267,20 +284,6 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 
 function angleToVector(radians: number): [xSpeedNormal: number, ySpeedNormal: number] {
 	return [Math.cos(radians), Math.sin(radians)]
-}
-
-function drawTriangle(ctx: CanvasRenderingContext2D, x: number, y: number, radians: number, size = 3 * window.devicePixelRatio) {
-	ctx.save()
-	ctx.translate(x, y)
-	ctx.rotate(radians)
-	ctx.beginPath()
-	ctx.moveTo(size, 0)
-	ctx.lineTo(-size, size / 2)
-	ctx.lineTo(-size, -size / 2)
-	ctx.closePath()
-	ctx.fillStyle = 'white'
-	ctx.fill()
-	ctx.restore()
 }
 
 function drawCircle(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number) {
