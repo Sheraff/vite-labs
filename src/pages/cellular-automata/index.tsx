@@ -184,24 +184,24 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 	const sortedTransforms = Object.fromEntries(Object.entries(Object.groupBy(transforms, (t) => t[0][0][0])).map(([key, transforms]) => {
 		const compiled = transforms!.map(t => {
 			const [before, after] = t!
-			const f = new Function('x', 'y', 'current', 'next', 'touched', `
+			const f = new Function('x', 'y', 'i', 'current', 'next', 'touched', `
 				if (y + ${before.length} > ${gridSize}) return;
 				if (x + ${before[0].length} > ${gridSize}) return;
 				if (${before.flatMap((row, by) => row.map((value, bx) => `
-					current[y * ${gridSize} ${by * gridSize + bx === 0 ? '' : `+ ${by * gridSize + bx}`} + x] !== ${value}
+					current[i${by * gridSize + bx === 0 ? '' : `+ ${by * gridSize + bx}`}] !== ${value}
 				`)).join(' || ')}) return;
 				${after.flatMap((row, by) => row.map((value, bx) => value === -1 ? '' : `{
-					const index = y * ${gridSize} ${by * gridSize + bx === 0 ? '' : `+ ${by * gridSize + bx}`} + x;
+					const index = i${by * gridSize + bx === 0 ? '' : `+ ${by * gridSize + bx}`};
 					next[index] = ${value};
-					touched.add(index);
+					touched[index] = 1;
 				}`)).filter(Boolean).join(' ')}
-			`.replaceAll(/\s+/g, ' ')) as (x: number, y: number, current: Int16Array, next: Int16Array, touched: Set<number>) => void
+			`.replaceAll(/\s+/g, ' ')) as (x: number, y: number, i: number, current: Int16Array, next: Int16Array, touched: Uint8Array) => void
 			return f
 		})
 		return [key, compiled]
 	}))
 
-	const touched = new Set<number>()
+	const touched = new Uint8Array(gridSize * gridSize)
 	const side = ctx.canvas.height
 	let lastTime = 0
 	let rafId = requestAnimationFrame(function animate(time) {
@@ -214,14 +214,14 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 		if (first) return
 
 		ctx.clearRect(0, 0, side, side)
-		touched.clear()
+		touched.fill(0)
+		ctx.fillStyle = 'white'
 
 		for (let y = 0; y < gridSize; y++) {
 			for (let x = 0; x < gridSize; x++) {
 				const index = getIndex(x, y)
 				const cell = current[index]
 				if (cell === 1) {
-					ctx.fillStyle = 'white'
 					ctx.fillRect(x * pxSize, y * pxSize, pxSize, pxSize)
 				}
 
@@ -229,12 +229,12 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 					const transforms = sortedTransforms[cell]
 					if (transforms) {
 						for (const t of transforms) {
-							t(x, y, current, next, touched)
+							t(x, y, index, current, next, touched)
 						}
 					}
 				}
 
-				if (!touched.has(index)) {
+				if (!touched[index]) {
 					next[index] = current[index]
 				}
 			}
