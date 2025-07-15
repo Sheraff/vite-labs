@@ -10,7 +10,7 @@ export const meta: RouteMeta = {
 	tags: ['wip']
 }
 
-const GRID_SIZE = 80
+const GRID_SIZE = 200
 const INITIAL_SPEED = 5
 
 
@@ -181,7 +181,25 @@ function start(ctx: CanvasRenderingContext2D, side: number, form: HTMLFormElemen
 		}
 	}
 
-	const sortedTransforms = Object.groupBy(transforms, (t) => t[0][0][0])
+	const sortedTransforms = Object.fromEntries(Object.entries(Object.groupBy(transforms, (t) => t[0][0][0])).map(([key, transforms]) => {
+		const compiled = transforms!.map(t => {
+			const [before, after] = t!
+			const f = new Function('x', 'y', 'current', 'next', 'touched', `
+				if (y + ${before.length} > ${gridSize}) return;
+				if (x + ${before[0].length} > ${gridSize}) return;
+				if (${before.flatMap((row, by) => row.map((value, bx) => `
+					current[y * ${gridSize} ${by * gridSize + bx === 0 ? '' : `+ ${by * gridSize + bx}`} + x] !== ${value}
+				`)).join(' || ')}) return;
+				${after.flatMap((row, by) => row.map((value, bx) => value === -1 ? '' : `{
+					const index = y * ${gridSize} ${by * gridSize + bx === 0 ? '' : `+ ${by * gridSize + bx}`} + x;
+					next[index] = ${value};
+					touched.add(index);
+				}`)).filter(Boolean).join(' ')}
+			`.replaceAll(/\s+/g, ' ')) as (x: number, y: number, current: Int16Array, next: Int16Array, touched: Set<number>) => void
+			return f
+		})
+		return [key, compiled]
+	}))
 
 	const touched = new Set<number>()
 	let lastTime = 0
@@ -209,32 +227,8 @@ function start(ctx: CanvasRenderingContext2D, side: number, form: HTMLFormElemen
 				if (update && state.playback.isPlaying) {
 					const transforms = sortedTransforms[cell]
 					if (transforms) {
-						transform: for (const [before, after] of transforms) {
-							if (cell !== before[0][0]) continue transform
-							const h = before.length
-							if (y + h > gridSize) continue transform
-							const w = before[0].length
-							if (x + w > gridSize) continue transform
-							for (let by = 0; by < h; by++) {
-								const bRow = before[by]
-								for (let bx = 0; bx < w; bx++) {
-									const cellIndex = getIndex(x + bx, y + by)
-									// if (touched.has(cellIndex)) continue transform
-									if (bRow[bx] !== current[cellIndex]) {
-										continue transform
-									}
-								}
-							}
-							for (let by = 0; by < h; by++) {
-								const afterRow = after[by]
-								for (let bx = 0; bx < w; bx++) {
-									const cellIndex = getIndex(x + bx, y + by)
-									const value = afterRow[bx]
-									if (value === -1) continue
-									touched.add(cellIndex)
-									next[cellIndex] = value
-								}
-							}
+						for (const t of transforms) {
+							t(x, y, current, next, touched)
 						}
 					}
 				}
