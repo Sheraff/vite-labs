@@ -349,7 +349,7 @@ export const ROUTES = {
 			tags: ['simulation', 'animation', 'performance']
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1752579039000,
 			firstAdded: 1752336310000
 		},
 	},

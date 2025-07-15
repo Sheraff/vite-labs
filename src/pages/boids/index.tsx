@@ -76,13 +76,13 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 		triangle.lineTo(-size, size / 2)
 		triangle.lineTo(-size, -size / 2)
 		triangle.closePath()
+		ctx.fillStyle = 'white'
 		return (x: number, y: number, radians: number) => {
-			ctx.save()
 			ctx.translate(x, y)
 			ctx.rotate(radians)
-			ctx.fillStyle = 'white'
 			ctx.fill(triangle)
-			ctx.restore()
+			ctx.rotate(-radians)
+			ctx.translate(-x, -y)
 		}
 	})()
 
