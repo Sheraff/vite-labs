@@ -31,7 +31,7 @@ export default function CellularAutomataPage() {
 		canvas.height = side
 		canvas.width = side
 
-		const frameCounter = makeFrameCounter(200)
+		const frameCounter = makeFrameCounter(50)
 
 		return start(ctx, side, form, (delta) => setFps(frameCounter(delta).toPrecision(3)))
 	}, [])
