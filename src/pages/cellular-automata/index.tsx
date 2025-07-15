@@ -27,13 +27,13 @@ export default function CellularAutomataPage() {
 		const form = formRef.current
 		if (!form) return
 
-		const side = 1600 * window.devicePixelRatio
-		canvas.height = side
-		canvas.width = side
+		const min = Math.min(canvas.width, canvas.height) * window.devicePixelRatio
+		canvas.height = min
+		canvas.width = min
 
 		const frameCounter = makeFrameCounter(50)
 
-		return start(ctx, side, form, (delta) => setFps(frameCounter(delta).toPrecision(3)))
+		return start(ctx, form, (delta) => setFps(frameCounter(delta).toPrecision(3)))
 	}, [])
 
 	return (
@@ -141,9 +141,9 @@ const sand: Transform[] = [
 
 const transforms: Transform[] = conway
 
-function start(ctx: CanvasRenderingContext2D, side: number, form: HTMLFormElement, onFrame: (delta: number) => void) {
+function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (delta: number) => void) {
 	const gridSize = GRID_SIZE
-	const pxSize = side / gridSize
+	const pxSize = ctx.canvas.height / gridSize
 
 	const a = new Int16Array(gridSize * gridSize)
 	const b = new Int16Array(gridSize * gridSize)
@@ -202,6 +202,7 @@ function start(ctx: CanvasRenderingContext2D, side: number, form: HTMLFormElemen
 	}))
 
 	const touched = new Set<number>()
+	const side = ctx.canvas.height
 	let lastTime = 0
 	let rafId = requestAnimationFrame(function animate(time) {
 		rafId = requestAnimationFrame(animate)
