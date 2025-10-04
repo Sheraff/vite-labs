@@ -89,7 +89,7 @@ export const ROUTES = {
 		meta: {
 			title: 'Star Rating',
 			image: star_rating_image,
-			tags: ['html', 'components']
+			tags: ['html', 'components', 'wip']
 		},
 		git: {
 			lastModified: 1752533354000,
@@ -323,8 +323,8 @@ export const ROUTES = {
 			tags: ['perspective', 'css', 'projection']
 		},
 		git: {
-			lastModified: 0,
-			firstAdded: 0
+			lastModified: 1759587075000,
+			firstAdded: 1759587075000
 		},
 	},
 	"collision-threads": {
