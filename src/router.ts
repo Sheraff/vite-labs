@@ -20,13 +20,14 @@ import hacker_background_image from "./pages/hacker-background/screen.png"
 import fourrier_series_image from "./pages/fourrier-series/screen.png"
 import flow_field_image from "./pages/flow-field/screen.png"
 import flask_image from "./pages/flask/screen.png"
+import css_cursor_tracking_image from "./pages/css-cursor-tracking/screen.png"
 import collision_threads_image from "./pages/collision-threads/screen.png"
 import boids_image from "./pages/boids/screen.png"
 import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/screen.png"
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "star-rating" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "ants" | "a-star"
+export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "star-rating" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "css-cursor-tracking" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
@@ -314,6 +315,18 @@ export const ROUTES = {
 			firstAdded: 1737497494000
 		},
 	},
+	"css-cursor-tracking": {
+		Component: lazy(() => import("./pages/css-cursor-tracking/index.tsx")),
+		meta: {
+			title: 'CSS Cursor Tracking',
+			image: css_cursor_tracking_image,
+			tags: ['perspective', 'css', 'projection']
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
+		},
+	},
 	"collision-threads": {
 		Component: lazy(() => import("./pages/collision-threads/index.tsx")),
 		meta: {
@@ -333,7 +346,7 @@ export const ROUTES = {
 			tags: ['wip']
 		},
 		git: {
-			lastModified: 1752583769000,
+			lastModified: 1752584880000,
 			firstAdded: 1752407483000
 		},
 	},
