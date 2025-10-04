@@ -92,7 +92,7 @@ export const ROUTES = {
 			tags: ['html', 'components', 'wip']
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1759587108000,
 			firstAdded: 1744563053000
 		},
 	},
@@ -261,7 +261,7 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/grainy-texture/index.tsx")),
 		meta: {
 			title: 'Grainy Texture',
-			tags: ['css', 'svg'],
+			tags: ['css', 'svg', 'wip'],
 		},
 		git: {
 			lastModified: 1752533354000,

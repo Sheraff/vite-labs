@@ -4,7 +4,7 @@ import type { RouteMeta } from "#router"
 
 export const meta: RouteMeta = {
 	title: 'Grainy Texture',
-	tags: ['css', 'svg'],
+	tags: ['css', 'svg', 'wip'],
 }
 
 export default function GrainyTexture() {
