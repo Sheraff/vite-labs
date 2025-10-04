@@ -264,7 +264,7 @@ export const ROUTES = {
 			tags: ['css', 'svg', 'wip'],
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1759587155000,
 			firstAdded: 1741450768000
 		},
 	},

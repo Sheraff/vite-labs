@@ -24,7 +24,7 @@ export default function CSSCursorTrackingPage() {
 		}
 
 		const controller = new AbortController()
-		window.addEventListener('mousemove', (event) => {
+		window.addEventListener('pointermove', (event) => {
 			const mouse = { left: event.clientX, top: event.clientY }
 
 			const { left: x, top: y } = project(
@@ -35,8 +35,8 @@ export default function CSSCursorTrackingPage() {
 				mouse
 			)
 
-			el.style.setProperty('--mx', Math.min(1, Math.max(-1, x)).toString())
-			el.style.setProperty('--my', Math.min(1, Math.max(-1, y)).toString())
+			el.style.setProperty('--mx', Math.min(2, Math.max(-1, x)).toString())
+			el.style.setProperty('--my', Math.min(2, Math.max(-1, y)).toString())
 
 		}, { signal: controller.signal })
 		return () => controller.abort()
@@ -75,9 +75,9 @@ export default function CSSCursorTrackingPage() {
 			<div className={styles.perspective}>
 				<div ref={ref} className={styles.grid} style={{ '--side': SIDE } as React.CSSProperties}>
 					{Array.from({ length: SIDE }, (_, y) => (
-						<div key={y} className={styles.row} style={{ '--y': y / SIDE + 0.5 / SIDE } as React.CSSProperties}>
+						<div key={y} className={styles.row} style={{ '--y': y / SIDE - 0.5 / SIDE } as React.CSSProperties}>
 							{Array.from({ length: SIDE }, (_, x) => (
-								<div key={x} className={styles.cell} style={{ '--x': x / SIDE + 0.5 / SIDE } as React.CSSProperties} />
+								<div key={x} className={styles.cell} style={{ '--x': x / SIDE + 1 / SIDE } as React.CSSProperties} />
 							))}
 						</div>
 					))}
