@@ -21,6 +21,13 @@
 	perspective-origin: center;
 	width: fit-content;
 	margin: auto;
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	/* center */
+	translate: 0 -23%;
+	/* compensate for 3D rotation of grid */
 }
 
 .grid {
@@ -126,6 +133,7 @@
 	/* transform: translateZ(calc(var(--t) * 0.75 * 50px)) scaleZ(calc(0.25 + var(--t) * 0.75)); */
 	/* transform: rotateZ(calc((1 - var(--t)) * 90deg)); */
 	transform: translateZ(calc((var(--t) - 1) * 50px));
+	will-change: transform;
 	--l: calc(36% + var(--t) * 20%);
 }
 
