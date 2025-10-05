@@ -242,7 +242,7 @@ export const ROUTES = {
 			tags: ['Intl', 'locales']
 		},
 		git: {
-			lastModified: 1759672364000,
+			lastModified: 1759673611000,
 			firstAdded: 1759672364000
 		},
 	},

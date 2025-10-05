@@ -14,10 +14,6 @@ declare module 'react' {
 		positionAnchor?: string
 	}
 
-	interface HTMLAttributes<T> extends AriaAttributes, DOMAttributes<T> {
-		popover?: '' | 'auto' | 'manual' | undefined
-	}
-
 	interface ButtonHTMLAttributes<T> extends HTMLAttributes<T> {
 		popovertarget?: string
 		popovertargetaction?: 'show' | 'hide' | 'toggle'
