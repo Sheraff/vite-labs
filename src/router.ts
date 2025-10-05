@@ -331,13 +331,13 @@ export const ROUTES = {
 	"cursor-projection": {
 		Component: lazy(() => import("./pages/cursor-projection/index.tsx")),
 		meta: {
-			title: 'CSS Cursor Tracking',
+			title: '3D Cursor Projection',
 			image: cursor_projection_image,
 			tags: ['perspective', 'css', 'projection']
 		},
 		git: {
-			lastModified: 0,
-			firstAdded: 0
+			lastModified: 1759672720000,
+			firstAdded: 1759672720000
 		},
 	},
 	"collision-threads": {

@@ -4,7 +4,7 @@ import { Head } from "#components/Head"
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react"
 
 export const meta: RouteMeta = {
-	title: 'CSS Cursor Tracking',
+	title: '3D Cursor Projection',
 	image: './screen.png',
 	tags: ['perspective', 'css', 'projection']
 }
