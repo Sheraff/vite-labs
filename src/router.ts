@@ -15,6 +15,7 @@ import normal_map_image from "./pages/normal-map/screen.png"
 import neat_image from "./pages/neat/screen.png"
 import minesweeper_image from "./pages/minesweeper/screen.png"
 import lightning_image from "./pages/lightning/screen.png"
+import intl_tuesday_image from "./pages/intl-tuesday/screen.png"
 import hex_a_star_image from "./pages/hex-a-star/screen.png"
 import hacker_background_image from "./pages/hacker-background/screen.png"
 import fourrier_series_image from "./pages/fourrier-series/screen.png"
@@ -27,7 +28,7 @@ import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/scree
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "star-rating" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "lightning" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "css-cursor-tracking" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "ants" | "a-star"
+export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "star-rating" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "lightning" | "intl-tuesday" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "css-cursor-tracking" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
@@ -233,6 +234,18 @@ export const ROUTES = {
 			firstAdded: 1717331001000
 		},
 	},
+	"intl-tuesday": {
+		Component: lazy(() => import("./pages/intl-tuesday/index.tsx")),
+		meta: {
+			title: 'Intl Tuesday',
+			image: intl_tuesday_image,
+			tags: ['Intl', 'locales']
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
+		},
+	},
 	"hex-a-star": {
 		Component: lazy(() => import("./pages/hex-a-star/index.tsx")),
 		meta: {
@@ -323,7 +336,7 @@ export const ROUTES = {
 			tags: ['perspective', 'css', 'projection']
 		},
 		git: {
-			lastModified: 1759601967000,
+			lastModified: 1759602500000,
 			firstAdded: 1759587075000
 		},
 	},
