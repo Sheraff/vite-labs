@@ -29,10 +29,6 @@
 	span {
 		animation: fade-in 1s ease;
 	}
-
-	span:not(:last-child)::after {
-		content: ' ';
-	}
 }
 
 @keyframes fade-in {

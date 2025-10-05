@@ -1,7 +1,7 @@
 import type { RouteMeta } from "#router"
 import styles from './styles.module.css'
 import { Head } from "#components/Head"
-import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react"
+import { Fragment, useEffect, useState } from "react"
 
 
 export const meta: RouteMeta = {
@@ -51,8 +51,11 @@ export default function IntlTuesdayPage() {
 				<output htmlFor="content">{translations.length.toString().padStart(2, '0')} locales</output>
 			</div>
 			<div className={styles.content} id="content">
-				{translations.map(t => (
-					<span key={t.locale} lang={t.locale}>{t.name}</span>
+				{translations.map((t, i) => (
+					<Fragment key={t.locale}>
+						{i > 0 ? ' ' : null}
+						<span lang={t.locale}>{t.name}</span>
+					</Fragment>
 				))}
 			</div>
 		</div>
