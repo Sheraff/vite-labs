@@ -25,6 +25,7 @@ import cursor_projection_image from "./pages/cursor-projection/screen.png"
 import collision_threads_image from "./pages/collision-threads/screen.png"
 import boids_image from "./pages/boids/screen.png"
 import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/screen.png"
+import ants_shader_image from "./pages/ants-shader/screen.png"
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
@@ -395,10 +396,11 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/ants-shader/index.tsx")),
 		meta: {
 			title: 'Ants on shader',
-			tags: ['simulation', 'performance', 'webgl', 'shader']
+			tags: ['simulation', 'performance', 'webgl', 'shader'],
+			image: ants_shader_image
 		},
 		git: {
-			lastModified: 1760201581000,
+			lastModified: 1760207398000,
 			firstAdded: 1742739684000
 		},
 	},
