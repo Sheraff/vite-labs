@@ -7,6 +7,15 @@ uniform float seed;
 
 uniform float decay_pheromone;
 
+// operation mode
+//   0 = state updates
+//   1 = move up
+//   2 = move right
+//   3 = move down
+//   4 = move left
+// this ensures no two ants move into each other
+uniform uint direction;
+
 out vec4 fragColor;
 
 
@@ -35,222 +44,104 @@ const uint maxPheromone = 255u;
 
 // random number [0,1] inclusive
 float rand(vec2 identity) {
-	return fract(sin(dot(identity, vec2(12.9898, 4.1414)) * seed));
+	vec2 seeded = identity + vec2(seed * 0.1, seed * 0.2);
+	return fract(sin(dot(seeded, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
+vec2 top = vec2(0, -1);
+vec2 right = vec2(1, 0);
+vec2 bottom = vec2(0, 1);
+vec2 left = vec2(-1, 0);
 
-struct Result {
-	bool found;
-	vec2 xy;
-	uint g;
-};
+uint cellValue(vec2 from, vec2 dir, bool withFood) {
+	vec2 to = from + dir;
+	if (to.x < 0.0 || to.x >= resolution.x) return 0u;
+	if (to.y < 0.0 || to.y >= resolution.y) return 0u;
+	vec4 rgba = texture(previous_frame, to / resolution.xy);
+	if (withFood) {
+		return uint(rgba.z * 255.0);
+	} else {
+		return uint(rgba.y * 255.0);
+	}
+}
 
-// the `xy` pixel is available, return the position of the ant that wants to move here
-Result antMovesInto(vec2 xy, uint g) {
-	if (g == 0u) return Result(false, xy, g);
-	vec2 candidates[8];
-	int count = 0;
-	uint best_g = 255u;
-	for(int dy = -1; dy <= 1; dy++) {
-		for(int dx = -1; dx <= 1; dx++) {
-			if(dx == 0 && dy == 0) continue;
-			vec2 nxy = xy + vec2(dx, dy);
-			if (nxy.x < 0.0 || nxy.x >= resolution.x) continue;
-			if (nxy.y < 0.0 || nxy.y >= resolution.y) continue;
-			vec4 neighbor = texture(previous_frame, nxy / resolution.xy);
-			uint nr = uint(neighbor.x * 255.0);
-			bool isAnt = (nr & ant) == 1u;
-			if (!isAnt) continue;
-			uint ng = uint(neighbor.y * 255.0);
-			if (ng == 255u) continue;
-			if (ng > g) continue;
-			if (ng > best_g) continue;
-			if (ng < best_g) {
-				best_g = ng;
-				count = 0;
-			}
-			if (ng == g) {
-				candidates[count] = nxy;
-				count++;
-			}
+bool isVec2Equal(vec2 a, vec2 b) {
+	return a.x == b.x && a.y == b.y;
+}
+
+bool antMoveFromTo(vec2 from, vec2 dir, bool withFood) {
+	{
+		// bail if `from` is out of bounds
+		if (from.x < 0.0 || from.x >= resolution.x) return false;
+		if (from.y < 0.0 || from.y >= resolution.y) return false;
+	}
+
+	vec2 to = from + dir;
+	{
+		// bail if `to` is out of bounds
+		if (to.x < 0.0 || to.x >= resolution.x) return false;
+		if (to.y < 0.0 || to.y >= resolution.y) return false;
+	}
+
+	uint mask;
+	if (withFood) {
+		mask = antAndFood;
+	} else {
+		mask = ant;
+	}
+
+	{
+		// bail if `from` does not contain an ant
+		vec4 from_rgba = texture(previous_frame, from / resolution.xy);
+		uint from_r = uint(from_rgba.x * 255.0);
+		bool isAntFrom = (from_r & mask) > 0u;
+		if (!isAntFrom) return false;
+	}
+
+	{
+		// bail if `to` already contains an ant
+		vec4 to_rgba = texture(previous_frame, to / resolution.xy);
+		uint to_r = uint(to_rgba.x * 255.0);
+		bool isAntTo = (to_r & mask) > 0u;
+		if (isAntTo) return false;
+	}
+
+	uint top_g = cellValue(from, top, withFood);
+	uint right_g = cellValue(from, right, withFood);
+	uint bottom_g = cellValue(from, bottom, withFood);
+	uint left_g = cellValue(from, left, withFood);
+
+	if (top_g == 0u && right_g == 0u && bottom_g == 0u && left_g == 0u) {
+		// no pheromone, move randomly
+		float r = rand(from);
+		if (r < 0.25) {
+			return isVec2Equal(dir, top);
+		} else if (r < 0.5) {
+			return isVec2Equal(dir, right);
+		} else if (r < 0.75) {
+			return isVec2Equal(dir, bottom);
+		} else if (r < 1.0) {
+			return isVec2Equal(dir, left);
 		}
-	}
-	if (count == 0) return Result(false, xy, g);
-	float best_r = 0.0;
-	vec2 best_candidate = xy;
-	for(int i = 0; i < count; i++) {
-		float r = rand(candidates[i]);
-		if (r > best_r) {
-			best_r = r;
-			best_candidate = candidates[i];
-		}
-	}
-	if (best_r == 0.0) return Result(false, xy, g);
-	return Result(true, best_candidate, best_g);
-}
-
-// an ant on `xy` want to move, return the new position
-Result antMovesAway(vec2 xy, uint g) {
-	vec2 candidates[8];
-	int count = 0;
-	uint best_g = 0u;
-	for(int dy = -1; dy <= 1; dy++) {
-		for(int dx = -1; dx <= 1; dx++) {
-			if(dx == 0 && dy == 0) continue;
-			vec2 nxy = xy + vec2(dx, dy);
-			if (nxy.x < 0.0 || nxy.x >= resolution.x) continue;
-			if (nxy.y < 0.0 || nxy.y >= resolution.y) continue;
-			vec4 neighbor = texture(previous_frame, nxy / resolution.xy);
-			uint nr = uint(neighbor.x * 255.0);
-			bool isAnt = (nr & ant) == 1u;
-			if (isAnt) continue;
-			uint ng = uint(neighbor.y * 255.0);
-			if (ng == 0u) continue;
-			if (ng < g) continue;
-			if (ng < best_g) continue;
-			if (ng > best_g) {
-				best_g = ng;
-				count = 0;
-			}
-			if (ng == g) {
-				candidates[count] = nxy;
-				count++;
-			}
-		}
-	}
-	if (count == 0) return Result(false, xy, g);
-	float best_r = 0.0;
-	vec2 best_candidate = xy;
-	for(int i = 0; i < count; i++) {
-		float r = rand(candidates[i]);
-		if (r > best_r) {
-			best_r = r;
-			best_candidate = candidates[i];
-		}
-	}
-	if (best_r == 0.0) return Result(false, xy, g);
-	return Result(true, best_candidate, best_g);
-}
-
-Result antMovesInto(vec2 xy, uint g, bool recurse) {
-	Result result = antMovesInto(xy, g);
-	if (!recurse) {
-		return result;
-	}
-	if (!result.found) {
-		return result;
-	}
-	Result mutual = antMovesAway(result.xy, result.g);
-	if (mutual.found && mutual.xy.x == xy.x && mutual.xy.y == xy.y) {
-		return result;
-	}
-	return Result(false, xy, g);
-}
-
-Result antMovesAway(vec2 xy, uint g, bool recurse) {
-	Result result = antMovesAway(xy, g);
-	if (!recurse) {
-		return result;
-	}
-	if (!result.found) {
-		return result;
-	}
-	Result mutual = antMovesInto(result.xy, result.g);
-	if (mutual.found && mutual.xy.x == xy.x && mutual.xy.y == xy.y) {
-		return result;
-	}
-	return Result(false, xy, g);
-}
-
-Result antRandomMoveAway(vec2 xy) {
-	float best_r = 0.0;
-	vec2 best_candidate = xy;
-
-	for(int dy = -1; dy <= 1; dy++) {
-		for(int dx = -1; dx <= 1; dx++) {
-			if(dx == 0 && dy == 0) continue;
-			vec2 nxy = xy + vec2(dx, dy);
-			if (nxy.x < 0.0 || nxy.x >= resolution.x) continue;
-			if (nxy.y < 0.0 || nxy.y >= resolution.y) continue;
-			float r = rand(nxy);
-			if (r <= best_r) continue;
-			vec4 neighbor = texture(previous_frame, nxy / resolution.xy);
-			uint nr = uint(neighbor.x * 255.0);
-			bool isAnt = (nr & ant) == 1u;
-			if (isAnt) continue;
-			uint ng = uint(neighbor.y * 255.0);
-			Result into = antMovesInto(nxy, ng, false);
-			if (into.found) continue;
-			best_r = r;
-			best_candidate = nxy;
-		}
+		return false;
 	}
 
-	if (best_r == 0.0) return Result(false, xy, 0u);
-	return Result(true, best_candidate, 0u);
-}
-
-Result antRandomMoveInto(vec2 xy) {
-	float best_r = 1.0;
-	vec2 best_candidate = xy;
-
-	for(int dy = -1; dy <= 1; dy++) {
-		for(int dx = -1; dx <= 1; dx++) {
-			if(dx == 0 && dy == 0) continue;
-			vec2 nxy = xy + vec2(dx, dy);
-			if (nxy.x < 0.0 || nxy.x >= resolution.x) continue;
-			if (nxy.y < 0.0 || nxy.y >= resolution.y) continue;
-			float r = rand(nxy);
-			if (r >= best_r) continue;
-			vec4 neighbor = texture(previous_frame, nxy / resolution.xy);
-			uint nr = uint(neighbor.x * 255.0);
-			bool isAnt = (nr & ant) == 1u;
-			if (!isAnt) continue;
-			uint ng = uint(neighbor.y * 255.0);
-			Result away = antMovesAway(nxy, ng, false);
-			if (away.found) continue;
-			best_r = r;
-			best_candidate = nxy;
-		}
+	if (isVec2Equal(dir, top)) {
+		return top_g >= right_g && top_g >= bottom_g && top_g >= left_g;
+	} else if (isVec2Equal(dir, right)) {
+		return right_g >= top_g && right_g >= bottom_g && right_g >= left_g;
+	} else if (isVec2Equal(dir, bottom)) {
+		return bottom_g >= top_g && bottom_g >= right_g && bottom_g >= left_g;
+	} else if (isVec2Equal(dir, left)) {
+		return left_g >= top_g && left_g >= right_g && left_g >= bottom_g;
 	}
 
-	if (best_r == 1.0) return Result(false, xy, 0u);
-	return Result(true, best_candidate, 0u);
-}
-
-Result antRandomMoveAway(vec2 xy, bool recurse) {
-	Result result = antRandomMoveAway(xy);
-	if (!recurse) {
-		return result;
-	}
-	if (!result.found) {
-		return result;
-	}
-	Result mutual = antRandomMoveInto(result.xy);
-	if (mutual.found && mutual.xy.x == xy.x && mutual.xy.y == xy.y) {
-		return result;
-	}
-	return Result(false, xy, 0u);
-}
-
-Result antRandomMoveInto(vec2 xy, bool recurse) {
-	Result result = antRandomMoveInto(xy);
-	if (!recurse) {
-		return result;
-	}
-	if (!result.found) {
-		return result;
-	}
-	Result mutual = antRandomMoveAway(result.xy);
-	if (mutual.found && mutual.xy.x == xy.x && mutual.xy.y == xy.y) {
-		return result;
-	}
-	return Result(false, xy, 0u);
+	return false;
 }
 
 
 void main() {
-	// vec2 uv = (gl_FragCoord.xy  + vec2(1.0, 0.0)) / resolution.xy;
+	// vec2 uv = (gl_FragCoord.xy + vec2(1.0, 0.0)) / resolution.xy;
 	vec2 uv = gl_FragCoord.xy / resolution.xy;
 
 	vec4 rgba = texture(previous_frame, uv);
@@ -260,107 +151,91 @@ void main() {
 	uint b = uint(rgba.z * 255.0);
 	// uint a = uint(rgba.a * 255.0);
 
-	if (decay_pheromone > 0.0) {
-		if (g > 0u) {
-			g -= 1u;
+	bool isAnt = (r & ant) > 0u;
+	bool isFood = (r & food) > 0u;
+	bool isAntAndFood = (r & antAndFood) > 0u;
+	bool isAnthill = (r & anthill) > 0u;
+
+	if (direction == 0u) {
+		if (decay_pheromone > 0.0) {
+			if (g > 0u) {
+				g -= 1u;
+			}
+			if (b > 0u) {
+				b -= 1u;
+			}
 		}
-		if (b > 0u) {
-			b -= 1u;
-		}
-	}
 
-	bool isAnt = (r & ant) == 1u;
-	bool isFood = ((r & food) >> 1) == 1u;
-	bool isAntAndFood = ((r & antAndFood) >> 2) == 1u;
-	bool isAnthill = ((r & anthill) >> 3) == 1u;
-
-	// collect food
-	if (isAnt && isFood && !isAntAndFood) {
-		r |= antAndFood;
-		r &= ~ant;
-		r &= ~food;
-		isAnt = false;
-		isFood = false;
-		isAntAndFood = true;
-
-	}
-
-	// leave pheromone trail
-	if (isAnt && !isFood) {
-		b = maxPheromone;
-	}
-	if (isAntAndFood && !isAnthill) {
-		g = maxPheromone;
-	}
-
-	// drop food
-	if (isAntAndFood && isAnthill && !isAnt) {
-		r &= ~antAndFood;
-		r |= ant;
-		isAntAndFood = false;
-		isAnt = true;
-	}
-
-	// move towards food
-	if (isAnt) {
-		// move away from this pixel
-		Result destination = antMovesAway(gl_FragCoord.xy, g, true);
-		if (destination.found) {
+		// collect food
+		if (isAnt && isFood && !isAntAndFood) {
+			r |= antAndFood;
 			r &= ~ant;
+			r &= ~food;
 			isAnt = false;
-		} else {
-			Result randomDestination = antRandomMoveAway(gl_FragCoord.xy, true);
-			if (randomDestination.found) {
+			isFood = false;
+			isAntAndFood = true;
+		}
+
+		// drop food
+		if (isAntAndFood && isAnthill && !isAnt) {
+			r &= ~antAndFood;
+			r |= ant;
+			isAntAndFood = false;
+			isAnt = true;
+		}
+
+		// leave pheromone trail
+		if (isAnt) {
+			b = maxPheromone;
+		}
+		if (isAntAndFood) {
+			g = maxPheromone;
+		}
+	} else {
+		vec2 out_dir;
+		if (direction == 1u) {
+			out_dir = top;
+		} else if (direction == 2u) {
+			out_dir = right;
+		} else if (direction == 3u) {
+			out_dir = bottom;
+		} else if (direction == 4u) {
+			out_dir = left;
+		}
+
+		if (isAnt) {
+			// if `ant` bit is set, see if it wants to move in `direction`
+			bool moved = antMoveFromTo(gl_FragCoord.xy, out_dir, false);
+			if (moved) {
 				r &= ~ant;
 				isAnt = false;
 			}
-		}
-	}
-	if (!isAnt) {
-		bool found = false;
-		// if we have some pheromone, neighbors might want to move here
-		if (g > 0u) {
-			Result from = antMovesInto(gl_FragCoord.xy, g, true);
-			if (from.found) {
-				found = true;
+		} else {
+			// if `ant` bit is free, look in `direction` for an ant to move here
+			bool moved = antMoveFromTo(gl_FragCoord.xy - out_dir, out_dir, false);
+			if (moved) {
 				r |= ant;
 				isAnt = true;
 			}
 		}
-		// if no neighbor moved here, move a random one
-		if (!found) {
-			Result randomFrom = antRandomMoveInto(gl_FragCoord.xy, true);
-			if (randomFrom.found) {
-				found = true;
-				r |= ant;
-				isAnt = true;
+
+		if (isAntAndFood) {
+			// if `antAndFood` bit is set, see if it wants to move in `direction`
+			bool moved = antMoveFromTo(gl_FragCoord.xy, out_dir, true);
+			if (moved) {
+				r &= ~antAndFood;
+				isAntAndFood = false;
+			}
+		} else {
+			// if `antAndFood` bit is free, look in `direction` for an antAndFood to move here
+			bool moved = antMoveFromTo(gl_FragCoord.xy - out_dir, out_dir, true);
+			if (moved) {
+				r |= antAndFood;
+				isAntAndFood = true;
 			}
 		}
 	}
 
-	// // DEBUG
-	// if (isAnt) {
-	// 	vec2 left = gl_FragCoord.xy + vec2(-1.0, 0.0);
-	// 	if (left.x >= 0.0) {
-	// 		vec4 left_rgba = texture(previous_frame, left / resolution.xy);
-	// 		uint left_r = uint(left_rgba.x * 255.0);
-	// 		bool left_isAnt = (left_r & ant) == 1u;
-	// 		if (!left_isAnt) {
-	// 			r &= ~ant;
-	// 		}
-	// 	}
-	// }
-	// if (!isAnt) {
-	// 	vec2 right = gl_FragCoord.xy + vec2(1.0, 0.0);
-	// 	if (right.x < resolution.x) {
-	// 		vec4 right_rgba = texture(previous_frame, right / resolution.xy);
-	// 		uint right_r = uint(right_rgba.x * 255.0);
-	// 		bool right_isAnt = (right_r & ant) == 1u;
-	// 		if (right_isAnt) {
-	// 			r |= ant;
-	// 		}
-	// 	}
-	// }
 
 	fragColor = vec4(
 		float(r) / 255.0,

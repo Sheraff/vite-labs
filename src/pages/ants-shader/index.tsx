@@ -49,7 +49,7 @@ export default function AntsShaderPage() {
 		/** visualisation for 2D canvas */
 		const image = new ImageData(side, side, { colorSpace: 'srgb' })
 
-		init(frame.data, side, side, 35_000)
+		init(frame.data, side, side, 100_000)
 
 		const previous_frame_texture = gl.createTexture()
 		gl.bindTexture(gl.TEXTURE_2D, previous_frame_texture)
@@ -65,40 +65,51 @@ export default function AntsShaderPage() {
 
 		const seed_loc = gl.getUniformLocation(program, "seed")
 		const decay_loc = gl.getUniformLocation(program, "decay_pheromone")
+		const direction_loc = gl.getUniformLocation(program, "direction")
 		const resolution_loc = gl.getUniformLocation(program, "resolution")
 		gl.uniform2f(resolution_loc, side, side)
 
-		let counter = 0
+		let decay_counter = 0
+		let frame_counter = 0
 
 		let rafId = requestAnimationFrame(function loop() {
 			rafId = requestAnimationFrame(loop)
+			frame_counter++
+
+			// decay pheromones every 10 frames
+			decay_counter = (decay_counter + 1) % 10
+			const should_decay = +(decay_counter === 0)
+
+			const seed = Math.random() * 100 - 50
+
+			for (let direction = 0; direction < 5; direction++) {
+				// send previous frame to shader
+				gl.activeTexture(gl.TEXTURE0)
+				gl.bindTexture(gl.TEXTURE_2D, previous_frame_texture)
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, frame)
+
+				// send additional data to shader
+				gl.uniform1f(seed_loc, seed)
+				gl.uniform1f(decay_loc, should_decay)
+				gl.uniform1ui(direction_loc, direction)
+
+				// compute new frame
+				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+
+				// read new from from shader into array
+				gl.readPixels(
+					0,
+					0,
+					gl.drawingBufferWidth,
+					gl.drawingBufferHeight,
+					gl.RGBA,
+					gl.UNSIGNED_BYTE,
+					frame.data,
+				)
+
+			}
 
 			let antcount = 0
-			counter += 1
-			counter %= 10
-
-			// send previous frame to shader
-			gl.activeTexture(gl.TEXTURE0)
-			gl.bindTexture(gl.TEXTURE_2D, previous_frame_texture)
-			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, frame)
-
-			// send additional data to shader
-			gl.uniform1f(seed_loc, Math.random() * 100 - 50)
-			gl.uniform1f(decay_loc, +(counter === 0))
-
-			// compute new frame
-			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-
-			// read new from from shader into array
-			gl.readPixels(
-				0,
-				0,
-				gl.drawingBufferWidth,
-				gl.drawingBufferHeight,
-				gl.RGBA,
-				gl.UNSIGNED_BYTE,
-				frame.data,
-			)
 
 			// compute image from new frame
 			for (let i = 0; i < frame.data.length; i += 4) {
@@ -131,17 +142,36 @@ export default function AntsShaderPage() {
 				} else if (isAnthill) {
 					image.data.set(colors.anthill, i)
 				} else if (isPheromoneToFood && isPheromoneToHill) {
-					image.data.set(colors.pheromoneBoth, i)
+					const color = [
+						colors.pheromoneBoth[0],
+						colors.pheromoneBoth[1],
+						colors.pheromoneBoth[2],
+						Math.max(isPheromoneToFood, isPheromoneToHill),
+					]
+					image.data.set(color, i)
 				} else if (isPheromoneToFood) {
-					image.data.set(colors.pheromoneToFood, i)
+					const color = [
+						colors.pheromoneToFood[0],
+						colors.pheromoneToFood[1],
+						colors.pheromoneToFood[2],
+						isPheromoneToFood,
+					]
+					image.data.set(color, i)
 				} else if (isPheromoneToHill) {
-					image.data.set(colors.pheromoneToHill, i)
+					const color = [
+						colors.pheromoneToHill[0],
+						colors.pheromoneToHill[1],
+						colors.pheromoneToHill[2],
+						isPheromoneToHill,
+					]
+					image.data.set(color, i)
 				} else {
 					image.data.set(colors.void, i)
 				}
 			}
 
-			// console.log('ants:', antcount)
+			if (frame_counter % 100 === 0)
+				console.log('ants:', antcount)
 
 			ctx.putImageData(image, 0, 0)
 		})
@@ -222,13 +252,15 @@ const colors = {
 }
 
 function init(array: Uint8ClampedArray, width: number, height: number, count: number) {
-	const foodPosition = [width / 3, height / 3]
+	// const foodPosition = [width / 3, height / 3]
+	const foodPosition = [width / 3, height / 2]
 	const foodRadius = Math.min(width, height) / 10
 
-	const anthillPosition = [width * 2 / 3, height * 2 / 3]
+	// const anthillPosition = [width * 2 / 3, height * 2 / 3]
+	const anthillPosition = [width * 2 / 3, height / 2]
 	const anthillRadius = Math.min(width, height) / 10
 
-	const antDistance = [Math.min(width, height) / 20, Math.min(width, height) / 7]
+	const antDistance = [0, Math.min(width, height) / 6]
 
 	for (let y = 0; y < height; y++) {
 		for (let x = 0; x < width; x++) {
@@ -250,6 +282,7 @@ function init(array: Uint8ClampedArray, width: number, height: number, count: nu
 		}
 	}
 
+	let stuck = 0
 	for (let i = 0; i < count; i++) {
 		const distance = Math.random() * (antDistance[1] - antDistance[0]) + antDistance[0]
 		const angle = Math.random() * Math.PI * 2
@@ -260,9 +293,12 @@ function init(array: Uint8ClampedArray, width: number, height: number, count: nu
 		const index = (y * width + x) * 4
 		const isOccupied = array[index] & 0b1 // ant
 		if (isOccupied) {
+			stuck++
+			if (stuck > 100) continue
 			i--
 			continue
 		}
+		stuck = 0
 		array[index] |= 0b1 // ant
 	}
 }
