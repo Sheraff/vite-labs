@@ -9,7 +9,8 @@ import fragment from './fragment.glsl?raw'
 
 export const meta: RouteMeta = {
 	title: 'Ants on shader',
-	tags: ['simulation', 'performance', 'webgl', 'shader']
+	tags: ['simulation', 'performance', 'webgl', 'shader'],
+	image: './screen.png'
 }
 
 export default function AntsShaderPage() {
@@ -257,7 +258,7 @@ function createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShader, fra
 
 const colors = {
 	ant: [0xcc, 0xcc, 0xcc, 0xff],
-	antAndFood: [0xee, 0x44, 0xee, 0xff],
+	antAndFood: [0x44, 0x44, 0xee, 0xff],
 	food: [0, 0x80, 0, 0xff],
 	pheromoneToFood: [0x20, 0xee, 0x20, 0xff],
 	pheromoneToHill: [0xa0, 0x20, 0x20, 0x80],
