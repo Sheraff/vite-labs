@@ -123,15 +123,17 @@ bool antMoveFromTo(vec2 from, vec2 dir, bool withFood) {
 		uint bottom_g = cellValue(from, bottom, withFood);
 		uint left_g = cellValue(from, left, withFood);
 
-		if (top_g != 0u || right_g != 0u || bottom_g != 0u || left_g != 0u) {
+		uint max_neighbor = max(max(top_g, right_g), max(bottom_g, left_g));
+
+		if (max_neighbor > 0u) {
 			if (isVec2Equal(dir, top)) {
-				return top_g >= current_g && top_g >= right_g && top_g >= bottom_g && top_g >= left_g;
+				if (top_g == max_neighbor) return true;
 			} else if (isVec2Equal(dir, right)) {
-				return right_g >= current_g && right_g >= top_g && right_g >= bottom_g && right_g >= left_g;
+				if (right_g == max_neighbor) return true;
 			} else if (isVec2Equal(dir, bottom)) {
-				return bottom_g >= current_g && bottom_g >= top_g && bottom_g >= right_g && bottom_g >= left_g;
+				if (bottom_g == max_neighbor) return true;
 			} else if (isVec2Equal(dir, left)) {
-				return left_g >= current_g && left_g >= top_g && left_g >= right_g && left_g >= bottom_g;
+				if (left_g == max_neighbor) return true;
 			}
 		}
 	}
@@ -253,10 +255,10 @@ void main() {
 
 		// leave pheromone trail
 		if (isAnt) {
-			b = maxPheromone;
+			b = min(maxPheromone, b + 8u);
 		}
 		if (isAntAndFood) {
-			g = maxPheromone;
+			g = min(maxPheromone, g + 8u);
 		}
 	} else {
 		vec2 out_dir;
