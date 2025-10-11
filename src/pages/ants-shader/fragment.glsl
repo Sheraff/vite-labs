@@ -117,6 +117,7 @@ bool antMoveFromTo(vec2 from, vec2 dir, bool withFood) {
 
 	// some direction is the favored pheromone gradient
 	{
+		uint current_g = cellValue(from, vec2(0, 0), withFood);
 		uint top_g = cellValue(from, top, withFood);
 		uint right_g = cellValue(from, right, withFood);
 		uint bottom_g = cellValue(from, bottom, withFood);
@@ -124,13 +125,13 @@ bool antMoveFromTo(vec2 from, vec2 dir, bool withFood) {
 
 		if (top_g != 0u || right_g != 0u || bottom_g != 0u || left_g != 0u) {
 			if (isVec2Equal(dir, top)) {
-				return top_g >= right_g && top_g >= bottom_g && top_g >= left_g;
+				return top_g >= current_g && top_g >= right_g && top_g >= bottom_g && top_g >= left_g;
 			} else if (isVec2Equal(dir, right)) {
-				return right_g >= top_g && right_g >= bottom_g && right_g >= left_g;
+				return right_g >= current_g && right_g >= top_g && right_g >= bottom_g && right_g >= left_g;
 			} else if (isVec2Equal(dir, bottom)) {
-				return bottom_g >= top_g && bottom_g >= right_g && bottom_g >= left_g;
+				return bottom_g >= current_g && bottom_g >= top_g && bottom_g >= right_g && bottom_g >= left_g;
 			} else if (isVec2Equal(dir, left)) {
-				return left_g >= top_g && left_g >= right_g && left_g >= bottom_g;
+				return left_g >= current_g && left_g >= top_g && left_g >= right_g && left_g >= bottom_g;
 			}
 		}
 	}
