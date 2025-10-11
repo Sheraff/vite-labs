@@ -397,7 +397,7 @@ export const ROUTES = {
 			title: 'Ants on shader',
 		},
 		git: {
-			lastModified: 1760191072000,
+			lastModified: 1760198626000,
 			firstAdded: 1742739684000
 		},
 	},

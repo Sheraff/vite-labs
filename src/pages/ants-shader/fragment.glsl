@@ -9,23 +9,24 @@ uniform float decay_pheromone;
 
 // operation mode
 //   0 = state updates
-//   1 = move up
-//   2 = move right
-//   3 = move down
-//   4 = move left
+//   1 - 4 = move in cardinal direction
 // this ensures no two ants move into each other
+// we use "moved" flags in the R channel to prevent ants from moving twice in one cycle
 uniform uint direction;
 
 out vec4 fragColor;
 
 
-
 /*
 R: 00000000
-       │││└─> ant
-       ││└──> food
-       │└───> ant and food
-       └────> anthill
+   │││││││└─> ant
+   ││││││└──> food
+   │││││└───> ant and food
+   ││││└────> anthill
+   │││└─────> ant moved flag
+   ││└──────> ant and food moved flag
+   │└───────> ??
+   └────────> ??
 
 G: 00000000
    pheromone to food countdown
@@ -39,6 +40,8 @@ const uint ant = 1u;
 const uint food = 2u;
 const uint antAndFood = 4u;
 const uint anthill = 8u;
+const uint antMoved = 16u;
+const uint antAndFoodMoved = 32u;
 
 const uint maxPheromone = 255u;
 
@@ -84,18 +87,23 @@ bool antMoveFromTo(vec2 from, vec2 dir, bool withFood) {
 	}
 
 	uint mask;
+	uint movedMask;
 	if (withFood) {
 		mask = antAndFood;
+		movedMask = antAndFoodMoved;
 	} else {
 		mask = ant;
+		movedMask = antMoved;
 	}
 
 	{
-		// bail if `from` does not contain an ant
+		// bail if `from` does not contain an ant or has moved already
 		vec4 from_rgba = texture(previous_frame, from / resolution.xy);
 		uint from_r = uint(from_rgba.x * 255.0);
 		bool isAntFrom = (from_r & mask) > 0u;
 		if (!isAntFrom) return false;
+		bool isAntFromMoved = (from_r & movedMask) > 0u;
+		if (isAntFromMoved) return false;
 	}
 
 	{
@@ -155,6 +163,8 @@ void main() {
 	bool isFood = (r & food) > 0u;
 	bool isAntAndFood = (r & antAndFood) > 0u;
 	bool isAnthill = (r & anthill) > 0u;
+	bool isAntMoved = (r & antMoved) > 0u;
+	bool isAntAndFoodMoved = (r & antAndFoodMoved) > 0u;
 
 	if (direction == 0u) {
 		if (decay_pheromone > 0.0) {
@@ -165,6 +175,9 @@ void main() {
 				b -= 1u;
 			}
 		}
+
+		r &= ~antMoved;
+		r &= ~antAndFoodMoved;
 
 		// collect food
 		if (isAnt && isFood && !isAntAndFood) {
@@ -194,11 +207,11 @@ void main() {
 	} else {
 		vec2 out_dir;
 		if (direction == 1u) {
-			out_dir = top;
-		} else if (direction == 2u) {
-			out_dir = right;
-		} else if (direction == 3u) {
 			out_dir = bottom;
+		} else if (direction == 2u) {
+			out_dir = top;
+		} else if (direction == 3u) {
+			out_dir = right;
 		} else if (direction == 4u) {
 			out_dir = left;
 		}
@@ -216,6 +229,8 @@ void main() {
 			if (moved) {
 				r |= ant;
 				isAnt = true;
+				r |= antMoved;
+				isAntMoved = true;
 			}
 		}
 
@@ -232,6 +247,8 @@ void main() {
 			if (moved) {
 				r |= antAndFood;
 				isAntAndFood = true;
+				r |= antAndFoodMoved;
+				isAntAndFoodMoved = true;
 			}
 		}
 	}

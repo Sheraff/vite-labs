@@ -1,7 +1,8 @@
 import styles from './styles.module.css'
 import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
-import { useEffect, useRef } from "react"
+import { makeFrameCounter } from "#components/makeFrameCounter"
+import { useEffect, useRef, useState } from "react"
 
 import vertex from './vertex.glsl?raw'
 import fragment from './fragment.glsl?raw'
@@ -12,6 +13,9 @@ export const meta: RouteMeta = {
 
 export default function AntsShaderPage() {
 	const ref = useRef<HTMLCanvasElement | null>(null)
+
+	const [count, setCount] = useState(0)
+	const [fps, setFps] = useState('')
 
 	useEffect(() => {
 		const canvas = ref.current
@@ -71,9 +75,16 @@ export default function AntsShaderPage() {
 
 		let decay_counter = 0
 		let frame_counter = 0
+		let lastTime = 0
+		const frameCounter = makeFrameCounter(50)
 
-		let rafId = requestAnimationFrame(function loop() {
+		let rafId = requestAnimationFrame(function loop(time) {
 			rafId = requestAnimationFrame(loop)
+
+			const delta = (time - lastTime) / 1000
+			lastTime = time
+			setFps(frameCounter(delta).toPrecision(3))
+
 			frame_counter++
 
 			// decay pheromones every 10 frames
@@ -170,8 +181,7 @@ export default function AntsShaderPage() {
 				}
 			}
 
-			if (frame_counter % 100 === 0)
-				console.log('ants:', antcount)
+			setCount(antcount)
 
 			ctx.putImageData(image, 0, 0)
 		})
@@ -192,6 +202,8 @@ export default function AntsShaderPage() {
 		<div className={styles.main}>
 			<div className={styles.head}>
 				<Head />
+				<p>Ants: {count}</p>
+				<p>FPS: {fps}</p>
 			</div>
 			<canvas width="1000" height="1000" ref={ref}>
 				Your browser does not support the HTML5 canvas tag.
