@@ -1,6 +1,6 @@
 import styles from './styles.module.css'
-import { Head } from "~/components/Head"
-import type { RouteMeta } from "~/router"
+import { Head } from "#components/Head"
+import type { RouteMeta } from "#router"
 import { useEffect, useRef } from "react"
 
 import vertex from './vertex.glsl?raw'
