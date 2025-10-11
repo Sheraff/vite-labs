@@ -9,13 +9,14 @@ import fragment from './fragment.glsl?raw'
 
 export const meta: RouteMeta = {
 	title: 'Ants on shader',
+	tags: ['simulation', 'performance', 'webgl', 'shader']
 }
 
 export default function AntsShaderPage() {
 	const ref = useRef<HTMLCanvasElement | null>(null)
 
 	const [count, setCount] = useState(0)
-	const [fps, setFps] = useState('')
+	const [fps, setFps] = useState(0)
 
 	useEffect(() => {
 		const canvas = ref.current
@@ -53,7 +54,7 @@ export default function AntsShaderPage() {
 		/** visualisation for 2D canvas */
 		const image = new ImageData(side, side, { colorSpace: 'srgb' })
 
-		init(frame.data, side, side, 100_000)
+		init(frame.data, side, side, 200_000)
 
 		const previous_frame_texture = gl.createTexture()
 		gl.bindTexture(gl.TEXTURE_2D, previous_frame_texture)
@@ -83,12 +84,12 @@ export default function AntsShaderPage() {
 
 			const delta = (time - lastTime) / 1000
 			lastTime = time
-			setFps(frameCounter(delta).toPrecision(3))
+			setFps(frameCounter(delta))
 
 			frame_counter++
 
-			// decay pheromones every 10 frames
-			decay_counter = (decay_counter + 1) % 10
+			// decay pheromones every X frames
+			decay_counter = (decay_counter + 1) % 2
 			const should_decay = +(decay_counter === 0)
 
 			const seed = Math.random() * 100 - 50
@@ -198,12 +199,14 @@ export default function AntsShaderPage() {
 		}
 	}, [])
 
+	const [formatter] = useState(() => new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }))
+
 	return (
 		<div className={styles.main}>
 			<div className={styles.head}>
 				<Head />
-				<p>Ants: {count}</p>
-				<p>FPS: {fps}</p>
+				<p>Ants: {formatter.format(count)}</p>
+				<p>FPS: {formatter.format(fps)}</p>
 			</div>
 			<canvas width="1000" height="1000" ref={ref}>
 				Your browser does not support the HTML5 canvas tag.
@@ -270,7 +273,7 @@ function init(array: Uint8ClampedArray, width: number, height: number, count: nu
 	const anthillPosition = [width / 3, height / 3]
 	const anthillRadius = Math.min(width, height) / 10
 
-	const antDistance = [0, Math.min(width, height) / 6]
+	const antDistance = [0, Math.min(width, height) / 4]
 
 	for (let y = 0; y < height; y++) {
 		for (let x = 0; x < width; x++) {

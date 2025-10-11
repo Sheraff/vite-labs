@@ -395,9 +395,10 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/ants-shader/index.tsx")),
 		meta: {
 			title: 'Ants on shader',
+			tags: ['simulation', 'performance', 'webgl', 'shader']
 		},
 		git: {
-			lastModified: 1760200476000,
+			lastModified: 1760201581000,
 			firstAdded: 1742739684000
 		},
 	},
