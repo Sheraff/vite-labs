@@ -73,15 +73,16 @@ bool isVec2Equal(vec2 a, vec2 b) {
 }
 
 bool antMoveFromTo(vec2 from, vec2 dir, bool withFood) {
+	// bail if `from` is out of bounds
 	{
-		// bail if `from` is out of bounds
 		if (from.x < 0.0 || from.x >= resolution.x) return false;
 		if (from.y < 0.0 || from.y >= resolution.y) return false;
 	}
 
 	vec2 to = from + dir;
+
+	// bail if `to` is out of bounds
 	{
-		// bail if `to` is out of bounds
 		if (to.x < 0.0 || to.x >= resolution.x) return false;
 		if (to.y < 0.0 || to.y >= resolution.y) return false;
 	}
@@ -96,8 +97,8 @@ bool antMoveFromTo(vec2 from, vec2 dir, bool withFood) {
 		movedMask = antMoved;
 	}
 
+	// bail if `from` does not contain an ant or has moved already
 	{
-		// bail if `from` does not contain an ant or has moved already
 		vec4 from_rgba = texture(previous_frame, from / resolution.xy);
 		uint from_r = uint(from_rgba.x * 255.0);
 		bool isAntFrom = (from_r & mask) > 0u;
@@ -106,21 +107,84 @@ bool antMoveFromTo(vec2 from, vec2 dir, bool withFood) {
 		if (isAntFromMoved) return false;
 	}
 
+	// bail if `to` already contains an ant
 	{
-		// bail if `to` already contains an ant
 		vec4 to_rgba = texture(previous_frame, to / resolution.xy);
 		uint to_r = uint(to_rgba.x * 255.0);
 		bool isAntTo = (to_r & mask) > 0u;
 		if (isAntTo) return false;
 	}
 
-	uint top_g = cellValue(from, top, withFood);
-	uint right_g = cellValue(from, right, withFood);
-	uint bottom_g = cellValue(from, bottom, withFood);
-	uint left_g = cellValue(from, left, withFood);
+	// some direction is the favored pheromone gradient
+	{
+		uint top_g = cellValue(from, top, withFood);
+		uint right_g = cellValue(from, right, withFood);
+		uint bottom_g = cellValue(from, bottom, withFood);
+		uint left_g = cellValue(from, left, withFood);
 
-	if (top_g == 0u && right_g == 0u && bottom_g == 0u && left_g == 0u) {
-		// no pheromone, move randomly
+		if (top_g != 0u || right_g != 0u || bottom_g != 0u || left_g != 0u) {
+			if (isVec2Equal(dir, top)) {
+				return top_g >= right_g && top_g >= bottom_g && top_g >= left_g;
+			} else if (isVec2Equal(dir, right)) {
+				return right_g >= top_g && right_g >= bottom_g && right_g >= left_g;
+			} else if (isVec2Equal(dir, bottom)) {
+				return bottom_g >= top_g && bottom_g >= right_g && bottom_g >= left_g;
+			} else if (isVec2Equal(dir, left)) {
+				return left_g >= top_g && left_g >= right_g && left_g >= bottom_g;
+			}
+		}
+	}
+
+	// some direction is the least opposite pheromone gradient
+	{
+		uint alt_top_g = cellValue(from, top, !withFood);
+		uint alt_right_g = cellValue(from, right, !withFood);
+		uint alt_bottom_g = cellValue(from, bottom, !withFood);
+		uint alt_left_g = cellValue(from, left, !withFood);
+
+		uint min_alt_g = min(min(alt_top_g, alt_right_g), min(alt_bottom_g, alt_left_g));
+
+		uint min_count = 0u;
+		if (alt_top_g == min_alt_g) min_count++;
+		if (alt_right_g == min_alt_g) min_count++;
+		if (alt_bottom_g == min_alt_g) min_count++;
+		if (alt_left_g == min_alt_g) min_count++;
+
+		if (min_count != 4u) {
+			// select randomly among all minimums
+			float r = rand(from);
+			float step = 1.0 / float(min_count);
+			uint step_count = 0u;
+			if (alt_top_g == min_alt_g) {
+				step_count++;
+				if (r < float(step_count) * step) {
+					return isVec2Equal(dir, top);
+				}
+			}
+			if (alt_right_g == min_alt_g) {
+				step_count++;
+				if (r < float(step_count) * step) {
+					return isVec2Equal(dir, right);
+				}
+			}
+			if (alt_bottom_g == min_alt_g) {
+				step_count++;
+				if (r < float(step_count) * step) {
+					return isVec2Equal(dir, bottom);
+				}
+			}
+			if (alt_left_g == min_alt_g) {
+				step_count++;
+				if (r < float(step_count) * step) {
+					return isVec2Equal(dir, left);
+				}
+			}
+			return false;
+		}
+	}
+	
+	// no pheromone, move randomly
+	{
 		float r = rand(from);
 		if (r < 0.25) {
 			return isVec2Equal(dir, top);
@@ -131,17 +195,6 @@ bool antMoveFromTo(vec2 from, vec2 dir, bool withFood) {
 		} else if (r < 1.0) {
 			return isVec2Equal(dir, left);
 		}
-		return false;
-	}
-
-	if (isVec2Equal(dir, top)) {
-		return top_g >= right_g && top_g >= bottom_g && top_g >= left_g;
-	} else if (isVec2Equal(dir, right)) {
-		return right_g >= top_g && right_g >= bottom_g && right_g >= left_g;
-	} else if (isVec2Equal(dir, bottom)) {
-		return bottom_g >= top_g && bottom_g >= right_g && bottom_g >= left_g;
-	} else if (isVec2Equal(dir, left)) {
-		return left_g >= top_g && left_g >= right_g && left_g >= bottom_g;
 	}
 
 	return false;

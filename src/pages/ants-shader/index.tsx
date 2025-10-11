@@ -264,12 +264,10 @@ const colors = {
 }
 
 function init(array: Uint8ClampedArray, width: number, height: number, count: number) {
-	// const foodPosition = [width / 3, height / 3]
-	const foodPosition = [width / 3, height / 2]
+	const foodPosition = [width * 2 / 3, height * 2 / 3]
 	const foodRadius = Math.min(width, height) / 10
 
-	// const anthillPosition = [width * 2 / 3, height * 2 / 3]
-	const anthillPosition = [width * 2 / 3, height / 2]
+	const anthillPosition = [width / 3, height / 3]
 	const anthillRadius = Math.min(width, height) / 10
 
 	const antDistance = [0, Math.min(width, height) / 6]
