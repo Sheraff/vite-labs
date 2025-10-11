@@ -1,8 +1,12 @@
+.h1 {
+	text-align: center;
+	opacity: 0.8;
+}
+
 .link {
 	width: fit-content;
 	/* color: hsl(0, 0%, 0%, 0.6); */
 	mix-blend-mode: luminosity;
-
 }
 
 .route {
@@ -18,9 +22,32 @@
 		border-top: 1px solid;
 	}
 
-	h2,
-	p {
-		mix-blend-mode: luminosity;
+	>:not(img) {
+		/* mix-blend-mode: luminosity; */
+	}
+
+	&:has(.tags) {
+		h2 {
+			margin-bottom: 0.2em;
+		}
+
+		p {
+			margin-top: 0.5em;
+		}
+	}
+
+	.tags {
+		margin: 0 !important;
+		display: flex;
+		gap: 0.5em;
+
+		span {
+			font-size: smaller;
+			padding: 0.1em 0.3em;
+			border-radius: 0.3em;
+			backdrop-filter: blur(0.25em) invert(10%);
+			background-color: #ffffff22;
+		}
 	}
 }
 

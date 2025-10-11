@@ -1,12 +1,13 @@
-import type { RouteMeta } from "~/router"
+import type { RouteMeta } from "#router"
 import styles from './styles.module.css'
-import { Head } from "~/components/Head"
+import { Head } from "#components/Head"
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react"
 import TILES, { type Tile } from './tiles'
 
 export const meta: RouteMeta = {
 	title: 'Ascii wave function collapse',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['procedural', 'random', 'ascii']
 }
 
 const GRID_SIZE = [70, 20] as const

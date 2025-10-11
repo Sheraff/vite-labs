@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react"
 import { useFragment, Receptacle, Portal, type FragmentPortal } from './FragmentPortal'
 import styles from './styles.module.css'
-import { Head } from "~/components/Head"
+import { Head } from "#components/Head"
 
 export const meta = {
-	title: 'Fragment Portal'
+	title: 'Fragment Portal',
+	tags: ['react']
 }
 
-export default function () {
+export default function FragmentPortal() {
 	const fragment = useFragment('div')
 
 	return (

@@ -1,15 +1,16 @@
 import styles from './styles.module.css'
-import { Head } from "~/components/Head"
-import type { RouteMeta } from "~/router"
+import { Head } from "#components/Head"
+import type { RouteMeta } from "#router"
 import type { Incoming, Outgoing } from "./worker"
 import Worker from "./worker?worker"
 import { useCallback, useEffect, useRef, useState } from "react"
-import * as utils from '@wave-function-collapse/utils'
-import * as config from '@wave-function-collapse/carcassonne/definition'
+import * as utils from '#wave-function-collapse/utils'
+import * as config from '#wave-function-collapse/carcassonne/definition'
 
 export const meta: RouteMeta = {
 	title: 'Wave Function Collapse',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['procedural', 'random']
 }
 
 const tiles = config.definition.map((row, y) => ({
@@ -22,9 +23,9 @@ const equivalents = tiles.map((tile) => tiles.filter((other) => other.sides.ever
 
 
 function drawTile(ctx: CanvasRenderingContext2D, w: number, h: number, index: number, rotate: number, x: number, y: number) {
-	if (rotate === 1) x += 1
-	if (rotate === 2) y += 1, x += 1
-	if (rotate === 3) y += 1
+	if (rotate === 1) { x += 1 }
+	if (rotate === 2) { y += 1; x += 1 }
+	if (rotate === 3) { y += 1 }
 	ctx.save()
 	ctx.translate(x * w, y * h)
 	ctx.rotate(rotate * Math.PI / 2)
@@ -55,7 +56,7 @@ const seed = (count: number) => {
 	return forces
 }
 
-export default function () {
+export default function Wave() {
 	const [available] = useState(window.crossOriginIsolated)
 	const ref = useRef<HTMLCanvasElement | null>(null)
 

@@ -1,0 +1,38 @@
+.main {
+	margin: 0;
+	background: #051016;
+	color: white;
+	touch-action: none;
+	width: 100vw;
+	min-height: 100svh;
+	padding: 1em;
+}
+
+.head {
+	padding: 1em;
+	float: left;
+	position: relative;
+	z-index: 1;
+
+	output {
+		white-space: nowrap;
+		font-family: monospace;
+		font-variant-numeric: tabular-nums;
+	}
+}
+
+.content {
+	font-size: clamp(24px, 7vmax, 100px);
+	line-height: 1;
+	opacity: 0.5;
+
+	span {
+		animation: fade-in 1s ease;
+	}
+}
+
+@keyframes fade-in {
+	from {
+		opacity: 0;
+	}
+}

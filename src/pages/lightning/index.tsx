@@ -1,11 +1,12 @@
 import styles from './styles.module.css'
 import { useEffect, useRef } from "react"
-import { Head } from "~/components/Head"
-import type { RouteMeta } from "~/router"
+import { Head } from "#components/Head"
+import type { RouteMeta } from "#router"
 
 export const meta: RouteMeta = {
 	title: 'Lightning',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['animation']
 }
 
 export default function Lightning() {

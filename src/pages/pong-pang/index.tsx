@@ -2,11 +2,12 @@ import styles from './styles.module.css'
 import { useEffect, useState } from "react"
 import type { Incoming } from "./worker"
 import Worker from "./worker?worker"
-import { Head } from "~/components/Head"
+import { Head } from "#components/Head"
 
 export const meta = {
 	title: 'Pong Pang',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['game']
 }
 
 export default function PongPang() {

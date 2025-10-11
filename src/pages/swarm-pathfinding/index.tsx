@@ -1,6 +1,6 @@
-import type { RouteMeta } from "~/router"
+import type { RouteMeta } from "#router"
 import styles from './styles.module.css'
-import { Head } from "~/components/Head"
+import { Head } from "#components/Head"
 import { useEffect, useRef } from "react"
 import FieldWorker from './field.worker?worker'
 import type { Incoming as FieldIncoming } from './field.worker'
@@ -15,7 +15,8 @@ import type {
 
 export const meta: RouteMeta = {
 	title: 'Swarm Pathfinding',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['pathfinding', 'performance']
 }
 
 const SIDE = 200

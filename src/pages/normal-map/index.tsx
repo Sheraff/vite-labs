@@ -1,6 +1,6 @@
-import type { RouteMeta } from "~/router"
+import type { RouteMeta } from "#router"
 import styles from './styles.module.css'
-import { Head } from "~/components/Head"
+import { Head } from "#components/Head"
 import { useEffect, useRef } from "react"
 
 // textures from https://www.cgbookcase.com/textures
@@ -17,7 +17,8 @@ const color_map = await getImageData(color_source)
 
 export const meta: RouteMeta = {
 	title: 'Normal Map',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['webgl', 'lighting']
 }
 
 export default function NormalMapPage() {

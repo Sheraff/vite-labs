@@ -4,29 +4,45 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "echo \"node:$(node -v) pnpm:v$(pnpm -v)\" && vite",
+    "dev": "echo \"node:$(node -v) pnpm:v$(pnpm -v)\\n\" && vite",
     "build": "vite build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "tsc": "tsc"
   },
+  "imports": {
+    "#router": "./src/router.ts",
+    "#components/*": "./src/components/*.tsx",
+    "#file-router/*": "./src/file-router/*.tsx",
+    "#*": {
+      "types": [
+        "./src/pages/*.tsx",
+        "./src/pages/*.ts",
+        "./src/pages/*.css"
+      ],
+      "default": "./src/pages/*"
+    }
+  },
   "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@types/node": "^22.10.7",
-    "@types/react": "^18.3.18",
-    "@types/react-dom": "^18.3.5",
-    "@typescript-eslint/eslint-plugin": "^7.18.0",
-    "@typescript-eslint/parser": "^7.18.0",
-    "@vitejs/plugin-react-swc": "^3.7.1",
-    "eslint": "^8.57.1",
-    "eslint-plugin-react-hooks": "^4.6.2",
-    "eslint-plugin-react-refresh": "^0.4.12",
-    "typescript": "^5.7.3",
-    "vite": "^5.4.14",
-    "vite-tsconfig-paths": "^5.1.4"
+    "@types/node": "^24.6.2",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@eslint/js": "^9.37.0",
+    "@typescript-eslint/eslint-plugin": "^8.45.0",
+    "@typescript-eslint/parser": "^8.45.0",
+    "@typescript-eslint/typescript-estree": "^8.45.0",
+    "@typescript-eslint/utils": "^8.45.0",
+    "@vitejs/plugin-react-swc": "^4.1.0",
+    "eslint": "^9.37.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-refresh": "^0.4.23",
+    "globals": "16.4.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.9"
   },
-  "packageManager": "pnpm@9.15.4"
+  "packageManager": "pnpm@10.18.0"
 }

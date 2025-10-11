@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useState, type ComponentPropsWithoutRef } from "react"
-import { ROUTES, type Routes } from "../router"
+import { createContext, useContext, useEffect, useState, type ComponentPropsWithoutRef, type ReactNode } from "react"
+import { ROUTES, type Routes } from "#router"
 import { flushSync } from "react-dom"
 
 
@@ -44,7 +44,7 @@ function parseUrl(href: string) {
 
 const NavigationContext = createContext<Routes | null>(null)
 
-export function NavigationProvider({ children }: { children: React.ReactNode }) {
+export function NavigationProvider({ children }: { children: ReactNode }) {
 	const [route, setRoute] = useState<Routes | null>(() => parseUrl(window.location.href))
 	useEffect(() => {
 		const onNavigate = (event: NavigationEvent) => {

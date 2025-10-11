@@ -1,10 +1,11 @@
-import { Head } from "~/components/Head"
+import { Head } from "#components/Head"
 import styles from './styles.module.css'
-import { cloneElement, useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from "react"
+import { cloneElement, useEffect, useId, useRef, useState, type CSSProperties, type FocusEvent, type MouseEvent, type ReactElement, type ReactNode } from "react"
 import { flushSync } from "react-dom"
 
 export const meta = {
 	title: 'Modern Modal',
+	tags: ['html', 'components']
 }
 
 declare module 'react' {
@@ -13,17 +14,13 @@ declare module 'react' {
 		positionAnchor?: string
 	}
 
-	interface HTMLAttributes<T> extends AriaAttributes, DOMAttributes<T> {
-		popover?: 'manual' | 'auto'
-	}
-
 	interface ButtonHTMLAttributes<T> extends HTMLAttributes<T> {
 		popovertarget?: string
 		popovertargetaction?: 'show' | 'hide' | 'toggle'
 	}
 }
 
-export default function () {
+export default function ModernModal() {
 	const [openModal, setOpenModal] = useState(false)
 	const [openDrawer, setOpenDrawer] = useState(false)
 	return (
@@ -101,17 +98,26 @@ function Drawer({ open, onClose, children }: { open: boolean, children: ReactNod
 	)
 }
 
-function Tooltip({ children, text }: { children: ReactElement, text?: string }) {
+function Tooltip({ children, text }: {
+	children: ReactElement<{
+		'data-trigger'?: string
+		style?: CSSProperties
+		onMouseEnter?: (e: MouseEvent) => void
+		onMouseLeave?: (e: MouseEvent) => void
+		onFocus?: (e: FocusEvent) => void
+		onBlur?: (e: FocusEvent) => void
+	}>, text?: string
+}) {
 	const id = useId()
 	return (
 		<div className={styles.tooltip}>
 			{cloneElement(children, {
 				['data-trigger']: 'true',
 				style: { anchorName: `--${CSS.escape(id)}`, zIndex: 0 },
-				onMouseEnter: (e: MouseEvent) => ((e.currentTarget as HTMLElement).nextElementSibling as HTMLElement).showPopover(),
-				onMouseLeave: (e: MouseEvent) => ((e.currentTarget as HTMLElement).nextElementSibling as HTMLElement).hidePopover(),
-				onFocus: (e: FocusEvent) => ((e.currentTarget as HTMLElement).nextElementSibling as HTMLElement).showPopover(),
-				onBlur: (e: FocusEvent) => ((e.currentTarget as HTMLElement).nextElementSibling as HTMLElement).hidePopover(),
+				onMouseEnter: (e) => ((e.currentTarget as HTMLElement).nextElementSibling as HTMLElement).showPopover(),
+				onMouseLeave: (e) => ((e.currentTarget as HTMLElement).nextElementSibling as HTMLElement).hidePopover(),
+				onFocus: (e) => ((e.currentTarget as HTMLElement).nextElementSibling as HTMLElement).showPopover(),
+				onBlur: (e) => ((e.currentTarget as HTMLElement).nextElementSibling as HTMLElement).hidePopover(),
 			})}
 			<div data-content
 				style={{ positionAnchor: `--${CSS.escape(id)}` }}

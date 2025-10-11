@@ -1,12 +1,13 @@
-import type { RouteMeta } from "~/router"
+import type { RouteMeta } from "#router"
 import styles from './styles.module.css'
-import { Head } from "~/components/Head"
+import { Head } from "#components/Head"
 import { useEffect, useRef } from "react"
 import aStar, { type Cell, type Matrix } from "./a-star"
 
 export const meta: RouteMeta = {
 	title: 'A*',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['pathfinding', '101']
 }
 
 export default function AStarPage() {

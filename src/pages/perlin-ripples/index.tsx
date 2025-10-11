@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react"
-import { Head } from "~/components/Head"
+import { Head } from "#components/Head"
 import styles from './styles.module.css'
-import type { RouteMeta } from "~/router"
+import type { RouteMeta } from "#router"
 import type { Incoming } from "./worker"
 import Worker from "./worker?worker"
 
 export const meta: RouteMeta = {
 	title: 'Perlin ripples',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['random', 'animation']
 }
 
-export default function () {
+export default function Perlin() {
 	const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null)
 	const [offscreen, setOffscreen] = useState<OffscreenCanvas | null>(null)
 

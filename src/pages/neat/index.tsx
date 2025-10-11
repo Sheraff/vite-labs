@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import styles from './styles.module.css'
-import { Head } from "~/components/Head"
-import type { RouteMeta } from "~/router"
+import { Head } from "#components/Head"
+import type { RouteMeta } from "#router"
 import { makeEntity, makeStartState, type Entity } from "./entity"
 import { makeRandomGenome, mutate } from "./random"
 import { simulate } from "./simulate"
@@ -19,7 +19,8 @@ export const meta: RouteMeta = {
 		each with a genome (a neural network). After a time, we select the best 1% of entities and create
 		a new generation by copying them and mutating them.
 	`,
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['simulation', 'genetic algorithm', 'neural network']
 }
 
 /** The number of entities to simulate */

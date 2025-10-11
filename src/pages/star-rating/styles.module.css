@@ -1,0 +1,143 @@
+.main {
+	margin: 0;
+	background: #051016;
+	color: white;
+	touch-action: none;
+	width: 100vw;
+	height: 100svh;
+	padding: 1em;
+}
+
+.head {
+	position: relative;
+	z-index: 1;
+}
+
+.radio {
+	display: flex;
+	align-items: center;
+	position: relative;
+
+	/* fieldset reset */
+	border: none;
+	padding: 0;
+	margin: 0;
+
+	legend {
+		padding: 0;
+	}
+
+	--size: 10rem;
+
+	input {
+		-webkit-appearance: none;
+		appearance: none;
+		width: var(--size);
+		height: var(--size);
+		background: transparent;
+		cursor: pointer;
+		margin: 0;
+
+		background: var(--color);
+		mask-image: var(--svg-bg-image);
+		mask-position: center;
+		mask-size: contain;
+	}
+
+	--color-empty: gray;
+	--color-empty-hover: orange;
+	--color-filled-hover: gold;
+	--color-active: yellow;
+	--color-filled: red;
+
+	--color: var(--color-empty);
+
+	&:has(input:checked) {
+		--color: var(--color-filled);
+
+		:is(input:checked~input) {
+			--color: var(--color-empty);
+		}
+	}
+
+	&:has(input:hover) {
+		--color: var(--color-empty-hover);
+
+		:is(input:hover~input) {
+			--color: var(--color-empty);
+		}
+	}
+
+	&:has(input:hover):has(input:checked) {
+		--color: var(--color-filled-hover);
+
+		:not(input:checked~input):is(input:hover~input) {
+			--color: var(--color-filled);
+		}
+
+		:is(input:checked~input):not(input:hover~input) {
+			--color: var(--color-empty-hover);
+		}
+
+		:is(input:checked~input):is(input:hover~input) {
+			--color: var(--color-empty);
+		}
+	}
+
+	&:has(input:active) {
+		input:hover {
+			--color: var(--color-active) !important;
+		}
+	}
+}
+
+.range {
+	--size: 10rem;
+
+	input {
+		display: block;
+		-webkit-appearance: none;
+		appearance: none;
+		width: calc(var(--max) * var(--size));
+		height: var(--size);
+		background: transparent;
+		cursor: pointer;
+		margin: 0;
+
+		background: var(--color);
+		mask-image: var(--svg-bg-image);
+		mask-position: left center;
+		mask-size: contain;
+		mask-repeat: repeat-x;
+
+		/* &::-moz-range-track */
+		&::-webkit-slider-runnable-track {
+			background-color: gray;
+			height: var(--size);
+		}
+
+		/* &::-moz-range-thumb */
+		&::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			appearance: none;
+			width: calc(var(--size) * var(--step));
+			height: var(--size);
+			background: pink;
+			margin: 0;
+		}
+
+		position: relative;
+
+		&::after {
+			content: '';
+			width: 100%;
+			height: 100%;
+			background-color: red;
+			position: absolute;
+			top: 0;
+			left: 0;
+			transform-origin: left;
+			transform: scaleX(calc(var(--value) / var(--max)));
+		}
+	}
+}

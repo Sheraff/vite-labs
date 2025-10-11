@@ -1,17 +1,18 @@
 import styles from './styles.module.css'
 import { useEffect, useRef } from "react"
 import { QuadTree } from "./QuadTree"
-import { Head } from "~/components/Head"
-import type { RouteMeta } from "~/router"
+import { Head } from "#components/Head"
+import type { RouteMeta } from "#router"
 
 export const meta: RouteMeta = {
 	title: 'Quad Tree',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['data structures', '101']
 }
 
 const CURSOR_RADIUS = 300
 
-export default function () {
+export default function QuadTreePage() {
 	const canvas = useRef<HTMLCanvasElement | null>(null)
 	const form = useRef<HTMLFormElement | null>(null)
 

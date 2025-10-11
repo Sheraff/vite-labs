@@ -1,10 +1,11 @@
 import { useEffect, useState, useSyncExternalStore } from "react"
-import { Head } from "~/components/Head"
-import type { RouteMeta } from "~/router"
+import { Head } from "#components/Head"
+import type { RouteMeta } from "#router"
 
 export const meta: RouteMeta = {
 	title: 'Minesweeper',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['game']
 }
 
 type State = {
@@ -62,7 +63,7 @@ function randomInitialState(width: number, height: number, mines: number): State
 
 const cache = new Map<string, State>()
 
-export default function () {
+export default function MineSweeper() {
 	const state = useSyncExternalStore(
 		(sub) => {
 			window.addEventListener('hashchange', sub)

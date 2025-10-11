@@ -1,11 +1,12 @@
 import { useEffect, useRef } from "react"
 import styles from './styles.module.css'
-import { Head } from "~/components/Head"
-import type { RouteMeta } from "~/router"
+import { Head } from "#components/Head"
+import type { RouteMeta } from "#router"
 
 export const meta: RouteMeta = {
 	title: 'Hacker Background',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['animation', 'ascii']
 }
 
 export default function HackerBackground() {

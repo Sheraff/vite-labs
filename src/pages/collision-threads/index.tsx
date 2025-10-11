@@ -1,6 +1,6 @@
-import type { RouteMeta } from "~/router"
+import type { RouteMeta } from "#router"
 import styles from './styles.module.css'
-import { Head } from "~/components/Head"
+import { Head } from "#components/Head"
 import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from "react"
 
 import CanvasWorker from "./workers/canvas.worker?worker"
@@ -10,7 +10,8 @@ import type { Incoming as ProcessIncoming } from "./workers/process.worker"
 
 export const meta: RouteMeta = {
 	title: 'Collision Threads',
-	image: './screen.png'
+	image: './screen.png',
+	tags: ['simulation', 'performance', 'physics']
 }
 
 function usePost<const T extends { type: string; data: unknown }>(worker: Worker) {

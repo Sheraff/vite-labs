@@ -1,0 +1,7 @@
+ignoredBuiltDependencies:
+
+onlyBuiltDependencies:
+  - esbuild
+  - "@swc/core"
+
+minimumReleaseAge: 1440 # 1 day in minutes
