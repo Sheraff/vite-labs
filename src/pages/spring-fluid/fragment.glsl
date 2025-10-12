@@ -13,7 +13,7 @@ const vec2 right = vec2(1, 0);
 const vec2 bottom = vec2(0, 1);
 const vec2 left = vec2(-1, 0);
 
-const float k = 100.0; // spring constant
+const float k = 50.0; // spring constant
 const float damping = 0.9999; // velocity damping
 const float scale = 3.0; // scale for reading/formatting velocity/offsets
 

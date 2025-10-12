@@ -21,9 +21,11 @@ export default function SpringFluidPage() {
 	useEffect(() => {
 		const canvas = ref.current
 		if (!canvas) return
-		const side = Math.min(canvas.clientWidth, canvas.clientHeight) // * window.devicePixelRatio
-		canvas.width = 500 / side * canvas.clientWidth
-		canvas.height = 500 / side * canvas.clientHeight
+		const pixels = 500_000
+		const viewport_pixels = canvas.clientWidth * canvas.clientHeight
+		const scale = Math.sqrt(pixels / viewport_pixels)
+		canvas.width = Math.floor(canvas.clientWidth * scale)
+		canvas.height = Math.floor(canvas.clientHeight * scale)
 		const ctx = canvas.getContext("2d")
 		if (!ctx) return
 		const frameCounter = makeFrameCounter()
