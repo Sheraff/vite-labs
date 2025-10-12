@@ -153,8 +153,9 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 		rafId = requestAnimationFrame(loop)
 
 		const delta = (time - lastTime) / 1000
-		// const first = lastTime === 0
+		const first = lastTime === 0
 		lastTime = time
+		if (first) return
 
 		onFrame(delta)
 
