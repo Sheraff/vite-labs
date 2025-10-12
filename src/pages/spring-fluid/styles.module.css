@@ -19,4 +19,25 @@
 	position: relative;
 	z-index: 1;
 	user-select: none;
+	max-width: min-content;
+}
+
+.form {
+	fieldset {
+		display: grid;
+		grid-template-columns: 1fr auto;
+
+		gap: 0.5em 1em;
+
+		label {
+			white-space: nowrap;
+		}
+
+		hr,
+		br,
+		button {
+			grid-column: 1 / -1;
+			margin: 0;
+		}
+	}
 }

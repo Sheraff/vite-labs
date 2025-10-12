@@ -15,21 +15,28 @@ export const meta: RouteMeta = {
 }
 
 export default function SpringFluidPage() {
-	const ref = useRef<HTMLCanvasElement | null>(null)
+	const canvas_ref = useRef<HTMLCanvasElement | null>(null)
+	const form_ref = useRef<HTMLFormElement | null>(null)
 	const [fps, setFps] = useState(0)
 
 	useEffect(() => {
-		const canvas = ref.current
+		const canvas = canvas_ref.current
 		if (!canvas) return
+
+		const form = form_ref.current
+		if (!form) return
+
 		const pixels = 500_000
 		const viewport_pixels = canvas.clientWidth * canvas.clientHeight
 		const scale = Math.sqrt(pixels / viewport_pixels)
 		canvas.width = Math.floor(canvas.clientWidth * scale)
 		canvas.height = Math.floor(canvas.clientHeight * scale)
+
 		const ctx = canvas.getContext("2d")
 		if (!ctx) return
+
 		const frameCounter = makeFrameCounter()
-		return start(ctx, (dt) => setFps(frameCounter(dt)))
+		return start(ctx, form, (dt) => setFps(frameCounter(dt)))
 	}, [])
 
 	const [formatter] = useState(() => new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }))
@@ -39,16 +46,35 @@ export default function SpringFluidPage() {
 			<div className={styles.head}>
 				<Head />
 				<p>fps: {formatter.format(fps)}</p>
+				<form className={styles.form} ref={form_ref}>
+					<fieldset>
+						<legend>Controls</legend>
+						<button type="button" name="springs">reset simulation</button>
+						<input type="range" name="k" id="k" defaultValue={k_default} min="0" max={k_map.length - 1} step="1" />
+						<label htmlFor="k">spring constant (k)</label>
+						<hr />
+						<input type="range" name="damping" id="damping" defaultValue={damping_default} min="0" max={damping_map.length - 1} step="1" />
+						<label htmlFor="damping">damping</label>
+						<hr />
+						<input type="range" name="speed" id="speed" defaultValue="4" min="1" max="16" step="1" />
+						<label htmlFor="speed">simulation speed</label>
+						<hr />
+						<input type="range" name="clamp" id="clamp" defaultValue={clamp_default} min="0" max={clamp_map.length - 1} step="1" />
+						<label htmlFor="clamp">clamp</label>
+						<button type="reset" name="controls">reset controls</button>
+					</fieldset>
+				</form>
 			</div>
 
-			<canvas ref={ref}>
+
+			<canvas ref={canvas_ref}>
 				Your browser does not support the HTML5 canvas tag.
 			</canvas>
 		</div>
 	)
 }
 
-function start(ctx: CanvasRenderingContext2D, onFrame: (dt: number) => void) {
+function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (dt: number) => void) {
 	const height = ctx.canvas.height
 	const width = ctx.canvas.width
 
@@ -98,20 +124,24 @@ function start(ctx: CanvasRenderingContext2D, onFrame: (dt: number) => void) {
 	const seed_loc = gl.getUniformLocation(program, "seed")
 	const dt_loc = gl.getUniformLocation(program, "dt")
 	const resolution_loc = gl.getUniformLocation(program, "resolution")
+	const k_loc = gl.getUniformLocation(program, "k")
+	const damping_loc = gl.getUniformLocation(program, "damping")
+	const clamp_loc = gl.getUniformLocation(program, "clamp_value")
 	gl.uniform2f(resolution_loc, width, height)
 
 	let lastTime = 0
 
-	const speed_mult = 4
-
-	let mouse = {
-		x: 0,
-		y: 0,
-		dx: 0,
-		dy: 0,
-		down: false,
+	const mouse = {
 		data: mouse_data,
 		frame: false
+	}
+
+	const controls = {
+		k: 0,
+		damping: 0,
+		reset: false,
+		speed: 0,
+		clamp: 0,
 	}
 
 	let rafId = requestAnimationFrame(function loop(time) {
@@ -119,10 +149,17 @@ function start(ctx: CanvasRenderingContext2D, onFrame: (dt: number) => void) {
 
 		const delta = (time - lastTime) / 1000
 		// const first = lastTime === 0
+		lastTime = time
 
 		onFrame(delta)
 
-		for (let i = 0; i < speed_mult; i++) {
+		if (controls.reset) {
+			init(frame.data, width, height)
+			controls.reset = false
+			return
+		}
+
+		for (let i = 0; i < controls.speed; i++) {
 
 			const seed = Math.random() * 100 - 50
 
@@ -144,6 +181,9 @@ function start(ctx: CanvasRenderingContext2D, onFrame: (dt: number) => void) {
 			// send additional data to shader
 			gl.uniform1f(seed_loc, seed)
 			gl.uniform1f(dt_loc, delta * 2)
+			gl.uniform1f(k_loc, controls.k)
+			gl.uniform1f(damping_loc, controls.damping)
+			gl.uniform1f(clamp_loc, controls.clamp)
 
 			// compute new frame
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
@@ -172,15 +212,6 @@ function start(ctx: CanvasRenderingContext2D, onFrame: (dt: number) => void) {
 		}
 
 		ctx.putImageData(image, 0, 0)
-
-		// // 30px circle around mouse pos
-		// ctx.beginPath()
-		// ctx.arc(mouse.x, mouse.y, 30, 0, Math.PI * 2)
-		// ctx.strokeStyle = 'rgba(255, 0, 255, 0.5)'
-		// ctx.lineWidth = 1
-		// ctx.stroke()
-
-		lastTime = time
 	})
 
 	const controller = new AbortController()
@@ -194,13 +225,9 @@ function start(ctx: CanvasRenderingContext2D, onFrame: (dt: number) => void) {
 		if (mouse.frame) return
 		mouse.frame = true
 		const e = event
-		mouse.x = Math.floor(((e.clientX - rect.left) / rect.width) * width)
-		mouse.y = Math.floor(((e.clientY - rect.top) / rect.height) * height)
-		mouse.dx = e.movementX
-		mouse.dy = e.movementY
-		mouse.down = e.buttons > 0
+		const isDown = e.buttons > 0
 
-		if (!mouse.down) return
+		if (!isDown) return
 
 		for (const e of event.getCoalescedEvents()) {
 			const x = Math.floor(((e.clientX - rect.left) / rect.width) * width)
@@ -209,7 +236,7 @@ function start(ctx: CanvasRenderingContext2D, onFrame: (dt: number) => void) {
 			const dy = e.movementY
 			const radius = 30
 			const max = Math.sqrt(2 * radius * radius)
-			const mult = 5 // [0 - 128]
+			const mult = 2 // [0 - 128]
 			for (let j = -radius; j <= radius; j++) {
 				const jy = y + j
 				if (jy < 0 || jy >= height) continue
@@ -227,6 +254,19 @@ function start(ctx: CanvasRenderingContext2D, onFrame: (dt: number) => void) {
 		}
 	}, { signal: controller.signal })
 
+	const onInput = () => {
+		controls.k = k_map[getValue<number>(form, 'k')!]
+		controls.damping = damping_map[getValue<number>(form, 'damping')!]
+		controls.speed = getValue<number>(form, 'speed')!
+		controls.clamp = clamp_map[getValue<number>(form, 'clamp')!]
+	}
+	onInput()
+	form.addEventListener('input', onInput, { signal: controller.signal })
+	form.addEventListener('reset', setTimeout.bind(null, onInput, 0), { signal: controller.signal })
+
+	const resetButton = (form.elements.namedItem('springs') as HTMLButtonElement)
+	resetButton.addEventListener('click', () => controls.reset = true, { signal: controller.signal })
+
 	return () => {
 		controller.abort()
 		cancelAnimationFrame(rafId)
@@ -240,7 +280,58 @@ function start(ctx: CanvasRenderingContext2D, onFrame: (dt: number) => void) {
 	}
 }
 
+const k_map = [
+	0,
+	0.01,
+	0.1,
+	1,
+	10,
+	25,
+	50,
+	80,
+	100,
+	150,
+	200,
+]
+const k_default = k_map.indexOf(50)
 
+const damping_map = [
+	1,
+	0.99999,
+	0.9999,
+	0.999,
+	0.99,
+	0.98,
+	0.95,
+	0.9,
+]
+const damping_default = damping_map.indexOf(0.9999)
+
+const clamp_map = [
+	0,
+	0.001,
+	0.01,
+	0.05,
+	0.075,
+	0.1,
+	0.25,
+	1,
+]
+const clamp_default = clamp_map.indexOf(0.01)
+
+function getValue<T,>(form: HTMLFormElement, name: string): T | undefined {
+	if (!(name in form.elements)) return undefined
+	const element = form.elements[name as keyof typeof form.elements]
+	if (element instanceof HTMLSelectElement) return element.value as T
+	if (element instanceof HTMLInputElement) {
+		if (element.type === 'range') {
+			return element.valueAsNumber as T
+		}
+		if (element.type === 'checkbox') {
+			return element.checked as T
+		}
+	}
+}
 
 function createShader(gl: WebGLRenderingContext, type: number, source: string) {
 	const shader = gl.createShader(type)

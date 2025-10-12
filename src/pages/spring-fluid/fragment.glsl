@@ -13,9 +13,10 @@ const vec2 right = vec2(1, 0);
 const vec2 bottom = vec2(0, 1);
 const vec2 left = vec2(-1, 0);
 
-const float k = 50.0; // spring constant
-const float damping = 0.9999; // velocity damping
+uniform float k; // spring constant
+uniform float damping; // velocity damping
 const float scale = 3.0; // scale for reading/formatting velocity/offsets
+uniform float clamp_value; // clamp max velocity/offsets
 
 /**
  * Each pixel represents one end of 4 springs connected to the neighboring pixels.
@@ -102,13 +103,13 @@ void main() {
 	// velocity
 	velocity += forces * dt;
 	velocity *= damping;
-	if (length(velocity) < 0.01 * scale) {
+	if (length(velocity) < clamp_value * scale) {
 		velocity = vec2(0.0, 0.0);
 	}
 
 	// position
 	offsets += velocity * dt;
-	if (velocity.x == 0.0 && velocity.y == 0.0 && length(offsets) < 0.01 * scale) {
+	if (velocity.x == 0.0 && velocity.y == 0.0 && length(offsets) < clamp_value * scale) {
 		offsets = vec2(0.0, 0.0);
 	}
 
