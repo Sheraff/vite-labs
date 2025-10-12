@@ -159,10 +159,14 @@ function start(ctx: CanvasRenderingContext2D, onFrame: (dt: number) => void) {
 		}
 
 		for (let i = 0; i < frame.data.length; i += 4) {
-			const vx = frame.data[i] - 128
-			const vy = frame.data[i + 1] - 128
-			const velocityMag = fastHypot(vx, vy)
-			image.data.set([frame.data[i + 2], frame.data[i + 3], velocityMag * 2, velocityMag * 2], i)
+			const dx = Math.abs(frame.data[i + 2] - 128)
+			const dy = Math.abs(frame.data[i + 3] - 128)
+			const deltaMag = fastHypot(dx, dy)
+			const r = frame.data[i + 2]
+			const g = frame.data[i + 3]
+			const b = (255 - r + 255 - g) / 2
+			const a = deltaMag * 2
+			image.data.set([r, g, b, a], i)
 		}
 
 		ctx.putImageData(image, 0, 0)
@@ -203,7 +207,7 @@ function start(ctx: CanvasRenderingContext2D, onFrame: (dt: number) => void) {
 			const dy = e.movementY
 			const radius = 30
 			const max = Math.sqrt(2 * radius * radius)
-			const mult = 10 // [0 - 128]
+			const mult = 5 // [0 - 128]
 			for (let j = -radius; j <= radius; j++) {
 				const jy = y + j
 				if (jy < 0 || jy >= height) continue
