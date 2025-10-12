@@ -47,7 +47,7 @@ export default function SpringFluidPage() {
 				<Head />
 				<p>fps: {formatter.format(fps)}</p>
 				<form className={styles.form} ref={form_ref}>
-					<fieldset>
+					<fieldset name="controls">
 						<legend>Controls</legend>
 						<button type="button" name="springs">reset simulation</button>
 						<input type="range" name="k" id="k" defaultValue={k_default} min="0" max={k_map.length - 1} step="1" />
@@ -65,14 +65,15 @@ export default function SpringFluidPage() {
 						<input type="range" name="turbulence" id="turbulence" defaultValue="0" min="0" max="4" step="0.1" />
 						<label htmlFor="turbulence">turbulence</label>
 						<button type="reset" name="controls">reset controls</button>
-						<div>
-							<input type="radio" name="brush" id="brush1" value="velocity" defaultChecked />
-							<label htmlFor="brush1">velocity brush</label>
-							<input type="radio" name="brush" id="brush2" value="obstacle" />
-							<label htmlFor="brush2">obstacle brush</label>
-							<input type="radio" name="brush" id="brush3" value="displacement" />
-							<label htmlFor="brush3">displacement brush</label>
-						</div>
+					</fieldset>
+					<fieldset name="brushes">
+						<legend>Brushes</legend>
+						<input type="radio" name="brush" id="brush1" value="velocity" defaultChecked />
+						<label htmlFor="brush1">velocity brush</label>
+						<input type="radio" name="brush" id="brush2" value="obstacle" />
+						<label htmlFor="brush2">obstacle brush</label>
+						<input type="radio" name="brush" id="brush3" value="displacement" />
+						<label htmlFor="brush3">displacement brush</label>
 					</fieldset>
 				</form>
 			</div>

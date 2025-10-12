@@ -23,6 +23,10 @@
 }
 
 .form {
+	fieldset+fieldset {
+		margin-top: 1em;
+	}
+
 	fieldset {
 		display: grid;
 		grid-template-columns: 1fr auto;
@@ -34,14 +38,13 @@
 
 		hr,
 		br,
-		button,
-		div {
+		button {
 			grid-column: 1 / -1;
 			margin: 0;
 		}
 	}
 
-	div {
+	fieldset[name='brushes'] {
 		display: grid;
 		grid-template-columns: auto 1fr;
 		gap: 0 0.5em;
