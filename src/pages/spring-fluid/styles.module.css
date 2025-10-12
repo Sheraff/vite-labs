@@ -9,12 +9,9 @@
 
 	canvas {
 		position: fixed;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		border: 1px solid white;
-		aspect-ratio: 1;
-		width: 100lvmin;
+		inset: 0;
+		width: 100lvw;
+		height: 100lvh;
 	}
 }
 

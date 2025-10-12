@@ -22,8 +22,8 @@ export default function SpringFluidPage() {
 		const canvas = ref.current
 		if (!canvas) return
 		const side = Math.min(canvas.clientWidth, canvas.clientHeight) // * window.devicePixelRatio
-		canvas.width = 500
-		canvas.height = 500
+		canvas.width = 500 / side * canvas.clientWidth
+		canvas.height = 500 / side * canvas.clientHeight
 		const ctx = canvas.getContext("2d")
 		if (!ctx) return
 		const frameCounter = makeFrameCounter()
@@ -39,7 +39,7 @@ export default function SpringFluidPage() {
 				<p>fps: {formatter.format(fps)}</p>
 			</div>
 
-			<canvas width="1000" height="1000" ref={ref}>
+			<canvas ref={ref}>
 				Your browser does not support the HTML5 canvas tag.
 			</canvas>
 		</div>
@@ -171,12 +171,12 @@ function start(ctx: CanvasRenderingContext2D, onFrame: (dt: number) => void) {
 
 		ctx.putImageData(image, 0, 0)
 
-		// 30px circle around mouse pos
-		ctx.beginPath()
-		ctx.arc(mouse.x / width * ctx.canvas.width, mouse.y / height * ctx.canvas.height, 30, 0, Math.PI * 2)
-		ctx.strokeStyle = 'rgba(255, 0, 255, 0.5)'
-		ctx.lineWidth = 1
-		ctx.stroke()
+		// // 30px circle around mouse pos
+		// ctx.beginPath()
+		// ctx.arc(mouse.x, mouse.y, 30, 0, Math.PI * 2)
+		// ctx.strokeStyle = 'rgba(255, 0, 255, 0.5)'
+		// ctx.lineWidth = 1
+		// ctx.stroke()
 
 		lastTime = time
 	})
