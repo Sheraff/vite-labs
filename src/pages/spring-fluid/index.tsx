@@ -75,6 +75,15 @@ export default function SpringFluidPage() {
 						<input type="radio" name="brush" id="brush3" value="displacement" />
 						<label htmlFor="brush3">displacement brush</label>
 					</fieldset>
+					<fieldset name="floaters">
+						<legend>Floaters</legend>
+						<div>
+							<input type="checkbox" name="enable_floaters" id="enable_floaters" defaultChecked />
+							<label htmlFor="enable_floaters">floating particles</label>
+						</div>
+						<input type="range" name="num_floaters" id="num_floaters" defaultValue="50" min="0" max="500" step="1" />
+						<label htmlFor="num_floaters">number of particles</label>
+					</fieldset>
 				</form>
 			</div>
 
@@ -167,7 +176,10 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 		clamp: 0,
 		turbulence: 0,
 		brush: '',
+		floaters: false,
 	}
+
+	const floaters: [vx: number, vy: number, x: number, y: number][] = []
 
 	let rafId = requestAnimationFrame(function loop(time) {
 		rafId = requestAnimationFrame(loop)
@@ -178,6 +190,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 		if (first) return
 
 		onFrame(delta)
+		const dt = delta * 2
 
 		if (controls.reset) {
 			init(frame.data, obstacles.data, width, height)
@@ -216,7 +229,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 
 			// send additional data to shader
 			gl.uniform1f(seed_loc, seed)
-			gl.uniform1f(dt_loc, delta * 2)
+			gl.uniform1f(dt_loc, dt)
 			gl.uniform1f(k_loc, controls.k)
 			gl.uniform1f(damping_loc, controls.damping)
 			gl.uniform1f(clamp_loc, controls.clamp)
@@ -252,8 +265,48 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 			const a = deltaMag * 2
 			image.data.set([r, g, b, a], i)
 		}
-
 		ctx.putImageData(image, 0, 0)
+
+		if (controls.floaters) {
+			const radius = 1
+			for (const floater of floaters) {
+				const index = (Math.floor(floater[3]) * width + Math.floor(floater[2])) * 4
+				const vx = (frame.data[index + 2] - 128) / 128 / (dt * controls.speed)
+				const vy = (frame.data[index + 3] - 128) / 128 / (dt * controls.speed)
+
+				floater[0] += vx
+				floater[1] += vy
+
+				// dampen
+				floater[0] *= 0.8
+				floater[1] *= 0.8
+
+				// update position
+				floater[2] += floater[0] * dt * controls.speed
+				floater[3] += floater[1] * dt * controls.speed
+
+				// bounce off walls
+				if (floater[2] <= radius) {
+					floater[2] = radius + (radius - floater[2]) + 1
+					floater[0] *= -1
+				}
+				if (floater[2] >= width - radius - 1) {
+					floater[2] = width - radius - (floater[2] - (width - radius)) - 1
+					floater[0] *= -1
+				}
+				if (floater[3] <= radius) {
+					floater[3] = radius + (radius - floater[3]) + 1
+					floater[1] *= -1
+				}
+				if (floater[3] >= height - radius - 1) {
+					floater[3] = height - radius - (floater[3] - (height - radius)) - 1
+					floater[1] *= -1
+				}
+
+				ctx.fillStyle = '#ccc'
+				ctx.fillRect(floater[2], floater[3], 1, 1)
+			}
+		}
 	})
 
 	const controller = new AbortController()
@@ -322,6 +375,16 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 		controls.clamp = clamp_map[getValue<number>(form, 'clamp')!]
 		controls.turbulence = getValue<number>(form, 'turbulence')!
 		controls.brush = getValue<string>(form, 'brush')!
+		controls.floaters = getValue<boolean>(form, 'enable_floaters')!
+
+		const num_floaters = getValue<number>(form, 'num_floaters')!
+		if (floaters.length > num_floaters) {
+			floaters.splice(num_floaters, floaters.length - num_floaters)
+		} else if (floaters.length < num_floaters) {
+			for (let i = floaters.length; i < num_floaters; i++) {
+				floaters.push([0, 0, Math.random() * width, Math.random() * height])
+			}
+		}
 	}
 	onInput()
 	form.addEventListener('input', onInput, { signal: controller.signal })
