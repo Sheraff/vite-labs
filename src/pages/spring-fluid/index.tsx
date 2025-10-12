@@ -65,6 +65,14 @@ export default function SpringFluidPage() {
 						<input type="range" name="turbulence" id="turbulence" defaultValue="0" min="0" max="4" step="0.1" />
 						<label htmlFor="turbulence">turbulence</label>
 						<button type="reset" name="controls">reset controls</button>
+						<div>
+							<input type="radio" name="brush" id="brush1" value="velocity" defaultChecked />
+							<label htmlFor="brush1">velocity brush</label>
+							<input type="radio" name="brush" id="brush2" value="obstacle" />
+							<label htmlFor="brush2">obstacle brush</label>
+							<input type="radio" name="brush" id="brush3" value="displacement" />
+							<label htmlFor="brush3">displacement brush</label>
+						</div>
 					</fieldset>
 				</form>
 			</div>
@@ -105,24 +113,34 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 
 	/** data in/out of webGL */
 	const frame = new ImageData(width, height, { colorSpace: 'srgb' })
+	/** obstacles */
+	const obstacles = new ImageData(width, height, { colorSpace: 'srgb' })
 	/** visualisation for 2D canvas */
 	const image = new ImageData(width, height, { colorSpace: 'srgb' })
 	/** mouse effects */
 	const mouse_data = new Int8Array(width * height * 4)
 
-	init(frame.data, width, height)
+	init(frame.data, obstacles.data, width, height)
 
 	const previous_frame_texture = gl.createTexture()
+	gl.activeTexture(gl.TEXTURE0)
 	gl.bindTexture(gl.TEXTURE_2D, previous_frame_texture)
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, frame)
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-	const texture_loc = gl.getUniformLocation(program, "previous_frame")
-	gl.uniform1i(texture_loc, 0)
-	gl.activeTexture(gl.TEXTURE0)
-	gl.bindTexture(gl.TEXTURE_2D, previous_frame_texture)
+	gl.uniform1i(gl.getUniformLocation(program, "previous_frame"), 0)
+
+	const obstacle_texture = gl.createTexture()
+	gl.activeTexture(gl.TEXTURE1)
+	gl.bindTexture(gl.TEXTURE_2D, obstacle_texture)
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, obstacles)
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+	gl.uniform1i(gl.getUniformLocation(program, "obstacles"), 1)
 
 	const seed_loc = gl.getUniformLocation(program, "seed")
 	const dt_loc = gl.getUniformLocation(program, "dt")
@@ -147,6 +165,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 		speed: 0,
 		clamp: 0,
 		turbulence: 0,
+		brush: '',
 	}
 
 	let rafId = requestAnimationFrame(function loop(time) {
@@ -160,10 +179,15 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 		onFrame(delta)
 
 		if (controls.reset) {
-			init(frame.data, width, height)
+			init(frame.data, obstacles.data, width, height)
 			controls.reset = false
 			return
 		}
+
+		// send obstacles to shader
+		gl.activeTexture(gl.TEXTURE1)
+		gl.bindTexture(gl.TEXTURE_2D, obstacle_texture)
+		gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, obstacles)
 
 		for (let i = 0; i < controls.speed; i++) {
 
@@ -171,8 +195,13 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 
 			if (mouse.frame) {
 				for (let i = 0; i < mouse.data.length; i += 4) {
-					frame.data[i] += mouse.data[i]
-					frame.data[i + 1] += mouse.data[i + 1]
+					if (controls.brush === 'velocity') {
+						frame.data[i] += mouse.data[i]
+						frame.data[i + 1] += mouse.data[i + 1]
+					} else if (controls.brush === 'displacement') {
+						frame.data[i + 2] += mouse.data[i]
+						frame.data[i + 3] += mouse.data[i + 1]
+					}
 					mouse.data[i] = 0
 					mouse.data[i + 1] = 0
 				}
@@ -208,6 +237,11 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 		}
 
 		for (let i = 0; i < frame.data.length; i += 4) {
+			const is_obstacls = obstacles.data[i] > 0
+			if (is_obstacls) {
+				image.data.set([0xcc, 0xcc, 0xcc, 255], i)
+				continue
+			}
 			const dx = Math.abs(frame.data[i + 2] - 128)
 			const dy = Math.abs(frame.data[i + 3] - 128)
 			const deltaMag = fastHypot(dx, dy)
@@ -239,23 +273,42 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 		for (const e of event.getCoalescedEvents()) {
 			const x = Math.floor(((e.clientX - rect.left) / rect.width) * width)
 			const y = Math.floor(((e.clientY - rect.top) / rect.height) * height)
-			const dx = e.movementX
-			const dy = e.movementY
-			const radius = 30
-			const max = Math.sqrt(2 * radius * radius)
-			const mult = 2 // [0 - 128]
-			for (let j = -radius; j <= radius; j++) {
-				const jy = y + j
-				if (jy < 0 || jy >= height) continue
-				for (let i = -radius; i <= radius; i++) {
-					const ix = x + i
-					if (ix < 0 || ix >= width) continue
-					const d = Math.sqrt(i * i + j * j)
-					if (d > radius) continue
-					const index = (jy * width + ix) * 4
-					const pow = 1 - (d / max)
-					mouse.data[index] = dx * pow * mult
-					mouse.data[index + 1] = dy * pow * mult
+			if (controls.brush === 'obstacle') {
+				const radius = 10
+				for (let j = -radius; j <= radius; j++) {
+					const jy = y + j
+					if (jy < 0 || jy >= height) continue
+					for (let i = -radius; i <= radius; i++) {
+						const ix = x + i
+						if (ix < 0 || ix >= width) continue
+						const d = Math.sqrt(i * i + j * j)
+						if (d > radius) continue
+						const index = (jy * width + ix) * 4
+						obstacles.data[index] = 255
+						obstacles.data[index + 1] = 255
+						obstacles.data[index + 2] = 255
+						obstacles.data[index + 3] = 255
+					}
+				}
+			} else {
+				const dx = e.movementX
+				const dy = e.movementY
+				const radius = 30
+				const max = Math.sqrt(2 * radius * radius)
+				const mult = 2 // [0 - 128]
+				for (let j = -radius; j <= radius; j++) {
+					const jy = y + j
+					if (jy < 0 || jy >= height) continue
+					for (let i = -radius; i <= radius; i++) {
+						const ix = x + i
+						if (ix < 0 || ix >= width) continue
+						const d = Math.sqrt(i * i + j * j)
+						if (d > radius) continue
+						const index = (jy * width + ix) * 4
+						const pow = 1 - (d / max)
+						mouse.data[index] = dx * pow * mult
+						mouse.data[index + 1] = dy * pow * mult
+					}
 				}
 			}
 		}
@@ -267,6 +320,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 		controls.speed = getValue<number>(form, 'speed')!
 		controls.clamp = clamp_map[getValue<number>(form, 'clamp')!]
 		controls.turbulence = getValue<number>(form, 'turbulence')!
+		controls.brush = getValue<string>(form, 'brush')!
 	}
 	onInput()
 	form.addEventListener('input', onInput, { signal: controller.signal })
@@ -331,6 +385,7 @@ const clamp_default = clamp_map.indexOf(0.003)
 function getValue<T,>(form: HTMLFormElement, name: string): T | undefined {
 	if (!(name in form.elements)) return undefined
 	const element = form.elements[name as keyof typeof form.elements]
+	if (element instanceof RadioNodeList) return element.value as T
 	if (element instanceof HTMLSelectElement) return element.value as T
 	if (element instanceof HTMLInputElement) {
 		if (element.type === 'range') {
@@ -381,12 +436,18 @@ function createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShader, fra
 	return program
 }
 
-function init(array: Uint8ClampedArray, width: number, height: number) {
+function init(array: Uint8ClampedArray, obstacles: Uint8ClampedArray, width: number, height: number) {
 	for (let i = 0; i < array.length; i += 4) {
 		array[i] = 128
 		array[i + 1] = 128
 		array[i + 2] = 128
 		array[i + 3] = 128
+	}
+	for (let i = 0; i < obstacles.length; i += 4) {
+		obstacles[i] = 0
+		obstacles[i + 1] = 0
+		obstacles[i + 2] = 0
+		obstacles[i + 3] = 0
 	}
 }
 

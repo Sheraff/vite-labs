@@ -26,7 +26,6 @@
 	fieldset {
 		display: grid;
 		grid-template-columns: 1fr auto;
-
 		gap: 0.5em 1em;
 
 		label {
@@ -35,9 +34,16 @@
 
 		hr,
 		br,
-		button {
+		button,
+		div {
 			grid-column: 1 / -1;
 			margin: 0;
 		}
+	}
+
+	div {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: 0 0.5em;
 	}
 }

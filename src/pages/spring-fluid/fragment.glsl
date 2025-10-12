@@ -3,6 +3,7 @@ precision highp float;
 
 uniform vec2 resolution;
 uniform sampler2D previous_frame;
+uniform sampler2D obstacles;
 uniform float seed;
 uniform float dt; // time step
 
@@ -15,7 +16,7 @@ const vec2 left = vec2(-1, 0);
 
 uniform float k; // spring constant
 uniform float damping; // velocity damping
-const float scale = 3.0; // scale for reading/formatting velocity/offsets
+const float scale = 1.0; // scale for reading/formatting velocity/offsets
 uniform float clamp_value; // clamp max velocity/offsets
 uniform float turbulence_factor; // turbulence strength multiplier [0 - 10]
 
@@ -46,7 +47,9 @@ vec2 getVelocity(vec4 pixel) {
 }
 
 bool isEdgePixel(vec2 coord) {
-	return coord.x <= 1.0 || coord.x >= resolution.x - 1.0 || coord.y <= 1.0 || coord.y >= resolution.y - 1.0;
+	if(coord.x <= 1.0 || coord.x >= resolution.x - 1.0 || coord.y <= 1.0 || coord.y >= resolution.y - 1.0) return true;
+	if (texture(obstacles, coord / resolution.xy).r > 0.5) return true;
+	return false;
 }
 
 // random number [0,1] inclusive
