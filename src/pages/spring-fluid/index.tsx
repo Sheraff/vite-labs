@@ -61,6 +61,9 @@ export default function SpringFluidPage() {
 						<hr />
 						<input type="range" name="clamp" id="clamp" defaultValue={clamp_default} min="0" max={clamp_map.length - 1} step="1" />
 						<label htmlFor="clamp">clamp</label>
+						<hr />
+						<input type="range" name="turbulence" id="turbulence" defaultValue="0" min="0" max="10" step="0.1" />
+						<label htmlFor="turbulence">turbulence</label>
 						<button type="reset" name="controls">reset controls</button>
 					</fieldset>
 				</form>
@@ -127,6 +130,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 	const k_loc = gl.getUniformLocation(program, "k")
 	const damping_loc = gl.getUniformLocation(program, "damping")
 	const clamp_loc = gl.getUniformLocation(program, "clamp_value")
+	const turbulence_loc = gl.getUniformLocation(program, "turbulence_factor")
 	gl.uniform2f(resolution_loc, width, height)
 
 	let lastTime = 0
@@ -142,6 +146,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 		reset: false,
 		speed: 0,
 		clamp: 0,
+		turbulence: 0,
 	}
 
 	let rafId = requestAnimationFrame(function loop(time) {
@@ -184,6 +189,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 			gl.uniform1f(k_loc, controls.k)
 			gl.uniform1f(damping_loc, controls.damping)
 			gl.uniform1f(clamp_loc, controls.clamp)
+			gl.uniform1f(turbulence_loc, controls.turbulence)
 
 			// compute new frame
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
@@ -259,6 +265,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 		controls.damping = damping_map[getValue<number>(form, 'damping')!]
 		controls.speed = getValue<number>(form, 'speed')!
 		controls.clamp = clamp_map[getValue<number>(form, 'clamp')!]
+		controls.turbulence = getValue<number>(form, 'turbulence')!
 	}
 	onInput()
 	form.addEventListener('input', onInput, { signal: controller.signal })
@@ -310,6 +317,7 @@ const damping_default = damping_map.indexOf(0.9999)
 const clamp_map = [
 	0,
 	0.001,
+	0.003,
 	0.01,
 	0.05,
 	0.075,
@@ -317,7 +325,7 @@ const clamp_map = [
 	0.25,
 	1,
 ]
-const clamp_default = clamp_map.indexOf(0.01)
+const clamp_default = clamp_map.indexOf(0.003)
 
 function getValue<T,>(form: HTMLFormElement, name: string): T | undefined {
 	if (!(name in form.elements)) return undefined

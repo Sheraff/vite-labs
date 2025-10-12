@@ -17,6 +17,7 @@ uniform float k; // spring constant
 uniform float damping; // velocity damping
 const float scale = 3.0; // scale for reading/formatting velocity/offsets
 uniform float clamp_value; // clamp max velocity/offsets
+uniform float turbulence_factor; // turbulence strength multiplier [0 - 10]
 
 /**
  * Each pixel represents one end of 4 springs connected to the neighboring pixels.
@@ -46,6 +47,12 @@ vec2 getVelocity(vec4 pixel) {
 
 bool isEdgePixel(vec2 coord) {
 	return coord.x <= 1.0 || coord.x >= resolution.x - 1.0 || coord.y <= 1.0 || coord.y >= resolution.y - 1.0;
+}
+
+// random number [0,1] inclusive
+float rand(vec2 identity) {
+	vec2 seeded = identity + vec2(seed * 0.1, seed * 0.2);
+	return fract(sin(dot(seeded, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
 vec2 updateForces(vec2 forces, vec2 position, vec2 direction) {
@@ -99,6 +106,14 @@ void main() {
 	forces = updateForces(forces, position, top + right);
 	forces = updateForces(forces, position, bottom + left);
 	forces = updateForces(forces, position, bottom + right);
+
+	// turbulence / noise
+	if (turbulence_factor > 0.0) {
+		float turbulence_strength = turbulence_factor * length(velocity);
+		float noise = rand(gl_FragCoord.xy);
+		vec2 turbulence = vec2(cos(noise * 6.28318), sin(noise * 6.28318));
+		forces += turbulence * turbulence_strength;
+	}
 
 	// velocity
 	velocity += forces * dt;
