@@ -13,7 +13,6 @@ const vec2 right = vec2(1, 0);
 const vec2 bottom = vec2(0, 1);
 const vec2 left = vec2(-1, 0);
 
-float rest_length = 1.0; // rest length of springs
 const float k = 100.0; // spring constant
 const float damping = 0.9999; // velocity damping
 const float scale = 3.0; // scale for reading/formatting velocity/offsets
@@ -52,6 +51,8 @@ vec2 updateForces(vec2 forces, vec2 position, vec2 direction) {
 	vec4 neighbor = getPixel(direction);
 	vec2 n_offsets = getOffset(neighbor);
 	vec2 n_position = vec2(gl_FragCoord.xy + direction + n_offsets);
+
+	float rest_length = length(direction);
 
 	vec2 spring_vec = n_position - position;
 	float current_length = length(spring_vec);
@@ -93,6 +94,10 @@ void main() {
 	forces = updateForces(forces, position, right);
 	forces = updateForces(forces, position, top);
 	forces = updateForces(forces, position, bottom);
+	forces = updateForces(forces, position, top + left);
+	forces = updateForces(forces, position, top + right);
+	forces = updateForces(forces, position, bottom + left);
+	forces = updateForces(forces, position, bottom + right);
 
 	// velocity
 	velocity += forces * dt;
