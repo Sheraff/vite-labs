@@ -108,8 +108,8 @@ export const ROUTES = {
 			tags: ['webgl', 'fluid', 'shader', 'physics'],
 		},
 		git: {
-			lastModified: 0,
-			firstAdded: 0
+			lastModified: 1760259852000,
+			firstAdded: 1760259852000
 		},
 	},
 	"spider-inverse-kinematics": {
