@@ -5,6 +5,7 @@ import wave_function_collapse_ascii_image from "./pages/wave-function-collapse-a
 import wave_function_collapse_image from "./pages/wave-function-collapse/screen.png"
 import swarm_pathfinding_image from "./pages/swarm-pathfinding/screen.png"
 import star_rating_image from "./pages/star-rating/screen.png"
+import spring_fluid_image from "./pages/spring-fluid/screen.png"
 import spider_inverse_kinematics_image from "./pages/spider-inverse-kinematics/screen.png"
 import quad_tree_collisions_image from "./pages/quad-tree-collisions/screen.png"
 import quad_tree_image from "./pages/quad-tree/screen.png"
@@ -25,10 +26,11 @@ import cursor_projection_image from "./pages/cursor-projection/screen.png"
 import collision_threads_image from "./pages/collision-threads/screen.png"
 import boids_image from "./pages/boids/screen.png"
 import bird_inverse_kinematics_image from "./pages/bird-inverse-kinematics/screen.png"
+import ants_shader_image from "./pages/ants-shader/screen.png"
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "star-rating" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "lightning" | "intl-tuesday" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "cursor-projection" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "ants-shader" | "ants" | "a-star"
+export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "star-rating" | "spring-fluid" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "lightning" | "intl-tuesday" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "cursor-projection" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "ants-shader" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
@@ -95,6 +97,19 @@ export const ROUTES = {
 		git: {
 			lastModified: 1759587108000,
 			firstAdded: 1744563053000
+		},
+	},
+	"spring-fluid": {
+		Component: lazy(() => import("./pages/spring-fluid/index.tsx")),
+		meta: {
+			title: 'Spring fluid',
+			description: 'A fluid simulation based on a spring-mass system, on the GPU. Click and drag to introduce disturbances. Warning: flashing lights.',
+			image: spring_fluid_image,
+			tags: ['webgl', 'fluid', 'shader', 'physics'],
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
 		},
 	},
 	"spider-inverse-kinematics": {
@@ -395,10 +410,11 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/ants-shader/index.tsx")),
 		meta: {
 			title: 'Ants on shader',
-			tags: ['simulation', 'performance', 'webgl', 'shader']
+			tags: ['simulation', 'performance', 'webgl', 'shader'],
+			image: ants_shader_image
 		},
 		git: {
-			lastModified: 1760201581000,
+			lastModified: 1760207398000,
 			firstAdded: 1742739684000
 		},
 	},
