@@ -62,7 +62,7 @@ export default function SpringFluidPage() {
 						<input type="range" name="clamp" id="clamp" defaultValue={clamp_default} min="0" max={clamp_map.length - 1} step="1" />
 						<label htmlFor="clamp">clamp</label>
 						<hr />
-						<input type="range" name="turbulence" id="turbulence" defaultValue="0" min="0" max="10" step="0.1" />
+						<input type="range" name="turbulence" id="turbulence" defaultValue="0" min="0" max="4" step="0.1" />
 						<label htmlFor="turbulence">turbulence</label>
 						<button type="reset" name="controls">reset controls</button>
 					</fieldset>
