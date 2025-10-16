@@ -34,6 +34,15 @@ G: 00000000
 B: 00000000
    pheromone to anthill countdown
 
+A: 00000000
+   ││││├┘├┘
+   │││││ └──> ant previous direction
+   ││││└────> ant and food previous direction
+   │││└─────> ??
+   ││└──────> ??
+   │└───────> ??
+   └────────> ??
+
 */
 
 const uint ant = 1u;
@@ -42,6 +51,9 @@ const uint antAndFood = 4u;
 const uint anthill = 8u;
 const uint antMoved = 16u;
 const uint antAndFoodMoved = 32u;
+
+// const uint antPrevDir = 3u;
+// const uint antAndFoodPrevDir = 12u;
 
 const uint maxPheromone = 255u;
 
@@ -72,6 +84,32 @@ bool isVec2Equal(vec2 a, vec2 b) {
 	return a.x == b.x && a.y == b.y;
 }
 
+uint vec2toDir(vec2 dir) {
+	if (isVec2Equal(dir, bottom)) {
+		return 1u;
+	} else if (isVec2Equal(dir, top)) {
+		return 2u;
+	} else if (isVec2Equal(dir, right)) {
+		return 3u;
+	} else if (isVec2Equal(dir, left)) {
+		return 4u;
+	}
+	return 0u;
+}
+
+vec2 dirToVec2(uint dir) {
+	if (dir == 1u) {
+		return bottom;
+	} else if (dir == 2u) {
+		return top;
+	} else if (dir == 3u) {
+		return right;
+	} else if (dir == 4u) {
+		return left;
+	}
+	return vec2(0, 0);
+}
+
 bool antMoveFromTo(vec2 from, vec2 dir, bool withFood) {
 	// bail if `from` is out of bounds
 	{
@@ -97,7 +135,9 @@ bool antMoveFromTo(vec2 from, vec2 dir, bool withFood) {
 		movedMask = antMoved;
 	}
 
-	// bail if `from` does not contain an ant or has moved already
+	// bail if
+	// - `from` does not contain an ant, or
+	// - `from` has moved already this cycle, or
 	{
 		vec4 from_rgba = texture(previous_frame, from / resolution.xy);
 		uint from_r = uint(from_rgba.x * 255.0);
@@ -113,15 +153,19 @@ bool antMoveFromTo(vec2 from, vec2 dir, bool withFood) {
 		uint to_r = uint(to_rgba.x * 255.0);
 		bool isAntTo = (to_r & mask) > 0u;
 		if (isAntTo) return false;
+		if (withFood) {
+			bool isFood = (to_r & food) > 0u;
+			if (isFood) return false; // can't move onto food
+		}
 	}
 
 	// some direction is the favored pheromone gradient
 	{
 		uint current_g = cellValue(from, vec2(0, 0), withFood);
-		uint top_g = cellValue(from, top, withFood);
-		uint right_g = cellValue(from, right, withFood);
-		uint bottom_g = cellValue(from, bottom, withFood);
-		uint left_g = cellValue(from, left, withFood);
+		uint top_g = cellValue(from, top, withFood) + cellValue(from, top+top, withFood) + cellValue(from, top+left, withFood) + cellValue(from, top+right, withFood) + cellValue(from, top+top+top, withFood) + cellValue(from, top+top+left, withFood) + cellValue(from, top+top+right, withFood);
+		uint right_g = cellValue(from, right, withFood) + cellValue(from, right+right, withFood) + cellValue(from, right+top, withFood) + cellValue(from, right+bottom, withFood) + cellValue(from, right+right+right, withFood) + cellValue(from, right+right+top, withFood) + cellValue(from, right+right+bottom, withFood);
+		uint bottom_g = cellValue(from, bottom, withFood) + cellValue(from, bottom+bottom, withFood) + cellValue(from, bottom+left, withFood) + cellValue(from, bottom+right, withFood) + cellValue(from, bottom+bottom+bottom, withFood) + cellValue(from, bottom+bottom+left, withFood) + cellValue(from, bottom+bottom+right, withFood);
+		uint left_g = cellValue(from, left, withFood) + cellValue(from, left+left, withFood) + cellValue(from, left+top, withFood) + cellValue(from, left+bottom, withFood) + cellValue(from, left+left+left, withFood) + cellValue(from, left+left+top, withFood) + cellValue(from, left+left+bottom, withFood);
 
 		uint max_neighbor = max(max(top_g, right_g), max(bottom_g, left_g));
 
@@ -213,7 +257,7 @@ void main() {
 	uint r = uint(rgba.x * 255.0);
 	uint g = uint(rgba.y * 255.0);
 	uint b = uint(rgba.z * 255.0);
-	// uint a = uint(rgba.a * 255.0);
+	uint a = uint(rgba.a * 255.0);
 
 	bool isAnt = (r & ant) > 0u;
 	bool isFood = (r & food) > 0u;
@@ -255,22 +299,15 @@ void main() {
 
 		// leave pheromone trail
 		if (isAnt) {
-			b = min(maxPheromone, b + 8u);
+			b = min(maxPheromone, b + 4u);
+			// b = maxPheromone;
 		}
 		if (isAntAndFood) {
-			g = min(maxPheromone, g + 8u);
+			g = min(maxPheromone, g + 4u);
+			// g = maxPheromone;
 		}
 	} else {
-		vec2 out_dir;
-		if (direction == 1u) {
-			out_dir = bottom;
-		} else if (direction == 2u) {
-			out_dir = top;
-		} else if (direction == 3u) {
-			out_dir = right;
-		} else if (direction == 4u) {
-			out_dir = left;
-		}
+		vec2 out_dir = dirToVec2(direction);
 
 		if (isAnt) {
 			// if `ant` bit is set, see if it wants to move in `direction`
@@ -314,6 +351,6 @@ void main() {
 		float(r) / 255.0,
 		float(g) / 255.0,
 		float(b) / 255.0,
-		rgba.a
+		float(a) / 255.0
 	);
 }
