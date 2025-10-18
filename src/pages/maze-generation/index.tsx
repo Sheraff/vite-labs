@@ -569,8 +569,8 @@ function recursiveDivision(maze: Uint8Array, cols: number, rows: number) {
 	while (chambers.length) {
 		const [x1, y1, x2, y2] = chambers.pop()!
 
-		const chamberWidth = x2 - x1
-		const chamberHeight = y2 - y1
+		const chamberWidth = x2 - x1 + 1
+		const chamberHeight = y2 - y1 + 1
 
 		if (chamberWidth < 2 || chamberHeight < 2) continue
 
@@ -578,8 +578,8 @@ function recursiveDivision(maze: Uint8Array, cols: number, rows: number) {
 
 		if (horizontal) {
 			// horizontal wall
-			const wallY = y1 + 1 + randomInt(chamberHeight - 2)
-			const passageX = x1 + randomInt(chamberWidth + 1)
+			const wallY = y1 + 1 + randomInt(chamberHeight - 1)
+			const passageX = x1 + randomInt(chamberWidth)
 
 			for (let x = x1; x <= x2; x++) {
 				if (x === passageX) continue
@@ -591,8 +591,8 @@ function recursiveDivision(maze: Uint8Array, cols: number, rows: number) {
 			chambers.push([x1, wallY, x2, y2])
 		} else {
 			// vertical wall
-			const wallX = x1 + 1 + randomInt(chamberWidth - 2)
-			const passageY = y1 + randomInt(chamberHeight + 1)
+			const wallX = x1 + 1 + randomInt(chamberWidth - 1)
+			const passageY = y1 + randomInt(chamberHeight)
 
 			for (let y = y1; y <= y2; y++) {
 				if (y === passageY) continue
