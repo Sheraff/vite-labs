@@ -156,6 +156,13 @@ function start(ctx: CanvasRenderingContext2D) {
 		const last_x = positions.at(-2)!
 		const hue = xToBucket(last_x, buckets).hue
 		mouse.hue = hue
+		if (e.buttons === 1) {
+			balls.push({
+				color: `hsl(${hue}, 100%, 30%)`,
+				startTime: lastTime,
+				positions,
+			})
+		}
 	}, { signal: controller.signal })
 
 	window.addEventListener('pointerdown', (e) => {
