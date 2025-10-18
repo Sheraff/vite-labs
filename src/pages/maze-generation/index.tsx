@@ -87,6 +87,7 @@ const ALGORITHMS: Record<string, { method: Method, name: string }> = {
 	'aldous-broder': { method: aldousBroder, name: 'Aldous-Broder' },
 	'recursive-division': { method: recursiveDivision, name: 'Recursive Division' },
 	'fractal-tessellation': { method: fractalTessellation, name: 'Fractal Tessellation (square only)' },
+	'rectangular-fractal-tessellation': { method: rectangularFractalTessellation, name: 'Rectangular Fractal Tessellation' },
 }
 
 const CELL_SIZE = 20
@@ -622,6 +623,105 @@ function fractalTessellation(maze: Uint8Array, cols: number, rows: number) {
 
 	let currentCols = 1
 	let currentRows = 1
+
+	while (currentCols * 2 <= cols && currentRows <= rows) {
+		// duplicate maze into 4 quadrants
+		for (let x = 0; x < currentCols; x++) {
+			for (let y = 0; y < currentRows; y++) {
+				const cell = maze[y * cols + x]
+				// copy right
+				maze[y * cols + x + currentCols] = cell
+				// copy down
+				maze[(y + currentRows) * cols + x] = cell
+				// copy down-right
+				maze[(y + currentRows) * cols + (x + currentCols)] = cell
+			}
+		}
+
+		// remove 3 walls between quadrants
+		const candidates = [1, 1, 1, 1]
+		candidates[randomInt(4)] = 0
+		const [top, right, bottom, left] = candidates
+		if (top) {
+			// remove wall between top-left and top-right
+			const x = currentCols
+			const y = randomInt(currentRows)
+			maze[y * cols + (x - 1)] &= ~0b0010 // remove east wall
+			maze[y * cols + x] &= ~0b1000 // remove west wall
+		}
+		if (right) {
+			// remove wall between top-right and bottom-right
+			const x = currentCols + randomInt(currentCols)
+			const y = currentRows
+			maze[(y - 1) * cols + x] &= ~0b0100 // remove south wall
+			maze[y * cols + x] &= ~0b0001 // remove north wall
+		}
+		if (bottom) {
+			// remove wall between bottom-left and bottom-right
+			const x = currentCols
+			const y = currentRows + randomInt(currentRows)
+			maze[y * cols + (x - 1)] &= ~0b0010 // remove east wall
+			maze[y * cols + x] &= ~0b1000 // remove west wall
+		}
+		if (left) {
+			// remove wall between top-left and bottom-left
+			const x = randomInt(currentCols)
+			const y = currentRows
+			maze[(y - 1) * cols + x] &= ~0b0100 // remove south wall
+			maze[y * cols + x] &= ~0b0001 // remove north wall
+		}
+
+		currentCols *= 2
+		currentRows *= 2
+	}
+}
+
+/**
+ * Same as fractalTessellation, but
+ * - find an initial size greater than 1x1 that best matches the target aspect ratio
+ * - initialize that size maze using another algorithm
+ * - then proceed with the fractal tessellation
+ */
+function rectangularFractalTessellation(maze: Uint8Array, cols: number, rows: number) {
+	let currentCols = 1
+	let currentRows = 1
+
+	if (cols === rows) {
+		maze[0] = 0b1111
+	} else {
+		const min = Math.min(cols, rows)
+		const max = Math.max(cols, rows)
+		let best = [1, 1]
+		let bestScore = Infinity
+		const ratio = max / min
+		for (let i = 1; i <= 8; i++) {
+			for (let j = 1; j <= i; j++) {
+				const score = Math.abs(ratio - i / j)
+				if (score < bestScore) {
+					bestScore = score
+					best = [i, j]
+				}
+			}
+		}
+		if (best) {
+			if (cols < rows) {
+				currentCols = best[1]
+				currentRows = best[0]
+			} else {
+				currentCols = best[0]
+				currentRows = best[1]
+			}
+		}
+		// initialize maze
+		const sub_maze = new Uint8Array(currentCols * currentRows)
+		depthFirstStackMaze(sub_maze, currentCols, currentRows)
+		// copy sub-maze into main maze
+		for (let x = 0; x < currentCols; x++) {
+			for (let y = 0; y < currentRows; y++) {
+				maze[y * cols + x] = sub_maze[y * currentCols + x]
+			}
+		}
+	}
 
 	while (currentCols * 2 <= cols && currentRows <= rows) {
 		// duplicate maze into 4 quadrants
