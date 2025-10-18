@@ -22,6 +22,7 @@ import hacker_background_image from "./pages/hacker-background/screen.png"
 import fourrier_series_image from "./pages/fourrier-series/screen.png"
 import flow_field_image from "./pages/flow-field/screen.png"
 import flask_image from "./pages/flask/screen.png"
+import deterministic_plinko_image from "./pages/deterministic-plinko/screen.png"
 import cursor_projection_image from "./pages/cursor-projection/screen.png"
 import collision_threads_image from "./pages/collision-threads/screen.png"
 import boids_image from "./pages/boids/screen.png"
@@ -30,7 +31,7 @@ import ants_shader_image from "./pages/ants-shader/screen.png"
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "star-rating" | "spring-fluid" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "lightning" | "intl-tuesday" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "cursor-projection" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "ants-shader" | "ants" | "a-star"
+export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "star-rating" | "spring-fluid" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "lightning" | "intl-tuesday" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "deterministic-plinko" | "cursor-projection" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "ants-shader" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
@@ -108,7 +109,7 @@ export const ROUTES = {
 			tags: ['webgl', 'fluid', 'shader', 'physics'],
 		},
 		git: {
-			lastModified: 1760273844000,
+			lastModified: 1760297097000,
 			firstAdded: 1760259852000
 		},
 	},
@@ -341,6 +342,18 @@ export const ROUTES = {
 		git: {
 			lastModified: 1752533354000,
 			firstAdded: 1737497494000
+		},
+	},
+	"deterministic-plinko": {
+		Component: lazy(() => import("./pages/deterministic-plinko/index.tsx")),
+		meta: {
+			title: 'Deterministic Plinko',
+			image: deterministic_plinko_image,
+			tags: ['game', 'physics', 'simulation']
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
 		},
 	},
 	"cursor-projection": {
