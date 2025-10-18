@@ -9,6 +9,15 @@
 	mix-blend-mode: luminosity;
 }
 
+.error {
+	padding: 1em;
+
+	pre {
+		color: red;
+		margin-top: 2em;
+	}
+}
+
 .route {
 	padding: 0 1em;
 	border-bottom: 1px solid;

@@ -31,7 +31,7 @@ import ants_shader_image from "./pages/ants-shader/screen.png"
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "star-rating" | "spring-fluid" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "lightning" | "intl-tuesday" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "deterministic-plinko" | "cursor-projection" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "ants-shader" | "ants" | "a-star"
+export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "star-rating" | "spring-fluid" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "maze-generation" | "lightning" | "intl-tuesday" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "deterministic-plinko" | "cursor-projection" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "ants-shader" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
@@ -238,6 +238,16 @@ export const ROUTES = {
 			firstAdded: 1738530954000
 		},
 	},
+	"maze-generation": {
+		Component: lazy(() => import("./pages/maze-generation/index.tsx")),
+		meta: {
+			title: 'Maze Generation',
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
+		},
+	},
 	"lightning": {
 		Component: lazy(() => import("./pages/lightning/index.tsx")),
 		meta: {
@@ -352,7 +362,7 @@ export const ROUTES = {
 			tags: ['game', 'physics', 'simulation']
 		},
 		git: {
-			lastModified: 1760809990000,
+			lastModified: 1760810010000,
 			firstAdded: 1760809990000
 		},
 	},

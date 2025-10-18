@@ -1,8 +1,9 @@
-import { Suspense, useMemo } from "react"
+import { Component, Suspense, useMemo, type ReactNode } from "react"
 import { Link, useNavigation } from "#file-router/Navigation"
 import { ROUTES, type Routes } from "#router"
 
 import styles from './App.module.css'
+import { Head } from "#components/Head"
 
 export default function App() {
 
@@ -16,7 +17,7 @@ export default function App() {
 
   const route = useNavigation()
   const Component = route ? ROUTES[route].Component : null
-  if (Component) return <Suspense><Component /></Suspense>
+  if (Component) return <ErrorBoundary><Suspense><Component /></Suspense></ErrorBoundary>
 
   return (
     <>
@@ -31,6 +32,23 @@ export default function App() {
       ))}
     </>
   )
+}
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false }
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+  render() {
+    if (this.state.hasError) {
+      return <div className={styles.error}>
+        <Head />
+        <pre>Something went wrong.</pre>
+      </div>
+    }
+
+    return this.props.children
+  }
 }
 
 const formatter = new Intl.DateTimeFormat('en', {
