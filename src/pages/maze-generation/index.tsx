@@ -11,6 +11,9 @@ export const meta: RouteMeta = {
 	tags: ['algorithm', 'procedural']
 }
 
+/**
+ * Demo of algoritms from https://en.wikipedia.org/wiki/Maze_generation_algorithm
+ */
 export default function MazeGenerationPage() {
 	const canvasRef = useRef<HTMLCanvasElement>(null)
 	const formRef = useRef<HTMLFormElement>(null)
@@ -83,6 +86,7 @@ const ALGORITHMS: Record<string, { method: Method, name: string }> = {
 	'wilson': { method: wilson, name: 'Wilson\'s Random Walk' },
 	'aldous-broder': { method: aldousBroder, name: 'Aldous-Broder' },
 	'recursive-division': { method: recursiveDivision, name: 'Recursive Division' },
+	'fractal-tessellation': { method: fractalTessellation, name: 'Fractal Tessellation (square only)' },
 }
 
 const CELL_SIZE = 20
@@ -603,5 +607,70 @@ function recursiveDivision(maze: Uint8Array, cols: number, rows: number) {
 			chambers.push([x1, y1, wallX - 1, y2])
 			chambers.push([wallX, y1, x2, y2])
 		}
+	}
+}
+
+
+/**
+ * - Start with a 1x1 "maze" (a single walled-up cell).
+ * - Duplicate it 3 times to create a 2x2 grid of cells.
+ * - Randomly remove 3 walls between adjacent quadrants to create a larger maze.
+ * - Repeat the duplication and wall removal process to double the maze size.
+ */
+function fractalTessellation(maze: Uint8Array, cols: number, rows: number) {
+	maze[0] = 0b1111 // initial cell with all walls
+
+	let currentCols = 1
+	let currentRows = 1
+
+	while (currentCols * 2 <= cols && currentRows <= rows) {
+		// duplicate maze into 4 quadrants
+		for (let x = 0; x < currentCols; x++) {
+			for (let y = 0; y < currentRows; y++) {
+				const cell = maze[y * cols + x]
+				// copy right
+				maze[y * cols + x + currentCols] = cell
+				// copy down
+				maze[(y + currentRows) * cols + x] = cell
+				// copy down-right
+				maze[(y + currentRows) * cols + (x + currentCols)] = cell
+			}
+		}
+
+		// remove 3 walls between quadrants
+		const candidates = [1, 1, 1, 1]
+		candidates[randomInt(4)] = 0
+		const [top, right, bottom, left] = candidates
+		if (top) {
+			// remove wall between top-left and top-right
+			const x = currentCols
+			const y = randomInt(currentRows)
+			maze[y * cols + (x - 1)] &= ~0b0010 // remove east wall
+			maze[y * cols + x] &= ~0b1000 // remove west wall
+		}
+		if (right) {
+			// remove wall between top-right and bottom-right
+			const x = currentCols + randomInt(currentCols)
+			const y = currentRows
+			maze[(y - 1) * cols + x] &= ~0b0100 // remove south wall
+			maze[y * cols + x] &= ~0b0001 // remove north wall
+		}
+		if (bottom) {
+			// remove wall between bottom-left and bottom-right
+			const x = currentCols
+			const y = currentRows + randomInt(currentRows)
+			maze[y * cols + (x - 1)] &= ~0b0010 // remove east wall
+			maze[y * cols + x] &= ~0b1000 // remove west wall
+		}
+		if (left) {
+			// remove wall between top-left and bottom-left
+			const x = randomInt(currentCols)
+			const y = currentRows
+			maze[(y - 1) * cols + x] &= ~0b0100 // remove south wall
+			maze[y * cols + x] &= ~0b0001 // remove north wall
+		}
+
+		currentCols *= 2
+		currentRows *= 2
 	}
 }
