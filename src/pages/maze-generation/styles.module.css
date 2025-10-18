@@ -1,0 +1,34 @@
+.main {
+	margin: 0;
+	background: #051016;
+	color: white;
+	touch-action: none;
+	width: 100vw;
+	height: 100svh;
+	padding: 1em;
+
+	canvas {
+		position: fixed;
+		inset: 0;
+		z-index: 0;
+	}
+}
+
+.head {
+	position: relative;
+	z-index: 1;
+	user-select: none;
+}
+
+.controls {
+	position: relative;
+	z-index: 1;
+	user-select: none;
+
+	fieldset {
+		width: fit-content;
+		display: flex;
+		flex-direction: column;
+		gap: 1em;
+	}
+}

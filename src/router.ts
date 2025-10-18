@@ -15,6 +15,7 @@ import paint_worklet_image from "./pages/paint-worklet/screen.png"
 import normal_map_image from "./pages/normal-map/screen.png"
 import neat_image from "./pages/neat/screen.png"
 import minesweeper_image from "./pages/minesweeper/screen.png"
+import maze_generation_image from "./pages/maze-generation/screen.png"
 import lightning_image from "./pages/lightning/screen.png"
 import intl_tuesday_image from "./pages/intl-tuesday/screen.png"
 import hex_a_star_image from "./pages/hex-a-star/screen.png"
@@ -242,6 +243,8 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/maze-generation/index.tsx")),
 		meta: {
 			title: 'Maze Generation',
+			image: maze_generation_image,
+			tags: ['algorithm', 'procedural']
 		},
 		git: {
 			lastModified: 0,
