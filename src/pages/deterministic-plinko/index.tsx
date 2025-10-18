@@ -169,21 +169,9 @@ function start(ctx: CanvasRenderingContext2D) {
 		})
 	}, { signal: controller.signal })
 
-	// const interval = setInterval(() => {
-	// 	const positions = simulateBall(mouse.x, mouse.y, BALL_RADIUS, obstacles, OBSTACLE_RADIUS, height, width, STATIC_TIMESTEP)
-	// 	const last_x = positions.at(-2)!
-	// 	const hue = xToBucket(last_x, buckets).hue
-	// 	balls.push({
-	// 		color: `hsl(${hue}, 100%, 30%)`,
-	// 		startTime: lastTime,
-	// 		positions,
-	// 	})
-	// }, 100)
-
 	return () => {
 		cancelAnimationFrame(rafId)
 		controller.abort()
-		// clearInterval(interval)
 	}
 }
 
