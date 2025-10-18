@@ -90,7 +90,7 @@ const ALGORITHMS: Record<string, { method: Method, name: string }> = {
 	'rectangular-fractal-tessellation': { method: rectangularFractalTessellation, name: 'Rectangular Fractal Tessellation' },
 }
 
-const CELL_SIZE = 20
+const CELL_SIZE = 16
 const WALL_THICKNESS = 2
 
 function start(ctx: CanvasRenderingContext2D, method: Method) {
