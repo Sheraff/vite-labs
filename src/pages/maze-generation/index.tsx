@@ -623,7 +623,9 @@ const recursiveDivision: Method = function* (maze, cols, rows, getIndex, fromInd
 
 		if (chamberWidth < 2 || chamberHeight < 2) continue
 
-		const horizontal = chamberWidth < chamberHeight
+		const horizontal = chamberWidth === chamberHeight
+			? Math.random() < 0.5
+			: chamberWidth < chamberHeight
 
 		if (horizontal) {
 			// horizontal wall
