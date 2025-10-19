@@ -33,21 +33,30 @@ export default function MazeGenerationPage() {
 
 		const state = {
 			algorithm: 'depth-first-stack',
+			animate: true,
 		}
+
+		let stop: (() => void) | void
+
 		const onInput = () => {
 			state.algorithm = getFormValue<string>(form, 'algorithm')!
-			start(ctx, ALGORITHMS[state.algorithm].method)
+			state.animate = getFormValue<boolean>(form, 'animate')!
+			stop?.()
+			stop = start(ctx, state)
 		}
+
 		onInput()
 
 		form.addEventListener('input', onInput, { signal: controller.signal })
 
 		const rerunButton = (form.elements.namedItem('rerun') as HTMLButtonElement)
 		rerunButton.addEventListener('click', () => {
-			start(ctx, ALGORITHMS[state.algorithm].method)
+			stop?.()
+			stop = start(ctx, state)
 		})
 
 		return () => {
+			stop?.()
 			controller.abort()
 		}
 	}, [])
@@ -68,6 +77,10 @@ export default function MazeGenerationPage() {
 						))}
 					</select>
 					<button type="button" id="rerun">Re-run</button>
+					<div>
+						<input type="checkbox" name="animate" id="animate" defaultChecked />
+						<label htmlFor="animate">Animate</label>
+					</div>
 				</fieldset>
 			</form>
 			<canvas ref={canvasRef}>
@@ -77,23 +90,19 @@ export default function MazeGenerationPage() {
 	)
 }
 
-type Method = (maze: Uint8Array, cols: number, rows: number) => void
+type Method = (
+	maze: Uint8Array,
+	cols: number,
+	rows: number,
+	getIndex: (x: number, y: number) => number,
+	fromIndex: (index: number) => { x: number, y: number }
+) => Generator<void, void, void>
 
-const ALGORITHMS: Record<string, { method: Method, name: string }> = {
-	'depth-first-stack': { method: depthFirstStackMaze, name: 'Depth-First Search' },
-	'iterative-randomized-kruskal': { method: iterativeRandomizedKruskal, name: 'Iterative Randomized Kruskal\'s' },
-	'iterative-randomized-prim': { method: iterativeRandomizedPrim, name: 'Iterative Randomized Prim\'s' },
-	'wilson': { method: wilson, name: 'Wilson\'s Random Walk' },
-	'aldous-broder': { method: aldousBroder, name: 'Aldous-Broder' },
-	'recursive-division': { method: recursiveDivision, name: 'Recursive Division' },
-	'fractal-tessellation': { method: fractalTessellation, name: 'Fractal Tessellation (square only)' },
-	'rectangular-fractal-tessellation': { method: rectangularFractalTessellation, name: 'Rectangular Fractal Tessellation' },
-}
 
 const CELL_SIZE = 16
 const WALL_THICKNESS = 2
 
-function start(ctx: CanvasRenderingContext2D, method: Method) {
+function start(ctx: CanvasRenderingContext2D, state: { algorithm: string, animate: boolean }) {
 	const width = ctx.canvas.width / devicePixelRatio
 	const height = ctx.canvas.height / devicePixelRatio
 
@@ -102,8 +111,32 @@ function start(ctx: CanvasRenderingContext2D, method: Method) {
 
 	const maze = new Uint8Array(COLS * ROWS) // N, E, S, W walls
 
-	method(maze, COLS, ROWS)
-	drawMaze(ctx, maze, COLS, ROWS)
+	const getIndex = (x: number, y: number) => y * COLS + x
+	const fromIndex = (index: number) => ({
+		x: index % COLS,
+		y: Math.floor(index / COLS)
+	})
+
+	const method = ALGORITHMS[state.algorithm].method
+	const gen = method(maze, COLS, ROWS, getIndex, fromIndex)
+
+	if (!state.animate) {
+		for (const _ of gen) { /**/ }
+		drawMaze(ctx, maze, COLS, ROWS)
+		return
+	}
+
+	let rafId = requestAnimationFrame(function frame() {
+		const res = gen.next()
+		drawMaze(ctx, maze, COLS, ROWS)
+		if (!res.done) {
+			rafId = requestAnimationFrame(frame)
+		}
+	})
+
+	return () => {
+		cancelAnimationFrame(rafId)
+	}
 }
 
 function randomInt(max: number) {
@@ -119,9 +152,11 @@ function randomItemFromSet<T>(set: Set<T>): T | undefined {
 	return iterator.next().value
 }
 
-function initWalls(maze: Uint8Array) {
-	for (let i = 0; i < maze.length; i++) {
-		maze[i] = 0b1111 // N, E, S, W walls
+function initWalls(maze: Uint8Array, cols: number, rows: number, getIndex: (x: number, y: number) => number) {
+	for (let row = 0; row < rows; row++) {
+		for (let col = 0; col < cols; col++) {
+			maze[getIndex(col, row)] = 0b1111
+		}
 	}
 }
 
@@ -192,8 +227,8 @@ function drawMaze(ctx: CanvasRenderingContext2D, maze: Uint8Array, cols: number,
  *     - Remove the wall between the current cell and the chosen cell
  *     - Mark the chosen cell as visited and push it to the stack
  */
-function depthFirstStackMaze(maze: Uint8Array, cols: number, rows: number) {
-	initWalls(maze)
+const depthFirstStackMaze: Method = function* (maze, cols, rows, getIndex, fromIndex) {
+	initWalls(maze, cols, rows, getIndex)
 	const max = cols * rows
 	const initial = randomInt(max)
 	const stack = [initial]
@@ -201,16 +236,17 @@ function depthFirstStackMaze(maze: Uint8Array, cols: number, rows: number) {
 
 	while (stack.length) {
 		const current = stack[stack.length - 1]
-		const top_index = current - cols
-		const right_index = current + 1
-		const bottom_index = current + cols
-		const left_index = current - 1
+		const { x, y } = fromIndex(current)
+		const top_index = getIndex(x, y - 1)
+		const right_index = getIndex(x + 1, y)
+		const bottom_index = getIndex(x, y + 1)
+		const left_index = getIndex(x - 1, y)
 
 		const candidates: number[] = []
-		if (top_index > 0 && top_index < max && !visited.has(top_index)) candidates.push(top_index)
-		if (right_index % cols !== 0 && right_index < max && !visited.has(right_index)) candidates.push(right_index)
-		if (bottom_index > 0 && bottom_index < max && !visited.has(bottom_index)) candidates.push(bottom_index)
-		if (left_index % cols !== cols - 1 && left_index >= 0 && !visited.has(left_index)) candidates.push(left_index)
+		if (y >= 1 && !visited.has(top_index)) candidates.push(top_index)
+		if (x < cols - 1 && !visited.has(right_index)) candidates.push(right_index)
+		if (y < rows - 1 && !visited.has(bottom_index)) candidates.push(bottom_index)
+		if (x >= 1 && !visited.has(left_index)) candidates.push(left_index)
 
 		if (!candidates.length) {
 			stack.pop()
@@ -234,6 +270,7 @@ function depthFirstStackMaze(maze: Uint8Array, cols: number, rows: number) {
 			maze[current] &= ~0b1000 // remove west wall
 			maze[left_index] &= ~0b0010 // remove east wall
 		}
+		yield
 	}
 }
 
@@ -244,8 +281,8 @@ function depthFirstStackMaze(maze: Uint8Array, cols: number, rows: number) {
  *     - Remove the current wall.
  *     - Join the sets of the formerly divided cells.
  */
-function iterativeRandomizedKruskal(maze: Uint8Array, cols: number, rows: number) {
-	initWalls(maze)
+const iterativeRandomizedKruskal: Method = function* (maze, cols, rows, getIndex, fromIndex) {
+	initWalls(maze, cols, rows, getIndex)
 	const max = cols * rows
 	const bl = max.toString(2).length
 	const bl_mask = (1 << bl) - 1
@@ -267,25 +304,25 @@ function iterativeRandomizedKruskal(maze: Uint8Array, cols: number, rows: number
 		*[Symbol.iterator]() {
 			for (let row = 0; row < rows; row++) {
 				for (let col = 0; col < cols; col++) {
-					const cellIndex = row * cols + col
+					const cellIndex = getIndex(col, row)
 					// north wall
 					if (row > 0) {
-						const neighborIndex = (row - 1) * cols + col
+						const neighborIndex = getIndex(col, row - 1)
 						yield getWallId(cellIndex, neighborIndex)
 					}
 					// east wall
 					if (col < cols - 1) {
-						const neighborIndex = row * cols + (col + 1)
+						const neighborIndex = getIndex(col + 1, row)
 						yield getWallId(cellIndex, neighborIndex)
 					}
 					// south wall
 					if (row < rows - 1) {
-						const neighborIndex = (row + 1) * cols + col
+						const neighborIndex = getIndex(col, row + 1)
 						yield getWallId(cellIndex, neighborIndex)
 					}
 					// west wall
 					if (col > 0) {
-						const neighborIndex = row * cols + (col - 1)
+						const neighborIndex = getIndex(col - 1, row)
 						yield getWallId(cellIndex, neighborIndex)
 					}
 				}
@@ -320,6 +357,7 @@ function iterativeRandomizedKruskal(maze: Uint8Array, cols: number, rows: number
 			maze[a] &= ~0b1000 // remove west wall
 			maze[b] &= ~0b0010 // remove east wall
 		}
+		yield
 	}
 }
 
@@ -333,35 +371,34 @@ function iterativeRandomizedKruskal(maze: Uint8Array, cols: number, rows: number
  *     - Add the neighboring walls of the cell to the wall list.
  *   - Remove the wall from the list.
  */
-function iterativeRandomizedPrim(maze: Uint8Array, cols: number, rows: number) {
-	initWalls(maze)
+const iterativeRandomizedPrim: Method = function* (maze, cols, rows, getIndex, fromIndex) {
+	initWalls(maze, cols, rows, getIndex)
 	const max = cols * rows
 	const initial = randomInt(max)
 	const visited = new Set<number>([initial])
 
 	const walls: number[] = []
 	const addWalls = (cellIndex: number) => {
-		const row = Math.floor(cellIndex / cols)
-		const col = cellIndex % cols
-		const north = row > 0 && (maze[cellIndex] & 0b0001)
-		const east = col < cols - 1 && (maze[cellIndex] & 0b0010)
-		const south = row < rows - 1 && (maze[cellIndex] & 0b0100)
-		const west = col > 0 && (maze[cellIndex] & 0b1000)
+		const { x, y } = fromIndex(cellIndex)
+		const north = y > 0 && (maze[cellIndex] & 0b0001)
+		const east = x < cols - 1 && (maze[cellIndex] & 0b0010)
+		const south = y < rows - 1 && (maze[cellIndex] & 0b0100)
+		const west = x > 0 && (maze[cellIndex] & 0b1000)
 
 		if (north) {
-			const neighborIndex = (row - 1) * cols + col
+			const neighborIndex = getIndex(x, y - 1)
 			walls.push(getWallId(cellIndex, neighborIndex))
 		}
 		if (east) {
-			const neighborIndex = row * cols + (col + 1)
+			const neighborIndex = getIndex(x + 1, y)
 			walls.push(getWallId(cellIndex, neighborIndex))
 		}
 		if (south) {
-			const neighborIndex = (row + 1) * cols + col
+			const neighborIndex = getIndex(x, y + 1)
 			walls.push(getWallId(cellIndex, neighborIndex))
 		}
 		if (west) {
-			const neighborIndex = row * cols + (col - 1)
+			const neighborIndex = getIndex(x - 1, y)
 			walls.push(getWallId(cellIndex, neighborIndex))
 		}
 	}
@@ -415,6 +452,7 @@ function iterativeRandomizedPrim(maze: Uint8Array, cols: number, rows: number) {
 			} else {
 				addWalls(a)
 			}
+			yield
 		}
 	}
 }
@@ -427,8 +465,8 @@ function iterativeRandomizedPrim(maze: Uint8Array, cols: number, rows: number) {
  *     - during the walk, if a cell is revisited, the loop is erased (i.e., the walk continues from the first occurrence of the cell).
  *     - all cells visited during the walk are then marked as part of the maze, removing walls between consecutive cells in the walk.
  */
-function wilson(maze: Uint8Array, cols: number, rows: number) {
-	initWalls(maze)
+const wilson: Method = function* (maze, cols, rows, getIndex, fromIndex) {
+	initWalls(maze, cols, rows, getIndex)
 	const max = cols * rows
 	const unvisited = new Set({
 		*[Symbol.iterator]() {
@@ -443,17 +481,19 @@ function wilson(maze: Uint8Array, cols: number, rows: number) {
 		let current = randomItemFromSet(unvisited)!
 		walk.push(current)
 
+
 		while (true) {
-			const top_index = current - cols
-			const right_index = current + 1
-			const bottom_index = current + cols
-			const left_index = current - 1
+			const { x, y } = fromIndex(current)
+			const top_index = getIndex(x, y - 1)
+			const right_index = getIndex(x + 1, y)
+			const bottom_index = getIndex(x, y + 1)
+			const left_index = getIndex(x - 1, y)
 
 			const candidates: number[] = []
-			if (top_index > 0 && top_index < max) candidates.push(top_index)
-			if (right_index % cols !== 0 && right_index < max) candidates.push(right_index)
-			if (bottom_index > 0 && bottom_index < max) candidates.push(bottom_index)
-			if (left_index % cols !== cols - 1 && left_index >= 0) candidates.push(left_index)
+			if (y >= 1) candidates.push(top_index)
+			if (x < cols - 1) candidates.push(right_index)
+			if (y < rows - 1) candidates.push(bottom_index)
+			if (x >= 1) candidates.push(left_index)
 
 			if (!candidates.length) throw new Error('Should not happen')
 
@@ -477,20 +517,22 @@ function wilson(maze: Uint8Array, cols: number, rows: number) {
 			const a = walk[i]
 			const b = walk[i + 1]
 			unvisited.delete(a)
+			const { x, y } = fromIndex(a)
 
-			if (b === a - cols) { // north
+			if (b === getIndex(x, y - 1)) { // north
 				maze[a] &= ~0b0001 // remove north wall
 				maze[b] &= ~0b0100 // remove south wall
-			} else if (b === a + 1) { // east
+			} else if (b === getIndex(x + 1, y)) { // east
 				maze[a] &= ~0b0010 // remove east wall
 				maze[b] &= ~0b1000 // remove west wall
-			} else if (b === a + cols) { // south
+			} else if (b === getIndex(x, y + 1)) { // south
 				maze[a] &= ~0b0100 // remove south wall
 				maze[b] &= ~0b0001 // remove north wall
-			} else if (b === a - 1) { // west
+			} else if (b === getIndex(x - 1, y)) { // west
 				maze[a] &= ~0b1000 // remove west wall
 				maze[b] &= ~0b0010 // remove east wall
 			}
+			yield
 		}
 		unvisited.delete(walk[walk.length - 1])
 	}
@@ -505,24 +547,25 @@ function wilson(maze: Uint8Array, cols: number, rows: number) {
  *     - Mark the chosen neighbour as visited.
  *   - Make the chosen neighbour the current cell.
  */
-function aldousBroder(maze: Uint8Array, cols: number, rows: number) {
-	initWalls(maze)
+const aldousBroder: Method = function* (maze, cols, rows, getIndex, fromIndex) {
+	initWalls(maze, cols, rows, getIndex)
 	const max = cols * rows
 	const visited = new Set<number>()
 	let current = randomInt(max)
 	visited.add(current)
 
 	while (visited.size < max) {
-		const top_index = current - cols
-		const right_index = current + 1
-		const bottom_index = current + cols
-		const left_index = current - 1
+		const { x, y } = fromIndex(current)
+		const top_index = getIndex(x, y - 1)
+		const right_index = getIndex(x + 1, y)
+		const bottom_index = getIndex(x, y + 1)
+		const left_index = getIndex(x - 1, y)
 
 		const candidates: number[] = []
-		if (top_index > 0 && top_index < max) candidates.push(top_index)
-		if (right_index % cols !== 0 && right_index < max) candidates.push(right_index)
-		if (bottom_index > 0 && bottom_index < max) candidates.push(bottom_index)
-		if (left_index % cols !== cols - 1 && left_index >= 0) candidates.push(left_index)
+		if (y >= 1) candidates.push(top_index)
+		if (x < cols - 1) candidates.push(right_index)
+		if (y < rows - 1) candidates.push(bottom_index)
+		if (x >= 1) candidates.push(left_index)
 
 		if (!candidates.length) throw new Error('Should not happen')
 
@@ -544,6 +587,7 @@ function aldousBroder(maze: Uint8Array, cols: number, rows: number) {
 				maze[current] &= ~0b1000 // remove west wall
 				maze[left_index] &= ~0b0010 // remove east wall
 			}
+			yield
 		}
 
 		current = selected
@@ -555,16 +599,16 @@ function aldousBroder(maze: Uint8Array, cols: number, rows: number) {
  * - Divide the chamber with a randomly positioned wall (or multiple walls) where each wall contains a randomly positioned passage opening within it.
  * - Then recursively repeat the process on the subchambers until all chambers are minimum sized.
  */
-function recursiveDivision(maze: Uint8Array, cols: number, rows: number) {
+const recursiveDivision: Method = function* (maze, cols, rows, getIndex, fromIndex) {
 	// add north and south walls
 	for (let i = 0; i < cols; i++) {
 		maze[i] |= 0b0001 // north wall
-		maze[cols * (rows - 1) + i] |= 0b0100 // south wall
+		maze[getIndex(i, rows - 1)] |= 0b0100 // south wall
 	}
 	// add east and west walls
 	for (let i = 0; i < rows; i++) {
-		maze[cols * i] |= 0b1000 // west wall
-		maze[cols * i + cols - 1] |= 0b0010 // east wall
+		maze[getIndex(0, i)] |= 0b1000 // west wall
+		maze[getIndex(cols - 1, i)] |= 0b0010 // east wall
 	}
 
 	const chambers: Array<[x1: number, y1: number, x2: number, y2: number]> = [
@@ -588,8 +632,8 @@ function recursiveDivision(maze: Uint8Array, cols: number, rows: number) {
 
 			for (let x = x1; x <= x2; x++) {
 				if (x === passageX) continue
-				maze[wallY * cols + x] |= 0b0001 // north wall
-				maze[(wallY - 1) * cols + x] |= 0b0100 // south wall
+				maze[getIndex(x, wallY)] |= 0b0001 // north wall
+				maze[getIndex(x, wallY - 1)] |= 0b0100 // south wall
 			}
 
 			chambers.push([x1, y1, x2, wallY - 1])
@@ -601,13 +645,14 @@ function recursiveDivision(maze: Uint8Array, cols: number, rows: number) {
 
 			for (let y = y1; y <= y2; y++) {
 				if (y === passageY) continue
-				maze[y * cols + wallX] |= 0b1000 // west wall
-				maze[y * cols + wallX - 1] |= 0b0010 // east wall
+				maze[getIndex(wallX, y)] |= 0b1000 // west wall
+				maze[getIndex(wallX - 1, y)] |= 0b0010 // east wall
 			}
 
 			chambers.push([x1, y1, wallX - 1, y2])
 			chambers.push([wallX, y1, x2, y2])
 		}
+		yield
 	}
 }
 
@@ -618,7 +663,7 @@ function recursiveDivision(maze: Uint8Array, cols: number, rows: number) {
  * - Randomly remove 3 walls between adjacent quadrants to create a larger maze.
  * - Repeat the duplication and wall removal process to double the maze size.
  */
-function fractalTessellation(maze: Uint8Array, cols: number, rows: number) {
+const fractalTessellation: Method = function* (maze, cols, rows, getIndex, fromIndex) {
 	maze[0] = 0b1111 // initial cell with all walls
 
 	let currentCols = 1
@@ -628,13 +673,14 @@ function fractalTessellation(maze: Uint8Array, cols: number, rows: number) {
 		// duplicate maze into 4 quadrants
 		for (let x = 0; x < currentCols; x++) {
 			for (let y = 0; y < currentRows; y++) {
-				const cell = maze[y * cols + x]
+				const cell = maze[getIndex(x, y)]
 				// copy right
-				maze[y * cols + x + currentCols] = cell
+				maze[getIndex(x + currentCols, y)] = cell
 				// copy down
-				maze[(y + currentRows) * cols + x] = cell
+				maze[getIndex(x, y + currentRows)] = cell
 				// copy down-right
-				maze[(y + currentRows) * cols + (x + currentCols)] = cell
+				maze[getIndex(x + currentCols, y + currentRows)] = cell
+				yield
 			}
 		}
 
@@ -646,29 +692,33 @@ function fractalTessellation(maze: Uint8Array, cols: number, rows: number) {
 			// remove wall between top-left and top-right
 			const x = currentCols
 			const y = randomInt(currentRows)
-			maze[y * cols + (x - 1)] &= ~0b0010 // remove east wall
-			maze[y * cols + x] &= ~0b1000 // remove west wall
+			maze[getIndex(x - 1, y)] &= ~0b0010 // remove east wall
+			maze[getIndex(x, y)] &= ~0b1000 // remove west wall
+			yield
 		}
 		if (right) {
 			// remove wall between top-right and bottom-right
 			const x = currentCols + randomInt(currentCols)
 			const y = currentRows
-			maze[(y - 1) * cols + x] &= ~0b0100 // remove south wall
-			maze[y * cols + x] &= ~0b0001 // remove north wall
+			maze[getIndex(x, y - 1)] &= ~0b0100 // remove south wall
+			maze[getIndex(x, y)] &= ~0b0001 // remove north wall
+			yield
 		}
 		if (bottom) {
 			// remove wall between bottom-left and bottom-right
 			const x = currentCols
 			const y = currentRows + randomInt(currentRows)
-			maze[y * cols + (x - 1)] &= ~0b0010 // remove east wall
-			maze[y * cols + x] &= ~0b1000 // remove west wall
+			maze[getIndex(x - 1, y)] &= ~0b0010 // remove east wall
+			maze[getIndex(x, y)] &= ~0b1000 // remove west wall
+			yield
 		}
 		if (left) {
 			// remove wall between top-left and bottom-left
 			const x = randomInt(currentCols)
 			const y = currentRows
-			maze[(y - 1) * cols + x] &= ~0b0100 // remove south wall
-			maze[y * cols + x] &= ~0b0001 // remove north wall
+			maze[getIndex(x, y - 1)] &= ~0b0100 // remove south wall
+			maze[getIndex(x, y)] &= ~0b0001 // remove north wall
+			yield
 		}
 
 		currentCols *= 2
@@ -682,12 +732,13 @@ function fractalTessellation(maze: Uint8Array, cols: number, rows: number) {
  * - initialize that size maze using another algorithm
  * - then proceed with the fractal tessellation
  */
-function rectangularFractalTessellation(maze: Uint8Array, cols: number, rows: number) {
+const rectangularFractalTessellation: Method = function* (maze, cols, rows, getIndex, fromIndex) {
 	let currentCols = 1
 	let currentRows = 1
 
 	if (cols === rows) {
 		maze[0] = 0b1111
+		yield
 	} else {
 		const min = Math.min(cols, rows)
 		const max = Math.max(cols, rows)
@@ -713,27 +764,21 @@ function rectangularFractalTessellation(maze: Uint8Array, cols: number, rows: nu
 			}
 		}
 		// initialize maze
-		const sub_maze = new Uint8Array(currentCols * currentRows)
-		depthFirstStackMaze(sub_maze, currentCols, currentRows)
-		// copy sub-maze into main maze
-		for (let x = 0; x < currentCols; x++) {
-			for (let y = 0; y < currentRows; y++) {
-				maze[y * cols + x] = sub_maze[y * currentCols + x]
-			}
-		}
+		yield* depthFirstStackMaze(maze, currentCols, currentRows, getIndex, fromIndex)
 	}
 
 	while (currentCols * 2 <= cols && currentRows <= rows) {
 		// duplicate maze into 4 quadrants
 		for (let x = 0; x < currentCols; x++) {
 			for (let y = 0; y < currentRows; y++) {
-				const cell = maze[y * cols + x]
+				const cell = maze[getIndex(x, y)]
 				// copy right
-				maze[y * cols + x + currentCols] = cell
+				maze[getIndex(x + currentCols, y)] = cell
 				// copy down
-				maze[(y + currentRows) * cols + x] = cell
+				maze[getIndex(x, y + currentRows)] = cell
 				// copy down-right
-				maze[(y + currentRows) * cols + (x + currentCols)] = cell
+				maze[getIndex(x + currentCols, y + currentRows)] = cell
+				yield
 			}
 		}
 
@@ -745,32 +790,47 @@ function rectangularFractalTessellation(maze: Uint8Array, cols: number, rows: nu
 			// remove wall between top-left and top-right
 			const x = currentCols
 			const y = randomInt(currentRows)
-			maze[y * cols + (x - 1)] &= ~0b0010 // remove east wall
-			maze[y * cols + x] &= ~0b1000 // remove west wall
+			maze[getIndex(x - 1, y)] &= ~0b0010 // remove east wall
+			maze[getIndex(x, y)] &= ~0b1000 // remove west wall
+			yield
 		}
 		if (right) {
 			// remove wall between top-right and bottom-right
 			const x = currentCols + randomInt(currentCols)
 			const y = currentRows
-			maze[(y - 1) * cols + x] &= ~0b0100 // remove south wall
-			maze[y * cols + x] &= ~0b0001 // remove north wall
+			maze[getIndex(x, y - 1)] &= ~0b0100 // remove south wall
+			maze[getIndex(x, y)] &= ~0b0001 // remove north wall
+			yield
 		}
 		if (bottom) {
 			// remove wall between bottom-left and bottom-right
 			const x = currentCols
 			const y = currentRows + randomInt(currentRows)
-			maze[y * cols + (x - 1)] &= ~0b0010 // remove east wall
-			maze[y * cols + x] &= ~0b1000 // remove west wall
+			maze[getIndex(x - 1, y)] &= ~0b0010 // remove east wall
+			maze[getIndex(x, y)] &= ~0b1000 // remove west wall
+			yield
 		}
 		if (left) {
 			// remove wall between top-left and bottom-left
 			const x = randomInt(currentCols)
 			const y = currentRows
-			maze[(y - 1) * cols + x] &= ~0b0100 // remove south wall
-			maze[y * cols + x] &= ~0b0001 // remove north wall
+			maze[getIndex(x, y - 1)] &= ~0b0100 // remove south wall
+			maze[getIndex(x, y)] &= ~0b0001 // remove north wall
+			yield
 		}
 
 		currentCols *= 2
 		currentRows *= 2
 	}
+}
+
+const ALGORITHMS: Record<string, { method: Method, name: string }> = {
+	'depth-first-stack': { method: depthFirstStackMaze, name: 'Depth-First Search' },
+	'iterative-randomized-kruskal': { method: iterativeRandomizedKruskal, name: 'Iterative Randomized Kruskal\'s' },
+	'iterative-randomized-prim': { method: iterativeRandomizedPrim, name: 'Iterative Randomized Prim\'s' },
+	'wilson': { method: wilson, name: 'Wilson\'s Random Walk' },
+	'aldous-broder': { method: aldousBroder, name: 'Aldous-Broder' },
+	'recursive-division': { method: recursiveDivision, name: 'Recursive Division' },
+	'fractal-tessellation': { method: fractalTessellation, name: 'Fractal Tessellation (square only)' },
+	'rectangular-fractal-tessellation': { method: rectangularFractalTessellation, name: 'Rectangular Fractal Tessellation' },
 }
