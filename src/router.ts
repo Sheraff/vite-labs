@@ -183,8 +183,8 @@ export const ROUTES = {
 			tags: ['wip']
 		},
 		git: {
-			lastModified: 0,
-			firstAdded: 0
+			lastModified: 1760880322000,
+			firstAdded: 1760880322000
 		},
 	},
 	"paint-worklet": {

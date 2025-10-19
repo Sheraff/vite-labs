@@ -39,6 +39,18 @@ export default function ParticleLifePage() {
 
 		const state = {
 			colors: [] as ColorDef[],
+			repulse: {
+				range: 10,
+				strength: 30,
+			},
+			attract: {
+				range: 40,
+				strength: 30,
+			},
+			wallRepulse: {
+				range: 50,
+				strength: 90,
+			},
 		}
 
 		const onInput = () => {
@@ -46,16 +58,23 @@ export default function ParticleLifePage() {
 			const result = state.colors || []
 			for (let i = 0; i < colors; i++) {
 				const def = result[i] || { count: 0, attractions: [], index: i, color: COLORS[i % COLORS.length] }
-				const count = getFormValue<number>(form, `particles_${i}_count`)!
+				const count = getFormValue<number>(form, `particles_${i}_count`) || 0
 				def.count = count
 				for (let j = 0; j < colors; j++) {
-					const attraction = getFormValue<number>(form, `attraction_${i}_${j}`)!
+					const attraction = getFormValue<number>(form, `attraction_${i}_${j}`) || 0
 					def.attractions[j] = attraction
 				}
 				result[i] = def
 			}
 			result.length = colors
 			state.colors = result
+
+			state.repulse.range = getFormValue<number>(form, 'repulse_range') || 10
+			state.repulse.strength = getFormValue<number>(form, 'repulse_strength') || 30
+			state.attract.range = getFormValue<number>(form, 'attract_range') || 40
+			state.attract.strength = getFormValue<number>(form, 'attract_strength') || 30
+			state.wallRepulse.range = getFormValue<number>(form, 'wall_repulse_range') || 50
+			state.wallRepulse.strength = getFormValue<number>(form, 'wall_repulse_strength') || 90
 		}
 
 		onInput()
@@ -69,6 +88,51 @@ export default function ParticleLifePage() {
 			stop?.()
 			onInput()
 			stop = start(ctx, state)
+		}, { signal: controller.signal })
+
+		const presetIdentityButton = form.elements.namedItem('preset-identity') as HTMLButtonElement
+		presetIdentityButton.addEventListener('click', () => {
+			const colors = state.colors.length
+			for (let i = 0; i < colors; i++) {
+				for (let j = 0; j < colors; j++) {
+					const input = form.elements.namedItem(`attraction_${i}_${j}`) as HTMLInputElement
+					input.value = i === j ? '1' : '0'
+				}
+			}
+			onInput()
+		}, { signal: controller.signal })
+
+		const presetChainButton = form.elements.namedItem('preset-chain') as HTMLButtonElement
+		presetChainButton.addEventListener('click', () => {
+			const colors = state.colors.length
+			for (let i = 0; i < colors; i++) {
+				for (let j = 0; j < colors; j++) {
+					const input = form.elements.namedItem(`attraction_${i}_${j}`) as HTMLInputElement
+					if (j === (i + 1) % colors) {
+						input.value = '0.8'
+					} else if (i === j) {
+						input.value = '0.5'
+					} else if ((j + 1) % colors === i) {
+						input.value = '-0.8'
+					} else {
+						input.value = '-0.2'
+					}
+				}
+			}
+			onInput()
+		}, { signal: controller.signal })
+
+		const presetRandomButton = form.elements.namedItem('preset-random') as HTMLButtonElement
+		presetRandomButton.addEventListener('click', () => {
+			const colors = state.colors.length
+			for (let i = 0; i < colors; i++) {
+				for (let j = 0; j < colors; j++) {
+					const input = form.elements.namedItem(`attraction_${i}_${j}`) as HTMLInputElement
+					const value = (Math.random() * 2 - 1).toFixed(2)
+					input.value = value
+				}
+			}
+			onInput()
 		}, { signal: controller.signal })
 
 		return () => {
@@ -96,12 +160,6 @@ export default function ParticleLifePage() {
 							<colgroup>
 								<col span={1} width="0" />
 							</colgroup>
-							<thead>
-								<tr>
-									<th></th>
-									<th>Count</th>
-								</tr>
-							</thead>
 							<tbody>
 								{Array.from({ length: colors }).map((_, i) => (
 									<tr key={i}>
@@ -109,7 +167,7 @@ export default function ParticleLifePage() {
 											<span className={styles.color} style={{ '--color': COLORS[i % COLORS.length] } as React.CSSProperties} />
 										</th>
 										<td>
-											<input type="number" name={`particles_${i}_count`} defaultValue="500" min="0" max="2000" step="1" />
+											<input type="number" name={`particles_${i}_count`} defaultValue="2000" min="0" max="2000" step="1" />
 										</td>
 									</tr>
 								))}
@@ -147,9 +205,53 @@ export default function ParticleLifePage() {
 								))}
 							</tbody>
 						</table>
+						<div className={styles.presets}>
+							<span>Presets:</span>
+							<button type="button" name="preset-identity">Identity</button>
+							<button type="button" name="preset-chain">Chain</button>
+							<button type="button" name="preset-random">Random</button>
+						</div>
 					</fieldset>
 					<fieldset>
 						<legend>Controls</legend>
+						<table>
+							<thead>
+								<tr>
+									<th></th>
+									<th>Range</th>
+									<th>Strength</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<th scope="row">Repulse</th>
+									<td>
+										<input type="range" name="repulse_range" defaultValue="10" min="0" max="100" step="1" />
+									</td>
+									<td>
+										<input type="range" name="repulse_strength" defaultValue="30" min="0" max="100" step="1" />
+									</td>
+								</tr>
+								<tr>
+									<th scope="row">Attract</th>
+									<td>
+										<input type="range" name="attract_range" defaultValue="40" min="0" max="100" step="1" />
+									</td>
+									<td>
+										<input type="range" name="attract_strength" defaultValue="30" min="0" max="100" step="1" />
+									</td>
+								</tr>
+								<tr>
+									<th scope="row">Wall Repulse</th>
+									<td>
+										<input type="range" name="wall_repulse_range" defaultValue="50" min="0" max="100" step="1" />
+									</td>
+									<td>
+										<input type="range" name="wall_repulse_strength" defaultValue="90" min="0" max="100" step="1" />
+									</td>
+								</tr>
+							</tbody>
+						</table>
 						<button type="button" name="restart">Restart simulation</button>
 					</fieldset>
 				</form>
@@ -171,7 +273,17 @@ type Particle = {
 	vy: number
 }
 
-function start(ctx: CanvasRenderingContext2D, state: { colors: ColorDef[] }) {
+type AttractionDef = {
+	range: number
+	strength: number
+}
+
+function start(ctx: CanvasRenderingContext2D, state: {
+	colors: ColorDef[]
+	repulse: AttractionDef
+	attract: AttractionDef
+	wallRepulse: AttractionDef
+}) {
 	console.log('start', state)
 	const width = ctx.canvas.width / devicePixelRatio
 	const height = ctx.canvas.height / devicePixelRatio
@@ -233,10 +345,10 @@ function start(ctx: CanvasRenderingContext2D, state: { colors: ColorDef[] }) {
 
 	function update(dt: number, frame: number) {
 		// constants
-		const max = 150
-		const repulse = max / 3
-		const peak = 2 * max / 3
-		const wallRepulse = 50
+		const max = state.repulse.range + state.attract.range
+		const repulse = state.repulse.range
+		const peak = state.repulse.range + state.attract.range / 2
+		const wallRepulse = state.wallRepulse.range
 		const dampen = 0.95
 
 		for (const particles of particlesByColor) {
@@ -258,13 +370,15 @@ function start(ctx: CanvasRenderingContext2D, state: { colors: ColorDef[] }) {
 					if (dist < repulse) {
 						// Repulse
 						const power = (repulse - dist) / repulse
-						p.vx -= (dx / dist) * attraction * power * dt * 20
-						p.vy -= (dy / dist) * attraction * power * dt * 20
+						const mult = attraction * power * dt * state.repulse.strength / dist
+						p.vx -= dx * mult
+						p.vy -= dy * mult
 					} else {
 						// Attract
 						const power = Math.abs(dist - peak) / (max - peak)
-						p.vx += (dx / dist) * attraction * power * dt * 50
-						p.vy += (dy / dist) * attraction * power * dt * 50
+						const mult = attraction * power * dt * state.attract.strength / dist
+						p.vx += dx * mult
+						p.vy += dy * mult
 					}
 				}
 
@@ -272,22 +386,22 @@ function start(ctx: CanvasRenderingContext2D, state: { colors: ColorDef[] }) {
 				left: {
 					const dx = p.x - wallRepulse
 					if (dx > 0) break left
-					p.vx -= (dx / wallRepulse) * dt * 100
+					p.vx -= (dx / wallRepulse) * dt * state.wallRepulse.strength
 				}
 				right: {
 					const dx = (width - p.x) - wallRepulse
 					if (dx > 0) break right
-					p.vx += (dx / wallRepulse) * dt * 100
+					p.vx += (dx / wallRepulse) * dt * state.wallRepulse.strength
 				}
 				top: {
 					const dy = p.y - wallRepulse
 					if (dy > 0) break top
-					p.vy -= (dy / wallRepulse) * dt * 100
+					p.vy -= (dy / wallRepulse) * dt * state.wallRepulse.strength
 				}
 				bottom: {
 					const dy = (height - p.y) - wallRepulse
 					if (dy > 0) break bottom
-					p.vy += (dy / wallRepulse) * dt * 100
+					p.vy += (dy / wallRepulse) * dt * state.wallRepulse.strength
 				}
 
 				// Dampen velocity
