@@ -180,10 +180,10 @@ export const ROUTES = {
 		meta: {
 			title: 'Particle Life',
 			image: particle_life_image,
-			tags: ['wip']
+			tags: ['simulation', 'canvas', 'particles'],
 		},
 		git: {
-			lastModified: 1760880322000,
+			lastModified: 1760886194000,
 			firstAdded: 1760880322000
 		},
 	},

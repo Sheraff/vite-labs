@@ -8,7 +8,7 @@ import { TreeNode } from "#quad-tree-collisions/TreeNode"
 export const meta: RouteMeta = {
 	title: 'Particle Life',
 	image: './screen.png',
-	tags: ['wip']
+	tags: ['simulation', 'canvas', 'particles'],
 }
 
 type ColorDef = {
