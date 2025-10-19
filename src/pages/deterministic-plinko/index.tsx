@@ -241,8 +241,9 @@ function simulateBall(x: number, y: number, r: number, obstacles: { x: number; y
 			// resolve collision
 			const overlap = minDistance - distance
 			const angle = Math.atan2(dy, dx)
-			vx -= Math.cos(angle) * overlap / dt
-			vy -= Math.sin(angle) * overlap / dt
+			const bumper_energy = 1.5
+			vx -= Math.cos(angle) * overlap / dt * bumper_energy
+			vy -= Math.sin(angle) * overlap / dt * bumper_energy
 		}
 
 		positions.push(x, y)
