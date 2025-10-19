@@ -64,8 +64,12 @@ function start(ctx: CanvasRenderingContext2D) {
 	const obstacles = Array.from({
 		*[Symbol.iterator]() {
 			for (let y = OBSTACLE_SPACING.y; y < height; y += OBSTACLE_SPACING.y) {
-				const offset_x = (y / OBSTACLE_SPACING.y) % 2 === 0 ? 0 : OBSTACLE_SPACING.x / 2
+				const offset_x = OBSTACLE_RADIUS + ((y / OBSTACLE_SPACING.y) % 2 === 0 ? 0 : OBSTACLE_SPACING.x / 2)
 				for (let x = offset_x; x < width; x += OBSTACLE_SPACING.x) {
+					// avoid situations where the ball can get stuck between an obstacle and the wall
+					if (x > BALL_RADIUS * 2 && x < BALL_RADIUS * 2 + OBSTACLE_RADIUS) continue
+					if (x < width - BALL_RADIUS * 2 && x > width - (BALL_RADIUS * 2 + OBSTACLE_RADIUS)) continue
+					// valid obstacle
 					yield { x, y }
 				}
 			}
@@ -79,7 +83,7 @@ function start(ctx: CanvasRenderingContext2D) {
 			const first_of_last_row = obstacles.findIndex(o => o.y === last_y)
 			let start = obstacles[first_of_last_row + 1]!.x
 			if (start < OBSTACLE_SPACING.x + BALL_RADIUS) start = obstacles[first_of_last_row + 2]!.x
-			for (let x = start; x <= width; x += OBSTACLE_SPACING.x * 2) {
+			for (let x = start; x <= width - OBSTACLE_RADIUS * 2; x += OBSTACLE_SPACING.x * 2) {
 				yield x
 			}
 		}
@@ -89,6 +93,7 @@ function start(ctx: CanvasRenderingContext2D) {
 	})
 
 	for (const bucket of buckets) {
+		if (bucket.x < OBSTACLE_RADIUS * 2 || bucket.x > width - OBSTACLE_RADIUS * 2) continue // avoid miniature buckets at edges
 		obstacles.push({ x: bucket.x, y: height - (height - last_y) / 2 })
 		obstacles.push({ x: bucket.x, y: height })
 	}
@@ -110,13 +115,16 @@ function start(ctx: CanvasRenderingContext2D) {
 		ctx.clearRect(0, 0, width, height)
 
 		// draw buckets
-		for (const bucket of buckets) {
+		for (let i = 0; i < buckets.length; i++) {
+			const bucket = buckets[i]!
+			const nextBucket = buckets[i + 1]
+			const w = nextBucket ? nextBucket.x - bucket.x : width - bucket.x
 			ctx.fillStyle = `hsl(${bucket.hue}, 100%, 20%)`
-			ctx.fillRect(bucket.x, last_y, OBSTACLE_SPACING.x * 2, height - last_y)
+			ctx.fillRect(bucket.x, last_y, w, height - last_y)
 		}
 
 		// draw obstacles
-		ctx.fillStyle = 'black'
+		ctx.fillStyle = '#222222'
 		for (const obstacle of obstacles) {
 			ctx.beginPath()
 			ctx.arc(obstacle.x, obstacle.y, OBSTACLE_RADIUS, 0, Math.PI * 2)
@@ -212,6 +220,15 @@ function simulateBall(x: number, y: number, r: number, obstacles: { x: number; y
 		// apply damping
 		vx *= damping
 		vy *= damping
+
+		// check for wall collisions
+		if (x - r < 0) {
+			x = r
+			vx = -vx
+		} else if (x + r > width) {
+			x = width - r
+			vx = -vx
+		}
 
 		// check for collisions with obstacles
 		const minDistance = obstacleRadius + r
