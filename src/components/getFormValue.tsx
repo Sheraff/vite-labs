@@ -4,11 +4,18 @@ export function getFormValue<T,>(form: HTMLFormElement, name: string): T | undef
 	if (element instanceof RadioNodeList) return element.value as T
 	if (element instanceof HTMLSelectElement) return element.value as T
 	if (element instanceof HTMLInputElement) {
+		if (element.type === 'hidden') {
+			return element.value as T
+		}
 		if (element.type === 'range') {
 			return element.valueAsNumber as T
 		}
 		if (element.type === 'checkbox') {
 			return element.checked as T
 		}
+		if (element.type === 'number') {
+			return element.valueAsNumber as T
+		}
+		return element.value as T
 	}
 }

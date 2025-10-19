@@ -11,6 +11,7 @@ import quad_tree_collisions_image from "./pages/quad-tree-collisions/screen.png"
 import quad_tree_image from "./pages/quad-tree/screen.png"
 import pong_pang_image from "./pages/pong-pang/screen.png"
 import perlin_ripples_image from "./pages/perlin-ripples/screen.png"
+import particle_life_image from "./pages/particle-life/screen.png"
 import paint_worklet_image from "./pages/paint-worklet/screen.png"
 import normal_map_image from "./pages/normal-map/screen.png"
 import neat_image from "./pages/neat/screen.png"
@@ -32,7 +33,7 @@ import ants_shader_image from "./pages/ants-shader/screen.png"
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "star-rating" | "spring-fluid" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "paint-worklet" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "maze-generation" | "lightning" | "intl-tuesday" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "deterministic-plinko" | "cursor-projection" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "ants-shader" | "ants" | "a-star"
+export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "swarm-pathfinding" | "star-rating" | "spring-fluid" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "particle-life" | "paint-worklet" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "maze-generation" | "lightning" | "intl-tuesday" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "deterministic-plinko" | "cursor-projection" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "ants-shader" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
@@ -174,6 +175,18 @@ export const ROUTES = {
 			firstAdded: 1721823247000
 		},
 	},
+	"particle-life": {
+		Component: lazy(() => import("./pages/particle-life/index.tsx")),
+		meta: {
+			title: 'Particle Life',
+			image: particle_life_image,
+			tags: ['wip']
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
+		},
+	},
 	"paint-worklet": {
 		Component: lazy(() => import("./pages/paint-worklet/index.tsx")),
 		meta: {
@@ -247,7 +260,7 @@ export const ROUTES = {
 			tags: ['algorithm', 'procedural']
 		},
 		git: {
-			lastModified: 1760836386000,
+			lastModified: 1760869556000,
 			firstAdded: 1760825464000
 		},
 	},
