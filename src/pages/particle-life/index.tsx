@@ -23,7 +23,7 @@ export default function ParticleLifePage() {
 	const canvasRef = useRef<HTMLCanvasElement>(null)
 	const formRef = useRef<HTMLFormElement>(null)
 
-	const [colors, setColors] = useState(4)
+	const [colors, setColors] = useState(7)
 	const [fps, setFps] = useState(0)
 	const [formatter] = useState(() => new Intl.NumberFormat(undefined, { maximumFractionDigits: 1, minimumFractionDigits: 1 }))
 
@@ -174,7 +174,7 @@ export default function ParticleLifePage() {
 											<span className={styles.color} style={{ '--color': COLORS[i % COLORS.length] } as React.CSSProperties} />
 										</th>
 										<td>
-											<input type="number" name={`particles_${i}_count`} defaultValue="2000" min="0" max="2000" step="1" />
+											<input type="number" name={`particles_${i}_count`} defaultValue="1000" min="0" max="2000" step="1" />
 										</td>
 									</tr>
 								))}
@@ -356,7 +356,7 @@ function start(ctx: CanvasRenderingContext2D, state: {
 		const max = state.repulse.range + state.attract.range
 		const repulse = state.repulse.range
 		const wallRepulse = state.wallRepulse.range
-		const dampen = 0.95
+		const dampen = 0.94
 
 		for (const particles of particlesByColor) {
 			for (const p of particles) {
@@ -413,6 +413,9 @@ function start(ctx: CanvasRenderingContext2D, state: {
 				// Dampen velocity
 				p.vx *= dampen
 				p.vy *= dampen
+
+				if (Math.abs(p.vx) > 100) p.vx = 100 * Math.sign(p.vx)
+				if (Math.abs(p.vy) > 100) p.vy = 100 * Math.sign(p.vy)
 			}
 		}
 
