@@ -26,6 +26,10 @@
 	z-index: 1;
 	user-select: none;
 
+	output {
+		font-variant-numeric: tabular-nums;
+	}
+
 	fieldset {
 		width: fit-content;
 		min-width: 100%;

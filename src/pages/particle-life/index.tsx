@@ -4,6 +4,7 @@ import type { RouteMeta } from "#router"
 import { useEffect, useRef, useState } from "react"
 import { getFormValue } from "#components/getFormValue"
 import { TreeNode } from "#quad-tree-collisions/TreeNode"
+import { makeFrameCounter } from "#components/makeFrameCounter"
 
 export const meta: RouteMeta = {
 	title: 'Particle Life',
@@ -23,6 +24,8 @@ export default function ParticleLifePage() {
 	const formRef = useRef<HTMLFormElement>(null)
 
 	const [colors, setColors] = useState(4)
+	const [fps, setFps] = useState(0)
+	const [formatter] = useState(() => new Intl.NumberFormat(undefined, { maximumFractionDigits: 1, minimumFractionDigits: 1 }))
 
 	useEffect(() => {
 		const canvas = canvasRef.current
@@ -81,13 +84,16 @@ export default function ParticleLifePage() {
 
 		form.addEventListener('input', onInput, { signal: controller.signal })
 
-		let stop = start(ctx, state)
+		const frameCounter = makeFrameCounter(50)
+		const onFrame = (dt: number) => setFps(frameCounter(dt))
+
+		let stop = start(ctx, state, onFrame)
 
 		const restartButton = form.elements.namedItem('restart') as HTMLButtonElement
 		restartButton.addEventListener('click', () => {
 			stop?.()
 			onInput()
-			stop = start(ctx, state)
+			stop = start(ctx, state, onFrame)
 		}, { signal: controller.signal })
 
 		const presetIdentityButton = form.elements.namedItem('preset-identity') as HTMLButtonElement
@@ -109,13 +115,13 @@ export default function ParticleLifePage() {
 				for (let j = 0; j < colors; j++) {
 					const input = form.elements.namedItem(`attraction_${i}_${j}`) as HTMLInputElement
 					if (j === (i + 1) % colors) {
-						input.value = '0.8'
-					} else if (i === j) {
 						input.value = '0.5'
+					} else if (i === j) {
+						input.value = '1'
 					} else if ((j + 1) % colors === i) {
-						input.value = '-0.8'
+						input.value = '-0.5'
 					} else {
-						input.value = '-0.2'
+						input.value = '0'
 					}
 				}
 			}
@@ -155,6 +161,7 @@ export default function ParticleLifePage() {
 								if (!e) return
 								e.dispatchEvent(new Event('input', { bubbles: true }))
 							}} />
+							<output>{formatter.format(fps)} fps</output>
 						</div>
 						<table>
 							<colgroup>
@@ -283,7 +290,7 @@ function start(ctx: CanvasRenderingContext2D, state: {
 	repulse: AttractionDef
 	attract: AttractionDef
 	wallRepulse: AttractionDef
-}) {
+}, onFrame: (dt: number) => void) {
 	console.log('start', state)
 	const width = ctx.canvas.width / devicePixelRatio
 	const height = ctx.canvas.height / devicePixelRatio
@@ -299,6 +306,7 @@ function start(ctx: CanvasRenderingContext2D, state: {
 		lastTime = time
 		frameCount++
 		if (dt > 1) return
+		onFrame(dt)
 		addRemoveParticles()
 		update(dt, frameCount)
 		draw()
