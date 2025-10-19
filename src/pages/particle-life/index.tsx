@@ -226,7 +226,7 @@ export default function ParticleLifePage() {
 								<tr>
 									<th scope="row">Repulse</th>
 									<td>
-										<input type="range" name="repulse_range" defaultValue="10" min="0" max="100" step="1" />
+										<input type="range" name="repulse_range" defaultValue="20" min="0" max="100" step="1" />
 									</td>
 									<td>
 										<input type="range" name="repulse_strength" defaultValue="30" min="0" max="100" step="1" />
@@ -238,7 +238,7 @@ export default function ParticleLifePage() {
 										<input type="range" name="attract_range" defaultValue="40" min="0" max="100" step="1" />
 									</td>
 									<td>
-										<input type="range" name="attract_strength" defaultValue="30" min="0" max="100" step="1" />
+										<input type="range" name="attract_strength" defaultValue="20" min="0" max="100" step="1" />
 									</td>
 								</tr>
 								<tr>
@@ -247,7 +247,7 @@ export default function ParticleLifePage() {
 										<input type="range" name="wall_repulse_range" defaultValue="50" min="0" max="100" step="1" />
 									</td>
 									<td>
-										<input type="range" name="wall_repulse_strength" defaultValue="90" min="0" max="100" step="1" />
+										<input type="range" name="wall_repulse_strength" defaultValue="100" min="0" max="100" step="1" />
 									</td>
 								</tr>
 							</tbody>
@@ -347,7 +347,6 @@ function start(ctx: CanvasRenderingContext2D, state: {
 		// constants
 		const max = state.repulse.range + state.attract.range
 		const repulse = state.repulse.range
-		const peak = state.repulse.range + state.attract.range / 2
 		const wallRepulse = state.wallRepulse.range
 		const dampen = 0.95
 
@@ -356,10 +355,6 @@ function start(ctx: CanvasRenderingContext2D, state: {
 				const neighbors = tree.query(p.x, p.y, max)
 				for (const n of neighbors) {
 					if (n === p) continue
-
-					const colorDef = state.colors[p.color]
-					const attraction = colorDef.attractions[n.color]
-					if (attraction === 0) continue
 
 					const dx = n.x - p.x
 					const dy = n.y - p.y
@@ -370,13 +365,16 @@ function start(ctx: CanvasRenderingContext2D, state: {
 					if (dist < repulse) {
 						// Repulse
 						const power = (repulse - dist) / repulse
-						const mult = attraction * power * dt * state.repulse.strength / dist
+						const mult = power * dt * state.repulse.strength / dist
 						p.vx -= dx * mult
 						p.vy -= dy * mult
 					} else {
 						// Attract
-						const power = Math.abs(dist - peak) / (max - peak)
-						const mult = attraction * power * dt * state.attract.strength / dist
+						const colorDef = state.colors[p.color]
+						const attraction = colorDef.attractions[n.color]
+						if (attraction === 0) continue
+						const power = attraction * Math.abs((dist - repulse) / (max - repulse) * 2 - 1)
+						const mult = power * dt * state.attract.strength / dist
 						p.vx += dx * mult
 						p.vy += dy * mult
 					}
