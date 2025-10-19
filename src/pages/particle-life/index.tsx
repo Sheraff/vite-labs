@@ -3,8 +3,10 @@ import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
 import { useEffect, useRef, useState } from "react"
 import { getFormValue } from "#components/getFormValue"
-import { TreeNode } from "#quad-tree-collisions/TreeNode"
 import { makeFrameCounter } from "#components/makeFrameCounter"
+
+import UpdateWorker from './update.worker?worker'
+import type { Incoming, Outgoing } from './update.worker'
 
 export const meta: RouteMeta = {
 	title: 'Particle Life',
@@ -19,12 +21,25 @@ type ColorDef = {
 	color: string
 }
 
+type AttractionDef = {
+	range: number
+	strength: number
+}
+
+type State = {
+	colors: ColorDef[]
+	repulse: AttractionDef
+	attract: AttractionDef
+	wallRepulse: AttractionDef
+}
+
 export default function ParticleLifePage() {
 	const canvasRef = useRef<HTMLCanvasElement>(null)
 	const formRef = useRef<HTMLFormElement>(null)
 
 	const [colors, setColors] = useState(7)
 	const [fps, setFps] = useState(0)
+	const [workers] = useState(() => Math.max(1, navigator.hardwareConcurrency - 1))
 	const [formatter] = useState(() => new Intl.NumberFormat(undefined, { maximumFractionDigits: 1, minimumFractionDigits: 1 }))
 
 	useEffect(() => {
@@ -40,8 +55,8 @@ export default function ParticleLifePage() {
 
 		const controller = new AbortController()
 
-		const state = {
-			colors: [] as ColorDef[],
+		const state: State = {
+			colors: [],
 			repulse: {
 				range: 10,
 				strength: 30,
@@ -55,6 +70,8 @@ export default function ParticleLifePage() {
 				strength: 90,
 			},
 		}
+
+		let current: ReturnType<typeof start> | null = null
 
 		const onInput = () => {
 			const colors = Number(getFormValue<string>(form, 'colors'))
@@ -78,6 +95,8 @@ export default function ParticleLifePage() {
 			state.attract.strength = getFormValue<number>(form, 'attract_strength') || 30
 			state.wallRepulse.range = getFormValue<number>(form, 'wall_repulse_range') || 50
 			state.wallRepulse.strength = getFormValue<number>(form, 'wall_repulse_strength') || 90
+
+			current?.update(state)
 		}
 
 		onInput()
@@ -87,13 +106,13 @@ export default function ParticleLifePage() {
 		const frameCounter = makeFrameCounter(50)
 		const onFrame = (dt: number) => setFps(frameCounter(dt))
 
-		let stop = start(ctx, state, onFrame)
+		current = start(ctx, state, onFrame)
 
 		const restartButton = form.elements.namedItem('restart') as HTMLButtonElement
 		restartButton.addEventListener('click', () => {
-			stop?.()
+			current?.stop()
 			onInput()
-			stop = start(ctx, state, onFrame)
+			current = start(ctx, state, onFrame)
 		}, { signal: controller.signal })
 
 		const presetIdentityButton = form.elements.namedItem('preset-identity') as HTMLButtonElement
@@ -141,11 +160,22 @@ export default function ParticleLifePage() {
 			onInput()
 		}, { signal: controller.signal })
 
+		const playPauseButton = form.elements.namedItem('play-pause') as HTMLButtonElement
+		playPauseButton.addEventListener('click', () => {
+			if (playPauseButton.getAttribute('data-state') === 'playing') {
+				current?.pause()
+			} else {
+				current?.resume()
+			}
+		}, { signal: controller.signal })
+
 		return () => {
-			stop?.()
+			current?.stop()
 			controller.abort()
 		}
 	}, [])
+
+	const [play, setPlay] = useState(true)
 
 	return (
 		<div className={styles.main}>
@@ -161,7 +191,8 @@ export default function ParticleLifePage() {
 								if (!e) return
 								e.dispatchEvent(new Event('input', { bubbles: true }))
 							}} />
-							<output>{formatter.format(fps)} fps</output>
+							<output className={styles.fps}>{formatter.format(fps)} fps on {workers} workers</output>
+							<button type="button" name="play-pause" data-state={play ? 'playing' : 'paused'} onClick={() => setPlay(p => !p)}>{play ? '⏸︎' : '▶︎'}</button>
 						</div>
 						<table>
 							<colgroup>
@@ -174,12 +205,13 @@ export default function ParticleLifePage() {
 											<span className={styles.color} style={{ '--color': COLORS[i % COLORS.length] } as React.CSSProperties} />
 										</th>
 										<td>
-											<input type="number" name={`particles_${i}_count`} defaultValue="1000" min="0" max="2000" step="1" />
+											<input type="number" name={`particles_${i}_count`} defaultValue="1500" min="0" max="2000" step="1" />
 										</td>
 									</tr>
 								))}
 							</tbody>
 						</table>
+						<button type="button" name="restart">Restart simulation</button>
 					</fieldset>
 					<fieldset>
 						<legend>Attraction</legend>
@@ -259,7 +291,6 @@ export default function ParticleLifePage() {
 								</tr>
 							</tbody>
 						</table>
-						<button type="button" name="restart">Restart simulation</button>
 					</fieldset>
 				</form>
 			</div>
@@ -272,174 +303,127 @@ export default function ParticleLifePage() {
 
 
 
-type Particle = {
-	color: number
-	x: number
-	y: number
-	vx: number
-	vy: number
-}
-
-type AttractionDef = {
-	range: number
-	strength: number
-}
-
-function start(ctx: CanvasRenderingContext2D, state: {
-	colors: ColorDef[]
-	repulse: AttractionDef
-	attract: AttractionDef
-	wallRepulse: AttractionDef
-}, onFrame: (dt: number) => void) {
+function start(ctx: CanvasRenderingContext2D, state: State, onFrame: (dt: number) => void) {
 	console.log('start', state)
 	const width = ctx.canvas.width / devicePixelRatio
 	const height = ctx.canvas.height / devicePixelRatio
 
-	const particlesByColor = new Array<Particle[]>()
-	const tree = new TreeNode<Particle>(0, 0, width, height, 8)
+	const total = state.colors.reduce((sum, c) => sum + c.count, 0)
+	// const particles = new Array<Particle>(total)
+	// const tree = new TreeNode<Particle>(0, 0, width, height, 8)
 
-	let lastTime = 0
-	let frameCount = 0
+	const x_buffer = new SharedArrayBuffer(Float32Array.BYTES_PER_ELEMENT * total)
+	const y_buffer = new SharedArrayBuffer(Float32Array.BYTES_PER_ELEMENT * total)
+	const vx_buffer = new SharedArrayBuffer(Float32Array.BYTES_PER_ELEMENT * total)
+	const vy_buffer = new SharedArrayBuffer(Float32Array.BYTES_PER_ELEMENT * total)
+	const color_buffer = new SharedArrayBuffer(Uint8Array.BYTES_PER_ELEMENT * total)
+
+	const x = new Float32Array(x_buffer)
+	const y = new Float32Array(y_buffer)
+	const vx = new Float32Array(vx_buffer)
+	const vy = new Float32Array(vy_buffer)
+	const color = new Uint8Array(color_buffer)
+	{
+		let i = 0
+		for (const c of state.colors) {
+			for (let j = 0; j < c.count; j++) {
+				color[i] = c.index
+				x[i] = Math.random() * width
+				y[i] = Math.random() * height
+				vx[i] = 0
+				vy[i] = 0
+				i++
+			}
+		}
+	}
+
+	const controller = new AbortController()
+	const parallelism = Math.max(1, navigator.hardwareConcurrency - 1)
+	const workers = new Array<Worker>(parallelism)
+	for (let i = 0; i < parallelism; i++) {
+		const worker = new UpdateWorker()
+		workers[i] = worker
+
+		const indexStart = Math.floor(i * total / parallelism)
+		const indexEnd = i === parallelism - 1
+			? total
+			: Math.floor((i + 1) * total / parallelism)
+
+		worker.postMessage({
+			type: 'buffers',
+			data: {
+				color: color_buffer,
+				x: x_buffer,
+				y: y_buffer,
+				vx: vx_buffer,
+				vy: vy_buffer,
+				total,
+				range: [indexStart, indexEnd],
+				width,
+				height,
+			}
+		} satisfies Incoming)
+
+		worker.postMessage({
+			type: 'state',
+			data: state
+		} satisfies Incoming)
+
+		worker.addEventListener('message', (e: MessageEvent<Outgoing>) => {
+			switch (e.data.type) {
+				case "frame":
+					onFrame(e.data.data.dt / 1000)
+					break
+			}
+		}, { signal: controller.signal })
+	}
+
 	let rafId = requestAnimationFrame(function loop(time) {
 		rafId = requestAnimationFrame(loop)
-		const dt = (time - lastTime) / 1000
-		lastTime = time
-		frameCount++
-		if (dt > 1) return
-		onFrame(dt)
-		addRemoveParticles()
-		update(dt, frameCount)
 		draw()
 	})
 
 
-	return () => {
-		cancelAnimationFrame(rafId)
-	}
-
-	function addRemoveParticles() {
-		if (state.colors.length < particlesByColor.length) {
-			for (let i = state.colors.length; i < particlesByColor.length; i++) {
-				const particles = particlesByColor[i]
-				for (const p of particles) {
-					tree.remove(p)
-				}
+	return {
+		stop: () => {
+			cancelAnimationFrame(rafId)
+			controller.abort()
+			for (const worker of workers) {
+				worker.terminate()
 			}
-			particlesByColor.length = state.colors.length
-		}
-		for (const color of state.colors) {
-			const particles = (particlesByColor[color.index] ||= [])
-			if (particles.length === color.count) continue
-			if (particles.length > color.count) {
-				for (let i = color.count; i < particles.length; i++) {
-					tree.remove(particles[i])
-				}
-				particles.length = color.count
-			} else {
-				for (let i = particles.length; i < color.count; i++) {
-					const p: Particle = {
-						color: color.index,
-						x: Math.random() * width,
-						y: Math.random() * height,
-						vx: 0,
-						vy: 0,
-					}
-					particles.push(p)
-					tree.insert(p)
-				}
+		},
+		update: (state: State) => {
+			for (const worker of workers) {
+				worker.postMessage({
+					type: 'state',
+					data: state
+				} satisfies Incoming)
 			}
-		}
-	}
-
-	function update(dt: number, frame: number) {
-		// constants
-		const max = state.repulse.range + state.attract.range
-		const repulse = state.repulse.range
-		const wallRepulse = state.wallRepulse.range
-		const dampen = 0.94
-
-		for (const particles of particlesByColor) {
-			for (const p of particles) {
-				const neighbors = tree.query(p.x, p.y, max)
-				for (const n of neighbors) {
-					if (n === p) continue
-
-					const dx = n.x - p.x
-					const dy = n.y - p.y
-					const dist = Math.hypot(dx, dy)
-
-					if (dist > max) continue
-
-					if (dist < repulse) {
-						// Repulse
-						const power = (repulse - dist) / repulse
-						const mult = power * dt * state.repulse.strength / dist
-						p.vx -= dx * mult
-						p.vy -= dy * mult
-					} else {
-						// Attract
-						const colorDef = state.colors[p.color]
-						const attraction = colorDef.attractions[n.color]
-						if (attraction === 0) continue
-						const power = attraction * Math.abs((dist - repulse) / (max - repulse) * 2 - 1)
-						const mult = power * dt * state.attract.strength / dist
-						p.vx += dx * mult
-						p.vy += dy * mult
-					}
-				}
-
-				// Repulse from walls
-				left: {
-					const dx = p.x - wallRepulse
-					if (dx > 0) break left
-					p.vx -= (dx / wallRepulse) * dt * state.wallRepulse.strength
-				}
-				right: {
-					const dx = (width - p.x) - wallRepulse
-					if (dx > 0) break right
-					p.vx += (dx / wallRepulse) * dt * state.wallRepulse.strength
-				}
-				top: {
-					const dy = p.y - wallRepulse
-					if (dy > 0) break top
-					p.vy -= (dy / wallRepulse) * dt * state.wallRepulse.strength
-				}
-				bottom: {
-					const dy = (height - p.y) - wallRepulse
-					if (dy > 0) break bottom
-					p.vy += (dy / wallRepulse) * dt * state.wallRepulse.strength
-				}
-
-				// Dampen velocity
-				p.vx *= dampen
-				p.vy *= dampen
-
-				if (Math.abs(p.vx) > 100) p.vx = 100 * Math.sign(p.vx)
-				if (Math.abs(p.vy) > 100) p.vy = 100 * Math.sign(p.vy)
+		},
+		pause: () => {
+			for (const worker of workers) {
+				worker.postMessage({
+					type: 'pause',
+				} satisfies Incoming)
 			}
-		}
-
-		const updateTree = frame % 10 === 0
-		for (const particles of particlesByColor) {
-			for (const p of particles) {
-				p.x += p.vx * dt
-				p.y += p.vy * dt
-
-				if (updateTree) tree.update(p)
+		},
+		resume: () => {
+			for (const worker of workers) {
+				worker.postMessage({
+					type: 'resume',
+				} satisfies Incoming)
 			}
-		}
+		},
 	}
 
 	function draw() {
 		ctx.clearRect(0, 0, width, height)
-		for (const particles of particlesByColor) {
-			for (const p of particles) {
-				ctx.fillStyle = state.colors[p.color].color
-				ctx.fillRect(p.x, p.y, 2, 2)
-				// ctx.beginPath()
-				// ctx.arc(p.x, p.y, 3, 0, Math.PI * 2)
-				// ctx.fill()
-			}
+		for (let i = 0; i < total; i++) {
+			const px = x[i]
+			const py = y[i]
+			const pcolor = color[i]
+			ctx.fillStyle = state.colors[pcolor].color
+			ctx.fillRect(px, py, 2, 2)
 		}
 	}
 }
@@ -454,16 +438,3 @@ const COLORS = [
 	'indigo',
 	'violet',
 ]
-
-// Pythagorean theorem approximation
-// https://stackoverflow.com/questions/3506404/fast-hypotenuse-algorithm-for-embedded-processor
-// All these assume 0 ≤ a ≤ b.
-// h = b + 0.337 * a                 // max error ≈ 5.5 %
-// h = max(b, 0.918 * (b + (a>>1)))  // max error ≈ 2.6 %
-// h = b + 0.428 * a * a / b         // max error ≈ 1.04 %
-function fastHypot(x: number, y: number) {
-	if (x > y) {
-		return (x + 0.337 * y)
-	}
-	return (y + 0.337 * x)
-}
