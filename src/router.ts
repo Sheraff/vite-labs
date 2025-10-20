@@ -3,6 +3,7 @@
 import { type JSX, lazy } from "react"
 import wave_function_collapse_ascii_image from "./pages/wave-function-collapse-ascii/screen.png"
 import wave_function_collapse_image from "./pages/wave-function-collapse/screen.png"
+import visual_exec_image from "./pages/visual-exec/screen.png"
 import swarm_pathfinding_image from "./pages/swarm-pathfinding/screen.png"
 import star_rating_image from "./pages/star-rating/screen.png"
 import spring_fluid_image from "./pages/spring-fluid/screen.png"
@@ -82,9 +83,10 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/visual-exec/index.tsx")),
 		meta: {
 			title: 'Visual Exec (WIP)',
+			image: visual_exec_image
 		},
 		git: {
-			lastModified: 1760993420000,
+			lastModified: 1760995969000,
 			firstAdded: 1760983403000
 		},
 	},

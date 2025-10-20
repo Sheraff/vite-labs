@@ -9,6 +9,7 @@ import type { Incoming, Outgoing } from './realm.worker'
 
 export const meta: RouteMeta = {
 	title: 'Visual Exec (WIP)',
+	image: './screen.png'
 }
 
 // const initialCode = `
