@@ -1,7 +1,7 @@
 import styles from './styles.module.css'
 import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
-import { useEffect, useRef } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { getFormValue } from "#components/getFormValue"
 import { shuffleArray } from "#components/shuffleArray"
 
@@ -17,6 +17,8 @@ export const meta: RouteMeta = {
 export default function MazeGenerationPage() {
 	const canvasRef = useRef<HTMLCanvasElement>(null)
 	const formRef = useRef<HTMLFormElement>(null)
+	const [_selected, setSelected] = useHashParam()
+	const selected = _selected && _selected in ALGORITHMS ? _selected : 'depth-first-stack'
 
 	useEffect(() => {
 		const canvas = canvasRef.current
@@ -69,7 +71,12 @@ export default function MazeGenerationPage() {
 			<form className={styles.controls} ref={formRef}>
 				<fieldset>
 					<legend>Controls</legend>
-					<select name="algorithm" id="algorithm">
+					<select
+						name="algorithm"
+						id="algorithm"
+						value={selected}
+						onChange={e => setSelected(e.target.value)}
+					>
 						{Object.entries(ALGORITHMS).map(([key, { name }]) => (
 							<option key={key} value={key}>
 								{name}
@@ -838,4 +845,30 @@ const ALGORITHMS: Record<string, { method: Method, name: string }> = {
 	'recursive-division': { method: recursiveDivision, name: 'Recursive Division' },
 	'fractal-tessellation': { method: fractalTessellation, name: 'Fractal Tessellation (square only)' },
 	'rectangular-fractal-tessellation': { method: rectangularFractalTessellation, name: 'Rectangular Fractal Tessellation' },
+}
+
+function getHash(): string | null {
+	return window.location.hash.slice(1) || null
+}
+
+function useHashParam() {
+	const [param, setParam] = useState<string | null>(getHash)
+
+	useEffect(() => {
+		const onHashChange = () => setParam(getHash())
+		window.addEventListener("hashchange", onHashChange)
+		return () => {
+			window.removeEventListener("hashchange", onHashChange)
+		}
+	}, [])
+
+	const setHash = useCallback((newParam: string | null) => {
+		if (newParam) {
+			window.history.replaceState(null, '', `#${newParam}`)
+		} else {
+			window.history.replaceState(null, '', window.location.pathname)
+		}
+	}, [])
+
+	return [param, setHash] as const
 }
