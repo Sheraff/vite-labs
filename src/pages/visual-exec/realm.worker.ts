@@ -3,7 +3,7 @@
 // import { parseForESLint } from '@typescript-eslint/parser/package.json'
 // import { simpleTraverse } from '@typescript-eslint/typescript-estree'
 import { parse, type Node } from 'acorn'
-import { simple as walk } from "acorn-walk"
+import { ancestor as walk } from "acorn-walk"
 
 export type Incoming =
 	| {
@@ -97,69 +97,102 @@ for (let i = 0; i < foo.length; i++) {
 ```
 becomes
 ```js
-const foo = yield [1, 2, 3]
-for (let i = yield 0; yield (i < foo.length); yield i++) {
-	const value = yield foo[i] * 2
-	yield foo[i] = value
+const foo = (yield ([(yield (1)), (yield (2)), (yield (3))]))
+for (let i = (yield (0)); (yield (i < foo.length)); (yield (i++))) {
+	const value = (yield ((yield (foo[i] * (yield (2))))
+	(yield (foo[i] = value))))
 }
 ```
 
 */
 function transform(src: string) {
-	const ast = parse(src, {
-		sourceType: 'module',
-		ecmaVersion: 'latest',
-		locations: true,
-		ranges: true,
-	})
+	const prefix = 'function* foo(){\n'
+	const suffix = '\n}'
+	src = `${prefix}${src}${suffix}`
+	while (true) {
+		let ast
+		try {
+			ast = parse(src, {
+				sourceType: 'module',
+				ecmaVersion: 'latest',
+				locations: true,
+				ranges: true,
+			})
 
-	const transformedCode: string[] = []
-	let lastIndex = 0
-
-	const nodesToYield: Node[] = []
-
-	// Collect nodes that should be yielded
-	walk(ast, {
-		YieldExpression() {
-			throw new Error('Yield expressions disallowed in source code')
-		},
-		Literal(node) {
-			nodesToYield.push(node)
-		},
-		BinaryExpression(node) {
-			nodesToYield.push(node)
-		},
-		AssignmentExpression(node) {
-			nodesToYield.push(node)
-		},
-		UpdateExpression(node) {
-			nodesToYield.push(node)
-		},
-		CallExpression(node) {
-			nodesToYield.push(node)
-		},
-		// MemberExpression(node) {
-		// 	nodesToYield.push(node)
-		// },
-		ArrayExpression(node) {
-			nodesToYield.push(node)
+		} catch (e) {
+			console.error('Parse error:', e)
+			console.log('Source was:\n', src)
+			throw e
 		}
-	})
 
-	// Sort nodes by their start position
-	nodesToYield.sort((a, b) => a.start - b.start)
+		const transformedCode: string[] = []
+		let lastIndex = 0
 
-	// Transform the code by inserting yields
-	for (const node of nodesToYield) {
-		if (node.start > lastIndex) {
-			transformedCode.push(src.slice(lastIndex, node.start))
-			transformedCode.push('yield ')
-			lastIndex = node.start
+		const nodesToYield: { node: Node, depth: number }[] = []
+
+		// Collect nodes that should be yielded
+		walk(ast, {
+			// YieldExpression() {
+			// 	throw new Error('Yield expressions disallowed in source code')
+			// },
+			Literal(node, _, ancestors) {
+				if (ancestors.at(-2)?.type === 'YieldExpression') return
+				nodesToYield.push({ node, depth: ancestors.length })
+			},
+			BinaryExpression(node, _, ancestors) {
+				if (ancestors.at(-2)?.type === 'YieldExpression') return
+				nodesToYield.push({ node, depth: ancestors.length })
+			},
+			AssignmentExpression(node, _, ancestors) {
+				if (ancestors.at(-2)?.type === 'YieldExpression') return
+				nodesToYield.push({ node, depth: ancestors.length })
+			},
+			UpdateExpression(node, _, ancestors) {
+				if (ancestors.at(-2)?.type === 'YieldExpression') return
+				nodesToYield.push({ node, depth: ancestors.length })
+			},
+			CallExpression(node, _, ancestors) {
+				if (ancestors.at(-2)?.type === 'YieldExpression') return
+				nodesToYield.push({ node, depth: ancestors.length })
+			},
+			// MemberExpression(node, _,ancestors) {
+			ArrayExpression(node, _, ancestors) {
+				if (ancestors.at(-2)?.type === 'YieldExpression') return
+				nodesToYield.push({ node, depth: ancestors.length })
+			}
+		})
+
+		if (nodesToYield.length === 0) {
+			break
 		}
+
+		const deepestDepth = Math.max(...nodesToYield.map(n => n.depth))
+		// Filter to only deepest nodes to avoid double-yielding
+		const filteredNodesToYield = nodesToYield.filter(n => n.depth === deepestDepth)
+
+		// Sort nodes by start position, then by end position (deepest first for same start)
+		filteredNodesToYield.sort((a, b) => {
+			if (a.node.start !== b.node.start) {
+				return a.node.start - b.node.start
+			}
+			return b.node.end - a.node.end // Deeper nodes first when at same position
+		})
+
+		for (const { node } of filteredNodesToYield) {
+			if (node.start > lastIndex) {
+				transformedCode.push(src.slice(lastIndex, node.start))
+				transformedCode.push('(yield (')
+				transformedCode.push(src.slice(node.start, node.end))
+				transformedCode.push('))')
+				lastIndex = node.end
+			}
+		}
+
+		// Add remaining code
+		transformedCode.push(src.slice(lastIndex))
+
+		src = transformedCode.join('')
 	}
 
-	// Add remaining code
-	transformedCode.push(src.slice(lastIndex))
-
-	return transformedCode.join('')
+	return src.slice(prefix.length, -suffix.length)
 }
