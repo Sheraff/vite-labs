@@ -2,7 +2,7 @@
 
 // import { parseForESLint } from '@typescript-eslint/parser/package.json'
 // import { simpleTraverse } from '@typescript-eslint/typescript-estree'
-import { parse } from 'acorn'
+import { parse, type Node } from 'acorn'
 import { simple as walk } from "acorn-walk"
 
 export type Incoming =
@@ -25,7 +25,8 @@ export type Outgoing =
 		type: "yield",
 		data: {
 			id: string
-			result: IteratorResult<any>
+			value: string
+
 		}
 	}
 	| {
@@ -57,13 +58,14 @@ export type Outgoing =
 
 	function handleSource(src: string, id: string) {
 		const GeneratorFunction = (function* () { }.constructor) as typeof Function
-		transform(src)
+		const yielding = transform(src)
+		console.log('yielding source:\n', yielding)
 		const generator = new GeneratorFunction(`
 			const global = undefined
 			const globalThis = undefined
 			const self = undefined
 			const postMessage = undefined
-			${src}
+			${yielding}
 		`) as () => Generator<any, any, any>
 		executor(generator(), id)
 	}
@@ -74,7 +76,7 @@ function executor(gen: Generator<any, any, any>, id: string) {
 		let result
 		do {
 			result = gen.next(result?.value)
-			postMessage({ type: "yield", data: { result, id } } satisfies Outgoing)
+			postMessage({ type: "yield", data: { value: result.value, id } } satisfies Outgoing)
 		} while (!result.done)
 		postMessage({ type: "done", data: { result: result.value, id } } satisfies Outgoing)
 	} catch (error) {
@@ -93,7 +95,7 @@ for (let i = 0; i < foo.length; i++) {
 	foo[i] = value
 }
 ```
-
+becomes
 ```js
 const foo = yield [1, 2, 3]
 for (let i = yield 0; yield (i < foo.length); yield i++) {
@@ -110,9 +112,54 @@ function transform(src: string) {
 		locations: true,
 		ranges: true,
 	})
+
+	const transformedCode: string[] = []
+	let lastIndex = 0
+
+	const nodesToYield: Node[] = []
+
+	// Collect nodes that should be yielded
 	walk(ast, {
-		YieldExpression(node) {
+		YieldExpression() {
 			throw new Error('Yield expressions disallowed in source code')
+		},
+		Literal(node) {
+			nodesToYield.push(node)
+		},
+		BinaryExpression(node) {
+			nodesToYield.push(node)
+		},
+		AssignmentExpression(node) {
+			nodesToYield.push(node)
+		},
+		UpdateExpression(node) {
+			nodesToYield.push(node)
+		},
+		CallExpression(node) {
+			nodesToYield.push(node)
+		},
+		// MemberExpression(node) {
+		// 	nodesToYield.push(node)
+		// },
+		ArrayExpression(node) {
+			nodesToYield.push(node)
 		}
 	})
+
+	// Sort nodes by their start position
+	nodesToYield.sort((a, b) => a.start - b.start)
+
+	// Transform the code by inserting yields
+	for (const node of nodesToYield) {
+		if (node.start > lastIndex) {
+			transformedCode.push(src.slice(lastIndex, node.start))
+			transformedCode.push('yield ')
+			lastIndex = node.start
+		}
+	}
+
+	// Add remaining code
+	transformedCode.push(src.slice(lastIndex))
+
+	return transformedCode.join('')
 }
