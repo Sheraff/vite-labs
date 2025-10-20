@@ -19,6 +19,8 @@ for (let i = 0; i < foo.length; i++) {
 	const value = foo[i] * 2
 	foo[i] = value
 }
+console.log(foo)
+return foo[0]
 `.trim()
 
 export default function VisualExecPage() {
@@ -75,6 +77,9 @@ function handleSource(src: string) {
 				break
 			case "error":
 				console.error('error', data.data)
+				break
+			case "log":
+				console.log('log', data.data)
 				break
 		}
 	}, { signal: controller.signal })

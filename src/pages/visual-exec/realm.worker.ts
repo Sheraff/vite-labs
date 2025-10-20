@@ -26,7 +26,18 @@ export type Outgoing =
 		data: {
 			id: string
 			value: string
-
+			loc: {
+				start: { line: number, column: number }
+				end: { line: number, column: number }
+			}
+		}
+	}
+	| {
+		type: "log",
+		data: {
+			id: string
+			value: string
+			level: 'log' | 'error' | 'warn'
 		}
 	}
 	| {
@@ -56,29 +67,48 @@ export type Outgoing =
 		}
 	}
 
+	const postConsole = {
+		log: (...args: any[]) => {
+			postMessage({ type: "log", data: { id: 'main', value: args.map(String).join(' '), level: 'log' } } satisfies Outgoing)
+		},
+		error: (...args: any[]) => {
+			postMessage({ type: "log", data: { id: 'main', value: args.map(String).join(' '), level: 'error' } } satisfies Outgoing)
+		},
+		warn: (...args: any[]) => {
+			postMessage({ type: "log", data: { id: 'main', value: args.map(String).join(' '), level: 'warn' } } satisfies Outgoing)
+		},
+	}
+
 	function handleSource(src: string, id: string) {
-		const GeneratorFunction = (function* () { }.constructor) as typeof Function
+		const GeneratorFunction = (async function* () { }.constructor) as typeof Function
 		const yielding = transform(src)
 		console.log('yielding source:\n', yielding)
-		const generator = new GeneratorFunction(`
+		const generator = new GeneratorFunction('postConsole', `
+			const console = postConsole
 			const global = undefined
 			const globalThis = undefined
 			const self = undefined
 			const postMessage = undefined
 			${yielding}
-		`) as () => Generator<any, any, any>
+		`).bind(
+			null,
+			postConsole
+		) as () => AsyncGenerator<any, any, any>
 		executor(generator(), id)
 	}
 }
 
-function executor(gen: Generator<any, any, any>, id: string) {
+async function executor(gen: AsyncGenerator<any, any, any>, id: string) {
 	try {
 		let result
 		do {
-			result = gen.next(result?.value)
-			postMessage({ type: "yield", data: { value: result.value, id } } satisfies Outgoing)
+			result = await gen.next(result?.value?.value)
+			if (!result.done) {
+				postMessage({ type: "yield", data: { value: JSON.stringify(result.value.value), id, loc: result.value.loc } } satisfies Outgoing)
+				await new Promise<void>((resolve) => setTimeout(() => resolve(), 500))
+			}
 		} while (!result.done)
-		postMessage({ type: "done", data: { result: result.value, id } } satisfies Outgoing)
+		postMessage({ type: "done", data: { result: JSON.stringify(result.value), id } } satisfies Outgoing)
 	} catch (error) {
 		postMessage({ type: "error", data: { error: String(error), id } } satisfies Outgoing)
 	}
@@ -106,6 +136,8 @@ for (let i = (yield (0)); (yield (i < foo.length)); (yield (i++))) {
 
 */
 function transform(src: string) {
+	const marker_start = '/*yielded*/'
+	const marker_end = '/*unyielded*/'
 	const prefix = 'function* foo(){\n'
 	const suffix = '\n}'
 	src = `${prefix}${src}${suffix}`
@@ -130,36 +162,27 @@ function transform(src: string) {
 
 		const nodesToYield: { node: Node, depth: number }[] = []
 
+		const queueNode = (node: Node, state: unknown, ancestors: Node[]) => {
+			if (ancestors.at(-2)?.type === 'YieldExpression') return
+			const start = src.slice(0, node.start).lastIndexOf(marker_start)
+			const end = start !== -1 ? src.slice(start, node.start).lastIndexOf(marker_end) : 0
+			if (end === -1) return
+			nodesToYield.push({ node, depth: ancestors.length })
+		}
+
 		// Collect nodes that should be yielded
 		walk(ast, {
 			// YieldExpression() {
 			// 	throw new Error('Yield expressions disallowed in source code')
 			// },
-			Literal(node, _, ancestors) {
-				if (ancestors.at(-2)?.type === 'YieldExpression') return
-				nodesToYield.push({ node, depth: ancestors.length })
-			},
-			BinaryExpression(node, _, ancestors) {
-				if (ancestors.at(-2)?.type === 'YieldExpression') return
-				nodesToYield.push({ node, depth: ancestors.length })
-			},
-			AssignmentExpression(node, _, ancestors) {
-				if (ancestors.at(-2)?.type === 'YieldExpression') return
-				nodesToYield.push({ node, depth: ancestors.length })
-			},
-			UpdateExpression(node, _, ancestors) {
-				if (ancestors.at(-2)?.type === 'YieldExpression') return
-				nodesToYield.push({ node, depth: ancestors.length })
-			},
-			CallExpression(node, _, ancestors) {
-				if (ancestors.at(-2)?.type === 'YieldExpression') return
-				nodesToYield.push({ node, depth: ancestors.length })
-			},
-			// MemberExpression(node, _,ancestors) {
-			ArrayExpression(node, _, ancestors) {
-				if (ancestors.at(-2)?.type === 'YieldExpression') return
-				nodesToYield.push({ node, depth: ancestors.length })
-			}
+			// we should forbid yield, imports, exports, debugger, arguments, with
+			Literal: queueNode,
+			BinaryExpression: queueNode,
+			AssignmentExpression: queueNode,
+			UpdateExpression: queueNode,
+			CallExpression: queueNode,
+			// MemberExpression: queueNode,
+			ArrayExpression: queueNode,
 		})
 
 		if (nodesToYield.length === 0) {
@@ -181,9 +204,15 @@ function transform(src: string) {
 		for (const { node } of filteredNodesToYield) {
 			if (node.start > lastIndex) {
 				transformedCode.push(src.slice(lastIndex, node.start))
-				transformedCode.push('(yield (')
+				const wrap = node.type !== 'AssignmentExpression' && node.type !== 'UpdateExpression'
+				transformedCode.push(marker_start)
+				if (wrap) transformedCode.push('(')
+				transformedCode.push('yield ')
+				transformedCode.push(`{ loc: { start: { line: ${node.loc!.start.line}, column: ${node.loc!.start.column} }, end: { line: ${node.loc!.end.line}, column: ${node.loc!.end.column} } }, value: (`)
 				transformedCode.push(src.slice(node.start, node.end))
-				transformedCode.push('))')
+				transformedCode.push(') }')
+				transformedCode.push(marker_end)
+				if (wrap) transformedCode.push(')')
 				lastIndex = node.end
 			}
 		}
@@ -192,6 +221,10 @@ function transform(src: string) {
 		transformedCode.push(src.slice(lastIndex))
 
 		src = transformedCode.join('')
+
+		// console.log('\n\n\n')
+		// console.log(src)
+		// console.log('\n\n\n')
 	}
 
 	return src.slice(prefix.length, -suffix.length)
