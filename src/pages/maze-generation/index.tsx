@@ -864,6 +864,7 @@ function useHashParam() {
 
 	const setHash = useCallback((newParam: string | null) => {
 		if (newParam) {
+			setParam(newParam)
 			window.history.replaceState(null, '', `#${newParam}`)
 		} else {
 			window.history.replaceState(null, '', window.location.pathname)
