@@ -40,7 +40,7 @@ export default function ParticleLifePage() {
 	const [colors, setColors] = useState(7)
 	const [fps, setFps] = useState(0)
 	const [workers] = useState(() => Math.max(1, navigator.hardwareConcurrency - 1))
-	const [formatter] = useState(() => new Intl.NumberFormat(undefined, { maximumFractionDigits: 1, minimumFractionDigits: 1 }))
+	const [formatter] = useState(() => new Intl.NumberFormat(undefined, { maximumFractionDigits: 0, minimumIntegerDigits: 3 }))
 
 	useEffect(() => {
 		const canvas = canvasRef.current
