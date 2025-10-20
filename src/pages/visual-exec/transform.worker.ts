@@ -1,129 +1,71 @@
 /// <reference lib="webworker" />
-
-// import { parseForESLint } from '@typescript-eslint/parser/package.json'
-// import { simpleTraverse } from '@typescript-eslint/typescript-estree'
 import { parse, type Node } from 'acorn'
 import { simple as walk } from "acorn-walk"
 import MagicString from 'magic-string'
 
 export type Incoming =
 	| {
-		type: "init",
-		data: {
-			foo: string
-		}
-	}
-	| {
 		type: "source",
 		data: {
-			id: string
-			code: string
+			id: string,
+			code: string,
 		}
 	}
 
 export type Outgoing =
 	| {
-		type: "yield",
+		type: "transformed",
 		data: {
-			id: string
-			value: string
-			loc: {
-				start: { line: number, column: number }
-				end: { line: number, column: number }
-			},
-			start: number
-			end: number
-		}
-	}
-	| {
-		type: "log",
-		data: {
-			id: string
-			value: string
-			level: 'log' | 'error' | 'warn'
-		}
-	}
-	| {
-		type: "done",
-		data: {
-			id: string
-			result: any
+			id: string,
+			code: string,
 		}
 	}
 	| {
 		type: "error",
 		data: {
-			id: string
-			error: any
+			id: string,
+			error: string,
 		}
 	}
 
 {
 	self.onmessage = (e: MessageEvent<Incoming>) => handleMessage(e.data)
-	function handleMessage(data: Incoming) {
-		switch (data.type) {
-			case "init":
+	function handleMessage(message: Incoming) {
+		switch (message.type) {
+			case "source": {
+				let code
+				try {
+					code = handleSource(message.data.code)
+				} catch (err: any) {
+					self.postMessage({
+						type: "error",
+						data: {
+							id: message.data.id,
+							error: String(err),
+						}
+					})
+					return
+				}
+				self.postMessage({
+					type: "transformed",
+					data: {
+						id: message.data.id,
+						code,
+					}
+				})
 				break
-			case "source":
-				handleSource(data.data.code, data.data.id)
-				break
+			}
+			default:
+				console.error('Unknown message type:', message.type)
 		}
-	}
-
-	const postConsole = {
-		log: (...args: any[]) => {
-			postMessage({ type: "log", data: { id: 'main', value: args.map(String).join(' '), level: 'log' } } satisfies Outgoing)
-		},
-		error: (...args: any[]) => {
-			postMessage({ type: "log", data: { id: 'main', value: args.map(String).join(' '), level: 'error' } } satisfies Outgoing)
-		},
-		warn: (...args: any[]) => {
-			postMessage({ type: "log", data: { id: 'main', value: args.map(String).join(' '), level: 'warn' } } satisfies Outgoing)
-		},
-	}
-
-	function handleSource(src: string, id: string) {
-		const GeneratorFunction = (async function* () { }.constructor) as typeof Function
-		const yielding = transform(src)
-		console.log('yielding source:\n', yielding)
-		const generator = new GeneratorFunction('postConsole', `
-			const console = postConsole
-			const global = undefined
-			const globalThis = undefined
-			const self = undefined
-			const postMessage = undefined
-			${yielding}
-		`).bind(
-			null,
-			postConsole
-		) as () => AsyncGenerator<any, any, any>
-		executor(generator(), id)
 	}
 }
 
-async function executor(gen: AsyncGenerator<any, any, any>, id: string) {
-	try {
-		let result
-		do {
-			result = await gen.next(result?.value?.value)
-			if (!result.done) {
-				postMessage({
-					type: "yield",
-					data: {
-						value: JSON.stringify(result.value.value),
-						id,
-						loc: result.value.loc,
-						start: result.value.start,
-						end: result.value.end,
-					}
-				} satisfies Outgoing)
-				await new Promise<void>((resolve) => setTimeout(() => resolve(), 500))
-			}
-		} while (!result.done)
-		postMessage({ type: "done", data: { result: JSON.stringify(result.value), id } } satisfies Outgoing)
-	} catch (error) {
-		postMessage({ type: "error", data: { error: String(error), id } } satisfies Outgoing)
+function handleSource(src: string): string {
+	if (isCodeMalicious(src)) {
+		throw new Error('Malicious code detected')
 	}
+	return transform(src)
 }
 
 /**
@@ -209,4 +151,18 @@ function transform(original: string) {
 	}
 
 	return s.toString().slice(prefix.length, -suffix.length)
+}
+
+const forbidden = [
+	'constructor',
+	'__proto__',
+	'prototype',
+	'Function',
+	'eval',
+	'importScripts',
+	'postMessage',
+	'window',
+]
+function isCodeMalicious(code: string): boolean {
+	return forbidden.some(pattern => code.includes(pattern))
 }

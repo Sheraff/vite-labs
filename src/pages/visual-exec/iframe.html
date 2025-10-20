@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline';">
+</head>
+
+<body>
+	<script>
+		window.fetch = undefined
+		window.XMLHttpRequest = undefined
+		window.WebSocket = undefined
+		window.EventSource = undefined
+		window.indexedDB = undefined
+		window.localStorage = undefined
+		window.sessionStorage = undefined
+		window.FileReader = undefined
+		window.Worker = undefined
+		window.SharedWorker = undefined
+		window.ServiceWorker = undefined
+		window.Notification = undefined
+		window.PushManager = undefined
+		window.Caches = undefined
+		window.navigator = undefined
+		window.document = undefined
+		window.XMLHttpRequest = undefined
+		window.WebAssembly = undefined
+		window.OffscreenCanvas = undefined
+		window.console = undefined
+
+		const console = {
+			log: (...args) => {
+				parent.postMessage({
+					type: "log",
+					data: {
+						id: '/*-- ID --*/',
+						value: args.map(String).join(' '),
+						level: 'log'
+					}
+				}, '/*-- ORIGIN --*/')
+			},
+			error: (...args) => {
+				parent.postMessage({
+					type: "error",
+					data: {
+						id: '/*-- ID --*/',
+						value: args.map(String).join(' '),
+						level: 'error'
+					}
+				}, '/*-- ORIGIN --*/')
+			},
+			warn: (...args) => {
+				parent.postMessage({
+					type: "warn",
+					data: {
+						id: '/*-- ID --*/',
+						value: args.map(String).join(' '),
+						level: 'warn'
+					}
+				}, '/*-- ORIGIN --*/')
+			},
+		}
+
+		const GeneratorFunction = (async function* () { }.constructor)
+
+		const generator = async function* () { /*-- SOURCE --*/ }.bind(null)
+		executor(generator())
+
+		async function executor(gen) {
+			try {
+				let result
+				do {
+					result = await gen.next(result?.value?.value)
+					if (!result.done) {
+						parent.postMessage({
+							type: "yield",
+							data: {
+								...result.value,
+								id: '/*-- ID --*/',
+								value: JSON.stringify(result.value.value),
+							}
+						}, '/*-- ORIGIN --*/')
+						await new Promise((resolve) => setTimeout(() => resolve(), 500))
+					}
+				} while (!result.done)
+				parent.postMessage({
+					type: "done",
+					data: {
+						id: '/*-- ID --*/',
+						result: JSON.stringify(result.value)
+					}
+				}, '/*-- ORIGIN --*/')
+			} catch (e) {
+				parent.postMessage({
+					type: 'error',
+					data: {
+						id: '/*-- ID --*/',
+						error: e instanceof Error
+							? e.message
+							: String(e)
+					}
+				}, '/*-- ORIGIN --*/')
+			}
+		}
+	</script>
+</body>
+
+</html>

@@ -4,8 +4,9 @@ import type { RouteMeta } from "#router"
 import { useEffect, useRef, useState } from "react"
 import { getFormValue } from "#components/getFormValue"
 
-import UpdateWorker from './realm.worker?worker'
-import type { Incoming, Outgoing } from './realm.worker'
+import TransformWorker from './transform.worker?worker'
+import IframeSource from './iframe.html?raw'
+import type { Incoming, Outgoing } from './transform.worker'
 
 export const meta: RouteMeta = {
 	title: 'Visual Exec (WIP)',
@@ -40,14 +41,14 @@ for (let i = 0; i < n - 1; i++) {
 	let swapped = false;
 
 	for (let j = 0; j < n - i - 1; j++) {
-		
+
 		if (arr[j] > arr[j + 1]) {
-			
+
 			// Swap elements
 			let temp = arr[j];
 			arr[j] = arr[j + 1];
 			arr[j + 1] = temp;
-			
+
 			swapped = true;
 		}
 
@@ -85,22 +86,7 @@ export default function VisualExecPage() {
 		const form = formRef.current
 		const highlighter = highlighterRef.current
 		const parent = container.current
-
-		const controller = new AbortController()
-
-		let clean: () => void
-
-		form.addEventListener('submit', (e) => {
-			e.preventDefault()
-			clean?.()
-			const source = getFormValue<string>(form, 'code') || ''
-			clean = handleSource(source, highlighter, parent)
-		}, { signal: controller.signal })
-
-		return () => {
-			controller.abort()
-			clean?.()
-		}
+		return start(form, highlighter, parent)
 	}, [])
 
 	return (
@@ -125,15 +111,60 @@ export default function VisualExecPage() {
 	)
 }
 
-function handleSource(src: string, highlighter: HTMLElement, parent: HTMLElement) {
-	const worker = new UpdateWorker()
+function start(form: HTMLFormElement, highlighter: HTMLElement, parent: HTMLElement) {
 	const controller = new AbortController()
+	let clean: () => void
 
+	const transformWorker = new TransformWorker()
+
+	function getTransformedCode(source: string): Promise<string> {
+		const id = Math.random().toString(16).slice(2)
+		return new Promise<string>((resolve, reject) => {
+			const onMessage = (e: MessageEvent<Outgoing>) => {
+				if (e.data.data.id !== id) return
+				transformWorker.removeEventListener('message', onMessage)
+				switch (e.data.type) {
+					case "transformed":
+						resolve(e.data.data.code)
+						break
+					case "error":
+						reject(new Error(e.data.data.error))
+						break
+					default:
+						reject(new Error('Unknown message type: ' + (e.data as any).type))
+				}
+			}
+			transformWorker.addEventListener('message', onMessage, { signal: controller.signal })
+			transformWorker.postMessage({
+				type: "source",
+				data: {
+					id,
+					code: source,
+				}
+			} satisfies Incoming)
+		})
+	}
+
+	form.addEventListener('submit', async (e) => {
+		e.preventDefault()
+		clean?.()
+		const source = getFormValue<string>(form, 'code') || ''
+		const transformed = await getTransformedCode(source)
+		clean = handleSource(transformed, highlighter, parent)
+	}, { signal: controller.signal })
+
+	return () => {
+		controller.abort()
+		clean?.()
+		transformWorker.terminate()
+	}
+}
+
+function handleSource(src: string, highlighter: HTMLElement, parent: HTMLElement) {
 	// const highlights_id = CSS.escape(Math.random().toString(16).slice(2))
 	const highlights_id = 'foo'
 
-	worker.addEventListener('message', (e: MessageEvent<Outgoing>) => {
-		const data = e.data
+	const iframe = createIframeRealm(src, (data) => {
 		switch (data.type) {
 			case "yield": {
 				console.log('yield', data.data)
@@ -161,28 +192,90 @@ function handleSource(src: string, highlighter: HTMLElement, parent: HTMLElement
 			}
 			case "done":
 				console.log('done', data.data)
+				iframe.destroy()
 				break
 			case "error":
 				console.error('error', data.data)
+				iframe.destroy()
 				break
 			case "log":
 				console.log('log', data.data)
 				break
 		}
-	}, { signal: controller.signal })
-
-	worker.postMessage({
-		type: "source",
-		data: {
-			id: 'main',
-			code: src,
-		}
-	} satisfies Incoming)
+	})
 
 
 	return () => {
-		worker.terminate()
-		controller.abort()
+		iframe.destroy()
 		CSS.highlights.delete(highlights_id)
 	}
 }
+
+
+function createIframeRealm(src: string, onMessage: (e: IframeMessage) => void) {
+	const id = Math.random().toString(16).slice(2)
+
+	const iframe = document.createElement('iframe')
+	iframe.sandbox.add('allow-scripts')
+	iframe.className = styles.iframe
+
+	const html = IframeSource
+		.replaceAll('/*-- ORIGIN --*/', window.location.origin)
+		.replaceAll('/*-- ID --*/', id)
+		.replace('/*-- SOURCE --*/', src)
+	iframe.src = 'data:text/html,' + encodeURIComponent(html)
+	document.body.appendChild(iframe)
+
+	const controller = new AbortController()
+	window.addEventListener('message', (e: MessageEvent<IframeMessage>) => {
+		if (e.data.data.id !== id) return
+		onMessage(e.data)
+	}, { signal: controller.signal })
+
+	return {
+		destroy: () => {
+			iframe.remove()
+			controller.abort()
+		},
+		postMessage: (message: Incoming) => {
+			iframe.contentWindow?.postMessage(message, '*')
+		}
+	}
+}
+
+export type IframeMessage =
+	| {
+		type: "yield",
+		data: {
+			id: string
+			value: string
+			loc: {
+				start: { line: number, column: number }
+				end: { line: number, column: number }
+			},
+			start: number
+			end: number
+		}
+	}
+	| {
+		type: "log",
+		data: {
+			id: string
+			value: string
+			level: 'log' | 'error' | 'warn'
+		}
+	}
+	| {
+		type: "done",
+		data: {
+			id: string
+			result: any
+		}
+	}
+	| {
+		type: "error",
+		data: {
+			id: string
+			error: any
+		}
+	}
