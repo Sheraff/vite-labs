@@ -1,3 +1,31 @@
+@font-face {
+	font-family: 'Monaspace';
+	src: url('./MonaspaceKrypton-SyntaxHighlighter-Regular.woff2') format('woff2');
+	ascent-override: 120%;
+	descent-override: 50%;
+}
+
+@font-palette-values --kung-fury {
+	font-family: "Monaspace";
+	override-colors:
+		/* curlies and tags */
+		0 hsl(188 100% 75%),
+		/* ? */
+		1 hsl(250 100% 80%),
+		/* function */
+		2 hsl(188 100% 75%),
+		/* ? */
+		3 hsl(188 100% 75%),
+		/* () */
+		4 hsl(250 100% 80%),
+		/* property name */
+		5 hsl(210 40% 98%),
+		/* ? */
+		6 hsl(210 40% 80%),
+		/* numbers */
+		7 hsl(300 100% 80%);
+}
+
 .main {
 	margin: 0;
 	background: #051016;
@@ -50,10 +78,12 @@
 		width: 100%;
 		height: 100%;
 		margin: 0;
-		line-height: 1.5;
+		line-height: 1.75;
 		background: transparent;
 		border: none;
 		resize: none;
+		font-family: "Monaspace", monospace;
+		font-palette: --kung-fury;
 	}
 
 	.content {
@@ -65,6 +95,6 @@
 	}
 
 	::highlight(foo) {
-		background-color: rgb(86, 11, 75);
+		background-color: rgb(180, 56, 161);
 	}
 }
