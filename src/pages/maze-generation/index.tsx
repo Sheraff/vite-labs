@@ -747,7 +747,7 @@ const rectangularFractalTessellation: Method = function* (maze, cols, rows, getI
 		let best = [1, 1]
 		let bestScore = Infinity
 		const ratio = max / min
-		for (let i = 1; i <= 10; i++) {
+		for (let i = 1; i <= 16; i++) {
 			for (let j = 1; j <= i; j++) {
 				const score = Math.abs(ratio - i / j)
 				if (score < bestScore) {
