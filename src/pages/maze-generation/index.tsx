@@ -744,26 +744,29 @@ const rectangularFractalTessellation: Method = function* (maze, cols, rows, getI
 	} else {
 		const min = Math.min(cols, rows)
 		const max = Math.max(cols, rows)
-		let best = [1, 1]
+
+		let best = [2, 2]
 		let bestScore = Infinity
-		const ratio = max / min
-		for (let i = 1; i <= 16; i++) {
-			for (let j = 1; j <= i; j++) {
-				const score = Math.abs(ratio - i / j)
-				if (score < bestScore) {
-					bestScore = score
+		for (let i = 2; i <= 16; i++) {
+			for (let j = 2; j <= i; j++) {
+				let power = 1
+				while (i * 2 ** power <= max && j * 2 ** power <= min) {
+					power++
+				}
+				power--
+				const unfilled = (cols * rows) - (i * j * (2 ** power) * (2 ** power))
+				if (unfilled < bestScore) {
+					bestScore = unfilled
 					best = [i, j]
 				}
 			}
 		}
-		if (best) {
-			if (cols < rows) {
-				currentCols = best[1]
-				currentRows = best[0]
-			} else {
-				currentCols = best[0]
-				currentRows = best[1]
-			}
+		if (cols < rows) {
+			currentCols = best[1]
+			currentRows = best[0]
+		} else {
+			currentCols = best[0]
+			currentRows = best[1]
 		}
 		// initialize maze
 		yield* depthFirstStackMaze(maze, currentCols, currentRows, getIndex, fromIndex)

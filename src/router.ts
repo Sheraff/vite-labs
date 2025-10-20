@@ -260,7 +260,7 @@ export const ROUTES = {
 			tags: ['algorithm', 'procedural']
 		},
 		git: {
-			lastModified: 1760957826000,
+			lastModified: 1760957935000,
 			firstAdded: 1760825464000
 		},
 	},
