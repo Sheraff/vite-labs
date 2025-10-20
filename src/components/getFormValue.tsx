@@ -18,4 +18,7 @@ export function getFormValue<T,>(form: HTMLFormElement, name: string): T | undef
 		}
 		return element.value as T
 	}
+	if (element instanceof HTMLTextAreaElement) {
+		return element.value as T
+	}
 }
