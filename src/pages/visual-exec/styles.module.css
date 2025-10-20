@@ -1,3 +1,5 @@
+/* font from https://codepen.io/argyleink/pen/GRbyNNv by Adam Argyle */
+
 @font-face {
 	font-family: 'Monaspace';
 	src: url('./MonaspaceKrypton-SyntaxHighlighter-Regular.woff2') format('woff2');
@@ -5,7 +7,7 @@
 	descent-override: 50%;
 }
 
-@font-palette-values --kung-fury {
+@font-palette-values --kung-fury-dark {
 	font-family: "Monaspace";
 	override-colors:
 		/* curlies and tags */
@@ -69,21 +71,27 @@
 	}
 
 	textarea,
-	.content {
-		padding: 0.5em;
+	.content,
+	.value {
 		tab-size: 4ch;
 		white-space: pre;
 		font-family: monospace;
 		font-size: 16px;
-		width: 100%;
-		height: 100%;
-		margin: 0;
 		line-height: 1.75;
+		font-family: "Monaspace", monospace;
+		font-palette: --kung-fury-dark;
+	}
+
+	textarea,
+	.content {
+		padding: 0.5em;
+		width: 100%;
+		min-height: 100%;
+		margin: 0;
 		background: transparent;
 		border: none;
 		resize: none;
-		font-family: "Monaspace", monospace;
-		font-palette: --kung-fury;
+		field-sizing: content;
 	}
 
 	.content {
@@ -94,7 +102,39 @@
 		color: transparent;
 	}
 
+	.value {
+		position: absolute;
+		display: block;
+		background-color: rgb(24, 23, 23);
+		padding: 0.1em 0.5em;
+		border-radius: 4px;
+		animation: in-and-out 500ms ease-in-out;
+		z-index: 2;
+		top: var(--top);
+		left: var(--left);
+		min-width: var(--min-width);
+		text-align: center;
+	}
+
 	::highlight(foo) {
 		background-color: rgb(180, 56, 161);
+	}
+}
+
+@keyframes in-and-out {
+	0% {
+		opacity: 0;
+		transform: translateY(10%) translateX(-50%);
+	}
+
+	20%,
+	80% {
+		opacity: 1;
+		transform: translateY(0%) translateX(-50%);
+	}
+
+	100% {
+		opacity: 0;
+		transform: translateY(10%) translateX(-50%);
 	}
 }

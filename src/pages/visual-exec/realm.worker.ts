@@ -146,6 +146,9 @@ for (let i = (yield (0)); (yield (i < foo.length)); (yield (i++))) {
 }
 ```
 
+TODO:
+- Literal that is the initializer of a variable should report the location of the entire parent VariableDeclarator
+- Reimplement most common methods (e.g., Math.*, String.*, Array.*, Set.*, Map.*) to use yield (and call them w/ yield*)
 */
 function transform(original: string) {
 	const prefix = 'function* foo(){\n'

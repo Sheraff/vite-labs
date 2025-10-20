@@ -3,7 +3,6 @@ import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
 import { useEffect, useRef, useState } from "react"
 import { getFormValue } from "#components/getFormValue"
-import { makeFrameCounter } from "#components/makeFrameCounter"
 
 import UpdateWorker from './realm.worker?worker'
 import type { Incoming, Outgoing } from './realm.worker'
@@ -12,26 +11,79 @@ export const meta: RouteMeta = {
 	title: 'Visual Exec (WIP)',
 }
 
+// const initialCode = `
+// /* Fibonacci sequence */
+
+// const n = 10;
+// if (n <= 1) return n;
+
+// let a = 0, b = 1;
+// for (let i = 2; i <= n; i++) {
+// 	let temp = a + b;
+// 	a = b;
+// 	b = temp;
+// }
+
+// return b;
+// `.trim()
+
 const initialCode = `
-const foo = [1, 2, 3]
-for (let i = 0; i < foo.length; i++) {
-	const value = foo[i] * 2
-	foo[i] = value
+// Bubble Sort Algorithm
+let arr = [64, 34, 25, 12, 22, 11, 90, 88, 76, 50, 47];
+let n = arr.length;
+
+console.log("Original array: " + arr.join(", "));
+
+// Bubble sort implementation
+for (let i = 0; i < n - 1; i++) {
+	let swapped = false;
+
+	for (let j = 0; j < n - i - 1; j++) {
+		
+		if (arr[j] > arr[j + 1]) {
+			
+			// Swap elements
+			let temp = arr[j];
+			arr[j] = arr[j + 1];
+			arr[j + 1] = temp;
+			
+			swapped = true;
+		}
+
+	}
+
+	// If no swapping occurred, array is sorted
+	if (!swapped) {
+		console.log("No swaps needed - array is sorted!");
+		break;
+	}
 }
-console.log(foo)
-return foo[0]
+
+console.log("Final sorted array: " + arr.join(", "));
+
+// Verify it's sorted
+let isSorted = true;
+for (let i = 0; i < arr.length - 1; i++) {
+	if (arr[i] > arr[i + 1]) {
+		isSorted = false;
+		break;
+	}
+}
+
+console.log("Is array sorted? " + isSorted);
 `.trim()
 
 export default function VisualExecPage() {
 	const formRef = useRef<HTMLFormElement>(null)
-	const canvasRef = useRef<HTMLCanvasElement>(null)
 	const highlighterRef = useRef<HTMLDivElement>(null)
+	const container = useRef<HTMLDivElement>(null)
 	const [value, setValue] = useState<string>(initialCode)
 
 	useEffect(() => {
-		if (!formRef.current || !highlighterRef.current) return
+		if (!formRef.current || !highlighterRef.current || !container.current) return
 		const form = formRef.current
 		const highlighter = highlighterRef.current
+		const parent = container.current
 
 		const controller = new AbortController()
 
@@ -41,7 +93,7 @@ export default function VisualExecPage() {
 			e.preventDefault()
 			clean?.()
 			const source = getFormValue<string>(form, 'code') || ''
-			clean = handleSource(source, highlighter)
+			clean = handleSource(source, highlighter, parent)
 		}, { signal: controller.signal })
 
 		return () => {
@@ -56,7 +108,8 @@ export default function VisualExecPage() {
 				<Head />
 			</div>
 			<form ref={formRef} className={styles.form}>
-				<div className={styles.textarea}>
+				<button>Run</button>
+				<div className={styles.textarea} ref={container}>
 					<textarea
 						name="code"
 						value={value}
@@ -66,14 +119,12 @@ export default function VisualExecPage() {
 						{value}
 					</div>
 				</div>
-				<canvas className={styles.canvas} />
-				<button>Run</button>
 			</form>
 		</div>
 	)
 }
 
-function handleSource(src: string, highlighter: HTMLElement) {
+function handleSource(src: string, highlighter: HTMLElement, parent: HTMLElement) {
 	const worker = new UpdateWorker()
 	const controller = new AbortController()
 
@@ -91,7 +142,20 @@ function handleSource(src: string, highlighter: HTMLElement) {
 				range.setEnd(textNode, data.data.end)
 				CSS.highlights.delete(highlights_id)
 				CSS.highlights.set(highlights_id, new Highlight(range))
-				console.log(range.getBoundingClientRect())
+				const parentRect = parent.getBoundingClientRect()
+				const rect = range.getBoundingClientRect()
+				const el = document.createElement('span')
+				el.classList.add(styles.value)
+				const top = rect.height + rect.top - parentRect.top + parent.scrollTop - el.offsetHeight
+				const left = rect.width / 2 + rect.left - parentRect.left + parent.scrollLeft
+				const minWidth = rect.width
+				el.style.setProperty('--top', `${top}px`)
+				el.style.setProperty('--left', `${left}px`)
+				el.style.setProperty('--min-width', `${minWidth}px`)
+
+				el.textContent = data.data.value
+				parent.appendChild(el)
+				el.addEventListener('animationend', () => el.remove(), { once: true })
 				break
 			}
 			case "done":
