@@ -3,7 +3,8 @@
 // import { parseForESLint } from '@typescript-eslint/parser/package.json'
 // import { simpleTraverse } from '@typescript-eslint/typescript-estree'
 import { parse, type Node } from 'acorn'
-import { ancestor as walk } from "acorn-walk"
+import { simple as walk } from "acorn-walk"
+import MagicString from 'magic-string'
 
 export type Incoming =
 	| {
@@ -29,7 +30,9 @@ export type Outgoing =
 			loc: {
 				start: { line: number, column: number }
 				end: { line: number, column: number }
-			}
+			},
+			start: number
+			end: number
 		}
 	}
 	| {
@@ -104,7 +107,16 @@ async function executor(gen: AsyncGenerator<any, any, any>, id: string) {
 		do {
 			result = await gen.next(result?.value?.value)
 			if (!result.done) {
-				postMessage({ type: "yield", data: { value: JSON.stringify(result.value.value), id, loc: result.value.loc } } satisfies Outgoing)
+				postMessage({
+					type: "yield",
+					data: {
+						value: JSON.stringify(result.value.value),
+						id,
+						loc: result.value.loc,
+						start: result.value.start,
+						end: result.value.end,
+					}
+				} satisfies Outgoing)
 				await new Promise<void>((resolve) => setTimeout(() => resolve(), 500))
 			}
 		} while (!result.done)
@@ -135,97 +147,63 @@ for (let i = (yield (0)); (yield (i < foo.length)); (yield (i++))) {
 ```
 
 */
-function transform(src: string) {
-	const marker_start = '/*yielded*/'
-	const marker_end = '/*unyielded*/'
+function transform(original: string) {
 	const prefix = 'function* foo(){\n'
 	const suffix = '\n}'
-	src = `${prefix}${src}${suffix}`
-	while (true) {
-		let ast
-		try {
-			ast = parse(src, {
-				sourceType: 'module',
-				ecmaVersion: 'latest',
-				locations: true,
-				ranges: true,
-			})
+	const src = `${prefix}${original}${suffix}`
 
-		} catch (e) {
-			console.error('Parse error:', e)
-			console.log('Source was:\n', src)
-			throw e
-		}
+	let ast = parse(src, {
+		sourceType: 'module',
+		ecmaVersion: 'latest',
+		locations: true,
+		ranges: true,
+	})
 
-		const transformedCode: string[] = []
-		let lastIndex = 0
+	const nodesToYield: { node: Node }[] = []
 
-		const nodesToYield: { node: Node, depth: number }[] = []
-
-		const queueNode = (node: Node, state: unknown, ancestors: Node[]) => {
-			if (ancestors.at(-2)?.type === 'YieldExpression') return
-			const start = src.slice(0, node.start).lastIndexOf(marker_start)
-			const end = start !== -1 ? src.slice(start, node.start).lastIndexOf(marker_end) : 0
-			if (end === -1) return
-			nodesToYield.push({ node, depth: ancestors.length })
-		}
-
-		// Collect nodes that should be yielded
-		walk(ast, {
-			// YieldExpression() {
-			// 	throw new Error('Yield expressions disallowed in source code')
-			// },
-			// we should forbid yield, imports, exports, debugger, arguments, with
-			Literal: queueNode,
-			BinaryExpression: queueNode,
-			AssignmentExpression: queueNode,
-			UpdateExpression: queueNode,
-			CallExpression: queueNode,
-			// MemberExpression: queueNode,
-			ArrayExpression: queueNode,
-		})
-
-		if (nodesToYield.length === 0) {
-			break
-		}
-
-		const deepestDepth = Math.max(...nodesToYield.map(n => n.depth))
-		// Filter to only deepest nodes to avoid double-yielding
-		const filteredNodesToYield = nodesToYield.filter(n => n.depth === deepestDepth)
-
-		// Sort nodes by start position, then by end position (deepest first for same start)
-		filteredNodesToYield.sort((a, b) => {
-			if (a.node.start !== b.node.start) {
-				return a.node.start - b.node.start
-			}
-			return b.node.end - a.node.end // Deeper nodes first when at same position
-		})
-
-		for (const { node } of filteredNodesToYield) {
-			if (node.start > lastIndex) {
-				transformedCode.push(src.slice(lastIndex, node.start))
-				const wrap = node.type !== 'AssignmentExpression' && node.type !== 'UpdateExpression'
-				transformedCode.push(marker_start)
-				if (wrap) transformedCode.push('(')
-				transformedCode.push('yield ')
-				transformedCode.push(`{ loc: { start: { line: ${node.loc!.start.line}, column: ${node.loc!.start.column} }, end: { line: ${node.loc!.end.line}, column: ${node.loc!.end.column} } }, value: (`)
-				transformedCode.push(src.slice(node.start, node.end))
-				transformedCode.push(') }')
-				transformedCode.push(marker_end)
-				if (wrap) transformedCode.push(')')
-				lastIndex = node.end
-			}
-		}
-
-		// Add remaining code
-		transformedCode.push(src.slice(lastIndex))
-
-		src = transformedCode.join('')
-
-		// console.log('\n\n\n')
-		// console.log(src)
-		// console.log('\n\n\n')
+	const queueNode = (node: Node) => {
+		nodesToYield.push({ node })
 	}
 
-	return src.slice(prefix.length, -suffix.length)
+	// Collect nodes that should be yielded
+	walk(ast, {
+		// YieldExpression() {
+		// 	throw new Error('Yield expressions disallowed in source code')
+		// },
+		// we should forbid yield, imports, exports, debugger, arguments, with
+		Literal: queueNode,
+		BinaryExpression: queueNode,
+		AssignmentExpression: queueNode,
+		UpdateExpression: queueNode,
+		CallExpression: queueNode,
+		// MemberExpression: queueNode,
+		ArrayExpression: queueNode,
+		ReturnStatement: (node) => {
+			if (node.argument) queueNode(node.argument)
+		}
+	})
+
+	if (nodesToYield.length === 0) {
+		return original
+	}
+
+	const s = new MagicString(src)
+
+	for (const { node } of nodesToYield) {
+		const wrap = node.type !== 'AssignmentExpression' && node.type !== 'UpdateExpression'
+		let before = ''
+		if (wrap) before += '('
+		before += 'yield '
+		before += '{ '
+		before += `loc: { start: { line: ${node.loc!.start.line - prefix.length}, column: ${node.loc!.start.column - prefix.length} }, end: { line: ${node.loc!.end.line - prefix.length}, column: ${node.loc!.end.column - prefix.length} } },`
+		before += `start: ${node.start - prefix.length}, end: ${node.end - prefix.length},`
+		before += 'value: ('
+		s.prependLeft(node.start, before)
+		let after = ''
+		after += ') }'
+		if (wrap) after += ')'
+		s.appendRight(node.end, after)
+	}
+
+	return s.toString().slice(prefix.length, -suffix.length)
 }

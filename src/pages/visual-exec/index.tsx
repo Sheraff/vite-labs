@@ -9,8 +9,7 @@ import UpdateWorker from './realm.worker?worker'
 import type { Incoming, Outgoing } from './realm.worker'
 
 export const meta: RouteMeta = {
-	title: 'Visual Exec',
-	tags: ['wip']
+	title: 'Visual Exec (WIP)',
 }
 
 const initialCode = `
@@ -26,10 +25,13 @@ return foo[0]
 export default function VisualExecPage() {
 	const formRef = useRef<HTMLFormElement>(null)
 	const canvasRef = useRef<HTMLCanvasElement>(null)
+	const highlighterRef = useRef<HTMLDivElement>(null)
+	const [value, setValue] = useState<string>(initialCode)
 
 	useEffect(() => {
-		if (!formRef.current) return
+		if (!formRef.current || !highlighterRef.current) return
 		const form = formRef.current
+		const highlighter = highlighterRef.current
 
 		const controller = new AbortController()
 
@@ -39,7 +41,7 @@ export default function VisualExecPage() {
 			e.preventDefault()
 			clean?.()
 			const source = getFormValue<string>(form, 'code') || ''
-			clean = handleSource(source)
+			clean = handleSource(source, highlighter)
 		}, { signal: controller.signal })
 
 		return () => {
@@ -54,7 +56,16 @@ export default function VisualExecPage() {
 				<Head />
 			</div>
 			<form ref={formRef} className={styles.form}>
-				<textarea name="code" defaultValue={initialCode} />
+				<div className={styles.textarea}>
+					<textarea
+						name="code"
+						value={value}
+						onChange={e => setValue(e.target.value)}
+					/>
+					<div ref={highlighterRef} className={styles.content}>
+						{value}
+					</div>
+				</div>
 				<canvas className={styles.canvas} />
 				<button>Run</button>
 			</form>
@@ -62,16 +73,27 @@ export default function VisualExecPage() {
 	)
 }
 
-function handleSource(src: string) {
+function handleSource(src: string, highlighter: HTMLElement) {
 	const worker = new UpdateWorker()
 	const controller = new AbortController()
+
+	// const highlights_id = CSS.escape(Math.random().toString(16).slice(2))
+	const highlights_id = 'foo'
 
 	worker.addEventListener('message', (e: MessageEvent<Outgoing>) => {
 		const data = e.data
 		switch (data.type) {
-			case "yield":
+			case "yield": {
 				console.log('yield', data.data)
+				const range = new Range()
+				const textNode = highlighter.firstChild!
+				range.setStart(textNode, data.data.start)
+				range.setEnd(textNode, data.data.end)
+				CSS.highlights.delete(highlights_id)
+				CSS.highlights.set(highlights_id, new Highlight(range))
+				console.log(range.getBoundingClientRect())
 				break
+			}
 			case "done":
 				console.log('done', data.data)
 				break
@@ -96,5 +118,6 @@ function handleSource(src: string) {
 	return () => {
 		worker.terminate()
 		controller.abort()
+		CSS.highlights.delete(highlights_id)
 	}
 }
