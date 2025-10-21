@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
+import type { AssignmentExpression, CallExpression, MemberExpression, UpdateExpression } from "acorn"
 import { parse, type Node } from 'acorn'
-import { simple as walk } from "acorn-walk"
+import { ancestor as walk } from "acorn-walk"
 import MagicString from 'magic-string'
 
 export type Incoming =
@@ -35,7 +36,7 @@ export type Outgoing =
 			case "source": {
 				let code
 				try {
-					code = handleSource(message.data.code)
+					code = transform(message.data.code)
 				} catch (err: any) {
 					self.postMessage({
 						type: "error",
@@ -59,14 +60,6 @@ export type Outgoing =
 				console.error('Unknown message type:', message.type)
 		}
 	}
-}
-
-function handleSource(src: string): string {
-	if (isCodeMalicious(src)) {
-		throw new Error('Malicious code detected')
-	}
-	const res = transform(src)
-	return res
 }
 
 /**
@@ -94,13 +87,13 @@ TODO:
 - Reimplement most common methods (e.g., Math.*, String.*, Array.*, Set.*, Map.*) to use yield (and call them w/ yield*)
 */
 function transform(original: string) {
-	const prefix = 'function* foo(){\n'
+	const prefix = 'async function* foo(){\n'
 	const suffix = '\n}'
 	const src = `${prefix}${original}${suffix}`
 
 	const semis: number[] = []
 
-	let ast = parse(src, {
+	const ast = parse(src, {
 		sourceType: 'module',
 		ecmaVersion: 'latest',
 		locations: true,
@@ -110,7 +103,45 @@ function transform(original: string) {
 		},
 	})
 
+	let is_malicious = false
+	const isMalicious = () => { is_malicious = true }
+	walk(ast, {
+		YieldExpression: isMalicious,
+		ImportDeclaration: isMalicious,
+		ExportNamedDeclaration: isMalicious,
+		ExportDefaultDeclaration: isMalicious,
+		ExportAllDeclaration: isMalicious,
+		DebuggerStatement: isMalicious,
+		WithStatement: isMalicious,
+		Identifier(node) {
+			if (node.name === 'arguments') isMalicious()
+			else if (node.name === 'eval') isMalicious()
+			else if (node.name === 'importScripts') isMalicious()
+			else if (node.name === 'window') isMalicious()
+			else if (node.name === 'Function') isMalicious()
+		},
+		MemberExpression(node) {
+			// forbid access to 'constructor', '__proto__', 'prototype' properties
+			if (!node.computed && node.property.type === 'Identifier') {
+				const propName = node.property.name
+				if (propName === 'constructor' || propName === '__proto__' || propName === 'prototype') {
+					isMalicious()
+				}
+			}
+			if (node.computed && node.property.type === 'Literal') {
+				const propName = String(node.property.value)
+				if (propName === 'constructor' || propName === '__proto__' || propName === 'prototype') {
+					isMalicious()
+				}
+			}
+		}
+	})
+	if (is_malicious) {
+		throw new Error(`Malicious code detected, ${JSON.stringify(is_malicious)}`)
+	}
+
 	const nodesToYield: Array<{ node: Node }> = []
+	const bindThis = new Set<Node>()
 
 	const queueNode = (node: Node) => {
 		for (const n of nodesToYield) {
@@ -121,16 +152,30 @@ function transform(original: string) {
 
 	// Collect nodes that should be yielded
 	walk(ast, {
-		// YieldExpression() {
-		// 	throw new Error('Yield expressions disallowed in source code')
-		// },
-		// we should forbid yield, imports, exports, debugger, arguments, with
 		Literal: queueNode,
 		BinaryExpression: queueNode,
 		AssignmentExpression: queueNode,
 		UpdateExpression: queueNode,
 		CallExpression: queueNode,
-		// MemberExpression: queueNode,
+		MemberExpression: (node, _, ancestors) => {
+			// don't yield if
+			// - the top parent of the MemberExpression chain is the left side of an AssignmentExpression
+			// - the top parent of the MemberExpression chain is the argument of an UpdateExpression
+			const top = ancestors.findLast(a => a.type !== 'MemberExpression')
+			if (top) {
+				if (top.type === 'AssignmentExpression' && (top as AssignmentExpression).left === node) {
+					return
+				}
+				if (top.type === 'UpdateExpression' && (top as UpdateExpression).argument === node) {
+					return
+				}
+			}
+			// if the top parent of the MemberExpression chain is the callee of a CallExpression (e.g. `array.join('')`), we need to bind `this`
+			if (top && top.type === 'CallExpression' && (top as CallExpression).callee === node) {
+				bindThis.add(node)
+			}
+			queueNode(node)
+		},
 		ArrayExpression: queueNode,
 		ReturnStatement: (node) => {
 			if (node.argument) queueNode(node.argument)
@@ -144,42 +189,49 @@ function transform(original: string) {
 		return original
 	}
 
+	// nodesToYield.sort((a, b) => {
+	// 	if (a.node.start !== b.node.start) {
+	// 		return a.node.start - b.node.start
+	// 	}
+	// 	return b.node.end - a.node.end
+	// })
+
+	// console.log('nodesToYield')
+	// for (const { node } of nodesToYield) {
+	// 	console.log(node.start, node.end, src.slice(node.start, node.end))
+	// }
+
+	// console.log('semis')
+	// for (const semi of semis) {
+	// 	console.log(semi)
+	// }
+
 	const s = new MagicString(src)
 
 	for (const { node } of nodesToYield) {
-		let wrap = node.type !== 'AssignmentExpression' && node.type !== 'UpdateExpression'
-		if (wrap) {
-			const last_new_line = src.slice(0, node.start).lastIndexOf('\n')
-			const prefix_semi = last_new_line !== -1 && src.slice(last_new_line, node.start).match(/^[\s\n]*$/)
-			if (prefix_semi) wrap = false
-		}
 		let before = ''
-		if (wrap) before += '('
+		before += '('
 		before += 'yield '
 		before += '{ '
 		before += `loc: { start: { line: ${node.loc!.start.line - prefix.length}, column: ${node.loc!.start.column - prefix.length} }, end: { line: ${node.loc!.end.line - prefix.length}, column: ${node.loc!.end.column - prefix.length} } },`
 		before += `start: ${node.start - prefix.length}, end: ${node.end - prefix.length},`
 		before += 'value: ('
-		s.prependLeft(node.start, before)
-		let after = ''
-		after += ') }'
-		if (wrap) after += ')'
-		s.appendRight(node.end, after)
+		s.appendLeft(node.start, before)
+		let after = ')'
+		if (bindThis.has(node)) {
+			after += '.bind('
+			after += src.slice((node as MemberExpression).object.start, (node as MemberExpression).object.end)
+			after += ')'
+		}
+		after += ' }'
+		after += ')'
+		s.prependRight(node.end, after)
+		const semi_index = semis.indexOf(node.end)
+		if (semi_index !== -1) {
+			s.appendRight(node.end, ';')
+			semis.splice(semi_index, 1)
+		}
 	}
 
 	return s.toString().slice(prefix.length, -suffix.length)
-}
-
-const forbidden = [
-	'constructor',
-	'__proto__',
-	'prototype',
-	'Function',
-	'eval',
-	'importScripts',
-	'postMessage',
-	'window',
-]
-function isCodeMalicious(code: string): boolean {
-	return forbidden.some(pattern => code.includes(pattern))
 }

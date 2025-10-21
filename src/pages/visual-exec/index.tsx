@@ -77,6 +77,53 @@ console.log("Is array sorted? " + isSorted)
 return arr
 `.trim()
 
+// const initialCode = `
+// // Ultimate Feature Test
+// const [a, b, ...rest] = [1, 2, 3, 4, 5];
+// let obj = { x: 10, y: 20, z: () => this?.value ?? 42 };
+
+// class Example extends Map {
+// 	#private = Symbol('secret');
+
+// 	constructor(data = {}) {
+// 		super();
+// 		this.data = { ...data, computed: a ** b };
+// 	}
+
+// 	async generator() {
+// 		let result = 0
+// 		for await (const item of [Promise.resolve(1), Promise.resolve(2)]) {
+// 			result += item * 2
+// 		}
+// 		return result
+// 	}
+
+// 	process = (fn) => fn?.(this.data) || 'default';
+// }
+
+// const instance = new Example();
+// let result = instance.process(({ computed }) => computed > 0 ? 
+// 	\`Value: \${computed}\` : null) ?? 'fallback';
+
+// function runGenerator() {
+// 	const gen = instance.generator()
+// 	return gen
+// }
+
+// result += ' ' + await runGenerator()
+
+// // Template literals with tagged template
+// const tagged = (strings, ...values) => strings.join(values.join(','));
+// const output = tagged\`Results: \${result} and \${obj.z()} with \${rest.length}\`;
+
+// // Destructuring assignment with regex and typeof
+// const { match: [, digit] = [] } = /(\\d+)/.exec(output) || {};
+// const final = typeof digit !== 'undefined' ? +digit : NaN;
+
+// // Ternary with bitwise and logical operators
+// console.log(final > 0 && final < 100 ? final | 0 : ~final >>> 1);
+// `.trim()
+
 export default function VisualExecPage() {
 	const formRef = useRef<HTMLFormElement>(null)
 	const highlighterRef = useRef<HTMLDivElement>(null)
