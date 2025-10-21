@@ -113,6 +113,7 @@ function transform(original: string) {
 		ExportAllDeclaration: isMalicious,
 		DebuggerStatement: isMalicious,
 		WithStatement: isMalicious,
+		ThisExpression: isMalicious,
 		Identifier(node) {
 			if (node.name === 'arguments') isMalicious()
 			else if (node.name === 'eval') isMalicious()
