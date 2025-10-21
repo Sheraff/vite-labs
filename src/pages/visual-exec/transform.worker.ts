@@ -189,12 +189,12 @@ function transform(original: string) {
 		return original
 	}
 
-	// nodesToYield.sort((a, b) => {
-	// 	if (a.node.start !== b.node.start) {
-	// 		return a.node.start - b.node.start
-	// 	}
-	// 	return b.node.end - a.node.end
-	// })
+	nodesToYield.sort((a, b) => {
+		if (a.node.start !== b.node.start) {
+			return a.node.start - b.node.start
+		}
+		return b.node.end - a.node.end
+	})
 
 	// console.log('nodesToYield')
 	// for (const { node } of nodesToYield) {
