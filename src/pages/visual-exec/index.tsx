@@ -226,17 +226,27 @@ function createIframeRealm(src: string, onMessage: (e: IframeMessage) => void) {
 	iframe.src = 'data:text/html,' + encodeURIComponent(html)
 	document.body.appendChild(iframe)
 
+	let pinged = true
+	const iid = setInterval(() => {
+		if (!pinged) destroy()
+		pinged = false
+	}, 500)
+
 	const controller = new AbortController()
 	window.addEventListener('message', (e: MessageEvent<IframeMessage>) => {
 		if (e.data.data.id !== id) return
+		if (e.data.type === 'ping') return pinged = true
 		onMessage(e.data)
 	}, { signal: controller.signal })
 
+	const destroy = () => {
+		iframe.remove()
+		controller.abort()
+		clearInterval(iid)
+	}
+
 	return {
-		destroy: () => {
-			iframe.remove()
-			controller.abort()
-		},
+		destroy,
 		postMessage: (message: Incoming) => {
 			iframe.contentWindow?.postMessage(message, '*')
 		}
@@ -277,5 +287,11 @@ export type IframeMessage =
 		data: {
 			id: string
 			error: any
+		}
+	}
+	| {
+		type: "ping",
+		data: {
+			id: string
 		}
 	}

@@ -3,7 +3,8 @@
 
 <head>
 	<meta charset="utf-8">
-	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline';">
+	<meta http-equiv="Content-Security-Policy"
+		content="default-src 'none'; script-src 'unsafe-inline'; object-src 'none'; base-uri 'none';">
 </head>
 
 <body>
@@ -27,7 +28,18 @@
 		window.XMLHttpRequest = undefined
 		window.WebAssembly = undefined
 		window.OffscreenCanvas = undefined
+		document.createElement = undefined
 		window.console = undefined
+	</script>
+	<script type="module">
+		setInterval(() => {
+			parent.postMessage({
+				type: "ping",
+				data: {
+					id: '/*-- ID --*/',
+				}
+			}, '/*-- ORIGIN --*/')
+		}, 100)
 
 		const console = {
 			log: (...args) => {
