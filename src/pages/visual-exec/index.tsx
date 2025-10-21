@@ -240,6 +240,7 @@ function createIframeRealm(src: string, onMessage: (e: IframeMessage) => void) {
 	}, { signal: controller.signal })
 
 	const destroy = () => {
+		console.log('destroy', id)
 		iframe.remove()
 		controller.abort()
 		clearInterval(iid)
