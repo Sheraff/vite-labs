@@ -31,48 +31,50 @@ export const meta: RouteMeta = {
 
 const initialCode = `
 // Bubble Sort Algorithm
-let arr = [64, 34, 25, 12, 22, 11, 90, 88, 76, 50, 47];
-let n = arr.length;
+let arr = [64, 34, 25, 12, 22, 11, 90, 88, 76, 50, 47]
+let n = arr.length
 
-console.log("Original array: " + arr.join(", "));
+console.log("Original array: " + arr.join(", "))
 
 // Bubble sort implementation
 for (let i = 0; i < n - 1; i++) {
-	let swapped = false;
+	let swapped = false
 
 	for (let j = 0; j < n - i - 1; j++) {
 
 		if (arr[j] > arr[j + 1]) {
 
 			// Swap elements
-			let temp = arr[j];
-			arr[j] = arr[j + 1];
-			arr[j + 1] = temp;
+			let temp = arr[j]
+			arr[j] = arr[j + 1]
+			arr[j + 1] = temp
 
-			swapped = true;
+			swapped = true
 		}
 
 	}
 
 	// If no swapping occurred, array is sorted
 	if (!swapped) {
-		console.log("No swaps needed - array is sorted!");
-		break;
+		console.log("No swaps needed - array is sorted!")
+		break
 	}
 }
 
-console.log("Final sorted array: " + arr.join(", "));
+console.log("Final sorted array: " + arr.join(", "))
 
 // Verify it's sorted
-let isSorted = true;
+let isSorted = true
 for (let i = 0; i < arr.length - 1; i++) {
 	if (arr[i] > arr[i + 1]) {
-		isSorted = false;
-		break;
+		isSorted = false
+		break
 	}
 }
 
-console.log("Is array sorted? " + isSorted);
+console.log("Is array sorted? " + isSorted)
+
+return arr
 `.trim()
 
 export default function VisualExecPage() {
@@ -113,7 +115,6 @@ export default function VisualExecPage() {
 
 function start(form: HTMLFormElement, highlighter: HTMLElement, parent: HTMLElement) {
 	const controller = new AbortController()
-	let clean: () => void
 
 	const transformWorker = new TransformWorker()
 
@@ -145,6 +146,7 @@ function start(form: HTMLFormElement, highlighter: HTMLElement, parent: HTMLElem
 		})
 	}
 
+	let clean: () => void
 	form.addEventListener('submit', async (e) => {
 		e.preventDefault()
 		clean?.()

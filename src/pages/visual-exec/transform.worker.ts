@@ -65,7 +65,8 @@ function handleSource(src: string): string {
 	if (isCodeMalicious(src)) {
 		throw new Error('Malicious code detected')
 	}
-	return transform(src)
+	const res = transform(src)
+	return res
 }
 
 /**
@@ -97,11 +98,16 @@ function transform(original: string) {
 	const suffix = '\n}'
 	const src = `${prefix}${original}${suffix}`
 
+	const semis: number[] = []
+
 	let ast = parse(src, {
 		sourceType: 'module',
 		ecmaVersion: 'latest',
 		locations: true,
 		ranges: true,
+		onInsertedSemicolon(lastTokEnd) {
+			semis.push(lastTokEnd)
+		},
 	})
 
 	const nodesToYield: { node: Node }[] = []
@@ -135,7 +141,12 @@ function transform(original: string) {
 	const s = new MagicString(src)
 
 	for (const { node } of nodesToYield) {
-		const wrap = node.type !== 'AssignmentExpression' && node.type !== 'UpdateExpression'
+		let wrap = node.type !== 'AssignmentExpression' && node.type !== 'UpdateExpression'
+		if (wrap) {
+			const last_new_line = src.slice(0, node.start).lastIndexOf('\n')
+			const prefix_semi = last_new_line !== -1 && src.slice(last_new_line, node.start).match(/^[\s\n]*$/)
+			if (prefix_semi) wrap = false
+		}
 		let before = ''
 		if (wrap) before += '('
 		before += 'yield '
