@@ -30,6 +30,7 @@
 		window.OffscreenCanvas = undefined
 		document.createElement = undefined
 		window.console = undefined
+		window.Proxy = undefined
 	</script>
 	<script type="module">
 		setInterval(() => {
@@ -41,7 +42,7 @@
 			}, '/*-- ORIGIN --*/')
 		}, 100)
 
-		const console = {
+		window.console = {
 			log: (...args) => {
 				parent.postMessage({
 					type: "log",
@@ -72,32 +73,27 @@
 					}
 				}, '/*-- ORIGIN --*/')
 			},
-		}
+		};
 
-		const GeneratorFunction = (async function* () { }.constructor)
-
-		const generator = async function* () { /*-- SOURCE --*/ }.bind(null)
-		executor(generator())
-
-		async function executor(gen) {
+		(async function (gen) {
 			const AsyncFunction = (async function () { }).constructor
 			const GeneratorFunction = (function* () { }).constructor
 			const AsyncGeneratorFunction = (async function* () { }).constructor
 			function stringify(value) {
 				if (value === undefined) return 'undefined'
+				if (value === null) return 'null'
 				if (typeof value === 'function') {
 					const name = value.name?.split(' ').at(-1) ?? 'function'
 					switch (value.constructor) {
 						case AsyncGeneratorFunction:
-							return `async ${name}*()`
-						case GeneratorFunction:
-							return `${name}*()`
 						case AsyncFunction:
 							return `async ${name}()`
+						case GeneratorFunction:
 						default:
 							return `${name}()`
 					}
 				}
+				if (value instanceof Promise) return 'Promise'
 				return JSON.stringify(value)
 			}
 			try {
@@ -134,7 +130,7 @@
 					}
 				}, '/*-- ORIGIN --*/')
 			}
-		}
+		})(async function* () { /*-- SOURCE --*/ }.bind(null)())
 	</script>
 </body>
 
