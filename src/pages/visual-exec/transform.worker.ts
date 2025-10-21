@@ -110,9 +110,12 @@ function transform(original: string) {
 		},
 	})
 
-	const nodesToYield: { node: Node }[] = []
+	const nodesToYield: Array<{ node: Node }> = []
 
 	const queueNode = (node: Node) => {
+		for (const n of nodesToYield) {
+			if (n.node.start === node.start && n.node.end === node.end) return
+		}
 		nodesToYield.push({ node })
 	}
 
@@ -131,6 +134,9 @@ function transform(original: string) {
 		ArrayExpression: queueNode,
 		ReturnStatement: (node) => {
 			if (node.argument) queueNode(node.argument)
+		},
+		VariableDeclarator: (node) => {
+			if (node.init) queueNode(node.init)
 		}
 	})
 
