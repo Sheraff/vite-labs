@@ -108,7 +108,7 @@
 		background-color: rgb(24, 23, 23);
 		padding: 0.1em 0.5em;
 		border-radius: 4px;
-		animation: in-and-out 500ms ease-in-out;
+		animation: in-and-out 1000ms ease-in-out;
 		z-index: 2;
 		top: var(--top);
 		left: var(--left);
