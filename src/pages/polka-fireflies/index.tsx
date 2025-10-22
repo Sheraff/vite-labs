@@ -12,11 +12,9 @@ export const meta: RouteMeta = {
 const SIDE = 50
 
 export default function PolkaFirefliesPage() {
-	const ref = useRef<HTMLDivElement>(null)
 	const canvasRef = useRef<HTMLCanvasElement>(null)
 
 	useEffect(() => {
-		const element = ref.current!
 		const canvas = canvasRef.current!
 
 		const size = Math.min(window.innerWidth, window.innerHeight) * devicePixelRatio
@@ -26,7 +24,6 @@ export default function PolkaFirefliesPage() {
 		canvas.style.height = `${size / devicePixelRatio}px`
 		const ctx = canvas.getContext("2d")!
 
-		// const cells = Array.from(element.children) as HTMLDivElement[]
 		const values = Array.from({ length: SIDE * SIDE }, () => 0)
 		const cooldown = Array.from({ length: SIDE * SIDE }, () => 0)
 
@@ -34,7 +31,6 @@ export default function PolkaFirefliesPage() {
 			if (values[index] > 1) return
 			if (cooldown[index] > 0) return
 			values[index] += amount
-			// cells[index].style.setProperty('--intensity', values[index].toString())
 			if (values[index] < 1) return
 			setTimeout(() => {
 				const propagate = values[index] * 0.5
@@ -45,7 +41,6 @@ export default function PolkaFirefliesPage() {
 			}, 100)
 			setTimeout(() => {
 				values[index] = 0
-				// cells[index].style.setProperty('--intensity', '0')
 				cooldown[index] = 1
 				setTimeout(() => {
 					cooldown[index] = 0
@@ -68,7 +63,6 @@ export default function PolkaFirefliesPage() {
 				if (values[i] > 0 && values[i] < 1) {
 					values[i] -= 0.01
 					if (values[i] < 0) values[i] = 0
-					// cells[i].style.setProperty('--intensity', values[i].toString())
 				}
 			}
 		})
@@ -105,11 +99,6 @@ export default function PolkaFirefliesPage() {
 		<div className={styles.main}>
 			<div className={styles.head}>
 				<Head />
-			</div>
-			<div ref={ref} className={styles.grid} style={{ '--side': SIDE } as CSSProperties}>
-				{/* {Array.from({ length: SIDE * SIDE }).map((_, i) => (
-					<div key={i} className={styles.cell} />
-				))} */}
 			</div>
 			<canvas ref={canvasRef} />
 		</div>
