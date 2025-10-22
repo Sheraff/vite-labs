@@ -3,19 +3,22 @@
 
 <head>
 	<meta charset="utf-8">
-	<meta http-equiv="Content-Security-Policy"
-		content="default-src 'none'; script-src 'unsafe-inline'; object-src 'none'; base-uri 'none';">
+	<!-- <meta http-equiv="Content-Security-Policy"
+		content="default-src 'none'; script-src 'unsafe-inline'; object-src 'none'; base-uri 'none';"> -->
 </head>
 
 <body>
-	<script>
-		window.fetch = undefined
+	<script type="module">
 		window.XMLHttpRequest = undefined
 		window.WebSocket = undefined
 		window.EventSource = undefined
-		window.indexedDB = undefined
-		window.localStorage = undefined
-		window.sessionStorage = undefined
+		// window.indexedDB = undefined
+		// window.localStorage = undefined
+		// window.sessionStorage = undefined
+		window.CookieChangeEvent = undefined
+		window.CookieStore = undefined
+		window.CookieStoreManager = undefined
+		window.cookieStore = undefined
 		window.FileReader = undefined
 		window.Worker = undefined
 		window.SharedWorker = undefined
@@ -23,114 +26,490 @@
 		window.Notification = undefined
 		window.PushManager = undefined
 		window.Caches = undefined
-		window.navigator = undefined
-		window.document = undefined
+		// window.navigator = undefined
+		// window.document = undefined
 		window.XMLHttpRequest = undefined
 		window.WebAssembly = undefined
 		window.OffscreenCanvas = undefined
 		document.createElement = undefined
-		window.console = undefined
 		window.Proxy = undefined
+		// window.customElements = undefined
+		window.MutationObserver = undefined
+		window.IntersectionObserver = undefined
+		window.PerformanceObserver = undefined
+		window.ResizeObserver = undefined
+		window.Symbol = undefined
+		window.alert = undefined
+		window.blur = undefined
+		window.cancelAnimationFrame = undefined
+		window.cancelIdleCallback = undefined
+		window.captureEvents = undefined
+		window.clearInterval = undefined
+		window.clearTimeout = undefined
+		window.close = undefined
+		window.confirm = undefined
+		window.createImageBitmap = undefined
+		window.fetch = undefined
+		window.find = undefined
+		window.focus = undefined
+		window.getComputedStyle = undefined
+		window.getSelection = undefined
+		window.matchMedia = undefined
+		window.moveBy = undefined
+		window.moveTo = undefined
+		window.open = undefined
+		window.postMessage = undefined
+		window.print = undefined
+		window.prompt = undefined
+		window.queueMicrotask = undefined
+		window.releaseEvents = undefined
+		window.reportError = undefined
+		window.requestAnimationFrame = undefined
+		window.requestIdleCallback = undefined
+		window.resizeBy = undefined
+		window.resizeTo = undefined
+		window.scroll = undefined
+		window.scrollBy = undefined
+		window.scrollTo = undefined
+		window.stop = undefined
+		window.webkitCancelAnimationFrame = undefined
+		window.webkitRequestAnimationFrame = undefined
+		window.fetchLater = undefined
+		window.getScreenDetails = undefined
+		window.queryLocalFonts = undefined
+		window.showDirectoryPicker = undefined
+		window.showOpenFilePicker = undefined
+		window.showSaveFilePicker = undefined
+		window.webkitRequestFileSystem = undefined
+		window.webkitResolveLocalFileSystemURL = undefined
+		window.JSCompiler_renameProperty = undefined
+		window.addEventListener = undefined
+		window.dispatchEvent = undefined
+		window.removeEventListener = undefined
+		window.when = undefined
+
+		EventTarget.prototype.addEventListener = undefined
+		EventTarget.prototype.dispatchEvent = undefined
+		EventTarget.prototype.removeEventListener = undefined
+
+		{
+			Array.prototype.every = function* (cb, thisArg) {
+				for (let i = 0; i < this.length; i++) {
+					const flag = yield* cb.call(thisArg, this[i], i, this)
+					if (!flag) return false
+				}
+				return true
+			}
+			Array.prototype.filter = function* (cb, thisArg) {
+				const result = []
+				for (let i = 0; i < this.length; i++) {
+					const flag = yield* cb.call(thisArg, this[i], i, this)
+					if (flag) yield* result.push(this[i])
+				}
+				return result
+			}
+			Array.prototype.find = function* (cb, thisArg) {
+				for (let i = 0; i < this.length; i++) {
+					const flag = yield* cb.call(thisArg, this[i], i, this)
+					if (flag) return this[i]
+				}
+				return undefined
+			}
+			Array.prototype.findIndex = function* (cb, thisArg) {
+				for (let i = 0; i < this.length; i++) {
+					const flag = yield* cb.call(thisArg, this[i], i, this)
+					if (flag) return i
+				}
+				return -1
+			}
+			Array.prototype.flatMap = function* (cb, thisArg) {
+				const result = []
+				for (let i = 0; i < this.length; i++) {
+					const mapped = yield* cb.call(thisArg, this[i], i, this)
+					if (Array.isArray(mapped)) {
+						yield* result.push(...mapped)
+					} else {
+						yield* result.push(mapped)
+					}
+				}
+				return result
+			}
+			Array.prototype.forEach = function* (cb, thisArg) {
+				for (let i = 0; i < this.length; i++) {
+					yield* cb.call(thisArg, this[i], i, this)
+				}
+			}
+			Array.prototype.map = function* (cb, thisArg) {
+				const result = new Array(this.length)
+				for (let i = 0; i < this.length; i++) {
+					result[i] = yield* cb.call(thisArg, this[i], i, this)
+				}
+				return result
+			}
+			Array.prototype.reduce = function* (...args) {
+				let acc = args.length > 1 ? args[1] : this[0]
+				let i = args.length > 1 ? 0 : 1
+				const cb = args[0]
+				for (; i < this.length; i++) {
+					acc = yield* cb(acc, this[i], i, this)
+				}
+				return acc
+			}
+			Array.prototype.reduceRight = function* (cb, thisArg) {
+				let acc = this[this.length - 1]
+				for (let i = this.length - 2; i >= 0; i--) {
+					acc = yield* cb(acc, this[i], i, this)
+				}
+				return acc
+			}
+			Array.prototype.some = function* (cb, thisArg) {
+				for (let i = 0; i < this.length; i++) {
+					const flag = yield* cb.call(thisArg, this[i], i, this)
+					if (flag) return true
+				}
+				return false
+			}
+			Array.prototype.sort = function* (cb) {
+				const arr = yield* this.slice()
+				const len = arr.length
+				for (let i = 0; i < len - 1; i++) {
+					for (let j = 0; j < len - 1 - i; j++) {
+						const a = arr[j]
+						const b = arr[j + 1]
+						let cmp
+						if (cb) {
+							cmp = yield* cb(a, b)
+						} else {
+							cmp = `${a}` > `${b}` ? 1 : -1
+						}
+						if (cmp > 0) {
+							arr[j] = b
+							arr[j + 1] = a
+						}
+					}
+				}
+				for (let i = 0; i < len; i++) {
+					this[i] = arr[i]
+				}
+				return this
+			}
+			Array.from = function* (iterable, mapFn, thisArg) {
+				const result = []
+				let i = 0
+				for (const item of iterable) {
+					if (mapFn) {
+						yield* result.push(yield* mapFn.call(thisArg, item, i))
+					} else {
+						yield* result.push(item)
+					}
+					i++
+				}
+				return result
+			}
+			Map.prototype.forEach = function* (cb, thisArg) {
+				for (const [key, value] of this) {
+					yield* cb.call(thisArg, value, key, this)
+				}
+			}
+			Set.prototype.forEach = function* (cb, thisArg) {
+				for (const value of this) {
+					yield* cb.call(thisArg, value, value, this)
+				}
+			}
+			Object.groupBy = function* (iterable, callback) {
+				const result = {}
+				let i = 0
+				for (const item of iterable) {
+					const key = yield* callback(item, i)
+					if (!result[key]) {
+						result[key] = []
+					}
+					yield* result[key].push(item)
+					i++
+				}
+				return result
+			}
+			const assign = Object.assign
+			function make(proto, method) {
+				const original = proto[method]
+				proto['_' + method] = original
+				proto[method] = {
+					[method]: function* (...args) {
+						return original.apply(this, args)
+					}
+				}[method]
+			}
+			make(String, 'fromCharCode')
+			make(String, 'fromCodePoint')
+			make(String, 'raw')
+			make(Number, 'isFinite')
+			make(Number, 'isInteger')
+			make(Number, 'isNaN')
+			make(Number, 'parseFloat')
+			make(Number, 'parseInt')
+			make(Number, 'isSafeInteger')
+			make(Object, 'assign')
+			make(Object, 'create')
+			make(Object, 'defineProperties')
+			make(Object, 'defineProperty')
+			make(Object, 'entries')
+			make(Object, 'freeze')
+			make(Object, 'fromEntries')
+			make(Object, 'getOwnPropertyDescriptor')
+			make(Object, 'getOwnPropertyDescriptors')
+			make(Object, 'getOwnPropertyNames')
+			make(Object, 'getOwnPropertySymbols')
+			make(Object, 'getPrototypeOf')
+			make(Object, 'is')
+			make(Object, 'isExtensible')
+			make(Object, 'isFrozen')
+			make(Object, 'isSealed')
+			make(Object, 'keys')
+			make(Object, 'preventExtensions')
+			make(Object, 'seal')
+			make(Object, 'setPrototypeOf')
+			make(Object, 'values')
+			make(Array, 'isArray')
+			make(Array, 'of')
+			make(Array.prototype, 'join')
+			make(Array.prototype, 'slice')
+			make(Array.prototype, 'concat')
+			make(Array.prototype, 'flat')
+			make(Array.prototype, 'fill')
+			make(Array.prototype, 'includes')
+			make(Array.prototype, 'indexOf')
+			make(Array.prototype, 'lastIndexOf')
+			make(Array.prototype, 'pop')
+			make(Array.prototype, 'push')
+			make(Array.prototype, 'push')
+			make(Array.prototype, 'splice')
+			make(Array.prototype, 'unshift')
+			make(Array.prototype, 'copyWithin')
+			make(Array.prototype, 'entries')
+			make(Array.prototype, 'keys')
+			make(Array.prototype, 'values')
+			make(Array.prototype, 'at')
+			make(String.prototype, 'charAt')
+			make(String.prototype, 'charCodeAt')
+			make(String.prototype, 'codePointAt')
+			make(String.prototype, 'concat')
+			make(String.prototype, 'endsWith')
+			make(String.prototype, 'includes')
+			make(String.prototype, 'indexOf')
+			make(String.prototype, 'lastIndexOf')
+			make(String.prototype, 'match')
+			make(String.prototype, 'localeCompare')
+			make(String.prototype, 'matchAll')
+			make(String.prototype, 'normalize')
+			make(String.prototype, 'padEnd')
+			make(String.prototype, 'padStart')
+			make(String.prototype, 'repeat')
+			make(String.prototype, 'replace')
+			make(String.prototype, 'replaceAll')
+			make(String.prototype, 'search')
+			make(String.prototype, 'slice')
+			make(String.prototype, 'split')
+			make(String.prototype, 'startsWith')
+			make(String.prototype, 'substring')
+			make(String.prototype, 'toLocaleLowerCase')
+			make(String.prototype, 'toLocaleUpperCase')
+			make(String.prototype, 'toLowerCase')
+			make(String.prototype, 'toString')
+			make(String.prototype, 'toUpperCase')
+			make(String.prototype, 'trim')
+			make(String.prototype, 'trimEnd')
+			make(String.prototype, 'trimStart')
+			make(String.prototype, 'valueOf')
+			make(Object.prototype, 'hasOwnProperty')
+			make(Object.prototype, 'isPrototypeOf')
+			make(Object.prototype, 'propertyIsEnumerable')
+			make(Object.prototype, 'toLocaleString')
+			make(Object.prototype, 'toString')
+			make(Object.prototype, 'valueOf')
+			make(Boolean.prototype, 'valueOf')
+			make(Number.prototype, 'toExponential')
+			make(Number.prototype, 'toFixed')
+			make(Number.prototype, 'toLocaleString')
+			make(Number.prototype, 'toPrecision')
+			make(Number.prototype, 'toString')
+			make(Number.prototype, 'valueOf')
+			make(Math, 'abs')
+			make(Math, 'acos')
+			make(Math, 'asin')
+			make(Math, 'atan')
+			make(Math, 'atan2')
+			make(Math, 'ceil')
+			make(Math, 'acosh')
+			make(Math, 'asinh')
+			make(Math, 'atanh')
+			make(Math, 'cbrt')
+			make(Math, 'clz32')
+			make(Math, 'cos')
+			make(Math, 'cosh')
+			make(Math, 'exp')
+			make(Math, 'expm1')
+			make(Math, 'floor')
+			make(Math, 'fround')
+			make(Math, 'hypot')
+			make(Math, 'imul')
+			make(Math, 'log')
+			make(Math, 'log10')
+			make(Math, 'log1p')
+			make(Math, 'log2')
+			make(Math, 'max')
+			make(Math, 'min')
+			make(Math, 'pow')
+			make(Math, 'random')
+			make(Math, 'round')
+			make(Math, 'sign')
+			make(Math, 'sin')
+			make(Math, 'sinh')
+			make(Math, 'sqrt')
+			make(Math, 'tan')
+			make(Math, 'tanh')
+			make(Math, 'trunc')
+			make(window, 'parseInt')
+			make(window, 'isFinite')
+			make(window, 'isNaN')
+			make(window, 'atob')
+			make(window, 'btoa')
+			make(window, 'structuredClone')
+
+			window.Array = Object.assign(function* (...args) { return new Array(...args) }, Array)
+			window.String = Object.assign(function* (...args) { return new String(...args) }, String)
+			window.Boolean = Object.assign(function* (...args) { return new Boolean(...args) }, Boolean)
+			window.Number = Object.assign(function* (...args) { return new Number(...args) }, Number)
+			window.Object = Object.assign(function* (...args) { return Object(...args) }, Object)
+		}
 	</script>
 	<script type="module">
-		setInterval(() => {
-			parent.postMessage({
-				type: "ping",
-				data: {
-					id: '/*-- ID --*/',
-				}
-			}, '/*-- ORIGIN --*/')
-		}, 100)
-
-		window.console = {
-			log: (...args) => {
-				parent.postMessage({
-					type: "log",
-					data: {
-						id: '/*-- ID --*/',
-						value: args.map(String).join(' '),
-						level: 'log'
-					}
-				}, '/*-- ORIGIN --*/')
-			},
-			error: (...args) => {
-				parent.postMessage({
-					type: "error",
-					data: {
-						id: '/*-- ID --*/',
-						value: args.map(String).join(' '),
-						level: 'error'
-					}
-				}, '/*-- ORIGIN --*/')
-			},
-			warn: (...args) => {
-				parent.postMessage({
-					type: "warn",
-					data: {
-						id: '/*-- ID --*/',
-						value: args.map(String).join(' '),
-						level: 'warn'
-					}
-				}, '/*-- ORIGIN --*/')
-			},
-		};
-
-		(async function (gen) {
-			const AsyncFunction = (async function () { }).constructor
-			const GeneratorFunction = (function* () { }).constructor
-			const AsyncGeneratorFunction = (async function* () { }).constructor
-			function stringify(value) {
-				if (value === undefined) return 'undefined'
-				if (value === null) return 'null'
-				if (typeof value === 'function') {
-					const name = value.name?.split(' ').at(-1) ?? 'function'
-					switch (value.constructor) {
-						case AsyncGeneratorFunction:
-						case AsyncFunction:
-							return `async ${name}()`
-						case GeneratorFunction:
-						default:
-							return `${name}()`
-					}
-				}
-				if (value instanceof Promise) return 'Promise'
-				return JSON.stringify(value)
+		const fn = async function* () {
+			const fn = undefined
+			{
+				/*-- SOURCE --*/
 			}
-			try {
-				let result
-				do {
-					result = await gen.next(result?.value?.value)
-					if (!result.done) {
-						parent.postMessage({
-							type: "yield",
-							data: {
-								...result.value,
-								id: '/*-- ID --*/',
-								value: stringify(result.value.value),
-							}
-						}, '/*-- ORIGIN --*/')
-						await new Promise((resolve) => setTimeout(() => resolve(), 500))
-					}
-				} while (!result.done)
-				parent.postMessage({
-					type: "done",
+		}.bind(null)
+
+		{
+			const postMessage = parent.postMessage.bind(parent)
+			const setInterval = window.setInterval.bind(window)
+			const setTimeout = window.setTimeout.bind(window)
+			window.parent = undefined
+			window.setInterval = undefined
+			window.setTimeout = undefined
+			setInterval(() => {
+				postMessage({
+					type: "ping",
 					data: {
 						id: '/*-- ID --*/',
-						result: stringify(result.value)
 					}
 				}, '/*-- ORIGIN --*/')
-			} catch (e) {
-				parent.postMessage({
-					type: 'error',
-					data: {
-						id: '/*-- ID --*/',
-						error: e instanceof Error
-							? e.message
-							: String(e)
+			}, 100)
+			const orig = window.console
+			window.console = {
+				log: function* (...args) {
+					orig.log('log', ...args)
+					try {
+						orig.log('log-string', `${args}`)
+					} catch (e) {
+						orig.error('log-string-error', e)
+						orig.error('log-string-error type', typeof args)
 					}
-				}, '/*-- ORIGIN --*/')
-			}
-		})(async function* () { /*-- SOURCE --*/ }.bind(null)())
+					postMessage({
+						type: "log",
+						data: {
+							id: '/*-- ID --*/',
+							// value: `${args}`,
+							value: "",
+							level: 'log'
+						}
+					}, '/*-- ORIGIN --*/')
+					orig.log('passed')
+				},
+				error: function* (...args) {
+					orig.error('error', ...args)
+					postMessage({
+						type: "error",
+						data: {
+							id: '/*-- ID --*/',
+							value: `${args}`,
+							level: 'error'
+						}
+					}, '/*-- ORIGIN --*/')
+				},
+				warn: function* (...args) {
+					orig.warn('warn', ...args)
+					postMessage({
+						type: "warn",
+						data: {
+							id: '/*-- ID --*/',
+							value: `${args}`,
+							level: 'warn'
+						}
+					}, '/*-- ORIGIN --*/')
+				},
+			};
+			(async function () {
+				const gen = fn()
+				const AsyncFunction = (async function () { }).constructor
+				const GeneratorFunction = (function* () { }).constructor
+				const AsyncGeneratorFunction = (async function* () { }).constructor
+				function stringify(value) {
+					if (value === undefined) return 'undefined'
+					if (value === null) return 'null'
+					if (typeof value === 'function') {
+						const name = value.name?._split(' ')._at(-1) ?? 'function'
+						switch (value.constructor) {
+							case AsyncGeneratorFunction:
+							case AsyncFunction:
+								return `async ${name}()`
+							case GeneratorFunction:
+							default:
+								return `${name}()`
+						}
+					}
+					if (value instanceof Promise) return 'Promise'
+					return JSON.stringify(value)
+				}
+				try {
+					let result
+					do {
+						result = await gen.next(result?.value?.value)
+						orig.log('------', result?.value?.value)
+						if (!result.done) {
+							postMessage({
+								type: "yield",
+								data: {
+									...result.value,
+									id: '/*-- ID --*/',
+									value: stringify(result.value.value),
+								}
+							}, '/*-- ORIGIN --*/')
+							await new Promise((resolve) => setTimeout(() => resolve(), 1000))
+						}
+					} while (!result.done)
+					postMessage({
+						type: "done",
+						data: {
+							id: '/*-- ID --*/',
+							result: stringify(result.value)
+						}
+					}, '/*-- ORIGIN --*/')
+				} catch (e) {
+					orig.error(e)
+					postMessage({
+						type: 'error',
+						data: {
+							id: '/*-- ID --*/',
+							error: e instanceof Error
+								? e.message
+								: String(e)
+						}
+					}, '/*-- ORIGIN --*/')
+				}
+			})()
+		}
+
 	</script>
 </body>
 

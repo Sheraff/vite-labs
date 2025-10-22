@@ -37,6 +37,7 @@ export type Outgoing =
 				let code
 				try {
 					code = transform(message.data.code)
+					console.log(code)
 				} catch (err: any) {
 					self.postMessage({
 						type: "error",
@@ -119,19 +120,21 @@ function transform(original: string) {
 			else if (node.name === 'eval') isMalicious()
 			else if (node.name === 'importScripts') isMalicious()
 			else if (node.name === 'window') isMalicious()
+			else if (node.name === 'global') isMalicious()
+			else if (node.name === 'globalThis') isMalicious()
 			else if (node.name === 'Function') isMalicious()
 		},
 		MemberExpression(node) {
 			// forbid access to 'constructor', '__proto__', 'prototype' properties
 			if (!node.computed && node.property.type === 'Identifier') {
 				const propName = node.property.name
-				if (propName === 'constructor' || propName === '__proto__' || propName === 'prototype') {
+				if (propName === 'constructor' || propName === '__proto__' || propName === 'prototype' || propName === '__defineGetter__' || propName === '__defineSetter__') {
 					isMalicious()
 				}
 			}
 			if (node.computed && node.property.type === 'Literal') {
 				const propName = String(node.property.value)
-				if (propName === 'constructor' || propName === '__proto__' || propName === 'prototype') {
+				if (propName === 'constructor' || propName === '__proto__' || propName === 'prototype' || propName === '__defineGetter__' || propName === '__defineSetter__') {
 					isMalicious()
 				}
 			}
@@ -143,16 +146,26 @@ function transform(original: string) {
 
 	const nodesToYield: Array<{ node: Node }> = []
 	const bindThis = new Set<Node>()
+	const userFunctions = new Set<Node>()
 
 	const queueNode = (node: Node) => {
-		for (const n of nodesToYield) {
-			if (n.node.start === node.start && n.node.end === node.end) return
+		const same = nodesToYield.findIndex((n) => n.node.start === node.start && n.node.end === node.end)
+		if (same !== -1) {
+			if (node.type === 'CallExpression') {
+				// prefer yielding CallExpressions
+				nodesToYield[same] = { node }
+			}
+		} else {
+			nodesToYield.push({ node })
 		}
-		nodesToYield.push({ node })
 	}
 
 	// Collect nodes that should be yielded
 	walk(ast, {
+		FunctionDeclaration: (node) => userFunctions.add(node),
+		ArrowFunctionExpression: (node) => userFunctions.add(node),
+		// [].map(function() {}) or const a = { foo() { } }
+		FunctionExpression: (node) => userFunctions.add(node),
 		Literal: queueNode,
 		BinaryExpression: queueNode,
 		AssignmentExpression: queueNode,
@@ -173,7 +186,8 @@ function transform(original: string) {
 			}
 			// if the top parent of the MemberExpression chain is the callee of a CallExpression (e.g. `array.join('')`), we need to bind `this`
 			if (top && top.type === 'CallExpression' && (top as CallExpression).callee === node) {
-				bindThis.add(node)
+				return
+				// bindThis.add(node)
 			}
 			queueNode(node)
 		},
@@ -217,8 +231,10 @@ function transform(original: string) {
 		before += `loc: { start: { line: ${node.loc!.start.line - prefix.length}, column: ${node.loc!.start.column - prefix.length} }, end: { line: ${node.loc!.end.line - prefix.length}, column: ${node.loc!.end.column - prefix.length} } },`
 		before += `start: ${node.start - prefix.length}, end: ${node.end - prefix.length},`
 		before += 'value: ('
+		if (node.type === 'CallExpression') before += 'yield* ('
 		s.appendLeft(node.start, before)
 		let after = ')'
+		if (node.type === 'CallExpression') after += ')'
 		if (bindThis.has(node)) {
 			after += '.bind('
 			after += src.slice((node as MemberExpression).object.start, (node as MemberExpression).object.end)

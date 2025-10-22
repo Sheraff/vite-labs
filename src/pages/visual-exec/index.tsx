@@ -29,9 +29,27 @@ export const meta: RouteMeta = {
 // return b;
 // `.trim()
 
+// const initialCode = `
+// function fibonacci(n) {
+// 	// Base cases
+// 	if (n <= 0) {
+// 		return 0
+// 	}
+// 	if (n === 1) {
+// 		return 1
+// 	}
+
+// 	// Recursive case
+// 	return fibonacci(n - 1) + fibonacci(n - 2)
+// }
+// const res = fibonacci(5)
+// console.log(res)
+// return res
+// `.trim()
+
 const initialCode = `
 // Bubble Sort Algorithm
-let arr = [64, 34, 25, 12, 22, 11, 90, 88, 76, 50, 47]
+let arr = [64, 34, 25]
 let n = arr.length
 
 console.log("Original array: " + arr.join(", "))
