@@ -11,6 +11,7 @@ import spider_inverse_kinematics_image from "./pages/spider-inverse-kinematics/s
 import quad_tree_collisions_image from "./pages/quad-tree-collisions/screen.png"
 import quad_tree_image from "./pages/quad-tree/screen.png"
 import pong_pang_image from "./pages/pong-pang/screen.png"
+import polka_fireflies_image from "./pages/polka-fireflies/screen.png"
 import perlin_ripples_image from "./pages/perlin-ripples/screen.png"
 import particle_life_image from "./pages/particle-life/screen.png"
 import paint_worklet_image from "./pages/paint-worklet/screen.png"
@@ -34,7 +35,7 @@ import ants_shader_image from "./pages/ants-shader/screen.png"
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "visual-exec" | "swarm-pathfinding" | "star-rating" | "spring-fluid" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "perlin-ripples" | "particle-life" | "paint-worklet" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "maze-generation" | "lightning" | "intl-tuesday" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "deterministic-plinko" | "cursor-projection" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "ants-shader" | "ants" | "a-star"
+export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "visual-exec" | "swarm-pathfinding" | "star-rating" | "spring-fluid" | "spider-inverse-kinematics" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "polka-fireflies" | "perlin-ripples" | "particle-life" | "paint-worklet" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "maze-generation" | "lightning" | "intl-tuesday" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "deterministic-plinko" | "cursor-projection" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "ants-shader" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
@@ -86,7 +87,7 @@ export const ROUTES = {
 			image: visual_exec_image
 		},
 		git: {
-			lastModified: 1761048600000,
+			lastModified: 1761070823000,
 			firstAdded: 1760983403000
 		},
 	},
@@ -173,6 +174,18 @@ export const ROUTES = {
 		git: {
 			lastModified: 1752533354000,
 			firstAdded: 1717337533000
+		},
+	},
+	"polka-fireflies": {
+		Component: lazy(() => import("./pages/polka-fireflies/index.tsx")),
+		meta: {
+			title: 'Polka Fireflies',
+			image: polka_fireflies_image
+		
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
 		},
 	},
 	"perlin-ripples": {
