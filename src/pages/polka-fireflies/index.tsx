@@ -80,7 +80,12 @@ export default function PolkaFirefliesPage() {
 					const index = y * SIDE + x
 					const intensity = Math.min(values[index], 1)
 					const radius = (size / SIDE) * 0.4 * (intensity * 0.5 + 0.5)
-					ctx.fillStyle = `rgba(255, 223, 100, ${intensity})`
+					const yellow = [90.749, 0.14483, 94.754]
+					const green = [82.386, 0.19922, 137.587]
+					const l = yellow[0] * intensity + green[0] * (1 - intensity)
+					const c = yellow[1] * intensity + green[1] * (1 - intensity)
+					const h = yellow[2] * intensity + green[2] * (1 - intensity)
+					ctx.fillStyle = `oklch(${l}% ${c} ${h} / ${intensity})`
 					ctx.beginPath()
 					ctx.arc(
 						(x + 0.5) * (size / SIDE),
