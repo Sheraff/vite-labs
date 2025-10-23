@@ -26,6 +26,28 @@ export default function PolkaFirefliesPage() {
 
 		const values = new Float32Array(SIDE * SIDE)
 		const cooldown = new Uint8Array(SIDE * SIDE)
+		let lastTime = 0
+
+		const queue = [] as Array<[time: number, callback: () => void]>
+		function enqueue(callback: () => void, delay: number) {
+			const time = lastTime + delay
+			queue.push([time, callback])
+			queue.sort((a, b) => a[0] - b[0])
+		}
+		const processQueue = () => {
+			let i = 0
+			for (; i < queue.length; i++) {
+				const [time, callback] = queue[i]
+				if (time <= lastTime) {
+					callback()
+				} else {
+					break
+				}
+			}
+			if (i > 0) {
+				queue.splice(0, i)
+			}
+		}
 
 		function updateCell(index: number, amount: number) {
 			if (values[index] > 1) return
@@ -33,22 +55,21 @@ export default function PolkaFirefliesPage() {
 			values[index] += amount
 			if (values[index] < 1) return
 			const propagate = values[index] * 0.8
-			setTimeout(() => {
+			enqueue(() => {
 				if (index % SIDE !== 0) updateCell(index - 1, propagate)
 				if (index % SIDE !== SIDE - 1) updateCell(index + 1, propagate)
 				if (index - SIDE >= 0) updateCell(index - SIDE, propagate)
 				if (index + SIDE < SIDE * SIDE) updateCell(index + SIDE, propagate)
 			}, 100)
 			cooldown[index] = 1
-			setTimeout(() => {
+			enqueue(() => {
 				values[index] = 0
-				setTimeout(() => {
+				enqueue(() => {
 					cooldown[index] = 0
 				}, Math.random() * 1000 + 100)
 			}, 700)
 		}
 
-		let lastTime = 0
 		let updateId = requestAnimationFrame(function up(time) {
 			updateId = requestAnimationFrame(up)
 
@@ -70,6 +91,8 @@ export default function PolkaFirefliesPage() {
 					if (values[i] < 0) values[i] = 0
 				}
 			}
+
+			processQueue()
 		})
 
 		let drawId = requestAnimationFrame(function draw() {
