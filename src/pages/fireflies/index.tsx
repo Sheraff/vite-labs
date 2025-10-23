@@ -7,7 +7,6 @@ import { StaticTreeNode } from "#particle-life/StaticTreeNode"
 export const meta: RouteMeta = {
 	title: 'Fireflies',
 	image: './screen.png'
-
 }
 
 export default function FirefliesPage() {
@@ -34,7 +33,6 @@ export default function FirefliesPage() {
 		const speed = new Float32Array(count)
 		const values = new Float32Array(count)
 		const cooldown = new Uint8Array(count)
-
 
 		const tree = new StaticTreeNode(
 			0,

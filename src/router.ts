@@ -185,7 +185,7 @@ export const ROUTES = {
 		
 		},
 		git: {
-			lastModified: 1761216470000,
+			lastModified: 1761222754000,
 			firstAdded: 1761173482000
 		},
 	},
@@ -401,11 +401,10 @@ export const ROUTES = {
 		meta: {
 			title: 'Fireflies',
 			image: fireflies_image
-		
 		},
 		git: {
-			lastModified: 0,
-			firstAdded: 0
+			lastModified: 1761222754000,
+			firstAdded: 1761222754000
 		},
 	},
 	"deterministic-plinko": {
