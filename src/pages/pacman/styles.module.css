@@ -1,0 +1,24 @@
+.main {
+	margin: 0;
+	background: oklch(13.508% 0.04223 288.372);
+	color: white;
+	touch-action: none;
+	width: 100vw;
+	height: 100svh;
+	padding: 1em;
+
+	canvas {
+		position: fixed;
+		width: 100dvmin;
+		height: 100dvmin;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		border: 1px solid white;
+	}
+}
+
+.head {
+	position: relative;
+	z-index: 1;
+}
