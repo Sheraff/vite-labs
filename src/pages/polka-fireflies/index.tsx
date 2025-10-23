@@ -24,44 +24,49 @@ export default function PolkaFirefliesPage() {
 		canvas.style.height = `${size / devicePixelRatio}px`
 		const ctx = canvas.getContext("2d")!
 
-		const values = Array.from({ length: SIDE * SIDE }, () => 0)
-		const cooldown = Array.from({ length: SIDE * SIDE }, () => 0)
+		const values = new Float32Array(SIDE * SIDE)
+		const cooldown = new Uint8Array(SIDE * SIDE)
 
 		function updateCell(index: number, amount: number) {
 			if (values[index] > 1) return
 			if (cooldown[index] > 0) return
 			values[index] += amount
 			if (values[index] < 1) return
+			const propagate = values[index] * 0.8
 			setTimeout(() => {
-				const propagate = values[index] * 0.5
 				if (index % SIDE !== 0) updateCell(index - 1, propagate)
 				if (index % SIDE !== SIDE - 1) updateCell(index + 1, propagate)
 				if (index - SIDE >= 0) updateCell(index - SIDE, propagate)
 				if (index + SIDE < SIDE * SIDE) updateCell(index + SIDE, propagate)
 			}, 100)
+			cooldown[index] = 1
 			setTimeout(() => {
 				values[index] = 0
-				cooldown[index] = 1
 				setTimeout(() => {
 					cooldown[index] = 0
 				}, Math.random() * 1000 + 100)
-			}, 500)
+			}, 700)
 		}
 
-		let updateId = requestAnimationFrame(function up() {
+		let lastTime = 0
+		let updateId = requestAnimationFrame(function up(time) {
 			updateId = requestAnimationFrame(up)
 
+			const delta = time - lastTime
+			lastTime = time
+			if (delta === time) return // first frame
+
 			// Randomly light up some cells
-			const count = Math.floor(Math.random() * SIDE * 2)
+			const count = Math.floor(Math.random() * SIDE * delta * 0.05)
 			for (let i = 0; i < count; i++) {
 				const index = Math.floor(Math.random() * SIDE * SIDE)
-				updateCell(index, Math.random() * 0.3 + 0.1)
+				updateCell(index, Math.random() * 0.3)
 			}
 
 			// Decay all cells
 			for (let i = 0; i < SIDE * SIDE; i++) {
 				if (values[i] > 0 && values[i] < 1) {
-					values[i] -= 0.01
+					values[i] -= 0.0002 * delta
 					if (values[i] < 0) values[i] = 0
 				}
 			}
