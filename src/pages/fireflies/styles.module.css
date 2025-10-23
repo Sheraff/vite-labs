@@ -1,6 +1,6 @@
 .main {
 	margin: 0;
-	background: #051016;
+	background: oklch(13.508% 0.04223 288.372);
 	color: white;
 	touch-action: none;
 	width: 100vw;
@@ -9,12 +9,7 @@
 
 	canvas {
 		position: fixed;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		aspect-ratio: 1;
-		width: 100lvmin;
-		height: 100lvmin;
+		inset: 0;
 	}
 }
 
