@@ -17,6 +17,17 @@ export default function Snakebird() {
 	return (
 		<div className={styles.main}>
 			<Head />
+			<div>
+				<fieldset>
+					<legend>Controls</legend>
+					<p>Arrow keys to move</p>
+					<p>Spacebar to restart</p>
+				</fieldset>
+				<fieldset>
+					<legend>Level</legend>
+					Level {levelNum + 1} / {LEVELS.length}
+				</fieldset>
+			</div>
 
 			<div className={styles.content}>
 				<PlayLevel

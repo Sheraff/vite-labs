@@ -3,6 +3,14 @@
 
 	height: 100dvh;
 	width: 100dvw;
+
+	fieldset {
+		width: fit-content;
+	}
+
+	fieldset+fieldset {
+		margin-top: 1em;
+	}
 }
 
 .content {
