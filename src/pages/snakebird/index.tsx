@@ -51,7 +51,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 
 	const snakeRef = useRef<SVGSVGElement>(null)
 
-	const [key, resetKey] = useState({})
+	const [key, resetKey] = useState(0)
 	const [positionState, setPositions] = useState(initialPositions)
 	const [collectedFruits, setCollectedFruits] = useState<ReadonlyArray<readonly [x: number, y: number]>>([])
 
@@ -110,7 +110,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 			moving = true
 			setPositions(initialPositions)
 			setCollectedFruits([])
-			resetKey({})
+			resetKey(r => r + 1)
 		}
 
 		const checkDeath = () => {
@@ -221,7 +221,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 					fill={collectedFruits.length === fruits.length ? "red" : "purple"}
 				/>
 			</svg>
-			<svg className={styles.snake} viewBox={`0 0 ${width} ${height}`} ref={snakeRef}>
+			<svg key={key} className={styles.snake} viewBox={`0 0 ${width} ${height}`} ref={snakeRef}>
 				<path
 					d={`M ${positionState.map(([x, y]) => `${x + 0.5} ${y + 0.5}`).join(' ')}`}
 					stroke="green"
