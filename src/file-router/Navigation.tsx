@@ -58,9 +58,13 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
 				}
 			})
 		}
-		window.navigation.addEventListener("navigate", onNavigate)
-		return () => {
-			window.navigation.removeEventListener("navigate", onNavigate)
+		try {
+			window.navigation.addEventListener("navigate", onNavigate)
+			return () => {
+				window.navigation.removeEventListener("navigate", onNavigate)
+			}
+		} catch {
+			console.log('Navigation API not supported, defaulting to MPA behavior.')
 		}
 	}, [])
 	return (
