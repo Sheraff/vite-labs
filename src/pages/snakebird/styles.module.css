@@ -17,13 +17,15 @@
 	svg {
 		position: absolute;
 		inset: 0;
+		height: 100%;
+		width: 100%;
 
 		path {
 			transition: d 100ms linear;
 		}
 
 		circle {
-			transition: cx 100ms linear, cy 100ms linear;
+			transition: cx 100ms linear, cy 100ms linear, r 100ms linear, fill 100ms linear;
 		}
 	}
 }

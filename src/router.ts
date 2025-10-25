@@ -8,6 +8,7 @@ import swarm_pathfinding_image from "./pages/swarm-pathfinding/screen.png"
 import star_rating_image from "./pages/star-rating/screen.png"
 import spring_fluid_image from "./pages/spring-fluid/screen.png"
 import spider_inverse_kinematics_image from "./pages/spider-inverse-kinematics/screen.png"
+import snakebird_image from "./pages/snakebird/screen.png"
 import quad_tree_collisions_image from "./pages/quad-tree-collisions/screen.png"
 import quad_tree_image from "./pages/quad-tree/screen.png"
 import pong_pang_image from "./pages/pong-pang/screen.png"
@@ -145,11 +146,12 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/snakebird/index.tsx")),
 		meta: {
 			title: 'Snakebird',
-			tags: ['wip']
+			image: snakebird_image,
+			tags: ['game']
 		},
 		git: {
-			lastModified: 0,
-			firstAdded: 0
+			lastModified: 1761415795000,
+			firstAdded: 1761415795000
 		},
 	},
 	"quad-tree-collisions": {
