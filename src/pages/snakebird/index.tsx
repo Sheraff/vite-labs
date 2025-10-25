@@ -3,65 +3,13 @@ import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { flushSync } from "react-dom"
+import { LEVELS } from "./levels"
 
 export const meta: RouteMeta = {
 	title: 'Snakebird',
 	image: './screen.png',
 	tags: ['game']
 }
-
-const LEVEL_0 = [
-	'...........................',
-	'...........................',
-	'...........##.....O........',
-	'...........####............',
-	'............##.............',
-	'............#...*.#........',
-	'.....321....#.#...##...*...',
-	'..#########...##.......##..',
-	'..#######################..',
-	'..#######################..',
-	'...........................',
-	'...........................',
-]
-
-const LEVEL_1 = [
-	'..............................',
-	'...............O..............',
-	'............#....#............',
-	'............*..#*#............',
-	'..............................',
-	'.............#21..............',
-	'.............####.............',
-	'.............####.............',
-	'.............###..............',
-	'.............###..............',
-	'..............................',
-]
-
-const LEVEL_2 = [
-	'.......................',
-	'.......................',
-	'.........##............',
-	'.........###...........',
-	'........####..O........',
-	'.......#####...........',
-	'.......##.*#...3.......',
-	'.......##.....12.*.....',
-	'......###..#####.......',
-	'......#######.##.......',
-	'......#######..#.......',
-	'......#######..#.......',
-]
-
-const LEVELS = [LEVEL_0, LEVEL_1, LEVEL_2]
-
-// const level_map = {
-// 	'.': 'empty',
-// 	'#': 'ground',
-// 	'*': 'fruit',
-// 	'O': 'goal',
-// }
 
 export default function Snakebird() {
 	const [levelNum, setLevelNum] = useState(0)
@@ -88,6 +36,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 	const groundPaths = useMemo(() => processGround(level), [level])
 	const { fruits, goal } = useMemo(() => processGoal(level), [level])
 	const initialPositions = useMemo(() => processInitialPositions(level), [level])
+	const spikes = useMemo(() => processSpikes(level), [level])
 
 	const snakeRef = useRef<SVGSVGElement>(null)
 
@@ -125,6 +74,8 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 			if (positions.some(([x, y]) => x === newHead[0] && y === newHead[1])) return
 			// ground collision
 			if (level[newHead[1]][newHead[0]] === '#') return
+			// spike collision
+			if (level[newHead[1]][newHead[0]] === 'x') return
 
 			const isFruit = isAvailableFruit(newHead[0], newHead[1])
 			moving = true
@@ -173,10 +124,16 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 
 		const checkGround = () => {
 			if (moving) return
+			let fallsOnSpikes = false
 			for (const [x, y] of positions) {
+				if (level[y + 1][x] === 'x') fallsOnSpikes = true
 				if (level[y + 1][x] === '#' || isAvailableFruit(x, y + 1)) {
 					return
 				}
+			}
+			if (fallsOnSpikes) {
+				reset()
+				return
 			}
 			nextAction = null
 			moving = true
@@ -221,6 +178,22 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 						strokeWidth="0.05"
 					/>
 				))}
+				{spikes.map(([x, y]) => (
+					<polygon
+						key={`${x}-${y}`}
+						points={`
+							${x},${y}
+							${x + 0.5},${y + 0.3}
+							${x + 1},${y}
+							${x + 0.7},${y + 0.5}
+							${x + 1},${y + 1}
+							${x + 0.5},${y + 0.7}
+							${x},${y + 1}
+							${x + 0.3},${y + 0.5}
+						`}
+						fill="gray"
+					/>
+				))}
 				{fruits.map(([x, y]) => !collectedFruits.some(([fx, fy]) => fx === x && fy === y) && (
 					<circle
 						key={`${x}-${y}`}
@@ -255,6 +228,19 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 			</svg>
 		</>
 	)
+}
+
+function processSpikes(level: string[]) {
+	const spikes: Array<readonly [number, number]> = []
+	for (let y = 0; y < level.length; y++) {
+		for (let x = 0; x < level[0].length; x++) {
+			const char = level[y][x]
+			if (char === 'x') {
+				spikes.push([x, y] as const)
+			}
+		}
+	}
+	return spikes
 }
 
 function processGoal(level: string[]) {
