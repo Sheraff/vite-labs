@@ -84,7 +84,7 @@ export const ROUTES = {
 	"visual-exec": {
 		Component: lazy(() => import("./pages/visual-exec/index.tsx")),
 		meta: {
-			title: 'Visual Exec (WIP)',
+			title: 'Visual Exec',
 			image: visual_exec_image
 		},
 		git: {
@@ -232,8 +232,8 @@ export const ROUTES = {
 			tags: ['wip']
 		},
 		git: {
-			lastModified: 0,
-			firstAdded: 0
+			lastModified: 1761257121000,
+			firstAdded: 1761257121000
 		},
 	},
 	"normal-map": {

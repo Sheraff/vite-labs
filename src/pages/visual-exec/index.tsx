@@ -9,7 +9,7 @@ import IframeSource from './iframe.html?raw'
 import type { Incoming, Outgoing } from './transform.worker'
 
 export const meta: RouteMeta = {
-	title: 'Visual Exec (WIP)',
+	title: 'Visual Exec',
 	image: './screen.png'
 }
 
