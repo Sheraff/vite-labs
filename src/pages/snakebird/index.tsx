@@ -70,7 +70,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 		let collectedFruits: Array<readonly [number, number]> = []
 
 		const isAvailableFruit = (x: number, y: number) => {
-			return level[y][x] === '*' && !collectedFruits.some(([fx, fy]) => fx === x && fy === y)
+			return level[y]?.[x] === '*' && !collectedFruits.some(([fx, fy]) => fx === x && fy === y)
 		}
 
 		const processNextAction = () => {
@@ -113,16 +113,6 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 			resetKey(r => r + 1)
 		}
 
-		const checkDeath = () => {
-			if (moving) return
-			for (const [x, y] of positions) {
-				if (y + 1 === height) {
-					reset()
-					return
-				}
-			}
-		}
-
 		const checkGoal = () => {
 			if (moving) return
 			const head = positions.at(-1)!
@@ -137,8 +127,8 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 			if (moving) return
 			let fallsOnSpikes = false
 			for (const [x, y] of positions) {
-				if (level[y + 1][x] === 'x') fallsOnSpikes = true
-				if (level[y + 1][x] === '#' || isAvailableFruit(x, y + 1)) {
+				if (level[y + 1]?.[x] === 'x') fallsOnSpikes = true
+				if (level[y + 1]?.[x] === '#' || isAvailableFruit(x, y + 1)) {
 					return
 				}
 			}
@@ -148,6 +138,13 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 			}
 			nextAction = null
 			moving = true
+			// check if any part would fall out of bounds
+			for (const [x, y] of positions) {
+				if (y + 1 === height) {
+					reset()
+					return
+				}
+			}
 			positions = positions.map(([x, y]) => [x, y + 1] as const)
 			setPositions(positions)
 		}
@@ -155,7 +152,6 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 
 		snake.addEventListener('transitionend', () => {
 			moving = false
-			checkDeath()
 			checkGoal()
 			checkGround()
 			processNextAction()
