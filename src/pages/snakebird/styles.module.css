@@ -6,10 +6,17 @@
 
 	fieldset {
 		width: fit-content;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5em;
 	}
 
 	fieldset+fieldset {
 		margin-top: 1em;
+	}
+
+	p {
+		margin: 0;
 	}
 }
 

@@ -1,9 +1,9 @@
 import styles from './styles.module.css'
 import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { Fragment, useEffect, useMemo, useRef, useState } from "react"
 import { flushSync } from "react-dom"
-import { LEVELS } from "./levels"
+import { FRUIT, GOAL, LEVELS, SPIKE, WALL } from "./levels"
 
 export const meta: RouteMeta = {
 	title: 'Snakebird',
@@ -12,7 +12,7 @@ export const meta: RouteMeta = {
 }
 
 export default function Snakebird() {
-	const [levelNum, setLevelNum] = useState(0)
+	const [levelNum, setLevelNum] = useState(7)
 
 	return (
 		<div className={styles.main}>
@@ -22,10 +22,13 @@ export default function Snakebird() {
 					<legend>Controls</legend>
 					<p>Arrow keys to move</p>
 					<p>Spacebar to restart</p>
+					<p>Tab or Enter to select snake</p>
 				</fieldset>
 				<fieldset>
 					<legend>Level</legend>
 					Level {levelNum + 1} / {LEVELS.length}
+					<button type="button" onClick={() => setLevelNum((n) => (n - 1 + LEVELS.length) % LEVELS.length)}>Previous</button>
+					<button type="button" onClick={() => setLevelNum((n) => (n + 1) % LEVELS.length)}>Next</button>
 				</fieldset>
 			</div>
 
@@ -47,6 +50,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 	const groundPaths = useMemo(() => processGround(level), [level])
 	const { fruits, goal } = useMemo(() => processGoal(level), [level])
 	const initialPositions = useMemo(() => processInitialPositions(level), [level])
+	const [controlling, setControlling] = useState(0)
 	const spikes = useMemo(() => processSpikes(level), [level])
 
 	const snakeRef = useRef<SVGSVGElement>(null)
@@ -56,7 +60,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 	const [collectedFruits, setCollectedFruits] = useState<ReadonlyArray<readonly [x: number, y: number]>>([])
 
 	useEffect(() => {
-		const snake = snakeRef.current!.querySelector('circle')!
+		const snake = snakeRef.current!
 		const controller = new AbortController()
 		const map = {
 			arrowup: [0, -1],
@@ -67,41 +71,76 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 		let moving = false
 		let nextAction: readonly [number, number] | null = null
 		let positions = positionState
+		let controlling = 0
 		let collectedFruits: Array<readonly [number, number]> = []
 
 		const isAvailableFruit = (x: number, y: number) => {
-			return level[y]?.[x] === '*' && !collectedFruits.some(([fx, fy]) => fx === x && fy === y)
+			return level[y]?.[x] === FRUIT && !collectedFruits.some(([fx, fy]) => fx === x && fy === y)
 		}
 
 		const processNextAction = () => {
 			if (!nextAction || moving) return
 			const [dx, dy] = nextAction
 			nextAction = null
-			const last = positions.at(-1)!
+			const last = positions[controlling].at(-1)!
 			const newHead = [last[0] + dx, last[1] + dy] as const
-			// out of bounds
-			if (newHead[0] < 0 || newHead[0] >= width || newHead[1] < 0 || newHead[1] >= height) return
-			// self collision
-			if (positions.some(([x, y]) => x === newHead[0] && y === newHead[1])) return
-			// ground collision
-			if (level[newHead[1]][newHead[0]] === '#') return
-			// spike collision
-			if (level[newHead[1]][newHead[0]] === 'x') return
+
+			const checked = new Set([controlling])
+			const canMove = (i: number, x: number, y: number): boolean => {
+				// out of bounds
+				if (x < 0 || x >= width || y < 0 || y >= height) return false
+				// self collision (only for controlling snake, the other cannot collide with theirselves)
+				if (i === controlling && positions[i].some(([px, py]) => px === x && py === y)) return false
+				// ground collision
+				if (level[y][x] === WALL) return false
+				// spike collision
+				if (level[y][x] === SPIKE) return false
+				// fruit collision (only non-controlling snakes can collide with fruits)
+				if (i !== controlling && isAvailableFruit(x, y)) return false
+				// collision with other snakes
+				for (let j = 0; j < positions.length; j++) {
+					if (j === i) continue
+					if (checked.has(j)) continue
+					if (positions[j].some(([px, py]) => px === x && py === y)) {
+						// when colliding with another snake, we need to check if every part of the other snake could move in the same direction
+						for (let k = 0; k < positions[j].length; k++) {
+							const other = canMove(j, positions[j][k][0] + dx, positions[j][k][1] + dy)
+							if (!other) return false
+						}
+						checked.add(j)
+					}
+				}
+				return true
+			}
+
+			if (!canMove(controlling, newHead[0], newHead[1])) return
 
 			const isFruit = isAvailableFruit(newHead[0], newHead[1])
 			moving = true
 			if (isFruit) {
 				flushSync(() => {
-					setPositions((positions) => [positions[0], ...positions])
+					setPositions((positions) => {
+						positions = [...positions]
+						positions[controlling] = [positions[controlling][0], ...positions[controlling]]
+						return positions
+					})
 				})
 				requestAnimationFrame(() => {
-					positions = [...positions, newHead]
-					setPositions(positions)
+					positions = [...positions]
+					positions[controlling] = [...positions[controlling], newHead]
+					setPositions([...positions])
 					collectedFruits.push(newHead)
 					setCollectedFruits(collectedFruits)
 				})
 			} else {
-				positions = [...positions.slice(1), newHead]
+				positions = [...positions]
+				for (const i of checked) {
+					if (i === controlling) {
+						positions[i] = [...positions[i].slice(1), newHead]
+					} else {
+						positions[i] = positions[i].map(([x, y]) => [x + dx, y + dy] as const)
+					}
+				}
 				setPositions(positions)
 			}
 		}
@@ -110,12 +149,13 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 			moving = true
 			setPositions(initialPositions)
 			setCollectedFruits([])
+			setControlling(0)
 			resetKey(r => r + 1)
 		}
 
 		const checkGoal = () => {
 			if (moving) return
-			const head = positions.at(-1)!
+			const head = positions[controlling].at(-1)!
 			if (head[0] !== goal[0] || head[1] !== goal[1]) return
 			if (collectedFruits.length !== fruits.length) return
 			moving = true
@@ -125,48 +165,65 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 
 		const checkGround = () => {
 			if (moving) return
-			let fallsOnSpikes = false
-			for (const [x, y] of positions) {
-				if (level[y + 1]?.[x] === 'x') fallsOnSpikes = true
-				if (level[y + 1]?.[x] === '#' || isAvailableFruit(x, y + 1)) {
-					return
+			snake_loop: for (let i = 0; i < positions.length; i++) {
+				let fallsOnSpikes = false
+				for (const [x, y] of positions[i]) {
+					if (level[y + 1]?.[x] === SPIKE) fallsOnSpikes = true
+					if (level[y + 1]?.[x] === WALL) continue snake_loop
+					if (isAvailableFruit(x, y + 1)) continue snake_loop
+					if (positions.some((other, otherIndex) => otherIndex !== i && other.some(([ox, oy]) => ox === x && oy === y + 1))) continue snake_loop
 				}
-			}
-			if (fallsOnSpikes) {
-				reset()
-				return
-			}
-			nextAction = null
-			moving = true
-			// check if any part would fall out of bounds
-			for (const [x, y] of positions) {
-				if (y + 1 === height) {
+				if (fallsOnSpikes) {
 					reset()
 					return
 				}
+				nextAction = null
+				moving = true
+				// check if any part would fall out of bounds
+				for (const [x, y] of positions[i]) {
+					if (y + 1 === height) {
+						reset()
+						return
+					}
+				}
+				positions = [...positions]
+				positions[i] = positions[i].map(([x, y]) => [x, y + 1] as const)
+				setPositions([...positions])
 			}
-			positions = positions.map(([x, y]) => [x, y + 1] as const)
-			setPositions(positions)
 		}
 		checkGround()
 
-		snake.addEventListener('transitionend', () => {
+		let tcount = 0
+		const onMoveEnd = () => {
+			tcount--
+			if (tcount > 0) return
 			moving = false
 			checkGoal()
 			checkGround()
 			processNextAction()
-		}, { signal: controller.signal })
+		}
+		snake.addEventListener('transitionstart', () => tcount++, { signal: controller.signal })
+		snake.addEventListener('transitioncancel', onMoveEnd, { signal: controller.signal })
+		snake.addEventListener('transitionend', onMoveEnd, { signal: controller.signal })
 
 		window.addEventListener('keydown', (e) => {
 			const key = e.key.toLowerCase()
 			if (key in map) {
+				e.preventDefault()
 				const action = map[key as keyof typeof map]
 				nextAction = action
 				if (moving) return
 				processNextAction()
 			}
 			if (key === 'escape' || key === ' ') {
+				e.preventDefault()
 				reset()
+			}
+			if (key === 'tab' || key === 'enter') {
+				e.preventDefault()
+				nextAction = null
+				controlling = (controlling + 1) % positions.length
+				setControlling(controlling)
 			}
 		}, { signal: controller.signal })
 
@@ -218,20 +275,26 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 				/>
 			</svg>
 			<svg key={key} className={styles.snake} viewBox={`0 0 ${width} ${height}`} ref={snakeRef}>
-				<path
-					d={`M ${positionState.map(([x, y]) => `${x + 0.5} ${y + 0.5}`).join(' ')}`}
-					stroke="green"
-					strokeWidth="0.9"
-					fill="none"
-					strokeLinecap="round"
-					strokeLinejoin="round"
-				/>
-				<circle
-					cx={positionState.at(-1)![0] + 0.5}
-					cy={positionState.at(-1)![1] + 0.5}
-					r="0.45"
-					fill="darkgreen"
-				/>
+				{positionState.map((snake, index) => (
+					<Fragment key={index}>
+						<path
+							d={`M ${snake.map(([x, y]) => `${x + 0.5} ${y + 0.5}`).join(' ')}`}
+							stroke={index === 0 ? "green" : index === 1 ? "blue" : "coral"}
+							strokeWidth="0.9"
+							fill="none"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							opacity={controlling === index ? 1 : 0.5}
+						/>
+						<circle
+							cx={snake.at(-1)![0] + 0.5}
+							cy={snake.at(-1)![1] + 0.5}
+							r={controlling === index ? "0.45" : "0.3"}
+							fill={index === 0 ? "darkgreen" : index === 1 ? "royalblue" : "salmon"}
+							opacity={controlling === index ? 1 : 0.5}
+						/>
+					</Fragment>
+				))}
 			</svg>
 		</>
 	)
@@ -242,7 +305,7 @@ function processSpikes(level: string[]) {
 	for (let y = 0; y < level.length; y++) {
 		for (let x = 0; x < level[0].length; x++) {
 			const char = level[y][x]
-			if (char === 'x') {
+			if (char === SPIKE) {
 				spikes.push([x, y] as const)
 			}
 		}
@@ -257,9 +320,9 @@ function processGoal(level: string[]) {
 	for (let y = 0; y < level.length; y++) {
 		for (let x = 0; x < level[0].length; x++) {
 			const char = level[y][x]
-			if (char === '*') {
+			if (char === FRUIT) {
 				fruits.push([x, y] as const)
-			} else if (char === 'O') {
+			} else if (char === GOAL) {
 				goal[0] = x
 				goal[1] = y
 			}
@@ -270,28 +333,40 @@ function processGoal(level: string[]) {
 }
 
 function processInitialPositions(level: string[]) {
+	const ref = [
+		['1', '2', '3', '4', '5', '6', '7', '8'],
+		['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
+		['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'],
+	]
 	const height = level.length
 	const width = level[0].length
 
-	// find numbers in level
-	const found = [] as [number, number, number][]
-	for (let y = 0; y < height; y++) {
-		for (let x = 0; x < width; x++) {
-			const char = level[y][x]
-			const num = parseInt(char)
-			if (!isNaN(num)) {
-				found.push([num, x, y])
+	const snakes = [] as Array<Array<readonly [number, number]>>
+	for (const ids of ref) {
+
+		// find numbers in level
+		const found = [] as [number, number][]
+		for (let y = 0; y < height; y++) {
+			for (let x = 0; x < width; x++) {
+				const char = level[y][x]
+				if (ids.includes(char)) {
+					found.push([x, y])
+				}
 			}
+		}
+
+		found.sort((a, b) => {
+			const aVal = ids.indexOf(level[a[1]][a[0]])
+			const bVal = ids.indexOf(level[b[1]][b[0]])
+			return bVal - aVal
+		})
+
+		if (found.length > 0) {
+			snakes.push(found)
 		}
 	}
 
-	const positions: Array<readonly [number, number]> = []
-	const sorted = found.sort((a, b) => b[0] - a[0])
-	for (const [, x, y] of sorted) {
-		positions.push([x, y] as const)
-	}
-
-	return positions
+	return snakes
 }
 
 function processGround(level: string[]) {
@@ -303,7 +378,7 @@ function processGround(level: string[]) {
 
 	for (let y = 0; y < height; y++) {
 		for (let x = 0; x < width; x++) {
-			if (level[y][x] !== '#') continue
+			if (level[y][x] !== WALL) continue
 			const index = y * width + x
 			all.add(index)
 
