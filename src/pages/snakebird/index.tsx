@@ -281,34 +281,44 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 			// all are on solid ground
 			if (!mightFall.size) return
 
-			snake_loop: for (const i of mightFall) {
-				let fallsOnSpikes = false
-				for (const [x, y] of positions[i]) {
-					if (level[y + 1]?.[x] === SPIKE) fallsOnSpikes = true
-					const isRestingOnSolidSnake = positions.some((other, j) => {
-						if (j === i) return false
-						if (mightFall.has(j)) return false
-						return other.some(([ox, oy]) => ox === x && oy === y + 1)
-					})
-					if (isRestingOnSolidSnake) continue snake_loop
-				}
-				if (fallsOnSpikes) {
-					reset()
-					return
-				}
-				nextAction = null
-				moving = true
-				// check if any part would fall out of bounds
-				for (const [x, y] of positions[i]) {
-					if (y + 1 === height) {
-						reset()
-						return
+			// loop check until it is stable
+			let prevMightFallSize
+			stable_loop: do {
+				prevMightFallSize = mightFall.size
+				for (const i of mightFall) {
+					for (const [x, y] of positions[i]) {
+						for (let j = 0; j < positions.length; j++) {
+							if (j === i) continue
+							if (mightFall.has(j)) continue
+							if (snakesInGoal.includes(j)) continue
+							if (positions[j].some(([ox, oy]) => ox === x && oy === y + 1)) {
+								mightFall.delete(i)
+								continue stable_loop
+							}
+						}
 					}
 				}
-				positions = [...positions]
-				positions[i] = positions[i].map(([x, y]) => [x, y + 1] as const)
-				setPositions(positions)
+			} while (mightFall.size !== prevMightFallSize)
+
+			// all are on snakes that are on solid ground
+			if (!mightFall.size) return
+
+			// check if any of the falling snakes would hit spikes or fall out of bounds
+			for (const i of mightFall) {
+				for (const [x, y] of positions[i]) {
+					if (y + 1 === height) return reset()
+					if (level[y + 1]?.[x] === SPIKE) return reset()
+				}
 			}
+
+			// all remaining snakes can fall safely
+			nextAction = null
+			moving = true
+			positions = [...positions]
+			for (const i of mightFall) {
+				positions[i] = positions[i].map(([x, y]) => [x, y + 1] as const)
+			}
+			setPositions(positions)
 		}
 		checkGround()
 
