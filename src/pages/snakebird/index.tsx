@@ -74,6 +74,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 	const [collectedFruits, setCollectedFruits] = useState<ReadonlyArray<readonly [x: number, y: number]>>([])
 	const [snakesInGoal, setSnakesInGoal] = useState<number[]>([])
 	const [fallenBoxes, setFallenBoxes] = useState<number[]>([])
+	const memoryRef = useRef<string[]>([])
 
 	useEffect(() => {
 		const snake = snakeRef.current!
@@ -108,7 +109,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 			setControlling(controlling)
 		}
 
-		const memory: string[] = []
+		const memory = memoryRef.current
 		const serialize = () => {
 			const state = JSON.stringify({
 				controlling,
