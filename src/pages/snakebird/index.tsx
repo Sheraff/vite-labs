@@ -12,7 +12,7 @@ export const meta: RouteMeta = {
 }
 
 export default function Snakebird() {
-	const [levelNum, setLevelNum] = useState(22)
+	const [levelNum, setLevelNum] = useState(0)
 
 	const isMultiSnakeLevel = useMemo(() => {
 		for (const line of LEVELS[levelNum]) {
