@@ -3,7 +3,7 @@ import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
 import { Fragment, useEffect, useMemo, useRef, useState } from "react"
 import { flushSync } from "react-dom"
-import { FRUIT, GOAL, LEVELS, SPIKE, WALL } from "./levels"
+import { BOX_1, BOX_2, BOX_3, FRUIT, GOAL, LEVELS, SNAKE_1, SNAKE_2, SNAKE_3, SPIKE, WALL } from "./levels"
 
 export const meta: RouteMeta = {
 	title: 'Snakebird',
@@ -12,7 +12,7 @@ export const meta: RouteMeta = {
 }
 
 export default function Snakebird() {
-	const [levelNum, setLevelNum] = useState(0)
+	const [levelNum, setLevelNum] = useState(22)
 
 	const isMultiSnakeLevel = useMemo(() => {
 		for (const line of LEVELS[levelNum]) {
@@ -59,6 +59,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 	const groundPaths = useMemo(() => processGround(level), [level])
 	const { fruits, goal } = useMemo(() => processGoal(level), [level])
 	const initialPositions = useMemo(() => processInitialPositions(level), [level])
+	const initialParsedBoxes = useMemo(() => processInitialBoxes(level), [level])
 	const [controlling, setControlling] = useState(0)
 	const spikes = useMemo(() => processSpikes(level), [level])
 
@@ -66,8 +67,10 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 
 	const [key, resetKey] = useState(0)
 	const [positionState, setPositions] = useState(initialPositions)
+	const [boxesState, setBoxes] = useState(initialParsedBoxes.boxes)
 	const [collectedFruits, setCollectedFruits] = useState<ReadonlyArray<readonly [x: number, y: number]>>([])
 	const [snakesInGoal, setSnakesInGoal] = useState<number[]>([])
+	const [fallenBoxes, setFallenBoxes] = useState<number[]>([])
 
 	useEffect(() => {
 		const snake = snakeRef.current!
@@ -81,9 +84,11 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 		let moving = false
 		let nextAction: readonly [number, number] | null = null
 		let positions = positionState
+		let boxes = boxesState
 		let controlling = 0
 		let collectedFruits: Array<readonly [number, number]> = []
 		let snakesInGoal: number[] = []
+		let fallenBoxes: number[] = []
 
 		const isAvailableFruit = (x: number, y: number) => level[y]?.[x] === FRUIT && !collectedFruits.some(([fx, fy]) => fx === x && fy === y)
 		const isOutOfBounds = (x: number, y: number) => x < 0 || x >= width || y < 0 || y >= height
@@ -103,8 +108,10 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 			const state = JSON.stringify({
 				controlling,
 				positions,
+				boxes,
 				collectedFruits,
 				snakesInGoal,
+				fallenBoxes,
 			})
 			if (memory.at(-1) === state) return
 			memory.push(state)
@@ -117,12 +124,16 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 			positions = state.positions
 			collectedFruits = state.collectedFruits
 			snakesInGoal = state.snakesInGoal
+			boxes = state.boxes
+			fallenBoxes = state.fallenBoxes
 			moving = false
 			nextAction = null
 			setControlling(controlling)
 			setPositions(positions)
 			setCollectedFruits(collectedFruits)
 			setSnakesInGoal(snakesInGoal)
+			setBoxes(boxes)
+			setFallenBoxes(fallenBoxes)
 		}
 
 		const processNextAction = () => {
@@ -134,6 +145,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 			const y = last[1] + dy
 
 			const checked = new Set([controlling])
+			const checkedBoxes = new Set<number>()
 
 			// out of bounds
 			if (isOutOfBounds(x, y)) return
@@ -149,28 +161,72 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 				if (snakesInGoal.includes(i)) return
 				return snake.some(([px, py]) => px === x && py === y)
 			})
-			if (collisionIndex !== -1) {
-				const checking = new Set([collisionIndex])
-				for (const j of checking) {
-					if (j === controlling) continue
-					const snake = positions[j]
-					for (const [px, py] of snake) {
-						if (isOutOfBounds(px + dx, py + dy)) return
-						if (isInWalls(px + dx, py + dy)) return
-						if (isInSpikes(px + dx, py + dy)) return
-						if (isAvailableFruit(px + dx, py + dy)) return
-						for (let k = 0; k < positions.length; k++) {
-							if (k === j) continue
-							if (snakesInGoal.includes(k)) continue
-							const other = positions[k]
-							// if it would collide with yet another snake, we need to check that one too
-							const collides = other.some(([ox, oy]) => ox === px + dx && oy === py + dy)
-							if (collides) checking.add(k)
+			const boxCollisionIndex = boxes.findIndex((box, i) => {
+				if (fallenBoxes.includes(i)) return
+				return box.positions.some(([px, py]) => px === x && py === y)
+			})
+			if (collisionIndex !== -1 || boxCollisionIndex !== -1) {
+				const checking = new Set<number>()
+				if (collisionIndex !== -1) checking.add(collisionIndex)
+				const boxChecking = new Set<number>()
+				if (boxCollisionIndex !== -1) boxChecking.add(boxCollisionIndex)
+				let checkingSize = 0
+				let boxCheckingSize = 0
+				do {
+					checkingSize = checking.size
+					boxCheckingSize = boxChecking.size
+					for (const j of checking) {
+						if (j === controlling) continue
+						const snake = positions[j]
+						for (const [px, py] of snake) {
+							if (isOutOfBounds(px + dx, py + dy)) return
+							if (isInWalls(px + dx, py + dy)) return
+							if (isInSpikes(px + dx, py + dy)) return
+							if (isAvailableFruit(px + dx, py + dy)) return
+							for (let k = 0; k < positions.length; k++) {
+								if (k === j) continue
+								if (snakesInGoal.includes(k)) continue
+								const other = positions[k]
+								// if it would collide with yet another snake, we need to check that one too
+								const collides = other.some(([ox, oy]) => ox === px + dx && oy === py + dy)
+								if (collides) checking.add(k)
+							}
+							for (let k = 0; k < boxes.length; k++) {
+								if (fallenBoxes.includes(k)) continue
+								const box = boxes[k]
+								// if it would collide with a box, we need to check that one too
+								const collides = box.positions.some(([bx, by]) => bx === px + dx && by === py + dy)
+								if (collides) boxChecking.add(k)
+							}
 						}
+						checked.add(j)
 					}
-					checked.add(j)
-				}
+					for (const j of boxChecking) {
+						const box = boxes[j]
+						for (const [px, py] of box.positions) {
+							if (isOutOfBounds(px + dx, py + dy)) return
+							if (isInWalls(px + dx, py + dy)) return
+							if (isInSpikes(px + dx, py + dy)) return
+							if (isAvailableFruit(px + dx, py + dy)) return
+							for (let k = 0; k < positions.length; k++) {
+								if (snakesInGoal.includes(k)) continue
+								const other = positions[k]
+								const collides = other.some(([ox, oy]) => ox === px + dx && oy === py + dy)
+								if (collides) checking.add(k)
+							}
+							for (let k = 0; k < boxes.length; k++) {
+								if (k === j) continue
+								if (fallenBoxes.includes(k)) continue
+								const box = boxes[k]
+								const collides = box.positions.some(([bx, by]) => bx === px + dx && by === py + dy)
+								if (collides) boxChecking.add(k)
+							}
+						}
+						checkedBoxes.add(j)
+					}
+				} while (checking.size !== checkingSize || boxChecking.size !== boxCheckingSize)
 			}
+
 			// verify that all the snakes that move won't collide with the current one
 			for (const j of checked) {
 				if (j === controlling) continue
@@ -181,8 +237,18 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 				}
 			}
 
+			// verify that all the boxes that move won't collide with the current snake
+			for (const j of checkedBoxes) {
+				const box = boxes[j]
+				for (const [px, py] of box.positions) {
+					const collides = positions[controlling].some(([ox, oy]) => ox === px + dx && oy === py + dy)
+					if (collides) return
+				}
+			}
+
 			serialize()
 			moving = true
+			console.log('processing move', moving)
 			const newHead = [x, y] as const
 			if (isAvailableFruit(x, y)) {
 				flushSync(() => {
@@ -210,15 +276,27 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 					}
 				}
 				setPositions(positions)
+				if (checkedBoxes.size) {
+					boxes = [...boxes]
+					for (const i of checkedBoxes) {
+						boxes[i] = { ...boxes[i] }
+						boxes[i].positions = boxes[i].positions.map(([x, y]) => [x + dx, y + dy] as const)
+						boxes[i].offsets = [boxes[i].offsets[0] + dx, boxes[i].offsets[1] + dy] as [number, number]
+					}
+					setBoxes(boxes)
+				}
 			}
 		}
 
 		const reset = () => {
 			moving = true
+			console.log('resetting', moving)
 			setPositions(initialPositions)
+			setBoxes(initialParsedBoxes.boxes)
 			setCollectedFruits([])
 			setControlling(0)
 			setSnakesInGoal([])
+			setFallenBoxes([])
 			resetKey(r => r + 1)
 		}
 
@@ -259,6 +337,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 					checkGround()
 				} else {
 					moving = true
+					console.log('level complete', moving)
 					controller.abort()
 					onSuccess()
 				}
@@ -278,15 +357,32 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 				}
 				mightFall.add(i)
 			}
+
+			const mightFallBoxes = new Set<number>()
+			box_loop: for (let i = 0; i < boxes.length; i++) {
+				if (fallenBoxes.includes(i)) continue
+				const box = boxes[i]
+				for (let j = 0; j < box.positions.length; j++) {
+					const [x, y] = box.positions[j]
+					if (level[y + 1]?.[x] === WALL) continue box_loop
+					if (level[y + 1]?.[x] === SPIKE) continue box_loop
+					if (isAvailableFruit(x, y + 1)) continue box_loop
+				}
+				mightFallBoxes.add(i)
+			}
+
 			// all are on solid ground
-			if (!mightFall.size) return
+			if (!mightFall.size && !mightFallBoxes.size) return
 
 			// loop check until it is stable
 			let prevMightFallSize
+			let prevMightFallBoxesSize
 			stable_loop: do {
 				prevMightFallSize = mightFall.size
+				prevMightFallBoxesSize = mightFallBoxes.size
 				for (const i of mightFall) {
 					for (const [x, y] of positions[i]) {
+						// check against other snakes
 						for (let j = 0; j < positions.length; j++) {
 							if (j === i) continue
 							if (mightFall.has(j)) continue
@@ -296,12 +392,44 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 								continue stable_loop
 							}
 						}
+						// check against boxes
+						for (let j = 0; j < boxes.length; j++) {
+							if (mightFallBoxes.has(j)) continue
+							if (fallenBoxes.includes(j)) continue
+							if (boxes[j].positions.some(([ox, oy]) => ox === x && oy === y + 1)) {
+								mightFall.delete(i)
+								continue stable_loop
+							}
+						}
 					}
 				}
-			} while (mightFall.size !== prevMightFallSize)
+				for (const i of mightFallBoxes) {
+					for (const [x, y] of boxes[i].positions) {
+						// check against other snakes
+						for (let j = 0; j < positions.length; j++) {
+							if (mightFall.has(j)) continue
+							if (snakesInGoal.includes(j)) continue
+							if (positions[j].some(([ox, oy]) => ox === x && oy === y + 1)) {
+								mightFallBoxes.delete(i)
+								continue stable_loop
+							}
+						}
+						// check against other boxes
+						for (let j = 0; j < boxes.length; j++) {
+							if (j === i) continue
+							if (mightFallBoxes.has(j)) continue
+							if (fallenBoxes.includes(j)) continue
+							if (boxes[j].positions.some(([ox, oy]) => ox === x && oy === y + 1)) {
+								mightFallBoxes.delete(i)
+								continue stable_loop
+							}
+						}
+					}
+				}
+			} while (mightFall.size !== prevMightFallSize || mightFallBoxes.size !== prevMightFallBoxesSize)
 
 			// all are on snakes that are on solid ground
-			if (!mightFall.size) return
+			if (!mightFall.size && !mightFallBoxes.size) return
 
 			// check if any of the falling snakes would hit spikes or fall out of bounds
 			for (const i of mightFall) {
@@ -311,14 +439,34 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 				}
 			}
 
-			// all remaining snakes can fall safely
-			nextAction = null
-			moving = true
-			positions = [...positions]
-			for (const i of mightFall) {
-				positions[i] = positions[i].map(([x, y]) => [x, y + 1] as const)
+			// all remaining snakes and boxes can fall safely
+			const willMoveSnakes = mightFall.size > 0
+			let willMoveBoxes = false
+			if (mightFall.size) {
+				positions = [...positions]
+				for (const i of mightFall) {
+					positions[i] = positions[i].map(([x, y]) => [x, y + 1] as const)
+				}
 			}
+			if (mightFallBoxes.size) {
+				boxes = [...boxes]
+				fallenBoxes = [...fallenBoxes]
+				for (const i of mightFallBoxes) {
+					boxes[i] = { ...boxes[i] }
+					boxes[i].positions = boxes[i].positions.map(([x, y]) => [x, y + 1] as const)
+					boxes[i].offsets = [boxes[i].offsets[0], boxes[i].offsets[1] + 1] as [number, number]
+					if (boxes[i].positions.every(([_, y]) => y >= height)) {
+						fallenBoxes.push(i)
+					} else {
+						willMoveBoxes = true
+					}
+				}
+			}
+			nextAction = null
+			moving = willMoveSnakes || willMoveBoxes
 			setPositions(positions)
+			setBoxes(boxes)
+			setFallenBoxes(fallenBoxes)
 		}
 		checkGround()
 
@@ -326,6 +474,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 		const onMoveEnd = () => {
 			if (animating) return
 			tcount--
+			console.log('move end', tcount)
 			if (tcount > 0) return
 			moving = false
 			const hasGoal = checkGoal()
@@ -336,6 +485,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 		snake.addEventListener('transitionstart', () => {
 			if (animating) return
 			tcount++
+			console.log('move start', tcount)
 		}, { signal: controller.signal })
 		snake.addEventListener('transitioncancel', onMoveEnd, { signal: controller.signal })
 		snake.addEventListener('transitionend', onMoveEnd, { signal: controller.signal })
@@ -346,6 +496,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 				e.preventDefault()
 				const action = map[key as keyof typeof map]
 				nextAction = action
+				console.log('next action', moving)
 				if (moving) return
 				processNextAction()
 			}
@@ -413,6 +564,13 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 				/>
 			</svg>
 			<svg key={key} className={styles.snake} viewBox={`0 0 ${width} ${height}`} ref={snakeRef}>
+				{boxesState.map((box, i) => !fallenBoxes.includes(i) && initialParsedBoxes.draw[i].map((draw, index) => (
+					<path
+						key={`${i}-${index}`}
+						d={draw(box.offsets[0], box.offsets[1])}
+						fill={["tan", "peru", "burlywood"][i % 3]}
+					/>
+				)))}
 				{positionState.map((snake, index) => {
 					if (snakesInGoal.includes(index)) return null
 					return (
@@ -475,9 +633,9 @@ function processGoal(level: string[]) {
 
 function processInitialPositions(level: string[]) {
 	const ref = [
-		['1', '2', '3', '4', '5', '6', '7', '8'],
-		['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
-		['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'],
+		SNAKE_1,
+		SNAKE_2,
+		SNAKE_3,
 	]
 	const height = level.length
 	const width = level[0].length
@@ -510,7 +668,50 @@ function processInitialPositions(level: string[]) {
 	return snakes
 }
 
+function processInitialBoxes(level: string[]) {
+	const boxes = []
+	const draw = []
+	for (const tiles of [BOX_1, BOX_2, BOX_3]) {
+		const width = level[0].length
+		const zones = getTileZones(level, tiles)
+		if (zones.size === 0) continue
+
+		draw.push(Array.from(zones).map((zone) => getZoneDrawFunction(zone, width)))
+
+		const positions: Array<readonly [x: number, y: number]> = []
+		for (const zone of zones) {
+			for (const index of zone) {
+				positions.push([
+					index % width,
+					Math.floor(index / width)
+				])
+			}
+		}
+
+		// links
+
+
+		boxes.push({
+			positions,
+			offsets: [0, 0] as [number, number],
+		})
+	}
+	return { boxes, draw }
+}
+
 function processGround(level: string[]) {
+	const width = level[0].length
+	const zones = getTileZones(level, WALL)
+
+	const paths: string[] = []
+	for (const zone of zones) {
+		const path = getZoneDrawFunction(zone, width)(0, 0)
+		paths.push(path)
+	}
+	return paths
+}
+
+function getTileZones(level: string[], tileChar: string) {
 	const zones = new Set<Set<number>>()
 	const all = new Set<number>()
 
@@ -519,7 +720,7 @@ function processGround(level: string[]) {
 
 	for (let y = 0; y < height; y++) {
 		for (let x = 0; x < width; x++) {
-			if (level[y][x] !== WALL) continue
+			if (level[y][x] !== tileChar) continue
 			const index = y * width + x
 			all.add(index)
 
@@ -547,87 +748,89 @@ function processGround(level: string[]) {
 			}
 		}
 	}
+	return zones
+}
 
-	const paths: string[] = []
-	for (const zone of zones) {
-		// find top-left most cell
-		const min = [Infinity, Infinity] as [number, number]
-		for (const index of zone) {
-			const x = index % width
-			const y = Math.floor(index / width)
-			if (y < min[1] || (y === min[1] && x < min[0])) {
-				min[0] = x
-				min[1] = y
-			}
+function getZoneDrawFunction(zone: Set<number>, width: number) {
+	// find top-left most cell
+	const min = [Infinity, Infinity] as [number, number]
+	for (const index of zone) {
+		const x = index % width
+		const y = Math.floor(index / width)
+		if (y < min[1] || (y === min[1] && x < min[0])) {
+			min[0] = x
+			min[1] = y
 		}
+	}
 
-		let path = `M ${min[0]} ${min[1]}`
+	const getX = (x: number) => `\${x + ${min[0]} + ${x - min[0]}}`
+	const getY = (y: number) => `\${y + ${min[1]} + ${y - min[1]}}`
 
-		// start at the top-left corner of the top-left most cell
-		// advance clockwise until we reach the starting point again
-		let dir = 0 // 0: right, 1: down, 2: left, 3: up
-		let x = min[0]
-		let y = min[1]
-		const startX = x
-		const startY = y
+	let path = `M ${getX(min[0])} ${getY(min[1])}`
 
-		let iterations = 0
-		do {
-			let i = 0
-			dirloop: for (; i < 4; i++) {
-				if ((i + 2) % 4 === dir) continue // don't go backwards
-				switch (i) {
-					case 0: { // right
-						const hasCellAbove = zone.has((y - 1) * width + x)
-						const hasCellBelow = zone.has(y * width + x)
-						if (hasCellAbove !== hasCellBelow) {
-							x = x + 1
-							path += ` ${x} ${y}`
-							break dirloop
-						}
-						break
+	// start at the top-left corner of the top-left most cell
+	// advance clockwise until we reach the starting point again
+	let dir = 0 // 0: right, 1: down, 2: left, 3: up
+	let x = min[0]
+	let y = min[1]
+	const startX = x
+	const startY = y
+
+	let iterations = 0
+	do {
+		let i = 0
+		dirloop: for (; i < 4; i++) {
+			if ((i + 2) % 4 === dir) continue // don't go backwards
+			switch (i) {
+				case 0: { // right
+					const hasCellAbove = zone.has((y - 1) * width + x)
+					const hasCellBelow = zone.has(y * width + x)
+					if (hasCellAbove !== hasCellBelow) {
+						x = x + 1
+						path += ` ${getX(x)} ${getY(y)}`
+						break dirloop
 					}
-					case 1: { // down
-						const hasCellRight = zone.has(y * width + x)
-						const hasCellLeft = zone.has(y * width + (x - 1))
-						if (hasCellRight !== hasCellLeft) {
-							y = y + 1
-							path += ` ${x} ${y}`
-							break dirloop
-						}
-						break
+					break
+				}
+				case 1: { // down
+					const hasCellRight = zone.has(y * width + x)
+					const hasCellLeft = zone.has(y * width + (x - 1))
+					if (hasCellRight !== hasCellLeft) {
+						y = y + 1
+						path += ` ${getX(x)} ${getY(y)}`
+						break dirloop
 					}
-					case 2: { // left
-						const hasCellBelow = zone.has(y * width + (x - 1))
-						const hasCellAbove = zone.has((y - 1) * width + (x - 1))
-						if (hasCellBelow !== hasCellAbove) {
-							x = x - 1
-							path += ` ${x} ${y}`
-							break dirloop
-						}
-						break
+					break
+				}
+				case 2: { // left
+					const hasCellBelow = zone.has(y * width + (x - 1))
+					const hasCellAbove = zone.has((y - 1) * width + (x - 1))
+					if (hasCellBelow !== hasCellAbove) {
+						x = x - 1
+						path += ` ${getX(x)} ${getY(y)}`
+						break dirloop
 					}
-					case 3: { // up
-						const hasCellLeft = zone.has((y - 1) * width + (x - 1))
-						const hasCellRight = zone.has((y - 1) * width + x)
-						if (hasCellLeft !== hasCellRight) {
-							y = y - 1
-							path += ` ${x} ${y}`
-							break dirloop
-						}
-						break
+					break
+				}
+				case 3: { // up
+					const hasCellLeft = zone.has((y - 1) * width + (x - 1))
+					const hasCellRight = zone.has((y - 1) * width + x)
+					if (hasCellLeft !== hasCellRight) {
+						y = y - 1
+						path += ` ${getX(x)} ${getY(y)}`
+						break dirloop
 					}
+					break
 				}
 			}
-			dir = i
-			if (++iterations > 1000) throw new Error('Infinite loop detected while processing ground')
-		} while (x !== startX || y !== startY || dir === 0)
+		}
+		dir = i
+		if (++iterations > 1000) throw new Error('Infinite loop detected while processing ground')
+	} while (x !== startX || y !== startY || dir === 0)
 
-		path += ' Z'
+	path += ' Z'
 
-		paths.push(path)
-	}
-	return paths
+	return new Function('x', 'y', `return \`${path}\``) as (x: number, y: number) => string
 }
 
 function findSet(sets: Set<Set<number>>, value: number) {
