@@ -12,7 +12,7 @@ export const meta: RouteMeta = {
 }
 
 export default function Snakebird() {
-	const [levelNum, setLevelNum] = useState(7)
+	const [levelNum, setLevelNum] = useState(0)
 
 	return (
 		<div className={styles.main}>
