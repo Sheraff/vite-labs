@@ -526,6 +526,21 @@ const LEVEL_29 = [
 	'.......#.#..#####....',
 ]
 
+const LEVEL_30 = [
+	'.....................',
+	'.....................',
+	'.....................',
+	'.......$.............',
+	'.....................',
+	'.......#....#?#......',
+	'......?..............',
+	'.....1234...#........',
+	'....##.#....#........',
+	'.....#.#....#........',
+	'.....#.#....#........',
+	'.....#.#....#........',
+]
+
 export const WALL = '#'
 export const SPIKE = '!'
 export const FRUIT = '*'
@@ -534,6 +549,7 @@ export const BOX_1 = '@' // { box: '@', link: '-' }
 export const BOX_2 = '%' // { box: '%', link: '=' }
 export const BOX_3 = '&' // { box: '&', link: '—' }
 export const BOX_4 = '§'
+export const TELEPORT = '?'
 
 export const SNAKE_1 = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'z']
 export const SNAKE_2 = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K']
@@ -570,5 +586,6 @@ export const LEVELS = [
 	LEVEL_26,
 	LEVEL_27,
 	LEVEL_28,
-	LEVEL_29
+	LEVEL_29,
+	LEVEL_30
 ]

@@ -44,4 +44,29 @@
 			transition: cx 100ms linear, cy 100ms linear, r 100ms linear, fill 100ms linear;
 		}
 	}
+
+}
+
+.teleport {
+	transform-box: fill-box;
+	transform-origin: center;
+	animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.collect {
+	transform-box: fill-box;
+	transform-origin: center;
+	animation: pulse 1s ease-in-out alternate infinite;
+}
+
+@keyframes pulse {
+	to {
+		transform: scale(0.8);
+	}
 }

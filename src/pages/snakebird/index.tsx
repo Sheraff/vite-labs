@@ -3,7 +3,7 @@ import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
 import { Fragment, useEffect, useMemo, useRef, useState } from "react"
 import { flushSync } from "react-dom"
-import { BOX_1, BOX_2, BOX_3, BOX_4, FRUIT, GOAL, LEVELS, SNAKE_1, SNAKE_2, SNAKE_3, SPIKE, WALL } from "./levels"
+import { BOX_1, BOX_2, BOX_3, BOX_4, FRUIT, GOAL, LEVELS, SNAKE_1, SNAKE_2, SNAKE_3, SPIKE, TELEPORT, WALL } from "./levels"
 
 export const meta: RouteMeta = {
 	title: 'Snakebird',
@@ -60,6 +60,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 	const { fruits, goal } = useMemo(() => processGoal(level), [level])
 	const initialPositions = useMemo(() => processInitialPositions(level), [level])
 	const initialParsedBoxes = useMemo(() => processInitialBoxes(level), [level])
+	const teleports = useMemo(() => processTeleports(level), [level])
 	const [controlling, setControlling] = useState(0)
 	const spikes = useMemo(() => processSpikes(level), [level])
 
@@ -89,6 +90,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 		let collectedFruits: Array<readonly [number, number]> = []
 		let snakesInGoal: number[] = []
 		let fallenBoxes: number[] = []
+		let isTeleportActive = true
 
 		const isAvailableFruit = (x: number, y: number) => level[y]?.[x] === FRUIT && !collectedFruits.some(([fx, fy]) => fx === x && fy === y)
 		const isOutOfBounds = (x: number, y: number) => x < 0 || x >= width || y < 0 || y >= height
@@ -112,6 +114,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 				collectedFruits,
 				snakesInGoal,
 				fallenBoxes,
+				isTeleportActive,
 			})
 			if (memory.at(-1) === state) return
 			memory.push(state)
@@ -126,6 +129,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 			snakesInGoal = state.snakesInGoal
 			boxes = state.boxes
 			fallenBoxes = state.fallenBoxes
+			isTeleportActive = state.isTeleportActive
 			moving = false
 			nextAction = null
 			setControlling(controlling)
@@ -248,7 +252,6 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 
 			serialize()
 			moving = true
-			console.log('processing move', moving)
 			const newHead = [x, y] as const
 			if (isAvailableFruit(x, y)) {
 				flushSync(() => {
@@ -290,7 +293,6 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 
 		const reset = () => {
 			moving = true
-			console.log('resetting', moving)
 			setPositions(initialPositions)
 			setBoxes(initialParsedBoxes.boxes)
 			setCollectedFruits([])
@@ -337,13 +339,64 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 					checkGround()
 				} else {
 					moving = true
-					console.log('level complete', moving)
 					controller.abort()
 					onSuccess()
 				}
 			})
 
 			return true
+		}
+
+		const checkTeleport = () => {
+			if (!teleports) return
+			if (!isTeleportActive) {
+				// check if both teleport pads are free again
+				for (const t of teleports) {
+					const occupiedBox = boxes.some((box, i) => !fallenBoxes.includes(i) && box.positions.some(([px, py]) => px === t[0] && py === t[1]))
+					if (occupiedBox) return
+					const occupiedSnake = positions.some((snake, i) => !snakesInGoal.includes(i) && snake.some(([px, py]) => px === t[0] && py === t[1]))
+					if (occupiedSnake) return
+				}
+				isTeleportActive = true
+				return
+			}
+			if (moving) return
+			const [a, b] = teleports
+			for (let i = 0; i < positions.length; i++) {
+				if (snakesInGoal.includes(i)) continue
+				const s = positions[i]
+				for (let j = 0; j < s.length; j++) {
+					const [x, y] = s[j]
+					const isA = x === a[0] && y === a[1]
+					const isB = x === b[0] && y === b[1]
+					if (!isA && !isB) continue
+					if (isA && isB) return
+					const from = isA ? a : b
+					const to = isA ? b : a
+					// check if we can teleport
+					const result = []
+					for (let k = 0; k < s.length; k++) {
+						const dx = s[k][0] - from[0]
+						const dy = s[k][1] - from[1]
+						const destX = to[0] + dx
+						const destY = to[1] + dy
+						result.push([destX, destY] as const)
+						if (isInSpikes(destX, destY)) return
+						if (isInWalls(destX, destY)) return
+						if (isAvailableFruit(destX, destY)) return
+						if (isOutOfBounds(destX, destY)) return
+						if (boxes.some((box, i) => !fallenBoxes.includes(i) && box.positions.some(([px, py]) => px === destX && py === destY))) return
+						if (positions.some((other, l) => l !== i && !snakesInGoal.includes(l) && other.some(([px, py]) => px === destX && py === destY))) return
+					}
+					// perform teleport
+					moving = true
+					isTeleportActive = false
+					positions = [...positions]
+					positions[i] = result
+					setPositions(positions)
+					return true
+				}
+			}
 		}
 
 		const checkGround = () => {
@@ -474,18 +527,18 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 		const onMoveEnd = () => {
 			if (animating) return
 			tcount--
-			console.log('move end', tcount)
 			if (tcount > 0) return
 			moving = false
 			const hasGoal = checkGoal()
 			if (hasGoal) return
+			const t = checkTeleport()
+			if (t) return
 			checkGround()
 			processNextAction()
 		}
 		snake.addEventListener('transitionstart', () => {
 			if (animating) return
 			tcount++
-			console.log('move start', tcount)
 		}, { signal: controller.signal })
 		snake.addEventListener('transitioncancel', onMoveEnd, { signal: controller.signal })
 		snake.addEventListener('transitionend', onMoveEnd, { signal: controller.signal })
@@ -496,7 +549,6 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 				e.preventDefault()
 				const action = map[key as keyof typeof map]
 				nextAction = action
-				console.log('next action', moving)
 				if (moving) return
 				processNextAction()
 			}
@@ -547,6 +599,30 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 						fill="gray"
 					/>
 				))}
+				{teleports && (
+					<>
+						<rect
+							className={styles.teleport}
+							x={teleports[0][0] + 0.2}
+							y={teleports[0][1] + 0.2}
+							width="0.6"
+							height="0.6"
+							fill="cyan"
+							rx="0.1"
+							ry="0.1"
+						/>
+						<rect
+							className={styles.teleport}
+							x={teleports[1][0] + 0.2}
+							y={teleports[1][1] + 0.2}
+							width="0.6"
+							height="0.6"
+							fill="cyan"
+							rx="0.1"
+							ry="0.1"
+						/>
+					</>
+				)}
 				{fruits.map(([x, y]) => !collectedFruits.some(([fx, fy]) => fx === x && fy === y) && (
 					<circle
 						key={`${x}-${y}`}
@@ -554,6 +630,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 						cy={y + 0.5}
 						r="0.5"
 						fill="gold"
+						className={styles.collect}
 					/>
 				))}
 				<circle
@@ -561,6 +638,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 					cy={goal[1] + 0.5}
 					r={collectedFruits.length === fruits.length ? "0.5" : "0.3"}
 					fill={collectedFruits.length === fruits.length ? "red" : "purple"}
+					className={collectedFruits.length === fruits.length ? styles.collect : undefined}
 				/>
 			</svg>
 			<svg key={key} className={styles.snake} viewBox={`0 0 ${width} ${height}`} ref={snakeRef}>
@@ -639,6 +717,27 @@ function processGoal(level: string[]) {
 	}
 
 	return { fruits, goal }
+}
+
+function processTeleports(level: string[]) {
+	let a, b
+	for (let y = 0; y < level.length; y++) {
+		for (let x = 0; x < level[0].length; x++) {
+			const char = level[y][x]
+			if (char === TELEPORT) {
+				if (!a) a = [x, y] as const
+				else if (!b) b = [x, y] as const
+				else throw new Error('More than two teleporters found')
+			}
+		}
+	}
+	if (a && b) {
+		return [a, b] as const
+	}
+	if (!a && !b) {
+		return null
+	}
+	throw new Error('Only one teleporter found')
 }
 
 function processInitialPositions(level: string[]) {
