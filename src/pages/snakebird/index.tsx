@@ -93,7 +93,8 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 		let isTeleportActive = true
 
 		const isAvailableFruit = (x: number, y: number) => level[y]?.[x] === FRUIT && !collectedFruits.some(([fx, fy]) => fx === x && fy === y)
-		const isOutOfBounds = (x: number, y: number) => x < 0 || x >= width || y < 0 || y >= height
+		// const isOutOfBounds = (x: number, y: number) => x < 0 || x >= width || y < 0 || y >= height
+		const isOutOfBounds = (x: number, y: number) => y >= height
 		const isSelfCollision = (i: number, x: number, y: number) => positions[i].some(([px, py]) => px === x && py === y)
 		const isInWalls = (x: number, y: number) => level[y]?.[x] === WALL
 		const isInSpikes = (x: number, y: number) => level[y]?.[x] === SPIKE
@@ -397,6 +398,43 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 					return true
 				}
 			}
+			for (let i = 0; i < boxes.length; i++) {
+				if (fallenBoxes.includes(i)) continue
+				const box = boxes[i]
+				for (let j = 0; j < box.positions.length; j++) {
+					const [x, y] = box.positions[j]
+					const isA = x === a[0] && y === a[1]
+					const isB = x === b[0] && y === b[1]
+					if (!isA && !isB) continue
+					if (isA && isB) return
+					const from = isA ? a : b
+					const to = isA ? b : a
+					// check if we can teleport
+					const result = []
+					for (let k = 0; k < box.positions.length; k++) {
+						const dx = box.positions[k][0] - from[0]
+						const dy = box.positions[k][1] - from[1]
+						const destX = to[0] + dx
+						const destY = to[1] + dy
+						result.push([destX, destY] as const)
+						if (isInSpikes(destX, destY)) return
+						if (isInWalls(destX, destY)) return
+						if (isAvailableFruit(destX, destY)) return
+						if (isOutOfBounds(destX, destY)) return
+						if (boxes.some((otherBox, l) => l !== i && !fallenBoxes.includes(l) && otherBox.positions.some(([px, py]) => px === destX && py === destY))) return
+						if (positions.some((snake, l) => !snakesInGoal.includes(l) && snake.some(([px, py]) => px === destX && py === destY))) return
+					}
+					// perform teleport
+					moving = true
+					isTeleportActive = false
+					boxes = [...boxes]
+					boxes[i] = { ...boxes[i] }
+					boxes[i].positions = result
+					boxes[i].offsets = [boxes[i].offsets[0] + (to[0] - from[0]), boxes[i].offsets[1] + (to[1] - from[1])] as [number, number]
+					setBoxes(boxes)
+					return true
+				}
+			}
 		}
 
 		const checkGround = () => {
@@ -581,6 +619,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 						fill="saddlebrown"
 						stroke="darkslategray"
 						strokeWidth="0.05"
+						strokeLinejoin="round"
 					/>
 				))}
 				{spikes.map(([x, y]) => (
