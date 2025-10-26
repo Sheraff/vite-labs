@@ -24,8 +24,10 @@ export default function Snakebird() {
 
 	return (
 		<div className={styles.main}>
-			<Head />
-			<div>
+			<div className={styles.head}>
+				<Head />
+			</div>
+			<div className={styles.info}>
 				<fieldset>
 					<legend>Controls</legend>
 					<p>Arrow keys to move</p>
