@@ -299,7 +299,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 					<Fragment key={index}>
 						<path
 							d={`M ${snake.map(([x, y]) => `${x + 0.5} ${y + 0.5}`).join(' ')}`}
-							stroke={index === 0 ? "green" : index === 1 ? "blue" : "coral"}
+							stroke={index === 0 ? "green" : index === 1 ? "blue" : "salmon"}
 							strokeWidth="0.9"
 							fill="none"
 							strokeLinecap="round"
@@ -310,7 +310,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 							cx={snake.at(-1)![0] + 0.5}
 							cy={snake.at(-1)![1] + 0.5}
 							r={controlling === index ? "0.45" : "0.3"}
-							fill={index === 0 ? "darkgreen" : index === 1 ? "royalblue" : "salmon"}
+							fill={index === 0 ? "darkgreen" : index === 1 ? "royalblue" : "coral"}
 							opacity={controlling === index ? 1 : 0.5}
 						/>
 					</Fragment>
