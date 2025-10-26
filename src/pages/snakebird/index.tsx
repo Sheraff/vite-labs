@@ -269,14 +269,28 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 
 		const checkGround = () => {
 			if (moving) return
+			const mightFall = new Set<number>()
 			snake_loop: for (let i = 0; i < positions.length; i++) {
 				if (snakesInGoal.includes(i)) continue
+				for (const [x, y] of positions[i]) {
+					if (level[y + 1]?.[x] === WALL) continue snake_loop
+					if (isAvailableFruit(x, y + 1)) continue snake_loop
+				}
+				mightFall.add(i)
+			}
+			// all are on solid ground
+			if (!mightFall.size) return
+
+			snake_loop: for (const i of mightFall) {
 				let fallsOnSpikes = false
 				for (const [x, y] of positions[i]) {
 					if (level[y + 1]?.[x] === SPIKE) fallsOnSpikes = true
-					if (level[y + 1]?.[x] === WALL) continue snake_loop
-					if (isAvailableFruit(x, y + 1)) continue snake_loop
-					if (positions.some((other, otherIndex) => otherIndex !== i && other.some(([ox, oy]) => ox === x && oy === y + 1))) continue snake_loop
+					const isRestingOnSolidSnake = positions.some((other, j) => {
+						if (j === i) return false
+						if (mightFall.has(j)) return false
+						return other.some(([ox, oy]) => ox === x && oy === y + 1)
+					})
+					if (isRestingOnSolidSnake) continue snake_loop
 				}
 				if (fallsOnSpikes) {
 					reset()
