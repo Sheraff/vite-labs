@@ -26,7 +26,7 @@ export default function Snakebird() {
 				</fieldset>
 				<fieldset>
 					<legend>Level</legend>
-					Level {levelNum + 1} / {LEVELS.length}
+					Level {levelNum} / {LEVELS.length - 1}
 					<button type="button" onClick={() => setLevelNum((n) => (n - 1 + LEVELS.length) % LEVELS.length)}>Previous</button>
 					<button type="button" onClick={() => setLevelNum((n) => (n + 1) % LEVELS.length)}>Next</button>
 				</fieldset>
