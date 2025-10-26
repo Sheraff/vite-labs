@@ -85,12 +85,16 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 			const last = positions[controlling].at(-1)!
 			const newHead = [last[0] + dx, last[1] + dy] as const
 
+			const checking = new Set([controlling])
 			const checked = new Set([controlling])
 			const canMove = (i: number, x: number, y: number): boolean => {
 				// out of bounds
 				if (x < 0 || x >= width || y < 0 || y >= height) return false
 				// self collision (only for controlling snake, the other cannot collide with theirselves)
-				if (i === controlling && positions[i].some(([px, py]) => px === x && py === y)) return false
+				if (positions[i].some(([px, py]) => px === x && py === y)) {
+					if (i === controlling) return false
+					return true
+				}
 				// ground collision
 				if (level[y][x] === WALL) return false
 				// spike collision
@@ -100,7 +104,8 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 				// collision with other snakes
 				for (let j = 0; j < positions.length; j++) {
 					if (j === i) continue
-					if (checked.has(j)) continue
+					if (checking.has(j)) continue
+					checking.add(j)
 					if (positions[j].some(([px, py]) => px === x && py === y)) {
 						// when colliding with another snake, we need to check if every part of the other snake could move in the same direction
 						for (let k = 0; k < positions[j].length; k++) {
