@@ -3,7 +3,7 @@ import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
 import { Fragment, useEffect, useMemo, useRef, useState } from "react"
 import { flushSync } from "react-dom"
-import { BOX_1, BOX_2, BOX_3, FRUIT, GOAL, LEVELS, SNAKE_1, SNAKE_2, SNAKE_3, SPIKE, WALL } from "./levels"
+import { BOX_1, BOX_2, BOX_3, BOX_4, FRUIT, GOAL, LEVELS, SNAKE_1, SNAKE_2, SNAKE_3, SPIKE, WALL } from "./levels"
 
 export const meta: RouteMeta = {
 	title: 'Snakebird',
@@ -568,7 +568,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 					<path
 						key={`${i}-${index}`}
 						d={draw(box.offsets[0], box.offsets[1])}
-						fill={["tan", "peru", "burlywood"][i % 3]}
+						fill={["tan", "peru", "burlywood", "lightgray"][i % 4]}
 					/>
 				)))}
 				{positionState.map((snake, index) => {
@@ -594,6 +594,16 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 						</Fragment>
 					)
 				})}
+			</svg>
+			<svg className={styles.ground} viewBox={`0 0 ${width} ${height}`}>
+				<defs>
+					<linearGradient id="fadeout" x1="0" x2="0" y1="0" y2="1">
+						<stop offset="0%" stopColor="black" stopOpacity="0" />
+						<stop offset="100%" stopColor="black" />
+					</linearGradient>
+				</defs>
+				<rect x={-width} y={height - 1} width={3 * width} height={1} fill="url(#fadeout)" />
+				<rect x={-width} y={height} width={3 * width} height={height} fill="black" />
 			</svg>
 		</>
 	)
@@ -671,7 +681,7 @@ function processInitialPositions(level: string[]) {
 function processInitialBoxes(level: string[]) {
 	const boxes = []
 	const draw = []
-	for (const tiles of [BOX_1, BOX_2, BOX_3]) {
+	for (const tiles of [BOX_1, BOX_2, BOX_3, BOX_4]) {
 		const width = level[0].length
 		const zones = getTileZones(level, tiles)
 		if (zones.size === 0) continue
