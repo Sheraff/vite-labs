@@ -74,56 +74,71 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 		let controlling = 0
 		let collectedFruits: Array<readonly [number, number]> = []
 
-		const isAvailableFruit = (x: number, y: number) => {
-			return level[y]?.[x] === FRUIT && !collectedFruits.some(([fx, fy]) => fx === x && fy === y)
-		}
+		const isAvailableFruit = (x: number, y: number) => level[y]?.[x] === FRUIT && !collectedFruits.some(([fx, fy]) => fx === x && fy === y)
+		const isOutOfBounds = (x: number, y: number) => x < 0 || x >= width || y < 0 || y >= height
+		const isSelfCollision = (i: number, x: number, y: number) => positions[i].some(([px, py]) => px === x && py === y)
+		const isInWalls = (x: number, y: number) => level[y]?.[x] === WALL
+		const isInSpikes = (x: number, y: number) => level[y]?.[x] === SPIKE
 
 		const processNextAction = () => {
 			if (!nextAction || moving) return
 			const [dx, dy] = nextAction
 			nextAction = null
 			const last = positions[controlling].at(-1)!
-			const newHead = [last[0] + dx, last[1] + dy] as const
+			const x = last[0] + dx
+			const y = last[1] + dy
 
-			const checking = new Set([controlling])
 			const checked = new Set([controlling])
-			const canMove = (i: number, x: number, y: number): boolean => {
-				// out of bounds
-				if (x < 0 || x >= width || y < 0 || y >= height) return false
-				// self collision (only for controlling snake, the other cannot collide with theirselves)
-				if (positions[i].some(([px, py]) => px === x && py === y)) {
-					if (i === controlling) return false
-					return true
-				}
-				// ground collision
-				if (level[y][x] === WALL) return false
-				// spike collision
-				if (level[y][x] === SPIKE) return false
-				// fruit collision (only non-controlling snakes can collide with fruits)
-				if (i !== controlling && isAvailableFruit(x, y)) return false
-				// collision with other snakes
-				for (let j = 0; j < positions.length; j++) {
-					if (j === i) continue
-					if (checking.has(j)) continue
-					checking.add(j)
-					if (positions[j].some(([px, py]) => px === x && py === y)) {
-						// when colliding with another snake, we need to check if every part of the other snake could move in the same direction
-						for (let k = 0; k < positions[j].length; k++) {
-							const other = canMove(j, positions[j][k][0] + dx, positions[j][k][1] + dy)
-							if (!other) return false
+
+			// out of bounds
+			if (isOutOfBounds(x, y)) return
+			// self collision (only for controlling snake, the other cannot collide with theirselves)
+			if (isSelfCollision(controlling, x, y)) return
+			// ground collision
+			if (isInWalls(x, y)) return
+			// spike collision
+			if (isInSpikes(x, y)) return
+			// collision with other snakes
+			const collisionIndex = positions.findIndex((snake, i) => {
+				if (i === controlling) return
+				return snake.some(([px, py]) => px === x && py === y)
+			})
+			if (collisionIndex !== -1) {
+				const checking = new Set([collisionIndex])
+				for (const j of checking) {
+					if (j === controlling) continue
+					const snake = positions[j]
+					for (const [px, py] of snake) {
+						if (isOutOfBounds(px + dx, py + dy)) return
+						if (isInWalls(px + dx, py + dy)) return
+						if (isInSpikes(px + dx, py + dy)) return
+						if (isAvailableFruit(px + dx, py + dy)) return
+						for (let k = 0; k < positions.length; k++) {
+							if (k === j) continue
+							const other = positions[k]
+							// if it would collide with yet another snake, we need to check that one too
+							const collides = other.some(([ox, oy]) => ox === px + dx && oy === py + dy)
+							if (collides) checking.add(k)
 						}
-						checked.add(j)
 					}
+					checked.add(j)
 				}
-				return true
+			}
+			// verify that all the snakes that move won't collide with the current one
+			for (const j of checked) {
+				if (j === controlling) continue
+				const snake = positions[j]
+				for (const [px, py] of snake) {
+					const collides = positions[controlling].some(([ox, oy]) => ox === px + dx && oy === py + dy)
+					if (collides) return
+				}
 			}
 
-			if (!canMove(controlling, newHead[0], newHead[1])) return
-
-			const isFruit = isAvailableFruit(newHead[0], newHead[1])
 			moving = true
-			if (isFruit) {
+			const newHead = [x, y] as const
+			if (isAvailableFruit(x, y)) {
 				flushSync(() => {
+					// duplicate the tail point, so animation plays when growing
 					setPositions((positions) => {
 						positions = [...positions]
 						positions[controlling] = [positions[controlling][0], ...positions[controlling]]
