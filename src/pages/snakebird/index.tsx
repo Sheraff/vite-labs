@@ -21,8 +21,9 @@ export default function Snakebird() {
 				<fieldset>
 					<legend>Controls</legend>
 					<p>Arrow keys to move</p>
-					<p>Spacebar to restart</p>
+					<p>Space or Escape to restart</p>
 					<p>Tab or Enter to select snake</p>
+					<p>Backspace to undo</p>
 				</fieldset>
 				<fieldset>
 					<legend>Level</legend>
@@ -80,6 +81,30 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 		const isInWalls = (x: number, y: number) => level[y]?.[x] === WALL
 		const isInSpikes = (x: number, y: number) => level[y]?.[x] === SPIKE
 
+		const memory: string[] = []
+		const serialize = () => {
+			const state = JSON.stringify({
+				controlling,
+				positions,
+				collectedFruits,
+			})
+			if (memory.at(-1) === state) return
+			memory.push(state)
+		}
+		const deserialize = () => {
+			const str = memory.pop()
+			if (!str) return
+			const state = JSON.parse(str)
+			controlling = state.controlling
+			positions = state.positions
+			collectedFruits = state.collectedFruits
+			moving = false
+			nextAction = null
+			setControlling(controlling)
+			setPositions(positions)
+			setCollectedFruits(collectedFruits)
+		}
+
 		const processNextAction = () => {
 			if (!nextAction || moving) return
 			const [dx, dy] = nextAction
@@ -134,6 +159,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 				}
 			}
 
+			serialize()
 			moving = true
 			const newHead = [x, y] as const
 			if (isAvailableFruit(x, y)) {
@@ -244,6 +270,11 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 				nextAction = null
 				controlling = (controlling + 1) % positions.length
 				setControlling(controlling)
+			}
+			if (key === 'backspace') {
+				e.preventDefault()
+				if (moving) return
+				deserialize()
 			}
 		}, { signal: controller.signal })
 
