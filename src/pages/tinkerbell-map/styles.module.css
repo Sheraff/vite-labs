@@ -1,0 +1,35 @@
+.main {
+	margin: 0;
+	background: oklch(13.508% 0.04223 288.372);
+	color: white;
+	touch-action: none;
+	width: 100vw;
+	height: 100svh;
+	padding: 1em;
+
+	canvas {
+		position: fixed;
+		inset: 0;
+	}
+
+	form {
+		position: relative;
+		z-index: 1;
+		width: fit-content;
+
+		fieldset {
+			display: grid;
+			grid-template-columns: 1fr auto;
+			gap: 0.5em;
+		}
+
+		button {
+			grid-column: span 2;
+		}
+	}
+}
+
+.head {
+	position: relative;
+	z-index: 1;
+}

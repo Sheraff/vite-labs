@@ -4,6 +4,7 @@ import { type JSX, lazy } from "react"
 import wave_function_collapse_ascii_image from "./pages/wave-function-collapse-ascii/screen.png"
 import wave_function_collapse_image from "./pages/wave-function-collapse/screen.png"
 import visual_exec_image from "./pages/visual-exec/screen.png"
+import tinkerbell_map_image from "./pages/tinkerbell-map/screen.png"
 import swarm_pathfinding_image from "./pages/swarm-pathfinding/screen.png"
 import star_rating_image from "./pages/star-rating/screen.png"
 import spring_fluid_image from "./pages/spring-fluid/screen.png"
@@ -37,7 +38,7 @@ import ants_shader_image from "./pages/ants-shader/screen.png"
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "visual-exec" | "swarm-pathfinding" | "star-rating" | "spring-fluid" | "spider-inverse-kinematics" | "snakebird" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "polka-fireflies" | "perlin-ripples" | "particle-life" | "paint-worklet" | "pacman" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "maze-generation" | "lightning" | "intl-tuesday" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "fireflies" | "deterministic-plinko" | "cursor-projection" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "ants-shader" | "ants" | "a-star"
+export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "visual-exec" | "tinkerbell-map" | "swarm-pathfinding" | "star-rating" | "spring-fluid" | "spider-inverse-kinematics" | "snakebird" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "polka-fireflies" | "perlin-ripples" | "particle-life" | "paint-worklet" | "pacman" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "maze-generation" | "lightning" | "intl-tuesday" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "fireflies" | "deterministic-plinko" | "cursor-projection" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "ants-shader" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
@@ -91,6 +92,17 @@ export const ROUTES = {
 		git: {
 			lastModified: 1761395963000,
 			firstAdded: 1760983403000
+		},
+	},
+	"tinkerbell-map": {
+		Component: lazy(() => import("./pages/tinkerbell-map/index.tsx")),
+		meta: {
+			title: 'Tinkerbell Map',
+			image: tinkerbell_map_image,
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
 		},
 	},
 	"swarm-pathfinding": {
@@ -150,7 +162,7 @@ export const ROUTES = {
 			tags: ['game']
 		},
 		git: {
-			lastModified: 1761520623000,
+			lastModified: 1761521307000,
 			firstAdded: 1761415795000
 		},
 	},
