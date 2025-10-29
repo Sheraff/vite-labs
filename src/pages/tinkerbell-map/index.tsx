@@ -7,6 +7,7 @@ import { getFormValue } from "#components/getFormValue"
 export const meta: RouteMeta = {
 	title: 'Tinkerbell Map',
 	image: './screen.png',
+	tags: ['math', 'chaos', 'attractor']
 }
 
 export default function TinkerbellMap() {

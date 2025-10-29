@@ -99,10 +99,11 @@ export const ROUTES = {
 		meta: {
 			title: 'Tinkerbell Map',
 			image: tinkerbell_map_image,
+			tags: ['math', 'chaos', 'attractor']
 		},
 		git: {
-			lastModified: 0,
-			firstAdded: 0
+			lastModified: 1761778472000,
+			firstAdded: 1761778472000
 		},
 	},
 	"swarm-pathfinding": {
