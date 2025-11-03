@@ -121,6 +121,7 @@ let playing = true
 }
 
 function start() {
+	console.log('starting worker for ', indexStart, 'to', indexEnd, '(', indexEnd - indexStart, 'particles )')
 	tree = new StaticTreeNode(0, 0, width, height, x, y, 8)
 	for (let i = 0; i < total; i++) {
 		tree.insert(i)
@@ -129,13 +130,15 @@ function start() {
 
 	let lastTime = 0
 	let frameCount = 0
+	const frameMessage = { type: "frame", data: { dt: 0 } } satisfies Outgoing
 	requestAnimationFrame(function loop(time) {
 		requestAnimationFrame(loop)
 
 		const dt = time - lastTime
 		lastTime = time
 		if (dt === time) return // first frame
-		postMessage({ type: "frame", data: { dt } } satisfies Outgoing)
+		frameMessage.data.dt = dt
+		postMessage(frameMessage)
 
 		if (!playing) return
 		update(dt / 1000, frameCount)
@@ -144,7 +147,7 @@ function start() {
 }
 
 function update(dt: number, frameCount: number) {
-	const updateTree = frameCount % 10 === 0
+	const updateTree = frameCount % 15 === 0
 
 	// constants
 	const max = repulseRange + attractRange
@@ -152,12 +155,20 @@ function update(dt: number, frameCount: number) {
 	const wallRepulse = wallRepulseRange
 	const dampen = 0.94
 
+	const maxSq = max * max
+	const inv_repulse = 1 / repulse
+	const inv_max_minus_repulse = 1 / (max - repulse)
+	const repulseStrengthDt = repulseStrength * dt
+	const attractStrengthDt = attractStrength * dt
+	const wallRepulseStrengthDt = wallRepulseStrength * dt / wallRepulse
+
 	for (let i = indexStart; i < indexEnd; i++) {
 		let px = x[i]
 		let py = y[i]
 		let pvx = vx[i]
 		let pvy = vy[i]
 		const pcolor = color[i]
+		const colorDef = colors[pcolor]
 
 		const neighbors = tree.query(px, py, max)
 		for (const j of neighbors) {
@@ -165,65 +176,50 @@ function update(dt: number, frameCount: number) {
 
 			const nx = x[j]
 			const ny = y[j]
-			const ncolor = color[j]
+
 
 			const dx = nx - px
 			const dy = ny - py
+			const distSq = dx * dx + dy * dy
+			if (distSq > maxSq) continue
 			const dist = Math.hypot(dx, dy)
-
-			if (dist > max) continue
 
 			if (dist < repulse) {
 				// Repulse
-				const power = (repulse - dist) / repulse
-				const mult = power * dt * repulseStrength / dist
+				const power = (repulse - dist) * inv_repulse
+				const mult = power * repulseStrengthDt / dist
 				pvx -= dx * mult
 				pvy -= dy * mult
 			} else {
 				// Attract
-				const colorDef = colors[pcolor]
-				try {
-					const attraction = colorDef.attractions[ncolor]
-					if (attraction === 0) continue
-					const power = attraction * Math.abs((dist - repulse) / (max - repulse) * 2 - 1)
-					const mult = power * dt * attractStrength / dist
-					pvx += dx * mult
-					pvy += dy * mult
-				} catch (e) {
-					console.log('Error in attraction', pcolor, ncolor, colorDef, colors)
-					throw e
-				}
+				const ncolor = color[j]
+				const attraction = colorDef.attractions[ncolor]
+				if (attraction === 0) continue
+				const power = attraction * Math.abs((dist - repulse) * inv_max_minus_repulse * 2 - 1)
+				const mult = power * attractStrengthDt / dist
+				pvx += dx * mult
+				pvy += dy * mult
 			}
 		}
 
 		// Repulse from walls
-		left: {
-			const dx = px - wallRepulse
-			if (dx > 0) break left
-			pvx -= (dx / wallRepulse) * dt * wallRepulseStrength
-		}
-		right: {
-			const dx = (width - px) - wallRepulse
-			if (dx > 0) break right
-			pvx += (dx / wallRepulse) * dt * wallRepulseStrength
-		}
-		top: {
-			const dy = py - wallRepulse
-			if (dy > 0) break top
-			pvy -= (dy / wallRepulse) * dt * wallRepulseStrength
-		}
-		bottom: {
-			const dy = (height - py) - wallRepulse
-			if (dy > 0) break bottom
-			pvy += (dy / wallRepulse) * dt * wallRepulseStrength
-		}
+		const dx_left = px - wallRepulse
+		if (dx_left <= 0) pvx -= dx_left * wallRepulseStrengthDt
+		const dx_right = (width - px) - wallRepulse
+		if (dx_right <= 0) pvx += dx_right * wallRepulseStrengthDt
+		const dy_top = py - wallRepulse
+		if (dy_top <= 0) pvy -= dy_top * wallRepulseStrengthDt
+		const dy_bottom = (height - py) - wallRepulse
+		if (dy_bottom <= 0) pvy += dy_bottom * wallRepulseStrengthDt
 
 		// Dampen velocity
 		pvx *= dampen
 		pvy *= dampen
 
-		if (Math.abs(pvx) > 100) pvx = 100 * Math.sign(pvx)
-		if (Math.abs(pvy) > 100) pvy = 100 * Math.sign(pvy)
+		if (pvx > 100) pvx = 100
+		else if (pvx < -100) pvx = -100
+		if (pvy > 100) pvy = 100
+		else if (pvy < -100) pvy = -100
 
 		vx[i] = pvx
 		vy[i] = pvy
