@@ -192,7 +192,20 @@ function update(dt: number, frameCount: number) {
 			if (distSq > maxSq) continue
 			const dist = Math.sqrt(distSq)
 
-			if (dist < repulse) {
+			if (dist < 4) {
+				// Collision (elastic bounce)
+				const nvx = vx[j]
+				const nvy = vy[j]
+				const relVelX = pvx - nvx
+				const relVelY = pvy - nvy
+				const dot = (relVelX * dx + relVelY * dy) / dist
+				if (dot > 0) {
+					const impulseX = (dot * dx) / dist
+					const impulseY = (dot * dy) / dist
+					pvx -= impulseX * 0.5
+					pvy -= impulseY * 0.5
+				}
+			} else if (dist < repulse) {
 				// Repulse
 				const power = (repulse - dist) * inv_repulse
 				const mult = power * repulseStrengthDt / dist
