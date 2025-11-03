@@ -37,7 +37,7 @@ export default function ParticleLifePage() {
 	const canvasRef = useRef<HTMLCanvasElement>(null)
 	const formRef = useRef<HTMLFormElement>(null)
 
-	const [colors, setColors] = useState(7)
+	const [colors, setColors] = useState(() => Math.min(Math.floor(navigator.hardwareConcurrency / 2), COLORS.length))
 	const [fps, setFps] = useState(0)
 	const [workers] = useState(() => Math.max(1, navigator.hardwareConcurrency - 1))
 	const [formatter] = useState(() => new Intl.NumberFormat(undefined, { maximumFractionDigits: 0, minimumIntegerDigits: 3 }))
@@ -437,4 +437,11 @@ const COLORS = [
 	'blue',
 	'indigo',
 	'violet',
+	'cyan',
+	'magenta',
+	'lime',
+	'pink',
+	'teal',
+	'lavender',
+	'brown',
 ]

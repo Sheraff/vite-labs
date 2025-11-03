@@ -155,7 +155,7 @@ function start() {
 const queryCache = new Array<number>()
 
 function update(dt: number, frameCount: number) {
-	const updateTree = frameCount % 15 === 0
+	const updateTree = frameCount % 30 === 0
 
 	// constants
 	const max = repulseRange + attractRange

@@ -7,10 +7,15 @@
 	height: 100svh;
 	padding: 1em;
 
+	position: fixed;
+	inset: 0;
+	overflow: auto;
+
 	canvas {
 		position: fixed;
 		inset: 0;
 		z-index: 0;
+		pointer-events: none;
 	}
 }
 
@@ -25,8 +30,6 @@
 	position: relative;
 	z-index: 1;
 	user-select: none;
-
-
 
 	fieldset {
 		width: fit-content;
