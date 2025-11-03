@@ -138,6 +138,8 @@ function start() {
 		const dt = time - lastTime
 		lastTime = time
 		if (dt === time) return // first frame
+		if (!playing) return
+
 		dtSum += dt
 		if (frameCount % 120 === 0) {
 			frameMessage.data.dt = dtSum / 120
@@ -145,11 +147,12 @@ function start() {
 			dtSum = 0
 		}
 
-		if (!playing) return
 		update(dt / 1000, frameCount)
 		frameCount++
 	})
 }
+
+const queryCache = new Array<number>()
 
 function update(dt: number, frameCount: number) {
 	const updateTree = frameCount % 15 === 0
@@ -175,13 +178,13 @@ function update(dt: number, frameCount: number) {
 		const pcolor = color[i]
 		const colorDef = colors[pcolor]
 
-		const neighbors = tree.query(px, py, max)
+		queryCache.length = 0
+		const neighbors = tree.query(px, py, max, queryCache)
 		for (const j of neighbors) {
 			if (i === j) continue
 
 			const nx = x[j]
 			const ny = y[j]
-
 
 			const dx = nx - px
 			const dy = ny - py

@@ -88,7 +88,7 @@ export class StaticTreeNode {
 		}
 	}
 
-	query(x: number, y: number, radius: number, result: Set<number> = new Set()): Set<number> {
+	query(x: number, y: number, radius: number, result: Array<number> = []): Array<number> {
 		if (this.children) {
 			for (let i = 0; i < 4; i++) {
 				const child = this.children[i]
@@ -102,9 +102,9 @@ export class StaticTreeNode {
 			return result
 		} else {
 			for (const index of this.indices) {
-				result.add(index)
+				result.push(index)
 			}
-			return this.indices
+			return result
 		}
 	}
 
