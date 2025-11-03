@@ -66,7 +66,8 @@ export class StaticTreeNode {
 		this.indices.add(index)
 		this.isEmpty = false
 		if (this.children) {
-			for (const child of this.children) {
+			for (let i = 0; i < 4; i++) {
+				const child = this.children[i]
 				if (child.isInside(this.x_array[index], this.y_array[index])) {
 					child.insert(index)
 					return
@@ -80,24 +81,29 @@ export class StaticTreeNode {
 		this.indices.delete(index)
 		this.isEmpty = this.indices.size === 0
 		if (this.children) {
-			for (const child of this.children) {
+			for (let i = 0; i < 4; i++) {
+				const child = this.children[i]
 				if (!child.isEmpty) child.remove(index)
 			}
 		}
 	}
 
 	query(x: number, y: number, radius: number, result: Set<number> = new Set()): Set<number> {
-		if (x + radius < this.x || x - radius > this.maxX ||
-			y + radius < this.y || y - radius > this.maxY) {
-			return result
-		}
 		if (this.children) {
-			for (const child of this.children) {
-				if (!child.isEmpty) child.query(x, y, radius, result)
+			for (let i = 0; i < 4; i++) {
+				const child = this.children[i]
+				if (!child.isEmpty) {
+					if (x + radius >= this.x && x - radius <= this.maxX &&
+						y + radius >= this.y && y - radius <= this.maxY) {
+						child.query(x, y, radius, result)
+					}
+				}
 			}
 			return result
 		} else {
-			this.indices.forEach(index => result.add(index))
+			for (const index of this.indices) {
+				result.add(index)
+			}
 			return this.indices
 		}
 	}
@@ -107,7 +113,8 @@ export class StaticTreeNode {
 		if (this.indices.has(index)) {
 			if (isInside) {
 				if (this.children) {
-					for (const child of this.children) {
+					for (let i = 0; i < 4; i++) {
+						const child = this.children[i]
 						if (!child.isEmpty) child.update(index)
 					}
 				}
