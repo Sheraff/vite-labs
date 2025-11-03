@@ -102,7 +102,7 @@ export const ROUTES = {
 			tags: ['math', 'chaos', 'attractor']
 		},
 		git: {
-			lastModified: 1761778472000,
+			lastModified: 1761778560000,
 			firstAdded: 1761778472000
 		},
 	},
@@ -235,7 +235,7 @@ export const ROUTES = {
 			tags: ['simulation', 'canvas', 'particles'],
 		},
 		git: {
-			lastModified: 1760957845000,
+			lastModified: 1762185811000,
 			firstAdded: 1760880322000
 		},
 	},

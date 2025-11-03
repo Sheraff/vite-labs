@@ -130,6 +130,7 @@ function start() {
 
 	let lastTime = 0
 	let frameCount = 0
+	let dtSum = 0
 	const frameMessage = { type: "frame", data: { dt: 0 } } satisfies Outgoing
 	requestAnimationFrame(function loop(time) {
 		requestAnimationFrame(loop)
@@ -137,8 +138,12 @@ function start() {
 		const dt = time - lastTime
 		lastTime = time
 		if (dt === time) return // first frame
-		frameMessage.data.dt = dt
-		postMessage(frameMessage)
+		dtSum += dt
+		if (frameCount % 120 === 0) {
+			frameMessage.data.dt = dtSum / 120
+			postMessage(frameMessage)
+			dtSum = 0
+		}
 
 		if (!playing) return
 		update(dt / 1000, frameCount)
