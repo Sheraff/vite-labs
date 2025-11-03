@@ -177,11 +177,14 @@ export default function ParticleLifePage() {
 
 	const [play, setPlay] = useState(true)
 
+	const [showControls, setShowControls] = useState(true)
+
 	return (
 		<div className={styles.main}>
 			<div className={styles.head}>
 				<Head />
-				<form className={styles.controls} ref={formRef}>
+				<button className={styles.showHide} onClick={() => setShowControls(c => !c)}>{showControls ? '◀︎ hide controls' : '▶︎'}</button>
+				<form className={styles.controls} ref={formRef} data-hidden={!showControls}>
 					<fieldset>
 						<legend>Particles</legend>
 						<div className={styles.plusMinus}>
@@ -431,17 +434,17 @@ function start(ctx: CanvasRenderingContext2D, state: State, onFrame: (dt: number
 
 const COLORS = [
 	'red',
-	'orange',
+	'cyan',
 	'yellow',
 	'green',
-	'blue',
+	'lavender',
 	'indigo',
 	'violet',
-	'cyan',
+	'orange',
 	'magenta',
 	'lime',
 	'pink',
 	'teal',
-	'lavender',
+	'blue',
 	'brown',
 ]

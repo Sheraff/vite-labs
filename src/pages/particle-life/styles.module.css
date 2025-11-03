@@ -26,10 +26,23 @@
 	width: fit-content;
 }
 
+.showHide {
+	height: 1.75lh;
+	margin-bottom: 0.5em;
+}
+
 .controls {
 	position: relative;
 	z-index: 1;
 	user-select: none;
+
+	transition: translate 300ms ease, opacity 300ms ease;
+
+	&[data-hidden="true"] {
+		opacity: 0;
+		translate: -50% 0;
+		pointer-events: none;
+	}
 
 	fieldset {
 		width: fit-content;
