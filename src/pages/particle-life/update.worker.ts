@@ -182,7 +182,7 @@ function update(dt: number, frameCount: number) {
 			const dy = ny - py
 			const distSq = dx * dx + dy * dy
 			if (distSq > maxSq) continue
-			const dist = Math.hypot(dx, dy)
+			const dist = Math.sqrt(distSq)
 
 			if (dist < repulse) {
 				// Repulse
