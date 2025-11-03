@@ -265,19 +265,19 @@ export default function ParticleLifePage() {
 								<tr>
 									<th scope="row">Repulse</th>
 									<td>
-										<input type="range" name="repulse_range" defaultValue="20" min="0" max="100" step="1" />
+										<input type="range" name="repulse_range" defaultValue="22" min="0" max="100" step="1" />
 									</td>
 									<td>
-										<input type="range" name="repulse_strength" defaultValue="30" min="0" max="100" step="1" />
+										<input type="range" name="repulse_strength" defaultValue="34" min="0" max="100" step="1" />
 									</td>
 								</tr>
 								<tr>
 									<th scope="row">Attract</th>
 									<td>
-										<input type="range" name="attract_range" defaultValue="40" min="0" max="100" step="1" />
+										<input type="range" name="attract_range" defaultValue="44" min="0" max="100" step="1" />
 									</td>
 									<td>
-										<input type="range" name="attract_strength" defaultValue="20" min="0" max="100" step="1" />
+										<input type="range" name="attract_strength" defaultValue="30" min="0" max="100" step="1" />
 									</td>
 								</tr>
 								<tr>

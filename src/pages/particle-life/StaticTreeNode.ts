@@ -30,7 +30,7 @@ export class StaticTreeNode {
 		height: number,
 		x_array: Float32Array,
 		y_array: Float32Array,
-		maxdepth: number = 6,
+		maxdepth: number = 4,
 		depth: number = 0,
 		parent: StaticTreeNode | null = null
 	) {

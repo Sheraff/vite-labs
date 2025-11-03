@@ -122,7 +122,7 @@ let playing = true
 
 function start() {
 	console.log('starting worker for ', indexStart, 'to', indexEnd, '(', indexEnd - indexStart, 'particles )')
-	tree = new StaticTreeNode(0, 0, width, height, x, y, 8)
+	tree = new StaticTreeNode(0, 0, width, height, x, y, 4)
 	for (let i = 0; i < total; i++) {
 		tree.insert(i)
 	}
