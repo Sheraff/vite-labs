@@ -41,6 +41,13 @@ export default function ParticleLifePage() {
 	const [fps, setFps] = useState(0)
 	const [workers] = useState(() => Math.max(1, navigator.hardwareConcurrency - 1))
 	const [formatter] = useState(() => new Intl.NumberFormat(undefined, { maximumFractionDigits: 0, minimumIntegerDigits: 3 }))
+	const [initialWeights] = useState(() => {
+		const weights = new Array(COLORS.length * COLORS.length)
+		for (let i = 0; i < weights.length; i++) {
+			weights[i] = (Math.random() * 2 - 1).toFixed(2)
+		}
+		return weights
+	})
 
 	useEffect(() => {
 		const form = formRef.current!
@@ -243,9 +250,14 @@ export default function ParticleLifePage() {
 										</th>
 										{Array.from({ length: colors }).map((_, j) => (
 											<td key={j}>
-												<input type="number" name={`attraction_${i}_${j}`} defaultValue={i === j ? "1" : "0"} step="0.1" min="-1" max="1" />
+												<input type="number" name={`attraction_${i}_${j}`} defaultValue={initialWeights[i * COLORS.length + j]} step="0.1" min="-1" max="1" />
 											</td>
 										))}
+										{/* {Array.from({ length: colors }).map((_, j) => (
+											<td key={j}>
+												<input type="number" name={`attraction_${i}_${j}`} defaultValue={i === j ? "1" : "0"} step="0.1" min="-1" max="1" />
+											</td>
+										))} */}
 									</tr>
 								))}
 							</tbody>
