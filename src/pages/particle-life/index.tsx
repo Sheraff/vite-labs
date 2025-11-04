@@ -30,7 +30,6 @@ type State = {
 	colors: ColorDef[]
 	repulse: AttractionDef
 	attract: AttractionDef
-	wallRepulse: AttractionDef
 }
 
 export default function ParticleLifePage() {
@@ -64,11 +63,7 @@ export default function ParticleLifePage() {
 			attract: {
 				range: 40,
 				strength: 30,
-			},
-			wallRepulse: {
-				range: 50,
-				strength: 90,
-			},
+			}
 		}
 
 		let current: ReturnType<typeof start> | null = null
@@ -93,8 +88,6 @@ export default function ParticleLifePage() {
 			state.repulse.strength = getFormValue<number>(form, 'repulse_strength') || 30
 			state.attract.range = getFormValue<number>(form, 'attract_range') || 40
 			state.attract.strength = getFormValue<number>(form, 'attract_strength') || 30
-			state.wallRepulse.range = getFormValue<number>(form, 'wall_repulse_range') || 50
-			state.wallRepulse.strength = getFormValue<number>(form, 'wall_repulse_strength') || 90
 
 			current?.update(state)
 		}
@@ -208,7 +201,7 @@ export default function ParticleLifePage() {
 											<span className={styles.color} style={{ '--color': COLORS[i % COLORS.length] } as React.CSSProperties} />
 										</th>
 										<td>
-											<input type="number" name={`particles_${i}_count`} defaultValue="1750" min="0" max="2000" step="1" />
+											<input type="number" name={`particles_${i}_count`} defaultValue="2000" min="0" max="2000" step="1" />
 										</td>
 									</tr>
 								))}
@@ -268,10 +261,10 @@ export default function ParticleLifePage() {
 								<tr>
 									<th scope="row">Repulse</th>
 									<td>
-										<input type="range" name="repulse_range" defaultValue="26" min="0" max="100" step="1" />
+										<input type="range" name="repulse_range" defaultValue="15" min="0" max="100" step="1" />
 									</td>
 									<td>
-										<input type="range" name="repulse_strength" defaultValue="30" min="0" max="100" step="1" />
+										<input type="range" name="repulse_strength" defaultValue="100" min="0" max="100" step="1" />
 									</td>
 								</tr>
 								<tr>
@@ -281,15 +274,6 @@ export default function ParticleLifePage() {
 									</td>
 									<td>
 										<input type="range" name="attract_strength" defaultValue="30" min="0" max="100" step="1" />
-									</td>
-								</tr>
-								<tr>
-									<th scope="row">Wall Repulse</th>
-									<td>
-										<input type="range" name="wall_repulse_range" defaultValue="50" min="0" max="100" step="1" />
-									</td>
-									<td>
-										<input type="range" name="wall_repulse_strength" defaultValue="100" min="0" max="100" step="1" />
 									</td>
 								</tr>
 							</tbody>

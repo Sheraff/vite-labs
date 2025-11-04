@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-import { StaticTreeNode } from "#particle-life/StaticTreeNode"
+import { Bins } from "#particle-life/Bins"
 
 export type Incoming =
 	| {
@@ -8,7 +8,6 @@ export type Incoming =
 		data: {
 			repulse: { range: number; strength: number }
 			attract: { range: number; strength: number }
-			wallRepulse: { range: number; strength: number }
 			colors: Array<{
 				color: string
 				attractions: Array<number>
@@ -54,14 +53,12 @@ let repulseRange: number
 let repulseStrength: number
 let attractRange: number
 let attractStrength: number
-let wallRepulseRange: number
-let wallRepulseStrength: number
 let colors: Array<{
 	color: string
 	attractions: Array<number>
 }>
 
-let tree: StaticTreeNode
+let bins: Bins
 
 let playing = true
 
@@ -101,8 +98,6 @@ let playing = true
 		repulseStrength = state.repulse.strength
 		attractRange = state.attract.range
 		attractStrength = state.attract.strength
-		wallRepulseRange = state.wallRepulse.range
-		wallRepulseStrength = state.wallRepulse.strength
 		colors = state.colors
 	}
 
@@ -120,12 +115,11 @@ let playing = true
 	}
 }
 
+
 function start() {
 	console.log('starting worker for ', indexStart, 'to', indexEnd, '(', indexEnd - indexStart, 'particles )')
-	tree = new StaticTreeNode(0, 0, width, height, x, y, 4)
-	for (let i = 0; i < total; i++) {
-		tree.insert(i)
-	}
+	bins = new Bins(width, height, 22, total)
+	console.log('bins created', bins.divisions, bins.count)
 
 
 	let lastTime = 0
@@ -152,23 +146,24 @@ function start() {
 	})
 }
 
-const queryCache = new Array<number>()
-
 function update(dt: number, frameCount: number) {
-	const updateTree = frameCount % 30 === 0
-
 	// constants
 	const max = repulseRange + attractRange
 	const repulse = repulseRange
-	const wallRepulse = wallRepulseRange
-	const dampen = 0.94
+	const dampen = 0.001
 
 	const maxSq = max * max
 	const inv_repulse = 1 / repulse
 	const inv_max_minus_repulse = 1 / (max - repulse)
 	const repulseStrengthDt = repulseStrength * dt
 	const attractStrengthDt = attractStrength * dt
-	const wallRepulseStrengthDt = wallRepulseStrength * dt / wallRepulse
+
+	const halfWidth = width * 0.5
+	const halfHeight = height * 0.5
+
+	// rebuild spatial map
+	if (frameCount % 10 === 0)
+		bins.fill(x, y)
 
 	for (let i = indexStart; i < indexEnd; i++) {
 		let px = x[i]
@@ -178,34 +173,43 @@ function update(dt: number, frameCount: number) {
 		const pcolor = color[i]
 		const colorDef = colors[pcolor]
 
-		queryCache.length = 0
-		const neighbors = tree.query(px, py, max, queryCache)
-		for (const j of neighbors) {
-			if (i === j) continue
+		bins.queryWrap(px, py, max, (j) => {
+			if (i === j) return
 
 			const nx = x[j]
 			const ny = y[j]
 
-			const dx = nx - px
-			const dy = ny - py
+			// Calculate wrapped distance (shortest path)
+			let dx = nx - px
+			let dy = ny - py
+
+			// Handle wrapping for x-axis
+			if (dx > halfWidth) dx -= width
+			else if (dx < -halfWidth) dx += width
+
+			// Handle wrapping for y-axis  
+			if (dy > halfHeight) dy -= height
+			else if (dy < -halfHeight) dy += height
+
 			const distSq = dx * dx + dy * dy
-			if (distSq > maxSq) continue
+			if (distSq > maxSq) return
 			const dist = Math.sqrt(distSq)
 
-			if (dist < 3) {
-				// Collision (elastic bounce)
-				const nvx = vx[j]
-				const nvy = vy[j]
-				const relVelX = pvx - nvx
-				const relVelY = pvy - nvy
-				const dot = (relVelX * dx + relVelY * dy) / dist
-				if (dot > 0) {
-					const impulseX = (dot * dx) / dist
-					const impulseY = (dot * dy) / dist
-					pvx -= impulseX * 0.5
-					pvy -= impulseY * 0.5
-				}
-			} else if (dist < repulse) {
+			// if (dist < 4) {
+			// 	// Collision (elastic bounce)
+			// 	const nvx = vx[j]
+			// 	const nvy = vy[j]
+			// 	const relVelX = pvx - nvx
+			// 	const relVelY = pvy - nvy
+			// 	const dot = (relVelX * dx + relVelY * dy) / dist
+			// 	if (dot > 0) {
+			// 		const impulseX = (dot * dx) / dist
+			// 		const impulseY = (dot * dy) / dist
+			// 		pvx -= impulseX * 0.5
+			// 		pvy -= impulseY * 0.5
+			// 	}
+			// } else
+			if (dist < repulse) {
 				// Repulse
 				const power = (repulse - dist) * inv_repulse
 				const mult = power * repulseStrengthDt / dist
@@ -215,46 +219,31 @@ function update(dt: number, frameCount: number) {
 				// Attract
 				const ncolor = color[j]
 				const attraction = colorDef.attractions[ncolor]
-				if (attraction === 0) continue
+				if (attraction === 0) return
 				const power = attraction * Math.abs((dist - repulse) * inv_max_minus_repulse * 2 - 1)
 				const mult = power * attractStrengthDt / dist
 				pvx += dx * mult
 				pvy += dy * mult
 			}
-		}
-
-		// Repulse from walls
-		const dx_left = px - wallRepulse
-		if (dx_left <= 0) pvx -= dx_left * wallRepulseStrengthDt
-		const dx_right = (width - px) - wallRepulse
-		if (dx_right <= 0) pvx += dx_right * wallRepulseStrengthDt
-		const dy_top = py - wallRepulse
-		if (dy_top <= 0) pvy -= dy_top * wallRepulseStrengthDt
-		const dy_bottom = (height - py) - wallRepulse
-		if (dy_bottom <= 0) pvy += dy_bottom * wallRepulseStrengthDt
+		})
 
 		// Dampen velocity
-		pvx *= dampen
-		pvy *= dampen
-
-		// if (pvx > 100) pvx = 100
-		// else if (pvx < -100) pvx = -100
-		// if (pvy > 100) pvy = 100
-		// else if (pvy < -100) pvy = -100
+		pvx *= Math.max(1 - dampen * Math.abs(pvx), 0)
+		pvy *= Math.max(1 - dampen * Math.abs(pvy), 0)
 
 		vx[i] = pvx
 		vy[i] = pvy
 
-		px += pvx * dt * 2
-		py += pvy * dt * 2
+		px += pvx * dt
+		py += pvy * dt
+
+		// Wrap around edges
+		if (px < 0) px += width
+		else if (px >= width) px -= width
+		if (py < 0) py += height
+		else if (py >= height) py -= height
 
 		x[i] = px
 		y[i] = py
-	}
-
-	if (updateTree) {
-		for (let i = 0; i < total; i++) {
-			tree.update(i)
-		}
 	}
 }
