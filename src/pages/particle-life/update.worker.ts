@@ -118,8 +118,8 @@ let playing = true
 
 function start() {
 	console.log('starting worker for ', indexStart, 'to', indexEnd, '(', indexEnd - indexStart, 'particles )')
-	bins = new Bins(width, height, 22, total)
-	console.log('bins created', bins.divisions, bins.count)
+	bins = new Bins(width, height, 50, total)
+	console.log('bins created', bins.count, 'width:', bins.width, 'height:', bins.height)
 
 
 	let lastTime = 0
