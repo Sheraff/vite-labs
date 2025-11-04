@@ -228,8 +228,9 @@ function update(dt: number, frameCount: number) {
 		})
 
 		// Dampen velocity
-		pvx *= Math.max(1 - dampen * Math.abs(pvx), 0)
-		pvy *= Math.max(1 - dampen * Math.abs(pvy), 0)
+const pv_hyp = Math.hypot(pvx, pvy)
+		pvx *= Math.max(1 - dampen * pv_hyp, 0)
+		pvy *= Math.max(1 - dampen * pv_hyp, 0)
 
 		vx[i] = pvx
 		vy[i] = pvy
