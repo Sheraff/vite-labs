@@ -35,6 +35,7 @@ type State = {
 export default function ParticleLifePage() {
 	const canvasRef = useRef<HTMLCanvasElement>(null)
 	const formRef = useRef<HTMLFormElement>(null)
+	const toolbarRef = useRef<HTMLFormElement>(null)
 
 	const [colors, setColors] = useState(() => Math.min(Math.floor(navigator.hardwareConcurrency / 2), COLORS.length))
 	const [fps, setFps] = useState(0)
@@ -42,12 +43,11 @@ export default function ParticleLifePage() {
 	const [formatter] = useState(() => new Intl.NumberFormat(undefined, { maximumFractionDigits: 0, minimumIntegerDigits: 3 }))
 
 	useEffect(() => {
-		const canvas = canvasRef.current
-		if (!canvas) return
+		const form = formRef.current!
+		const toolbar = toolbarRef.current!
+		const canvas = canvasRef.current!
 		const ctx = canvas.getContext("2d")
 		if (!ctx) return
-		const form = formRef.current
-		if (!form) return
 
 		canvas.width = window.innerWidth * devicePixelRatio
 		canvas.height = window.innerHeight * devicePixelRatio
@@ -140,8 +140,7 @@ export default function ParticleLifePage() {
 			onInput()
 		}, { signal: controller.signal })
 
-		const presetRandomButton = form.elements.namedItem('preset-random') as HTMLButtonElement
-		presetRandomButton.addEventListener('click', () => {
+		const onRandom = () => {
 			const colors = state.colors.length
 			for (let i = 0; i < colors; i++) {
 				for (let j = 0; j < colors; j++) {
@@ -151,16 +150,23 @@ export default function ParticleLifePage() {
 				}
 			}
 			onInput()
-		}, { signal: controller.signal })
+		}
+		const presetRandomButton = form.elements.namedItem('preset-random') as HTMLButtonElement
+		presetRandomButton.addEventListener('click', onRandom, { signal: controller.signal })
+		const randomizeButton = toolbar.elements.namedItem('randomize') as HTMLButtonElement
+		randomizeButton.addEventListener('click', onRandom, { signal: controller.signal })
 
-		const playPauseButton = form.elements.namedItem('play-pause') as HTMLButtonElement
-		playPauseButton.addEventListener('click', () => {
+		const onPlayPause = () => {
 			if (playPauseButton.getAttribute('data-state') === 'playing') {
 				current?.pause()
 			} else {
 				current?.resume()
 			}
-		}, { signal: controller.signal })
+		}
+		const playPauseButton = form.elements.namedItem('play-pause') as HTMLButtonElement
+		playPauseButton.addEventListener('click', onPlayPause, { signal: controller.signal })
+		const toolbarPlayPauseButton = toolbar.elements.namedItem('play-pause') as HTMLButtonElement
+		toolbarPlayPauseButton.addEventListener('click', onPlayPause, { signal: controller.signal })
 
 		return () => {
 			current?.stop()
@@ -176,7 +182,11 @@ export default function ParticleLifePage() {
 		<div className={styles.main}>
 			<div className={styles.head}>
 				<Head />
-				<button className={styles.showHide} onClick={() => setShowControls(c => !c)}>{showControls ? '◀︎ hide controls' : '▶︎'}</button>
+				<form className={styles.toolbar} ref={toolbarRef}>
+					<button type="button" onClick={() => setShowControls(c => !c)}>{showControls ? '← hide controls' : '→'}</button>
+					<button type="button" name="randomize" data-hidden={showControls}>🎲</button>
+					<button type="button" name="play-pause" data-state={play ? 'playing' : 'paused'} onClick={() => setPlay(p => !p)} data-hidden={showControls}>{play ? '⏸︎' : '▶︎'}</button>
+				</form>
 				<form className={styles.controls} ref={formRef} data-hidden={!showControls}>
 					<fieldset>
 						<legend>Particles</legend>
