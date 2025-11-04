@@ -34,7 +34,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 		ySpeedNormal: number
 	}
 
-	const tree = new TreeNode<Boid>(0, 0, side, side, 8)
+	const tree = new TreeNode<Boid>(0, 0, side, side, 5)
 
 	const boids: Boid[] = Array.from({ length: COUNT })
 
@@ -88,6 +88,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 
 	let lastTime = 0
 	let frame = 0
+	const queryCache = new Set<Boid>()
 	let rafId = requestAnimationFrame(function animate(time) {
 		rafId = requestAnimationFrame(animate)
 		const first = lastTime === 0
@@ -100,6 +101,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 		ctx.clearRect(0, 0, side, side)
 
 		const max = Math.max(params.sight, params.space)
+		const max_sq = max * max
 
 		for (let i = 0; i < boids.length; i++) {
 			const boid = boids[i]
@@ -158,16 +160,16 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 				let centerX = 0
 				let centerY = 0
 
-				const neighbors = tree.query(boid.x, boid.y, max)
+				queryCache.clear()
+				const neighbors = tree.query(boid.x, boid.y, max, queryCache)
 
 				for (const other of neighbors) {
 					if (other === boid) continue
 					const dx = other.x - boid.x
-					if (dx > max || dx < -max) continue
 					const dy = other.y - boid.y
-					if (dy > max || dy < -max) continue
-					const distance = Math.sqrt(dx * dx + dy * dy)
-					if (distance > max) continue
+					const distance_sq = dx * dx + dy * dy
+					if (distance_sq > max_sq) continue
+					const distance = Math.sqrt(distance_sq)
 
 					if (distance < params.sight) {
 						inSightCount++
@@ -242,7 +244,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, side: numbe
 				boid.y = side
 			}
 
-			if (frame % 5 === 0)
+			if (frame % 10 === 0)
 				tree.update(boid)
 
 			drawTriangle(boid.x, boid.y, boid.radians)
