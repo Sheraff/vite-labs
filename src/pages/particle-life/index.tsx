@@ -208,7 +208,7 @@ export default function ParticleLifePage() {
 											<span className={styles.color} style={{ '--color': COLORS[i % COLORS.length] } as React.CSSProperties} />
 										</th>
 										<td>
-											<input type="number" name={`particles_${i}_count`} defaultValue="1500" min="0" max="2000" step="1" />
+											<input type="number" name={`particles_${i}_count`} defaultValue="1750" min="0" max="2000" step="1" />
 										</td>
 									</tr>
 								))}
@@ -268,16 +268,16 @@ export default function ParticleLifePage() {
 								<tr>
 									<th scope="row">Repulse</th>
 									<td>
-										<input type="range" name="repulse_range" defaultValue="22" min="0" max="100" step="1" />
+										<input type="range" name="repulse_range" defaultValue="26" min="0" max="100" step="1" />
 									</td>
 									<td>
-										<input type="range" name="repulse_strength" defaultValue="34" min="0" max="100" step="1" />
+										<input type="range" name="repulse_strength" defaultValue="30" min="0" max="100" step="1" />
 									</td>
 								</tr>
 								<tr>
 									<th scope="row">Attract</th>
 									<td>
-										<input type="range" name="attract_range" defaultValue="44" min="0" max="100" step="1" />
+										<input type="range" name="attract_range" defaultValue="26" min="0" max="100" step="1" />
 									</td>
 									<td>
 										<input type="range" name="attract_strength" defaultValue="30" min="0" max="100" step="1" />

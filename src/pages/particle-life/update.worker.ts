@@ -192,7 +192,7 @@ function update(dt: number, frameCount: number) {
 			if (distSq > maxSq) continue
 			const dist = Math.sqrt(distSq)
 
-			if (dist < 4) {
+			if (dist < 3) {
 				// Collision (elastic bounce)
 				const nvx = vx[j]
 				const nvy = vy[j]
@@ -237,16 +237,16 @@ function update(dt: number, frameCount: number) {
 		pvx *= dampen
 		pvy *= dampen
 
-		if (pvx > 100) pvx = 100
-		else if (pvx < -100) pvx = -100
-		if (pvy > 100) pvy = 100
-		else if (pvy < -100) pvy = -100
+		// if (pvx > 100) pvx = 100
+		// else if (pvx < -100) pvx = -100
+		// if (pvy > 100) pvy = 100
+		// else if (pvy < -100) pvy = -100
 
 		vx[i] = pvx
 		vy[i] = pvy
 
-		px += pvx * dt
-		py += pvy * dt
+		px += pvx * dt * 2
+		py += pvy * dt * 2
 
 		x[i] = px
 		y[i] = py
