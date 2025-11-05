@@ -14,6 +14,7 @@ export function Head() {
 			<h1 style={{ viewTransitionName: route }} className={styles.both}>{title}</h1>
 			{description && <p className={styles.both + ' ' + styles.desc}>{description}</p>}
 			<a href={source} target="_blank" className={styles.both}>view source on github</a>
+			<title>{`${title} - Sheraff demos`}</title>
 		</>
 	)
 }
