@@ -195,35 +195,34 @@ function update(dt: number, frameCount: number) {
 			if (distSq > maxSq) return
 			const dist = Math.sqrt(distSq)
 
-			// if (dist < 4) {
-			// 	// Collision (elastic bounce)
-			// 	const nvx = vx[j]
-			// 	const nvy = vy[j]
-			// 	const relVelX = pvx - nvx
-			// 	const relVelY = pvy - nvy
-			// 	const dot = (relVelX * dx + relVelY * dy) / dist
-			// 	if (dot > 0) {
-			// 		const impulseX = (dot * dx) / dist
-			// 		const impulseY = (dot * dy) / dist
-			// 		pvx -= impulseX * 0.5
-			// 		pvy -= impulseY * 0.5
-			// 	}
-			// } else
-			if (dist < repulse) {
+			if (dist < 0.5) {
+				// Collision (elastic bounce) (also avoids division by zero)
+				const nvx = vx[j]
+				const nvy = vy[j]
+				const relVelX = pvx - nvx
+				const relVelY = pvy - nvy
+				const dot = (relVelX * dx + relVelY * dy) / dist
+				if (dot > 0) {
+					const impulseX = (dot * dx) / dist
+					const impulseY = (dot * dy) / dist
+					pvx -= impulseX * 0.5
+					pvy -= impulseY * 0.5
+				}
+			} else if (dist < repulse) {
 				// Repulse
-				const power = (repulse - dist) * inv_repulse
-				const mult = power * repulseStrengthDt / dist
-				pvx -= dx * mult
-				pvy -= dy * mult
+				const power = (repulse - dist) * inv_repulse // TODO use some easing to repulse more strongly when closer
+				const distRatio = power * repulseStrengthDt / (Math.abs(dx) + Math.abs(dy))
+				pvx -= dx * distRatio
+				pvy -= dy * distRatio
 			} else {
 				// Attract
 				const ncolor = color[j]
 				const attraction = colorDef.attractions[ncolor]
 				if (attraction === 0) return
 				const power = attraction * Math.abs((dist - repulse) * inv_max_minus_repulse * 2 - 1)
-				const mult = power * attractStrengthDt / dist
-				pvx += dx * mult
-				pvy += dy * mult
+				const distRatio = power * attractStrengthDt / (Math.abs(dx) + Math.abs(dy))
+				pvx += dx * distRatio
+				pvy += dy * distRatio
 			}
 		})
 
