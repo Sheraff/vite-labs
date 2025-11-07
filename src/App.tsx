@@ -57,6 +57,9 @@ const formatter = new Intl.DateTimeFormat('en', {
 })
 
 function sortDates(a: number, b: number) {
+  if (a === b) return 0
+  if (a === 0) return 1
+  if (b === 0) return -1
   if (Number.isNaN(a)) return 1
   if (Number.isNaN(b)) return -1
   return a - b
