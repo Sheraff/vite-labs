@@ -234,8 +234,8 @@ export const ROUTES = {
 			tags: ['simulation', 'webgpu', 'particles', 'wip'],
 		},
 		git: {
-			lastModified: 0,
-			firstAdded: 0
+			lastModified: 1762551884000,
+			firstAdded: 1762551884000
 		},
 	},
 	"particle-life": {
