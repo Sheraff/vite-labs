@@ -38,7 +38,7 @@ import ants_shader_image from "./pages/ants-shader/screen.png"
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "visual-exec" | "tinkerbell-map" | "swarm-pathfinding" | "star-rating" | "spring-fluid" | "spider-inverse-kinematics" | "snakebird" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "polka-fireflies" | "perlin-ripples" | "particle-life" | "paint-worklet" | "pacman" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "maze-generation" | "lightning" | "intl-tuesday" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "fireflies" | "deterministic-plinko" | "cursor-projection" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "ants-shader" | "ants" | "a-star"
+export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "visual-exec" | "tinkerbell-map" | "swarm-pathfinding" | "star-rating" | "spring-fluid" | "spider-inverse-kinematics" | "snakebird" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "polka-fireflies" | "perlin-ripples" | "particle-life-gpu" | "particle-life" | "paint-worklet" | "pacman" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "maze-generation" | "lightning" | "intl-tuesday" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "fireflies" | "deterministic-plinko" | "cursor-projection" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "ants-shader" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
@@ -227,6 +227,17 @@ export const ROUTES = {
 			firstAdded: 1721823247000
 		},
 	},
+	"particle-life-gpu": {
+		Component: lazy(() => import("./pages/particle-life-gpu/index.tsx")),
+		meta: {
+			title: 'Particle Life GPU',
+			tags: ['simulation', 'webgpu', 'particles', 'wip'],
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
+		},
+	},
 	"particle-life": {
 		Component: lazy(() => import("./pages/particle-life/index.tsx")),
 		meta: {
@@ -235,7 +246,7 @@ export const ROUTES = {
 			tags: ['simulation', 'canvas', 'particles'],
 		},
 		git: {
-			lastModified: 1762282920000,
+			lastModified: 1762433687000,
 			firstAdded: 1760880322000
 		},
 	},
