@@ -20,6 +20,7 @@ export const meta: RouteMeta = {
 
 export default function ParticleLifeGPUPage() {
 	const canvasRef = useRef<HTMLCanvasElement>(null)
+	const randomizeRef = useRef<HTMLButtonElement>(null)
 	const [supported] = useState(() => Boolean(navigator.gpu))
 	const [fps, setFps] = useState(0)
 
@@ -31,33 +32,53 @@ export default function ParticleLifeGPUPage() {
 		canvas.width = window.innerWidth * devicePixelRatio
 		canvas.height = window.innerHeight * devicePixelRatio
 
+		const randomizeButton = randomizeRef.current!
+
 		const frameCounter = makeFrameCounter(60)
-		start(controller, canvas, (dt) => setFps(Math.round(frameCounter(dt / 1000))))
+		start({
+			controller,
+			canvas,
+			onFrame: (dt) => setFps(Math.round(frameCounter(dt / 1000))),
+			controls: {
+				randomize: randomizeButton,
+			}
+		})
 
 		return () => {
 			controller.abort()
 		}
 	}, [supported])
-	
+
 	const [numberFormat] = useState(() => new Intl.NumberFormat('en-US'))
 
 	return (
 		<div className={styles.main}>
 			<div className={styles.head}>
 				<Head />
-				{supported && <pre>{numberFormat.format(particleCount)} particles, {fps} fps</pre>}
 				{!supported && <pre>Your browser does not support WebGPU.</pre>}
+				{supported && <>
+					<pre>{numberFormat.format(particleCount)} particles, {fps} fps</pre>
+					<button ref={randomizeRef} type="button" name="randomize">🎲</button>
+				</>}
 			</div>
 			<canvas ref={canvasRef} />
 		</div>
 	)
 }
 
-async function start(
+async function start({
+	controller,
+	canvas,
+	onFrame,
+	controls,
+}: {
 	controller: AbortController,
 	canvas: HTMLCanvasElement,
 	onFrame: (dt: number) => void,
-) {
+	controls: {
+		randomize: HTMLButtonElement,
+	},
+}) {
 
 	const onAbort = (cb: () => void) => {
 		if (controller.signal.aborted) return
@@ -102,7 +123,7 @@ async function start(
 	const particlePositionBuffer = device.createBuffer({
 		label: 'particle position storage buffer',
 		size: particleCount * 2 * Float32Array.BYTES_PER_ELEMENT,
-		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+		usage: GPUBufferUsage.STORAGE,
 		mappedAtCreation: true,
 	})
 	{
@@ -117,7 +138,7 @@ async function start(
 	const particleColorBuffer = device.createBuffer({
 		label: 'particle color storage buffer',
 		size: particleCount * 1 * Uint32Array.BYTES_PER_ELEMENT,
-		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+		usage: GPUBufferUsage.STORAGE,
 		mappedAtCreation: true,
 	})
 	{
@@ -131,7 +152,7 @@ async function start(
 	const particleVelocityBuffer = device.createBuffer({
 		label: 'particle velocity storage buffer',
 		size: particleCount * 2 * Float32Array.BYTES_PER_ELEMENT,
-		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+		usage: GPUBufferUsage.STORAGE,
 		mappedAtCreation: true,
 	})
 	{
@@ -143,6 +164,17 @@ async function start(
 		particleVelocityBuffer.unmap()
 		onAbort(() => particleVelocityBuffer.destroy())
 	}
+	function makeInteractionMatrix(buffer = new ArrayBuffer(numberOfColors * numberOfColors * Float32Array.BYTES_PER_ELEMENT)) {
+		const staticStorageArray = new Float32Array(buffer)
+		for (let i = 0; i < numberOfColors; i++) {
+			for (let j = 0; j < numberOfColors; j++) {
+				staticStorageArray[i * numberOfColors + j] = Math.random() * 2 - 1
+				// staticStorageArray[i * numberOfColors + j] = i === j ? 1 : 0
+			}
+		}
+
+		return buffer
+	}
 	const particleInteractionsBuffer = device.createBuffer({
 		label: 'particle interactions storage buffer',
 		size: numberOfColors * numberOfColors * Float32Array.BYTES_PER_ELEMENT,
@@ -150,13 +182,8 @@ async function start(
 		mappedAtCreation: true,
 	})
 	{
-		const staticStorageArray = new Float32Array(particleInteractionsBuffer.getMappedRange())
-		for (let i = 0; i < numberOfColors; i++) {
-			for (let j = 0; j < numberOfColors; j++) {
-				staticStorageArray[i * numberOfColors + j] = Math.random() * 2 - 1
-				// staticStorageArray[i * numberOfColors + j] = i === j ? 1 : 0
-			}
-		}
+		const buffer = particleInteractionsBuffer.getMappedRange()
+		makeInteractionMatrix(buffer)
 		particleInteractionsBuffer.unmap()
 		onAbort(() => particleInteractionsBuffer.destroy())
 	}
@@ -164,28 +191,28 @@ async function start(
 	const binSizeBuffer = device.createBuffer({
 		label: 'bin size storage buffer',
 		size: binCount * Uint32Array.BYTES_PER_ELEMENT,
-		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
+		usage: GPUBufferUsage.STORAGE,
 	})
 	onAbort(() => binSizeBuffer.destroy())
 
 	const binOffsetBuffer = device.createBuffer({
 		label: 'bin offset storage buffer',
 		size: binCount * Uint32Array.BYTES_PER_ELEMENT,
-		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
+		usage: GPUBufferUsage.STORAGE,
 	})
 	onAbort(() => binOffsetBuffer.destroy())
 
 	const binCursorBuffer = device.createBuffer({
 		label: 'bin cursor storage buffer',
 		size: binCount * Uint32Array.BYTES_PER_ELEMENT,
-		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
+		usage: GPUBufferUsage.STORAGE,
 	})
 	onAbort(() => binCursorBuffer.destroy())
 
 	const binContentsBuffer = device.createBuffer({
 		label: 'bin contents storage buffer',
 		size: particleCount * Uint32Array.BYTES_PER_ELEMENT,
-		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
+		usage: GPUBufferUsage.STORAGE,
 	})
 	onAbort(() => binContentsBuffer.destroy())
 
@@ -547,7 +574,7 @@ async function start(
 	const drawConfigBuffer = device.createBuffer({
 		label: 'draw config uniform buffer',
 		size: 2 * 4,
-		usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+		usage: GPUBufferUsage.UNIFORM,
 		mappedAtCreation: true,
 	})
 	{
@@ -649,7 +676,7 @@ async function start(
 		lastTime = time
 		frameCount++
 		onFrame(dt)
-		if (frameCount > 10) {
+		if (frameCount > 4) {
 			computeBins()
 			frameCount = 0
 		}
@@ -665,5 +692,10 @@ async function start(
 		} else {
 			playing = false
 		}
+	}, { signal: controller.signal })
+
+	controls.randomize.addEventListener('click', () => {
+		const buffer = makeInteractionMatrix()
+		device.queue.writeBuffer(particleInteractionsBuffer, 0, buffer)
 	}, { signal: controller.signal })
 }

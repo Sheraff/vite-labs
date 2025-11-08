@@ -232,11 +232,11 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/particle-life-gpu/index.tsx")),
 		meta: {
 			title: 'Particle Life GPU',
-			tags: ['simulation', 'webgpu', 'particles', 'wip'],
+			tags: ['simulation', 'webgpu', 'particles'],
 			image: particle_life_gpu_image
 		},
 		git: {
-			lastModified: 1762621979000,
+			lastModified: 1762625075000,
 			firstAdded: 1762551884000
 		},
 	},
