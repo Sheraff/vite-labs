@@ -78,13 +78,14 @@ async function start(
 	const width = ctx.canvas.width
 	const height = ctx.canvas.height
 
-	const cellSize = 100
+	const cellSize = 30
 	const widthDivisions = Math.ceil(width / cellSize)
 	const heightDivisions = Math.ceil(height / cellSize)
 	const toBinX = widthDivisions / width
 	const toBinY = heightDivisions / height
 	const binCount = widthDivisions * heightDivisions
-	const particleCount = 20_000
+	// const particleCount = 150_000
+	const particleCount = 100_000
 
 	const particlePositionBuffer = device.createBuffer({
 		label: 'particle position storage buffer',
@@ -410,8 +411,8 @@ async function start(
 		// interaction parameters
 		asFloat32[3] = 15 // repulsion range
 		asFloat32[4] = 26 // attraction range
-		asFloat32[5] = 100 // repulsion strength
-		asFloat32[6] = 30 // attraction strength
+		asFloat32[5] = 5 // repulsion strength
+		asFloat32[6] = 5 // attraction strength
 		// binning info
 		asFloat32[7] = toBinX
 		asFloat32[8] = toBinY
@@ -624,10 +625,12 @@ async function start(
 		device.queue.submit([commandBuffer])
 	}
 
+	let playing = document.visibilityState === 'visible'
 	let lastTime = performance.now()
 	let rafId = requestAnimationFrame(function frame(time) {
 		if (controller.signal.aborted) return
 		rafId = requestAnimationFrame(frame)
+		if (!playing) return
 		const dt = time - lastTime
 		lastTime = time
 		onFrame(dt)
@@ -637,4 +640,12 @@ async function start(
 	})
 	controller.signal.addEventListener('abort', () => cancelAnimationFrame(rafId), { once: true })
 
+	window.addEventListener('visibilitychange', () => {
+		if (document.visibilityState === 'visible') {
+			playing = true
+			lastTime = performance.now()
+		} else {
+			playing = false
+		}
+	}, { signal: controller.signal })
 }

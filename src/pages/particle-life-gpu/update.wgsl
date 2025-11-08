@@ -93,7 +93,7 @@ fn update(
 					continue;
 				}
 
-				if (dist < 0.5) {
+				if (dist < 0.1) {
 					// Collision (elastic bounce) (also avoids division by zero)
 					let other_velocity = particleVelocities[other_index];
 					velocity -= dot(velocity - other_velocity, offset / dist) * (offset / dist);
@@ -108,7 +108,7 @@ fn update(
 					let interaction_strength = interactions[interaction_index];
 					let normalized_distance = (config.attractionRange - (dist - config.repulsionRange)) / config.attractionRange;
 					let symmetric_distance = abs(normalized_distance * 2.0 - 1.0);
-					let strength = symmetric_distance * interaction_strength * dt;
+					let strength = symmetric_distance * interaction_strength * config.attractionStrength * dt;
 					velocity += normalize(offset) * strength;
 				}
 			}
@@ -116,11 +116,7 @@ fn update(
 	}
 
 	// dampen velocity
-	// velocity -= normalize(velocity) * 0.01 * dt;
-	let speed = length(velocity);
-	if (speed > 0.0) {
-		velocity -= (velocity / speed) * 0.01 * dt;
-	}
+	velocity -= normalize(velocity) * 0.01 * dt;
 
 	// update position
 	position += velocity * dt;
