@@ -57,7 +57,10 @@ fn update(
 	let half_width = config.width / 2.0;
 	let half_height = config.height / 2.0;
 
-	// var total_count = 0u;
+	let repulsion_range = config.repulsionRange;
+	let pre_mult_repulsion_strength = config.repulsionStrength * dt / repulsion_range;
+	let pre_mult_attraction_strength = config.attractionStrength * dt;
+	let pre_mult_inv_attraction_range = 1 / config.attractionRange;
 
 	for (var bin_x = min_bin_x; bin_x <= max_bin_x; bin_x++) {
 		let wrapped_bin_x = (bin_x + wd) % wd;
@@ -92,24 +95,18 @@ fn update(
 
 				let dist = length(offset);
 
-				if (dist < config.repulsionRange) {
+				if (dist < repulsion_range) {
 					// Repulsion
-					let strength = (config.repulsionRange - dist) / config.repulsionRange * config.repulsionStrength * dt;
+					let strength = (repulsion_range - dist) * pre_mult_repulsion_strength;
 					velocity -= normalize(offset) * strength;
 				} else if (dist < range) {
 					// Attraction
 					let other_color = particleColors[other_index];
 					let interaction_index = color * COLOR_COUNT + other_color;
 					let interaction_strength = interactions[interaction_index];
-					// if (interaction_strength > 0.0) {
-					// 	total_count += 1u;
-					// }
-					let normalized_distance = (config.attractionRange - (dist - config.repulsionRange)) / config.attractionRange;
+					let normalized_distance = 1 - (dist - repulsion_range) * pre_mult_inv_attraction_range;
 					let symmetric_distance = 1.0 - abs(normalized_distance * 2.0 - 1.0);
-					let strength = symmetric_distance * interaction_strength * config.attractionStrength * dt;
-					// if (total_count > 200u) {
-					// 	strength = strength * (200.0 / f32(total_count));
-					// }
+					let strength = symmetric_distance * interaction_strength * pre_mult_attraction_strength;
 					velocity += normalize(offset) * strength;
 				}
 			}
