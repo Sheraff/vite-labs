@@ -680,7 +680,8 @@ async function start({
 			computeBins()
 			frameCount = 0
 		}
-		updateParticles(dt / 1000)
+		const scaledDt = Math.min(dt, 16.6667) // Cap at 60fps equivalent
+		updateParticles(scaledDt / 1000)
 		drawParticles()
 	})
 	controller.signal.addEventListener('abort', () => cancelAnimationFrame(rafId), { once: true })
