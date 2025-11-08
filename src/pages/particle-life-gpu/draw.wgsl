@@ -17,13 +17,15 @@ const positions = array<vec2f, 6>(
 	vec2f(-1,  1),
 );
 
-const colors = array<vec4f, 6>(
-	vec4f(1.0, 0.0, 0.0, 1.0), // red
-	vec4f(0.0, 1.0, 0.0, 1.0), // green
-	vec4f(0.5, 0.5, 1.0, 1.0), // blue
-	vec4f(1.0, 1.0, 0.0, 1.0), // yellow
-	vec4f(1.0, 0.0, 1.0, 1.0), // magenta
-	vec4f(0.0, 1.0, 1.0, 1.0), // cyan
+const colors = array<vec4f, 8>(
+	vec4f(0.72, 0.07, 0.02, 1.0), // red
+	vec4f(0.12, 0.67, 0.89, 1.0), // cyan
+	vec4f(0.84, 1.0, 0.19, 1.0), // yellow
+	vec4f(0.53, 0.05, 0.87, 1.0), // indigo
+	vec4f(0.04, 0.56, 0.04, 1.0), // green
+	vec4f(0.56, 0.56, 0.77, 1.0), // lavender
+	vec4f(1.0, 0.65, 0.0, 1.0), // orange
+	vec4f(0.93, 0.51, 0.93, 1.0), // violet
 );
 
 struct VertexOutput {

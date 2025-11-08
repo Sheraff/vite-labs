@@ -8,6 +8,10 @@ import drawShader from './draw.wgsl?raw'
 import binShader from './bin-fill.wgsl?raw'
 import updateShader from './update.wgsl?raw'
 
+// const particleCount = 200_000
+const particleCount = 100_000
+// const particleCount = 20_000
+
 export const meta: RouteMeta = {
 	title: 'Particle Life GPU',
 	tags: ['simulation', 'webgpu', 'particles'],
@@ -34,12 +38,14 @@ export default function ParticleLifeGPUPage() {
 			controller.abort()
 		}
 	}, [supported])
+	
+	const [numberFormat] = useState(() => new Intl.NumberFormat('en-US'))
 
 	return (
 		<div className={styles.main}>
 			<div className={styles.head}>
 				<Head />
-				{supported && <pre>{fps} FPS</pre>}
+				{supported && <pre>{numberFormat.format(particleCount)} particles, {fps} fps</pre>}
 				{!supported && <pre>Your browser does not support WebGPU.</pre>}
 			</div>
 			<canvas ref={canvasRef} />
@@ -90,9 +96,8 @@ async function start(
 	const toBinX = widthDivisions / width
 	const toBinY = heightDivisions / height
 	const binCount = widthDivisions * heightDivisions
-	// const particleCount = 200_000
-	const particleCount = 100_000
-	// const particleCount = 20_000
+
+	const numberOfColors = 8
 
 	const particlePositionBuffer = device.createBuffer({
 		label: 'particle position storage buffer',
@@ -118,7 +123,7 @@ async function start(
 	{
 		const staticStorageArray = new Uint32Array(particleColorBuffer.getMappedRange())
 		for (let i = 0; i < particleCount; i++) {
-			staticStorageArray[i] = i % 6
+			staticStorageArray[i] = i % numberOfColors
 		}
 		particleColorBuffer.unmap()
 		onAbort(() => particleColorBuffer.destroy())
@@ -140,16 +145,16 @@ async function start(
 	}
 	const particleInteractionsBuffer = device.createBuffer({
 		label: 'particle interactions storage buffer',
-		size: 6 * 6 * Float32Array.BYTES_PER_ELEMENT,
+		size: numberOfColors * numberOfColors * Float32Array.BYTES_PER_ELEMENT,
 		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
 		mappedAtCreation: true,
 	})
 	{
 		const staticStorageArray = new Float32Array(particleInteractionsBuffer.getMappedRange())
-		for (let i = 0; i < 6; i++) {
-			for (let j = 0; j < 6; j++) {
-				staticStorageArray[i * 6 + j] = Math.random() * 2 - 1
-				// staticStorageArray[i * 6 + j] = i === j ? 1 : 0
+		for (let i = 0; i < numberOfColors; i++) {
+			for (let j = 0; j < numberOfColors; j++) {
+				staticStorageArray[i * numberOfColors + j] = Math.random() * 2 - 1
+				// staticStorageArray[i * numberOfColors + j] = i === j ? 1 : 0
 			}
 		}
 		particleInteractionsBuffer.unmap()
@@ -612,7 +617,7 @@ async function start(
 		colorAttachments: [
 			{
 				view: null! as GPUTextureView,
-				clearValue: [0.1, 0.1, 0.1, 1],
+				clearValue: [0.06, 0.06, 0.08, 1],
 				loadOp: 'clear',
 				storeOp: 'store',
 			},
