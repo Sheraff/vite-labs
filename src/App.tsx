@@ -22,12 +22,12 @@ export default function App() {
   return (
     <>
       <h1 className={styles.h1}>🤍 none of this is useful 🤍</h1>
-      {list.map(([route, { meta, git }]) => (
+      {list.map(([route, { meta, git }], i) => (
         <Link key={route} className={styles.route} href={`/${route as Routes}`}>
           <h2 style={{ viewTransitionName: route }} className={styles.link}>{meta.title}</h2>
           {'tags' in meta && meta.tags.length > 0 && (<p className={styles.tags}>{meta.tags.map(t => <span key={t}>{t}</span>)}</p>)}
           <p>Created on: {git.firstAdded && formatter.format(git.firstAdded)}</p>
-          {'image' in meta && meta.image && <img src={meta.image} className={styles.bg} />}
+          {'image' in meta && meta.image && <img src={meta.image} className={styles.bg} loading={i > 5 ? 'lazy' : 'eager'} />}
         </Link>
       ))}
     </>
