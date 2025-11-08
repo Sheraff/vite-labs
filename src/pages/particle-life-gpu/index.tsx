@@ -29,8 +29,8 @@ export default function ParticleLifeGPUPage() {
 		const canvas = canvasRef.current!
 		const controller = new AbortController()
 
-		canvas.width = window.innerWidth * devicePixelRatio
-		canvas.height = window.innerHeight * devicePixelRatio
+		canvas.width = window.innerWidth * devicePixelRatio * 2
+		canvas.height = window.innerHeight * devicePixelRatio * 2
 
 		const randomizeButton = randomizeRef.current!
 
@@ -633,11 +633,25 @@ async function start({
 		fragment: {
 			module: drawModule,
 			entryPoint: 'fs',
-			targets: [{ format }],
+			targets: [{
+				format,
+				blend: {
+					color: {
+						srcFactor: 'src-alpha',
+						dstFactor: 'one-minus-src-alpha',
+						operation: 'add'
+					},
+					alpha: {
+						srcFactor: 'one',
+						dstFactor: 'one-minus-src-alpha',
+						operation: 'add'
+					}
+				}
+			}],
 		},
-		primitive: {
-			topology: 'point-list',
-		},
+		// primitive: {
+		// 	topology: 'point-list',
+		// },
 	})
 	const renderPassDescriptor = {
 		label: 'draw render pass descriptor',
@@ -659,7 +673,7 @@ async function start({
 		pass.setPipeline(drawPipeline)
 		pass.setBindGroup(0, drawConfigBindGroup)
 		pass.setBindGroup(1, drawParticlesBindGroup)
-		pass.draw(1, particleCount)
+		pass.draw(6, particleCount)
 		pass.end()
 		const commandBuffer = encoder.finish()
 		device.queue.submit([commandBuffer])
