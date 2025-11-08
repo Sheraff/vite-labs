@@ -31,7 +31,7 @@ struct Config {
 
 const COLOR_COUNT = 6u;
 
-@compute @workgroup_size(256)
+@compute @workgroup_size(64)
 fn update(
 	@builtin(global_invocation_id) id: vec3u,
 ) {
@@ -56,6 +56,8 @@ fn update(
 
 	let half_width = config.width / 2.0;
 	let half_height = config.height / 2.0;
+
+	// var total_count = 0u;
 
 	for (var bin_x = min_bin_x; bin_x <= max_bin_x; bin_x++) {
 		let wrapped_bin_x = (bin_x + wd) % wd;
@@ -99,9 +101,15 @@ fn update(
 					let other_color = particleColors[other_index];
 					let interaction_index = color * COLOR_COUNT + other_color;
 					let interaction_strength = interactions[interaction_index];
+					// if (interaction_strength > 0.0) {
+					// 	total_count += 1u;
+					// }
 					let normalized_distance = (config.attractionRange - (dist - config.repulsionRange)) / config.attractionRange;
 					let symmetric_distance = 1.0 - abs(normalized_distance * 2.0 - 1.0);
 					let strength = symmetric_distance * interaction_strength * config.attractionStrength * dt;
+					// if (total_count > 200u) {
+					// 	strength = strength * (200.0 / f32(total_count));
+					// }
 					velocity += normalize(offset) * strength;
 				}
 			}
@@ -109,7 +117,7 @@ fn update(
 	}
 
 	// dampen velocity
-	velocity -= velocity * 8 * dt;
+	velocity -= vec2f(velocity.x * velocity.x * sign(velocity.x), velocity.y * velocity.y * sign(velocity.y)) * 0.2 * dt;
 
 	// update position
 	position += velocity * dt;

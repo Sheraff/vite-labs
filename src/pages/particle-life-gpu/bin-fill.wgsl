@@ -13,7 +13,7 @@ struct Config {
 @group(1) @binding(3) var<storage, read_write> binContents: array<u32>;
 @group(2) @binding(0) var<storage, read> particlePositions: array<vec2f>;
 
-@compute @workgroup_size(256)
+@compute @workgroup_size(64)
 fn clear(
 	@builtin(global_invocation_id) id: vec3u,
 ) {
@@ -26,7 +26,7 @@ fn clear(
 	atomicStore(&binCursor[i], 0u);
 }
 
-@compute @workgroup_size(256)
+@compute @workgroup_size(64)
 fn size(
 	@builtin(global_invocation_id) id: vec3u,
 ) {
@@ -43,7 +43,7 @@ fn size(
 	atomicAdd(&binSize[index], 1u);
 }
 
-@compute @workgroup_size(256)
+@compute @workgroup_size(64)
 fn prepare(
 	@builtin(global_invocation_id) id: vec3u,
 ) {
@@ -58,7 +58,7 @@ fn prepare(
 	binOffset[i] = offset;
 }
 
-@compute @workgroup_size(256)
+@compute @workgroup_size(64)
 fn fill(
 	@builtin(global_invocation_id) id: vec3u,
 ) {

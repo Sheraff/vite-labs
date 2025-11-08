@@ -79,7 +79,7 @@ async function start(
 	const width = ctx.canvas.width
 	const height = ctx.canvas.height
 
-	const repulsionRange = 25
+	const repulsionRange = 35
 	const attractionRange = 26
 	const repulsionStrength = 30
 	const attractionStrength = 30
@@ -90,7 +90,7 @@ async function start(
 	const toBinX = widthDivisions / width
 	const toBinY = heightDivisions / height
 	const binCount = widthDivisions * heightDivisions
-	// const particleCount = 130_000
+	// const particleCount = 200_000
 	const particleCount = 100_000
 	// const particleCount = 20_000
 
@@ -331,16 +331,16 @@ async function start(
 		pass.setBindGroup(0, binConfigBindGroup)
 		pass.setBindGroup(1, binBindGroup)
 		pass.setBindGroup(2, particlePositionBindGroup)
-		pass.dispatchWorkgroups(Math.ceil(binCount / 256))
+		pass.dispatchWorkgroups(Math.ceil(binCount / 64))
 
 		pass.setPipeline(binSizePipeline)
-		pass.dispatchWorkgroups(Math.ceil(particleCount / 256))
+		pass.dispatchWorkgroups(Math.ceil(particleCount / 64))
 
 		pass.setPipeline(binPreparePipeline)
-		pass.dispatchWorkgroups(Math.ceil(binCount / 256))
+		pass.dispatchWorkgroups(Math.ceil(binCount / 64))
 
 		pass.setPipeline(binFillPipeline)
-		pass.dispatchWorkgroups(Math.ceil(particleCount / 256))
+		pass.dispatchWorkgroups(Math.ceil(particleCount / 64))
 
 		pass.end()
 
@@ -519,7 +519,7 @@ async function start(
 		pass.setBindGroup(2, updateConfigBindGroup)
 		pass.setBindGroup(3, updateBinsBindGroup)
 
-		pass.dispatchWorkgroups(Math.ceil(particleCount / 256))
+		pass.dispatchWorkgroups(Math.ceil(particleCount / 64))
 
 		pass.end()
 		const commandBuffer = encoder.finish()
@@ -633,6 +633,7 @@ async function start(
 		device.queue.submit([commandBuffer])
 	}
 
+	let frameCount = 0
 	let playing = document.visibilityState === 'visible'
 	let lastTime = performance.now()
 	let rafId = requestAnimationFrame(function frame(time) {
@@ -641,8 +642,12 @@ async function start(
 		if (!playing) return
 		const dt = time - lastTime
 		lastTime = time
+		frameCount++
 		onFrame(dt)
-		computeBins()
+		if (frameCount > 10) {
+			computeBins()
+			frameCount = 0
+		}
 		updateParticles(dt / 1000)
 		drawParticles()
 	})
