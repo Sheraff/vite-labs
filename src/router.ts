@@ -15,6 +15,7 @@ import quad_tree_image from "./pages/quad-tree/screen.png"
 import pong_pang_image from "./pages/pong-pang/screen.png"
 import polka_fireflies_image from "./pages/polka-fireflies/screen.png"
 import perlin_ripples_image from "./pages/perlin-ripples/screen.png"
+import particle_life_gpu_image from "./pages/particle-life-gpu/screen.png"
 import particle_life_image from "./pages/particle-life/screen.png"
 import paint_worklet_image from "./pages/paint-worklet/screen.png"
 import normal_map_image from "./pages/normal-map/screen.png"
@@ -232,9 +233,10 @@ export const ROUTES = {
 		meta: {
 			title: 'Particle Life GPU',
 			tags: ['simulation', 'webgpu', 'particles', 'wip'],
+			image: particle_life_gpu_image
 		},
 		git: {
-			lastModified: 1762608552000,
+			lastModified: 1762611209000,
 			firstAdded: 1762551884000
 		},
 	},
