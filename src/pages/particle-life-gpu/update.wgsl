@@ -36,7 +36,7 @@ fn update(
 	@builtin(global_invocation_id) id: vec3u,
 ) {
 	let i = id.x;
-	if (i > config.particleCount) {
+	if (i >= config.particleCount) {
 		return;
 	}
 
@@ -116,7 +116,11 @@ fn update(
 	}
 
 	// dampen velocity
-	velocity -= normalize(velocity) * 0.01 * dt;
+	// velocity -= normalize(velocity) * 0.01 * dt;
+	let speed = length(velocity);
+	if (speed > 0.0) {
+		velocity -= (velocity / speed) * 0.01 * dt;
+	}
 
 	// update position
 	position += velocity * dt;

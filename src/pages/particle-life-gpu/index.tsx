@@ -78,7 +78,7 @@ async function start(
 	const width = ctx.canvas.width
 	const height = ctx.canvas.height
 
-	const cellSize = 32
+	const cellSize = 100
 	const widthDivisions = Math.ceil(width / cellSize)
 	const heightDivisions = Math.ceil(height / cellSize)
 	const toBinX = widthDivisions / width
