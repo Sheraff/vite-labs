@@ -79,10 +79,10 @@ async function start(
 	const width = ctx.canvas.width
 	const height = ctx.canvas.height
 
-	const repulsionRange = 35
-	const attractionRange = 26
+	const repulsionRange = 30
+	const attractionRange = 30
 	const repulsionStrength = 30
-	const attractionStrength = 30
+	const attractionStrength = 40
 
 	const cellSize = repulsionRange + attractionRange
 	const widthDivisions = Math.ceil(width / cellSize)
