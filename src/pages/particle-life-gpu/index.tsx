@@ -79,10 +79,10 @@ async function start(
 	const width = ctx.canvas.width
 	const height = ctx.canvas.height
 
-	const repulsionRange = 20
-	const attractionRange = 20
-	const repulsionStrength = 20
-	const attractionStrength = 10
+	const repulsionRange = 25
+	const attractionRange = 26
+	const repulsionStrength = 30
+	const attractionStrength = 30
 
 	const cellSize = repulsionRange + attractionRange
 	const widthDivisions = Math.ceil(width / cellSize)
@@ -90,8 +90,9 @@ async function start(
 	const toBinX = widthDivisions / width
 	const toBinY = heightDivisions / height
 	const binCount = widthDivisions * heightDivisions
-	// const particleCount = 180_000
+	// const particleCount = 130_000
 	const particleCount = 100_000
+	// const particleCount = 20_000
 
 	const particlePositionBuffer = device.createBuffer({
 		label: 'particle position storage buffer',
@@ -148,6 +149,7 @@ async function start(
 		for (let i = 0; i < 6; i++) {
 			for (let j = 0; j < 6; j++) {
 				staticStorageArray[i * 6 + j] = Math.random() * 2 - 1
+				// staticStorageArray[i * 6 + j] = i === j ? 1 : 0
 			}
 		}
 		particleInteractionsBuffer.unmap()

@@ -46,10 +46,10 @@ fn update(
 
 	let range = config.repulsionRange + config.attractionRange;
 
-	let min_bin_x = u32(floor((position.x - range) * config.binWidth));
-	let min_bin_y = u32(floor((position.y - range) * config.binHeight));
-	let max_bin_x = u32(floor((position.x + range) * config.binWidth));
-	let max_bin_y = u32(floor((position.y + range) * config.binHeight));
+	let min_bin_x = u32((position.x - range) * config.binWidth);
+	let min_bin_y = u32((position.y - range) * config.binHeight);
+	let max_bin_x = u32((position.x + range) * config.binWidth);
+	let max_bin_y = u32((position.y + range) * config.binHeight);
 
 	let wd = config.widthDivisions;
 	let hd = config.heightDivisions;
@@ -89,25 +89,18 @@ fn update(
 				}
 
 				let dist = length(offset);
-				if (dist > range) {
-					continue;
-				}
 
-				if (dist < 0.5) {
-					// Collision (elastic bounce) (also avoids division by zero)
-					let other_velocity = particleVelocities[other_index];
-					velocity -= dot(velocity - other_velocity, offset / dist) * (offset / dist);
-				} else if (dist < config.repulsionRange) {
+				if (dist < config.repulsionRange) {
 					// Repulsion
 					let strength = (config.repulsionRange - dist) / config.repulsionRange * config.repulsionStrength * dt;
 					velocity -= normalize(offset) * strength;
-				} else {
+				} else if (dist < range) {
 					// Attraction
 					let other_color = particleColors[other_index];
 					let interaction_index = color * COLOR_COUNT + other_color;
 					let interaction_strength = interactions[interaction_index];
 					let normalized_distance = (config.attractionRange - (dist - config.repulsionRange)) / config.attractionRange;
-					let symmetric_distance = abs(normalized_distance * 2.0 - 1.0);
+					let symmetric_distance = 1.0 - abs(normalized_distance * 2.0 - 1.0);
 					let strength = symmetric_distance * interaction_strength * config.attractionStrength * dt;
 					velocity += normalize(offset) * strength;
 				}
@@ -116,7 +109,7 @@ fn update(
 	}
 
 	// dampen velocity
-	velocity -= normalize(velocity) * 12 * dt;
+	velocity -= velocity * 8 * dt;
 
 	// update position
 	position += velocity * dt;
