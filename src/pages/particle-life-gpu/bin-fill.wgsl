@@ -36,8 +36,8 @@ fn size(
 	}
 
 	let position = particlePositions[i];
-	let bin_x = u32(position.x / config.binWidth);
-	let bin_y = u32(position.y / config.binHeight);
+	let bin_x = u32(position.x * config.binWidth);
+	let bin_y = u32(position.y * config.binHeight);
 	let index = bin_y * config.widthDivisions + bin_x;
 
 	atomicAdd(&binSize[index], 1u);
@@ -52,7 +52,7 @@ fn prepare(
 		return;
 	}
 	var offset = 0u;
-	for (var j: u32 = 0u; j < i; j = j + 1u) {
+	for (var j: u32 = 0u; j < i; j++) {
 		offset = offset + atomicLoad(&binSize[j]);
 	}
 	binOffset[i] = offset;
@@ -68,8 +68,8 @@ fn fill(
 	}
 
 	let position = particlePositions[i];
-	let bin_x = u32(position.x / config.binWidth);
-	let bin_y = u32(position.y / config.binHeight);
+	let bin_x = u32(position.x * config.binWidth);
+	let bin_y = u32(position.y * config.binHeight);
 	let index = bin_y * config.widthDivisions + bin_x;
 
 	let offset = atomicAdd(&binCursor[index], 1u);
