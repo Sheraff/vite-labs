@@ -10,7 +10,7 @@ import updateShader from './update.wgsl?raw'
 
 export const meta: RouteMeta = {
 	title: 'Particle Life GPU',
-	tags: ['simulation', 'webgpu', 'particles', 'wip'],
+	tags: ['simulation', 'webgpu', 'particles'],
 	image: './screen.png'
 }
 
