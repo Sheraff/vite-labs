@@ -78,13 +78,18 @@ async function start(
 	const width = ctx.canvas.width
 	const height = ctx.canvas.height
 
-	const cellSize = 30
+	const repulsionRange = 20
+	const attractionRange = 20
+	const repulsionStrength = 20
+	const attractionStrength = 10
+
+	const cellSize = repulsionRange + attractionRange
 	const widthDivisions = Math.ceil(width / cellSize)
 	const heightDivisions = Math.ceil(height / cellSize)
 	const toBinX = widthDivisions / width
 	const toBinY = heightDivisions / height
 	const binCount = widthDivisions * heightDivisions
-	// const particleCount = 150_000
+	// const particleCount = 180_000
 	const particleCount = 100_000
 
 	const particlePositionBuffer = device.createBuffer({
@@ -409,10 +414,10 @@ async function start(
 		asFloat32[1] = height
 		asUint32[2] = particleCount
 		// interaction parameters
-		asFloat32[3] = 15 // repulsion range
-		asFloat32[4] = 26 // attraction range
-		asFloat32[5] = 5 // repulsion strength
-		asFloat32[6] = 5 // attraction strength
+		asFloat32[3] = repulsionRange
+		asFloat32[4] = attractionRange
+		asFloat32[5] = repulsionStrength
+		asFloat32[6] = attractionStrength
 		// binning info
 		asFloat32[7] = toBinX
 		asFloat32[8] = toBinY

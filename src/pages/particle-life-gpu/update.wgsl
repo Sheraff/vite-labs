@@ -93,7 +93,7 @@ fn update(
 					continue;
 				}
 
-				if (dist < 0.1) {
+				if (dist < 0.5) {
 					// Collision (elastic bounce) (also avoids division by zero)
 					let other_velocity = particleVelocities[other_index];
 					velocity -= dot(velocity - other_velocity, offset / dist) * (offset / dist);
@@ -116,7 +116,7 @@ fn update(
 	}
 
 	// dampen velocity
-	velocity -= normalize(velocity) * 0.01 * dt;
+	velocity -= normalize(velocity) * 12 * dt;
 
 	// update position
 	position += velocity * dt;

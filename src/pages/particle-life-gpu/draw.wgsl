@@ -20,7 +20,7 @@ const positions = array<vec2f, 6>(
 const colors = array<vec4f, 6>(
 	vec4f(1.0, 0.0, 0.0, 1.0), // red
 	vec4f(0.0, 1.0, 0.0, 1.0), // green
-	vec4f(0.0, 0.0, 1.0, 1.0), // blue
+	vec4f(0.5, 0.5, 1.0, 1.0), // blue
 	vec4f(1.0, 1.0, 0.0, 1.0), // yellow
 	vec4f(1.0, 0.0, 1.0, 1.0), // magenta
 	vec4f(0.0, 1.0, 1.0, 1.0), // cyan
