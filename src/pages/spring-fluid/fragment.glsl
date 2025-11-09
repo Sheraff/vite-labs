@@ -16,7 +16,7 @@ const vec2 left = vec2(-1, 0);
 
 uniform float k; // spring constant
 uniform float damping; // velocity damping
-const float scale = 1.0; // scale for reading/formatting velocity/offsets
+const float scale = 1.0f; // scale for reading/formatting velocity/offsets
 uniform float clamp_value; // clamp max velocity/offsets
 uniform float turbulence_factor; // turbulence strength multiplier [0 - 10]
 
@@ -39,23 +39,57 @@ vec4 getPixel(vec2 coord) {
 }
 
 vec2 getOffset(vec4 pixel) {
-	return vec2(pixel.z * 2.0 - 1.0, pixel.a * 2.0 - 1.0) * scale;
+	return vec2(pixel.z * 2.0f - 1.0f, pixel.a * 2.0f - 1.0f) * scale;
 }
 
 vec2 getVelocity(vec4 pixel) {
-	return vec2(pixel.x * 2.0 - 1.0, pixel.y * 2.0 - 1.0) * scale;
+	return vec2(pixel.x * 2.0f - 1.0f, pixel.y * 2.0f - 1.0f) * scale;
 }
 
 bool isEdgePixel(vec2 coord) {
-	if(coord.x <= 1.0 || coord.x >= resolution.x - 1.0 || coord.y <= 1.0 || coord.y >= resolution.y - 1.0) return true;
-	if (texture(obstacles, coord / resolution.xy).r > 0.5) return true;
+	if(coord.x <= 1.0f || coord.x >= resolution.x - 1.0f || coord.y <= 1.0f || coord.y >= resolution.y - 1.0f)
+		return true;
+	if(texture(obstacles, coord / resolution.xy).r > 0.5f)
+		return true;
 	return false;
 }
 
 // random number [0,1] inclusive
 float rand(vec2 identity) {
-	vec2 seeded = identity + vec2(seed * 0.1, seed * 0.2);
-	return fract(sin(dot(seeded, vec2(12.9898, 78.233))) * 43758.5453);
+	vec2 seeded = identity + vec2(seed * 0.1f, seed * 0.2f);
+	return fract(sin(dot(seeded, vec2(12.9898f, 78.233f))) * 43758.5453f);
+}
+
+// A single iteration of Bob Jenkins' One-At-A-Time hashing algorithm for u32.
+uint hash_u32(uint x_in) {
+	uint x = x_in;
+	x += (x << 10u);
+	x ^= (x >> 6u);
+	x += (x << 3u);
+	x ^= (x >> 11u);
+	x += (x << 15u);
+	return x;
+}
+
+// Construct a float with half-open range [0:1] using low 23 bits.
+// All zeroes yields 0.0, all ones yields the next smallest representable value below 1.0.
+float float_construct_from_u32(uint m_in) {
+	uint ieeeMantissa = 0x007FFFFFu; // binary32 mantissa bitmask
+	uint ieeeOne = 0x3F800000u;      // 1.0 in IEEE binary32
+
+	uint m = m_in;
+	m &= ieeeMantissa;              // Keep only mantissa bits (fractional part)
+	m |= ieeeOne;                   // Add fractional part to 1.0
+
+	float f = uintBitsToFloat(m);        // Range [1:2]
+	return f - 1.0f;                 // Range [0:1]
+}
+
+// Pseudo-random value in half-open range [0:1] from a f32 seed.
+// from https://marktension.nl/blog/my_favorite_wgsl_random_func_so_far/
+float random_uniform(vec2 identity) {
+	float seeded = identity.x * seed * 0.1f + identity.y * seed * 0.2f;
+	return float_construct_from_u32(hash_u32(floatBitsToUint(seeded)));
 }
 
 vec2 updateForces(vec2 forces, vec2 position, vec2 direction) {
@@ -67,7 +101,7 @@ vec2 updateForces(vec2 forces, vec2 position, vec2 direction) {
 
 	vec2 spring_vec = n_position - position;
 	float current_length = length(spring_vec);
-	if (current_length > 0.001) { // avoid division by zero
+	if(current_length > 0.001f) { // avoid division by zero
 		vec2 spring_dir = spring_vec / current_length;
 		float displacement = current_length - rest_length;
 
@@ -81,17 +115,16 @@ vec2 updateForces(vec2 forces, vec2 position, vec2 direction) {
 }
 
 vec2 format(vec2 v) {
-	return clamp(v / scale * 0.5 + vec2(0.5), 0.0, 1.0);
+	return clamp(v / scale * 0.5f + vec2(0.5f), 0.0f, 1.0f);
 }
-
 
 void main() {
 	vec4 rgba = getPixel();
 
 	bool isEdge = isEdgePixel(gl_FragCoord.xy);
 
-	if (isEdge) {
-		fragColor = vec4(0.5, 0.5, 0.5, 0.5);
+	if(isEdge) {
+		fragColor = vec4(0.5f, 0.5f, 0.5f, 0.5f);
 		return;
 	}
 
@@ -100,7 +133,7 @@ void main() {
 	vec2 position = vec2(gl_FragCoord.xy + offsets);
 
 	// spring force from neighbors
-	vec2 forces = vec2(0.0, 0.0);
+	vec2 forces = vec2(0.0f, 0.0f);
 	forces = updateForces(forces, position, left);
 	forces = updateForces(forces, position, right);
 	forces = updateForces(forces, position, top);
@@ -111,24 +144,24 @@ void main() {
 	forces = updateForces(forces, position, bottom + right);
 
 	// turbulence / noise
-	if (turbulence_factor > 0.0) {
+	if(turbulence_factor > 0.0f) {
 		float turbulence_strength = turbulence_factor * length(velocity);
 		float noise = rand(gl_FragCoord.xy);
-		vec2 turbulence = vec2(cos(noise * 6.28318), sin(noise * 6.28318));
+		vec2 turbulence = vec2(cos(noise * 6.28318f), sin(noise * 6.28318f));
 		forces += turbulence * turbulence_strength;
 	}
 
 	// velocity
 	velocity += forces * dt;
 	velocity *= damping;
-	if (length(velocity) < clamp_value * scale) {
-		velocity = vec2(0.0, 0.0);
+	if(length(velocity) < clamp_value * scale) {
+		velocity = vec2(0.0f, 0.0f);
 	}
 
 	// position
 	offsets += velocity * dt;
-	if (velocity.x == 0.0 && velocity.y == 0.0 && length(offsets) < clamp_value * scale) {
-		offsets = vec2(0.0, 0.0);
+	if(velocity.x == 0.0f && velocity.y == 0.0f && length(offsets) < clamp_value * scale) {
+		offsets = vec2(0.0f, 0.0f);
 	}
 
 	// clamp
@@ -136,8 +169,5 @@ void main() {
 	velocity = format(velocity);
 
 	// output
-	fragColor = vec4(
-		velocity,
-		offsets
-	);
+	fragColor = vec4(velocity, offsets);
 }
