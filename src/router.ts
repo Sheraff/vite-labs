@@ -39,7 +39,7 @@ import ants_shader_image from "./pages/ants-shader/screen.png"
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "visual-exec" | "tinkerbell-map" | "swarm-pathfinding" | "star-rating" | "spring-fluid" | "spider-inverse-kinematics" | "snakebird" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "polka-fireflies" | "perlin-ripples" | "particle-life-gpu" | "particle-life" | "paint-worklet" | "pacman" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "maze-generation" | "lightning" | "intl-tuesday" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "fireflies" | "deterministic-plinko" | "cursor-projection" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "ants-shader" | "ants" | "a-star"
+export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "visual-exec" | "tinkerbell-map" | "swarm-pathfinding" | "star-rating" | "spring-fluid" | "spider-inverse-kinematics" | "snakebird" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "polka-fireflies" | "perlin-ripples" | "particle-life-gpu" | "particle-life" | "paint-worklet" | "pacman" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "maze-generation" | "lightning" | "intl-tuesday" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "fireflies" | "deterministic-plinko" | "cursor-projection" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "any-string-to-css-color" | "ants-shader" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
@@ -140,7 +140,7 @@ export const ROUTES = {
 			tags: ['webgl', 'fluid', 'shader', 'physics'],
 		},
 		git: {
-			lastModified: 1760297097000,
+			lastModified: 1762693908000,
 			firstAdded: 1760259852000
 		},
 	},
@@ -236,7 +236,7 @@ export const ROUTES = {
 			image: particle_life_gpu_image
 		},
 		git: {
-			lastModified: 1762630501000,
+			lastModified: 1762636452000,
 			firstAdded: 1762551884000
 		},
 	},
@@ -530,6 +530,17 @@ export const ROUTES = {
 		git: {
 			lastModified: 1752533354000,
 			firstAdded: 1717365547000
+		},
+	},
+	"any-string-to-css-color": {
+		Component: lazy(() => import("./pages/any-string-to-css-color/index.tsx")),
+		meta: {
+			title: 'Any string to CSS color',
+			tags: ['wip']
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
 		},
 	},
 	"ants-shader": {
