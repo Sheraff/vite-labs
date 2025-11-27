@@ -7,6 +7,20 @@
 	height: 100svh;
 	padding: 1em;
 
+	button {
+		padding: 0.5em 1em;
+		border: 1px solid currentColor;
+		background: transparent;
+		color: inherit;
+		font-size: inherit;
+		border-radius: 2em;
+		cursor: pointer;
+		corner-shape: squircle;
+		margin-bottom: 1em;
+	}
+}
+
+.first {
 	dialog {
 		--initial-gap: 40svh;
 		--end-gap: 5rem;
@@ -39,9 +53,11 @@
 			&::before {
 				content: "";
 				display: block;
-				height: calc(100dvh - var(--initial-gap));
+				height: 100dvh;
 				scroll-snap-align: start;
 				view-timeline: --dialog-page-top y;
+				/* outline: 2px solid blue;
+				outline-offset: -2px; */
 			}
 		}
 
@@ -49,8 +65,10 @@
 			&::before {
 				content: "";
 				display: block;
-				height: calc(100dvh - var(--end-gap));
+				height: 100dvh;
 				view-timeline: --dialog-page-bottom y;
+				/* outline: 2px solid red;
+				outline-offset: -2px; */
 			}
 
 			&::after {
@@ -62,14 +80,19 @@
 		}
 
 		&>div[data-dialog-area] {
+			outline: none;
 			scroll-snap-align: start;
 			max-height: 100dvh;
 			overflow-y: auto;
 			scrollbar-width: none;
 			padding-block: var(--initial-gap) var(--end-gap);
+			/* outline: 2px solid green;
+			outline-offset: -2px; */
 		}
 
 		&>div>div[data-dialog-content] {
+			overscroll-behavior-y: contain;
+
 			transition: translate 250ms cubic-bezier(0.101, 1, 0.68, 1);
 
 			@starting-style {
@@ -78,11 +101,10 @@
 
 			max-width: 50ch;
 			margin: auto;
-			padding: 2em;
 			border-radius: 2em;
 			corner-shape: squircle;
 			background: #5e5e5e;
-
+			overflow: hidden;
 		}
 	}
 }
@@ -94,5 +116,117 @@
 
 	to {
 		backdrop-filter: blur(3px);
+	}
+}
+
+.second {
+	dialog {
+		/* reset */
+		inset: 0;
+		margin: 0;
+		width: auto;
+		height: auto;
+		max-width: none;
+		max-height: none;
+		padding: 0;
+		background: transparent;
+		border: 0;
+		scrollbar-width: none;
+
+		scroll-snap-type: y mandatory;
+		timeline-scope: --dialog-scroll-area;
+
+		&[open] {
+			display: flex;
+			flex-direction: column;
+		}
+
+		&::backdrop {
+			transition: opacity 400ms ease-out;
+			animation: backdrop-animation linear both, backdrop-animation linear reverse both, backdrop-animation 250ms cubic-bezier(0.101, 1, 0.68, 1);
+			animation-timeline: --dialog-scroll-area, --dialog-scroll-area, auto;
+			animation-range: entry, exit;
+			background-color: rgba(0, 0, 0, 0.5);
+		}
+
+		&>div[data-dialog-bumper="before"] {
+			min-height: 100dvh;
+			width: 100%;
+			view-timeline: --dialog-scroll-before y;
+			scroll-snap-align: start;
+			/* outline: 2px solid blue;
+			outline-offset: -2px; */
+		}
+
+		&>div[data-dialog-bumper="after"] {
+			min-height: 200dvh;
+			width: 100%;
+			view-timeline: --dialog-scroll-after y;
+			scroll-snap-align: start;
+			/* outline: 2px solid red;
+			outline-offset: -2px; */
+		}
+
+		&>div[data-dialog-area] {
+			outline: none;
+			scroll-snap-align: start;
+			min-height: 100dvh;
+			width: 100%;
+			view-timeline: --dialog-scroll-area y;
+			/* outline: 2px solid green;
+			outline-offset: -2px; */
+
+			display: grid;
+			place-items: center;
+		}
+
+		&>div[data-dialog-area]>div[data-dialog-content] {
+			overflow: hidden auto;
+			scrollbar-width: none;
+
+			transition: translate 250ms cubic-bezier(0.101, 1, 0.68, 1);
+
+			@starting-style {
+				translate: 0 calc(100dvh);
+			}
+
+			max-width: 50ch;
+			max-height: 80dvh;
+			border-radius: 4em;
+			corner-shape: squircle;
+			background: rgb(145, 140, 145);
+			color: rgb(41, 19, 46);
+		}
+	}
+}
+
+@keyframes backdrop-animation {
+	from {
+		opacity: 0;
+	}
+
+	to {
+		backdrop-filter: blur(3px);
+	}
+}
+
+.content {
+	position: relative;
+
+
+	button {
+		position: absolute;
+		top: 2em;
+		right: 2em;
+	}
+
+	img {
+		width: 100%;
+		height: auto;
+		object-fit: cover;
+	}
+
+	.body {
+		padding: 0 2em 2em;
 	}
 }

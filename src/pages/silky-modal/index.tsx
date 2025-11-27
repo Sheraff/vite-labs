@@ -2,10 +2,12 @@
 import styles from './styles.module.css'
 import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
+import { useId, type MouseEvent } from "react"
+import src from './lorem.jpg'
 
 export const meta: RouteMeta = {
 	title: 'Silky Modal',
-	tags: ['css', 'wip']
+	tags: ['css']
 }
 
 declare module 'react' {
@@ -17,12 +19,28 @@ declare module 'react' {
 
 export default function SilkyModalPage() {
 	return (
-		<div className={styles.main}>
-			<Head />
+		<>
+			<div className={styles.main}>
+				<Head />
+				{/* <First /> */}
+				<Second />
+			</div>
+		</>
+	)
+}
+
+const onClose = (e: MouseEvent) => {
+	e.preventDefault()
+	e.currentTarget.closest<HTMLDialogElement>('dialog')!.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+function First() {
+	return (
+		<div className={styles.first}>
 			<button commandfor="mydialog" command="show-modal">Show modal dialog</button>
 			<dialog id="mydialog" ref={(e) => {
 				if (!e) return
-				const content = e.querySelector<HTMLDivElement>('[data-dialog-content]')!
+				const content = e.querySelector<HTMLDivElement>('[data-dialog-area]')!
 				let visible = false
 				const observer = new IntersectionObserver(([entry]) => {
 					visible = entry.isIntersecting
@@ -32,34 +50,9 @@ export default function SilkyModalPage() {
 				return () => observer.disconnect()
 			}}>
 				<div data-dialog-bumper="top" />
-				<div data-dialog-area>
-					<div data-dialog-content>
-						<button
-							commandfor="mydialog"
-							command="close"
-							onClick={(e) => {
-								e.preventDefault()
-								e.currentTarget.closest<HTMLDialogElement>('dialog')!.scrollTo({ top: 0, behavior: 'smooth' })
-							}}
-						>Close</button>
-						<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque aliquam odio et faucibus.</p>
-						<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque aliquam odio et faucibus.</p>
-						<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque aliquam odio et faucibus.</p>
-						<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque aliquam odio et faucibus.</p>
-						<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque aliquam odio et faucibus.</p>
-						<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque aliquam odio et faucibus.</p>
-						<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque aliquam odio et faucibus.</p>
-						<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque aliquam odio et faucibus.</p>
-						<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque aliquam odio et faucibus.</p>
-						<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque aliquam odio et faucibus.</p>
-						<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque aliquam odio et faucibus.</p>
-						<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque aliquam odio et faucibus.</p>
-						<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque aliquam odio et faucibus.</p>
-						<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque aliquam odio et faucibus.</p>
-						<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque aliquam odio et faucibus.</p>
-						<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque aliquam odio et faucibus.</p>
-						<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque aliquam odio et faucibus.</p>
-						<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque aliquam odio et faucibus.</p>
+				<div data-dialog-area onClick={onClose}>
+					<div data-dialog-content onClick={(e) => e.stopPropagation()}>
+						<Content id="mydialog" />
 					</div>
 				</div>
 				<div data-dialog-bumper="bottom" />
@@ -67,3 +60,67 @@ export default function SilkyModalPage() {
 		</div>
 	)
 }
+
+
+function Second() {
+	const id = useId()
+
+	return (
+		<div className={styles.second}>
+			<button commandfor={id} command="show-modal">Show modal dialog</button>
+			<dialog id={id} ref={(e) => {
+				if (!e) return
+				let visible = false
+				const observer = new IntersectionObserver(([entry]) => {
+					visible = entry.isIntersecting
+					if (!visible) e.close()
+				}, { rootMargin: '-1px' })
+				observer.observe(e.querySelector<HTMLDivElement>('[data-dialog-area]')!)
+				const controller = new AbortController()
+				e.addEventListener('beforetoggle', (event) => {
+					if (event.newState === 'open') requestAnimationFrame(() => {
+						e.scrollTop = e.querySelector<HTMLDivElement>('[data-dialog-bumper="before"]')!.getBoundingClientRect().height
+						e.querySelector<HTMLDivElement>('[data-dialog-content]')!.scrollTo({ top: 0 })
+					})
+				}, { signal: controller.signal })
+				return () => {
+					controller.abort()
+					observer.disconnect()
+				}
+			}}>
+				<div data-dialog-bumper="before" />
+				<div data-dialog-area onClick={onClose}>
+					<div data-dialog-content onClick={(e) => e.stopPropagation()}>
+						<Content id={id} />
+					</div>
+				</div>
+				<div data-dialog-bumper="after" />
+			</dialog>
+		</div>
+	)
+}
+
+function Content({ id }: { id: string }) {
+	return (
+		<div className={styles.content}>
+			<button
+				commandfor={id}
+				command="close"
+				onClick={onClose}
+			>Close</button>
+			<img src={src} alt="Random" />
+			<div className={styles.body}>
+				<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce sodales urna iaculis erat ultricies mattis. In efficitur varius nulla id lobortis. Nam consequat nibh et ante finibus semper. Donec placerat vehicula imperdiet. Morbi sollicitudin sem a odio ullamcorper, ac porta eros hendrerit. Cras pellentesque sem non neque malesuada, ac consequat lacus tincidunt. Ut venenatis, nulla non ultrices vulputate, orci ex laoreet lorem, eu efficitur libero ligula eget nulla. Mauris et risus mattis, fermentum tortor iaculis, maximus velit. Morbi tincidunt lacus a eros hendrerit viverra. Vivamus viverra ex in justo tincidunt aliquam. Nulla non nisi vitae sapien lobortis iaculis eget et mi. Duis justo mi, placerat ut vestibulum ac, posuere sit amet mauris. Vestibulum id elit purus. Maecenas efficitur maximus ipsum, non condimentum felis cursus et. Nunc tempus volutpat nisi. Phasellus porta sapien ex, ac sodales urna feugiat eu.</p>
+				<p>Integer mauris nunc, tincidunt a euismod sed, aliquam nec libero. Vivamus accumsan at justo eget euismod. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Nunc ullamcorper ante non tristique porttitor. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Sed quis sem ac sem suscipit mollis at et purus. Nulla non tincidunt elit.</p>
+				<p>Integer dignissim convallis nunc ut lobortis. Donec ac ligula elit. Donec in iaculis nisi. Vestibulum at mattis velit. Aenean aliquam orci vel lorem interdum, sed pulvinar sem placerat. Aliquam in blandit libero. Vivamus consequat libero nec magna ullamcorper, nec congue nunc sagittis. Vivamus ac sagittis ipsum. Phasellus condimentum lorem ac metus tristique, sit amet mattis sapien viverra. Mauris cursus eros vel erat mattis, vitae egestas eros placerat. Vestibulum risus nulla, efficitur ac egestas ac, semper id lectus. Duis aliquam ac libero non efficitur.</p>
+				<p>Quisque aliquam purus sapien, ut maximus metus fermentum sed. Integer in ipsum sed enim tristique tincidunt. Sed maximus luctus lectus, eu sagittis felis eleifend vitae. Vestibulum mattis ipsum velit, at facilisis massa tincidunt eu. Phasellus vitae enim ut ante ullamcorper tempor. Donec bibendum posuere lacus, non vestibulum sem tristique non. Vestibulum imperdiet mauris nec arcu faucibus, ac pharetra magna maximus. Integer sit amet diam porttitor justo aliquet gravida a a libero. Morbi auctor rhoncus congue.</p>
+				<p>Aenean commodo, elit ullamcorper iaculis tincidunt, felis elit placerat lorem, sit amet molestie enim enim at magna. Pellentesque ut cursus justo. Aenean condimentum massa pulvinar erat feugiat imperdiet. Fusce id porta sapien. Quisque dictum velit vel dui iaculis luctus. Sed rhoncus congue est vel imperdiet. Cras sagittis turpis sem, venenatis imperdiet nulla mattis ac. Phasellus viverra lectus eu venenatis hendrerit. Cras dapibus nisi eget est ultrices blandit. Fusce nec mattis risus, vel ornare lacus. Pellentesque ac urna sagittis, aliquet tortor quis, condimentum mi. Aliquam elit sapien, scelerisque id dolor sit amet, congue elementum velit. Mauris leo lorem, tincidunt nec odio non, tempus interdum nulla.</p>
+			</div>
+		</div>
+	)
+}
+
+
+
+
+

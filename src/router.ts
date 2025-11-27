@@ -172,10 +172,10 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/silky-modal/index.tsx")),
 		meta: {
 			title: 'Silky Modal',
-			tags: ['css', 'wip']
+			tags: ['css']
 		},
 		git: {
-			lastModified: 1764198910000,
+			lastModified: 1764201815000,
 			firstAdded: 1764198910000
 		},
 	},
