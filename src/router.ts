@@ -175,7 +175,7 @@ export const ROUTES = {
 			tags: ['css']
 		},
 		git: {
-			lastModified: 1764201815000,
+			lastModified: 1764247721000,
 			firstAdded: 1764198910000
 		},
 	},

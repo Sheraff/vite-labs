@@ -150,9 +150,8 @@
 		}
 
 		&>div[data-dialog-bumper="before"] {
-			min-height: 100dvh;
+			min-height: 200dvh;
 			width: 100%;
-			view-timeline: --dialog-scroll-before y;
 			scroll-snap-align: start;
 			/* outline: 2px solid blue;
 			outline-offset: -2px; */
@@ -161,7 +160,6 @@
 		&>div[data-dialog-bumper="after"] {
 			min-height: 200dvh;
 			width: 100%;
-			view-timeline: --dialog-scroll-after y;
 			scroll-snap-align: start;
 			/* outline: 2px solid red;
 			outline-offset: -2px; */

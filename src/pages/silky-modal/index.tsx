@@ -70,17 +70,13 @@ function Second() {
 			<button commandfor={id} command="show-modal">Show modal dialog</button>
 			<dialog id={id} ref={(e) => {
 				if (!e) return
-				let visible = false
-				const observer = new IntersectionObserver(([entry]) => {
-					visible = entry.isIntersecting
-					if (!visible) e.close()
-				}, { rootMargin: '-1px' })
+				const observer = new IntersectionObserver(([entry]) => !entry.isIntersecting && e.close(), { rootMargin: '-1px' })
 				observer.observe(e.querySelector<HTMLDivElement>('[data-dialog-area]')!)
 				const controller = new AbortController()
 				e.addEventListener('beforetoggle', (event) => {
 					if (event.newState === 'open') requestAnimationFrame(() => {
 						e.scrollTop = e.querySelector<HTMLDivElement>('[data-dialog-bumper="before"]')!.getBoundingClientRect().height
-						e.querySelector<HTMLDivElement>('[data-dialog-content]')!.scrollTo({ top: 0 })
+						e.querySelector<HTMLDivElement>('[data-dialog-content]')!.scrollTop = 0
 					})
 				}, { signal: controller.signal })
 				return () => {
