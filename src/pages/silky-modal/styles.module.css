@@ -149,20 +149,13 @@
 			background-color: rgba(0, 0, 0, 0.5);
 		}
 
-		&>div[data-dialog-bumper="before"] {
+		&::before,
+		&::after {
+			content: "";
+			display: block;
 			min-height: 200dvh;
 			width: 100%;
 			scroll-snap-align: start;
-			/* outline: 2px solid blue;
-			outline-offset: -2px; */
-		}
-
-		&>div[data-dialog-bumper="after"] {
-			min-height: 200dvh;
-			width: 100%;
-			scroll-snap-align: start;
-			/* outline: 2px solid red;
-			outline-offset: -2px; */
 		}
 
 		&>div[data-dialog-area] {
@@ -178,7 +171,7 @@
 			place-items: center;
 		}
 
-		&>div[data-dialog-area]>div[data-dialog-content] {
+		&>div>div[data-dialog-content] {
 			overflow: hidden auto;
 			scrollbar-width: none;
 

@@ -71,11 +71,12 @@ function Second() {
 			<dialog id={id} ref={(e) => {
 				if (!e) return
 				const observer = new IntersectionObserver(([entry]) => !entry.isIntersecting && e.close(), { rootMargin: '-1px' })
-				observer.observe(e.querySelector<HTMLDivElement>('[data-dialog-area]')!)
+				const area = e.querySelector<HTMLDivElement>('[data-dialog-area]')!
+				observer.observe(area)
 				const controller = new AbortController()
 				e.addEventListener('beforetoggle', (event) => {
 					if (event.newState === 'open') requestAnimationFrame(() => {
-						e.scrollTop = e.querySelector<HTMLDivElement>('[data-dialog-bumper="before"]')!.getBoundingClientRect().height
+						e.scrollTop = area.offsetTop
 						e.querySelector<HTMLDivElement>('[data-dialog-content]')!.scrollTop = 0
 					})
 				}, { signal: controller.signal })
@@ -84,13 +85,11 @@ function Second() {
 					observer.disconnect()
 				}
 			}}>
-				<div data-dialog-bumper="before" />
 				<div data-dialog-area onClick={onClose}>
 					<div data-dialog-content onClick={(e) => e.stopPropagation()}>
 						<Content id={id} />
 					</div>
 				</div>
-				<div data-dialog-bumper="after" />
 			</dialog>
 		</div>
 	)
