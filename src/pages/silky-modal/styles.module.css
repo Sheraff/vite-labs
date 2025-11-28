@@ -1,10 +1,18 @@
-.main {
-	margin: 0;
+:root:has(.main) {
 	background: #051016;
 	color: white;
+	padding: 1em;
+}
+
+.main {
+	margin: 0;
 	touch-action: none;
-	width: 100vw;
-	height: 100svh;
+}
+
+.examples {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 2em;
 	padding: 1em;
 
 	button {
@@ -20,176 +28,190 @@
 	}
 }
 
-.first {
-	dialog {
-		--initial-gap: 40svh;
-		--end-gap: 5rem;
-		inset: 0;
-		margin: 0;
-		width: auto;
-		height: auto;
-		max-width: none;
-		max-height: none;
-		padding: 0;
-		background: transparent;
-		border: 0;
+dialog.dialog {
+	/* reset */
+	inset: 0;
+	margin: 0;
+	width: auto;
+	height: auto;
+	max-width: none;
+	max-height: none;
+	padding: 0;
+	background: transparent;
+	border: 0;
+	scrollbar-width: none;
+
+	scroll-snap-stop: always;
+	timeline-scope: --dialog-scroll-area;
+	scroll-snap-type: var(--axis) mandatory;
+
+	&[open] {
+		display: flex;
+		flex-direction: var(--direction);
+	}
+
+	&::backdrop {
+		transition: opacity 400ms ease-out;
+		animation: backdrop-animation linear both, backdrop-animation linear reverse both, backdrop-animation 250ms cubic-bezier(0.101, 1, 0.68, 1);
+		animation-timeline: --dialog-scroll-area, --dialog-scroll-area, auto;
+		animation-range: entry, exit;
+		background-color: rgba(0, 0, 0, 0.5);
+	}
+
+	&::before,
+	&::after {
+		scroll-snap-align: start;
+	}
+
+	&>div[data-dialog-area] {
+		outline: none;
+		scroll-snap-align: start;
+
+		display: grid;
+	}
+
+	&>div>div[data-dialog-content] {
+		overflow: hidden auto;
 		scrollbar-width: none;
 
-		scroll-snap-type: y mandatory;
+		transition: translate 250ms cubic-bezier(0.101, 1, 0.68, 1);
+		view-timeline: --dialog-scroll-area var(--axis);
+	}
 
-		timeline-scope: --dialog-page-top, --dialog-page-bottom;
+	&[data-orientation="horizontal"] {
+		--axis: x;
+		--direction: row;
 
-		&::backdrop {
-			transition: opacity 400ms ease-out;
-			animation: blur-in linear both, blur-in linear reverse both, blur-in 250ms cubic-bezier(0.101, 1, 0.68, 1);
-			animation-timeline: --dialog-page-top, --dialog-page-bottom, auto;
-			animation-range: exit, entry;
-			background-color: rgba(0, 0, 0, 0.543);
-		}
-
-		&>div[data-dialog-bumper="top"] {
-			padding-top: var(--initial-gap);
-
-			&::before {
-				content: "";
-				display: block;
-				height: 100dvh;
-				scroll-snap-align: start;
-				view-timeline: --dialog-page-top y;
-				/* outline: 2px solid blue;
-				outline-offset: -2px; */
-			}
-		}
-
-		&>div[data-dialog-bumper="bottom"] {
-			&::before {
-				content: "";
-				display: block;
-				height: 100dvh;
-				view-timeline: --dialog-page-bottom y;
-				/* outline: 2px solid red;
-				outline-offset: -2px; */
-			}
-
-			&::after {
-				content: "";
-				display: block;
-				scroll-snap-align: end;
-				height: 1px;
-			}
+		&::before,
+		&::after {
+			min-width: 100dvw;
+			min-height: 100%;
 		}
 
 		&>div[data-dialog-area] {
-			outline: none;
-			scroll-snap-align: start;
-			max-height: 100dvh;
-			overflow-y: auto;
-			scrollbar-width: none;
-			padding-block: var(--initial-gap) var(--end-gap);
-			/* outline: 2px solid green;
-			outline-offset: -2px; */
+			min-width: 100dvw;
+			min-height: 100%;
+		}
+	}
+
+	&[data-orientation="vertical"] {
+		--axis: y;
+		--direction: column;
+
+		&::before,
+		&::after {
+			min-height: 200dvh;
+			min-width: 100%;
 		}
 
-		&>div>div[data-dialog-content] {
-			overscroll-behavior-y: contain;
+		&>div[data-dialog-area] {
+			min-height: 100dvh;
+			min-width: 100%;
+		}
+	}
 
-			transition: translate 250ms cubic-bezier(0.101, 1, 0.68, 1);
+	&[data-align="start"] {
+		&::after {
+			content: "";
+			display: block;
+		}
 
-			@starting-style {
-				translate: 0 calc(100dvh - var(--initial-gap));
+		&[data-orientation="horizontal"] {
+			&>div[data-dialog-area] {
+				align-items: center;
+				justify-items: start;
 			}
 
-			max-width: 50ch;
-			margin: auto;
-			border-radius: 2em;
-			corner-shape: squircle;
-			background: #5e5e5e;
-			overflow: hidden;
-		}
-	}
-}
-
-@keyframes blur-in {
-	from {
-		opacity: 0;
-	}
-
-	to {
-		backdrop-filter: blur(3px);
-	}
-}
-
-.second {
-	dialog {
-		/* reset */
-		inset: 0;
-		margin: 0;
-		width: auto;
-		height: auto;
-		max-width: none;
-		max-height: none;
-		padding: 0;
-		background: transparent;
-		border: 0;
-		scrollbar-width: none;
-
-		scroll-snap-type: y mandatory;
-		timeline-scope: --dialog-scroll-area;
-
-		&[open] {
-			display: flex;
-			flex-direction: column;
+			&>div>div[data-dialog-content] {
+				@starting-style {
+					translate: -100dvw 0;
+				}
+			}
 		}
 
-		&::backdrop {
-			transition: opacity 400ms ease-out;
-			animation: backdrop-animation linear both, backdrop-animation linear reverse both, backdrop-animation 250ms cubic-bezier(0.101, 1, 0.68, 1);
-			animation-timeline: --dialog-scroll-area, --dialog-scroll-area, auto;
-			animation-range: entry, exit;
-			background-color: rgba(0, 0, 0, 0.5);
+		&[data-orientation="vertical"] {
+			&>div[data-dialog-area] {
+				align-items: start;
+				justify-items: center;
+			}
+
+			&>div>div[data-dialog-content] {
+				@starting-style {
+					translate: 0 -100dvh;
+				}
+			}
 		}
+	}
+
+	&[data-align="end"] {
+		&::before {
+			content: "";
+			display: block;
+		}
+
+		&[data-orientation="horizontal"] {
+			&>div[data-dialog-area] {
+				align-items: center;
+				justify-items: end;
+			}
+
+			&>div>div[data-dialog-content] {
+				@starting-style {
+					translate: 100dvw 0;
+				}
+			}
+		}
+
+		&[data-orientation="vertical"] {
+			&>div[data-dialog-area] {
+				align-items: end;
+				justify-items: center;
+			}
+
+			&>div>div[data-dialog-content] {
+				@starting-style {
+					translate: 0 100dvh;
+				}
+			}
+		}
+	}
+
+	&[data-align="center"] {
 
 		&::before,
 		&::after {
 			content: "";
 			display: block;
-			min-height: 200dvh;
-			width: 100%;
-			scroll-snap-align: start;
 		}
 
 		&>div[data-dialog-area] {
-			outline: none;
-			scroll-snap-align: start;
-			min-height: 100dvh;
-			width: 100%;
-			view-timeline: --dialog-scroll-area y;
-			/* outline: 2px solid green;
-			outline-offset: -2px; */
-
-			display: grid;
 			place-items: center;
 		}
 
-		&>div>div[data-dialog-content] {
-			overflow: hidden auto;
-			scrollbar-width: none;
-
-			transition: translate 250ms cubic-bezier(0.101, 1, 0.68, 1);
-
-			@starting-style {
-				translate: 0 calc(100dvh);
+		&[data-orientation="horizontal"] {
+			&>div>div[data-dialog-content] {
+				@starting-style {
+					translate: 100dvw 0;
+				}
 			}
+		}
 
-			max-width: 50ch;
-			max-height: 80dvh;
-			border-radius: 4em;
-			corner-shape: squircle;
-			background: rgb(145, 140, 145);
-			color: rgb(41, 19, 46);
+		&[data-orientation="vertical"] {
+			&>div>div[data-dialog-content] {
+				@starting-style {
+					translate: 0 100dvh;
+				}
+			}
 		}
 	}
+
+	/* &>div>div[data-dialog-content] {
+		animation: entry-slowdown linear both;
+		animation-timeline: --dialog-scroll-area;
+		animation-range: exit;
+	} */
 }
+
 
 @keyframes backdrop-animation {
 	from {
@@ -200,6 +222,51 @@
 		backdrop-filter: blur(3px);
 	}
 }
+
+/* @keyframes entry-slowdown {
+	to {
+		transform: translate(calc(100dvw - 100%), 0);
+	}
+} */
+
+.verticalCenter {
+	max-width: 50ch;
+	max-height: 80dvh;
+	border-radius: 4em;
+	corner-shape: squircle;
+	background: rgb(145, 140, 145);
+	color: rgb(41, 19, 46);
+}
+
+.verticalBottom {
+	max-width: 60ch;
+	max-height: 60dvh;
+	border-radius: 4em;
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
+	corner-shape: squircle;
+	background: rgb(145, 140, 145);
+	color: rgb(41, 19, 46);
+}
+
+.horizontalEnd {
+	max-width: 60ch;
+	max-height: 90dvh;
+	border-radius: 4em;
+	corner-shape: squircle;
+	background: rgb(145, 140, 145);
+	color: rgb(41, 19, 46);
+	margin-right: 2em;
+}
+
+.horizontalStart {
+	max-width: 40ch;
+	max-height: 100dvh;
+	background: rgb(145, 140, 145);
+	color: rgb(41, 19, 46);
+}
+
+
 
 .content {
 	position: relative;

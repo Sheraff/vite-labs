@@ -2,7 +2,7 @@
 import styles from './styles.module.css'
 import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
-import { useId, type MouseEvent } from "react"
+import { useId, type MouseEvent, type ReactNode } from "react"
 import src from './lorem.jpg'
 
 export const meta: RouteMeta = {
@@ -22,8 +22,12 @@ export default function SilkyModalPage() {
 		<>
 			<div className={styles.main}>
 				<Head />
-				{/* <First /> */}
+			</div>
+			<div className={styles.examples}>
 				<Second />
+				<BottomSheet />
+				<SideSheet />
+				<HorizontalStartModal />
 			</div>
 		</>
 	)
@@ -31,34 +35,20 @@ export default function SilkyModalPage() {
 
 const onClose = (e: MouseEvent) => {
 	e.preventDefault()
-	e.currentTarget.closest<HTMLDialogElement>('dialog')!.scrollTo({ top: 0, behavior: 'smooth' })
-}
-
-function First() {
-	return (
-		<div className={styles.first}>
-			<button commandfor="mydialog" command="show-modal">Show modal dialog</button>
-			<dialog id="mydialog" ref={(e) => {
-				if (!e) return
-				const content = e.querySelector<HTMLDivElement>('[data-dialog-area]')!
-				let visible = false
-				const observer = new IntersectionObserver(([entry]) => {
-					visible = entry.isIntersecting
-					if (!visible) e.close()
-				})
-				observer.observe(content)
-				return () => observer.disconnect()
-			}}>
-				<div data-dialog-bumper="top" />
-				<div data-dialog-area onClick={onClose}>
-					<div data-dialog-content onClick={(e) => e.stopPropagation()}>
-						<Content id="mydialog" />
-					</div>
-				</div>
-				<div data-dialog-bumper="bottom" />
-			</dialog>
-		</div>
-	)
+	const dialog = e.currentTarget.closest<HTMLDialogElement>('dialog')!
+	if (dialog.dataset.orientation === 'vertical') {
+		if (dialog.dataset.align === 'start') {
+			dialog.scrollTo({ top: dialog.offsetHeight, behavior: 'smooth' })
+		} else {
+			dialog.scrollTo({ top: 0, behavior: 'smooth' })
+		}
+	} else {
+		if (dialog.dataset.align === 'start') {
+			dialog.scrollTo({ left: dialog.offsetWidth, behavior: 'smooth' })
+		} else {
+			dialog.scrollTo({ left: 0, behavior: 'smooth' })
+		}
+	}
 }
 
 
@@ -66,17 +56,104 @@ function Second() {
 	const id = useId()
 
 	return (
-		<div className={styles.second}>
-			<button commandfor={id} command="show-modal">Show modal dialog</button>
-			<dialog id={id} ref={(e) => {
+		<>
+			<button commandfor={id} command="show-modal">Vertical center sheet</button>
+			<Dialog
+				id={id}
+				orientation="vertical"
+				align="center"
+				className={styles.verticalCenter}
+			>
+				<Content id={id} />
+			</Dialog>
+		</>
+	)
+}
+
+function BottomSheet() {
+	const id = useId()
+
+	return (
+		<>
+			<button commandfor={id} command="show-modal">Vertical end sheet</button>
+			<Dialog
+				id={id}
+				orientation="vertical"
+				align="end"
+				className={styles.verticalBottom}
+			>
+				<Content id={id} />
+			</Dialog>
+		</>
+	)
+}
+
+function SideSheet() {
+	const id = useId()
+
+	return (
+		<>
+			<button commandfor={id} command="show-modal">Horizontal end sheet</button>
+			<Dialog
+				id={id}
+				orientation="horizontal"
+				align="end"
+				className={styles.horizontalEnd}
+			>
+				<Content id={id} />
+			</Dialog>
+		</>
+	)
+}
+
+function HorizontalStartModal() {
+	const id = useId()
+
+	return (
+		<>
+			<button commandfor={id} command="show-modal">Horizontal start sheet</button>
+			<Dialog
+				id={id}
+				orientation="horizontal"
+				align="start"
+				className={styles.horizontalStart}
+			>
+				<Content id={id} />
+			</Dialog>
+		</>
+	)
+}
+
+function Dialog({
+	id,
+	children,
+	className,
+	orientation = 'vertical',
+	align = 'center'
+}: {
+	id: string
+	children: ReactNode
+	className?: string
+	orientation?: 'horizontal' | 'vertical'
+	align?: 'start' | 'center' | 'end'
+}) {
+	return (
+		<dialog
+			className={styles.dialog}
+			id={id}
+			data-orientation={orientation}
+			data-align={align}
+			ref={(e) => {
 				if (!e) return
 				const observer = new IntersectionObserver(([entry]) => !entry.isIntersecting && e.close(), { rootMargin: '-1px' })
 				const area = e.querySelector<HTMLDivElement>('[data-dialog-area]')!
-				observer.observe(area)
+				const content = area.querySelector<HTMLDivElement>('[data-dialog-content]')!
+				observer.observe(content)
 				const controller = new AbortController()
 				e.addEventListener('beforetoggle', (event) => {
 					if (event.newState === 'open') requestAnimationFrame(() => {
 						e.scrollTop = area.offsetTop
+						e.scrollLeft = area.offsetLeft
 						e.querySelector<HTMLDivElement>('[data-dialog-content]')!.scrollTop = 0
 					})
 				}, { signal: controller.signal })
@@ -85,13 +162,12 @@ function Second() {
 					observer.disconnect()
 				}
 			}}>
-				<div data-dialog-area onClick={onClose}>
-					<div data-dialog-content onClick={(e) => e.stopPropagation()}>
-						<Content id={id} />
-					</div>
+			<div data-dialog-area onClick={onClose}>
+				<div className={className} data-dialog-content onClick={(e) => e.stopPropagation()}>
+					{children}
 				</div>
-			</dialog>
-		</div>
+			</div>
+		</dialog>
 	)
 }
 
