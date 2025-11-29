@@ -48,11 +48,10 @@ export interface FlipperConfig {
 
 export interface BezierPathConfig {
 	id: string
-	// Cubic bezier: start, control1, control2, end
-	p0: { x: number; y: number }
-	p1: { x: number; y: number }
-	p2: { x: number; y: number }
-	p3: { x: number; y: number }
+	// Array of points forming cubic bezier segments
+	// Minimum 4 points (1 segment), then +3 for each additional segment
+	// e.g., [p0, p1, p2, p3] = 1 segment, [p0, p1, p2, p3, p4, p5, p6] = 2 segments
+	points: Array<{ x: number; y: number }>
 	trackWidth: number // Width of the track (slightly less than ball diameter)
 }
 

@@ -86,6 +86,30 @@
 			border-color: #0abde3;
 			font-weight: bold;
 		}
+
+		&.doneButton {
+			background: #00d2d3;
+			color: #001122;
+			border-color: #01a3a4;
+			font-weight: bold;
+			animation: pulse 1.5s ease-in-out infinite;
+
+			&:hover {
+				background: #01a3a4;
+			}
+		}
+	}
+}
+
+@keyframes pulse {
+
+	0%,
+	100% {
+		box-shadow: 0 0 0 0 rgba(0, 210, 211, 0.7);
+	}
+
+	50% {
+		box-shadow: 0 0 0 8px rgba(0, 210, 211, 0);
 	}
 }
 

@@ -96,11 +96,11 @@ export class PinballGame {
 				new CurvedSurface(c.x, c.y, c.radius, c.startAngle, c.endAngle, c.thickness)
 			)
 
-			this.smoothPaths = []
+		this.smoothPaths = []
 
-			this.bezierPaths = config.bezierPaths?.map(b =>
-				new BezierPath(b.p0, b.p1, b.p2, b.p3, b.trackWidth)
-			) || []
+		this.bezierPaths = config.bezierPaths?.map(b =>
+			new BezierPath(b.points, b.trackWidth)
+		) || []
 		} else {
 			// Default layout
 			this.flippers = {
