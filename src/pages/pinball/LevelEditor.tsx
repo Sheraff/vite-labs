@@ -31,6 +31,45 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 	const [isDragging, setIsDragging] = useState(false)
 	const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null)
 	const [dragVertex, setDragVertex] = useState<{ type: 'triangle' | 'rail' | 'bezier', vertex: number } | null>(null)
+	const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 1200 })
+	const toolbarRef = useRef<HTMLDivElement>(null)
+	const instructionsRef = useRef<HTMLDivElement>(null)
+
+	// Calculate canvas dimensions based on available space
+	useEffect(() => {
+		const calculateDimensions = () => {
+			const gameAspectRatio = width / height
+
+			// Account for padding (2em = ~32px), toolbar, instructions, and gaps
+			const toolbarHeight = toolbarRef.current?.offsetHeight || 0
+			const instructionsHeight = instructionsRef.current?.offsetHeight || 0
+			const padding = 32 // 1em padding from .main
+			const gaps = 32 // gaps between elements
+
+			const availableWidth = window.innerWidth - padding * 2
+			const availableHeight = window.innerHeight - padding * 2 - toolbarHeight - instructionsHeight - gaps
+			const availableAspectRatio = availableWidth / availableHeight
+
+			let canvasWidth: number
+			let canvasHeight: number
+
+			if (availableAspectRatio > gameAspectRatio) {
+				// Available space is wider than game ratio - constrain by height
+				canvasHeight = availableHeight
+				canvasWidth = canvasHeight * gameAspectRatio
+			} else {
+				// Available space is taller than game ratio - constrain by width
+				canvasWidth = availableWidth
+				canvasHeight = canvasWidth / gameAspectRatio
+			}
+
+			setCanvasDimensions({ width: canvasWidth, height: canvasHeight })
+		}
+
+		calculateDimensions()
+		window.addEventListener('resize', calculateDimensions)
+		return () => window.removeEventListener('resize', calculateDimensions)
+	}, [width, height])
 
 	// Draw the editor view
 	useEffect(() => {
@@ -40,7 +79,11 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 		const ctx = canvas.getContext('2d')!
 		ctx.save()
 		ctx.setTransform(1, 0, 0, 1, 0, 0) // Reset transform
-		ctx.scale(window.devicePixelRatio, window.devicePixelRatio)
+
+		// Calculate scale to map game coordinates to canvas display coordinates
+		const scaleX = canvasDimensions.width / width * window.devicePixelRatio
+		const scaleY = canvasDimensions.height / height * window.devicePixelRatio
+		ctx.scale(scaleX, scaleY)
 
 		// Clear canvas
 		ctx.fillStyle = '#001122'
@@ -513,13 +556,13 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 		}
 
 		ctx.restore()
-	}, [config, selectedId, tool, hoverPos, railStart, triangleVertices, bezierPoints, width, height, isAltPressed])
+	}, [config, selectedId, tool, hoverPos, railStart, triangleVertices, bezierPoints, width, height, isAltPressed, canvasDimensions])
 
 	const getCanvasCoords = (e: React.MouseEvent<HTMLCanvasElement>) => {
 		const canvas = canvasRef.current!
 		const rect = canvas.getBoundingClientRect()
-		const x = ((e.clientX - rect.left) / rect.width) * width
-		const y = ((e.clientY - rect.top) / rect.height) * height
+		const x = ((e.clientX - rect.left) / canvasDimensions.width) * width
+		const y = ((e.clientY - rect.top) / canvasDimensions.height) * height
 		return { x, y }
 	}
 
@@ -1228,7 +1271,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 
 	return (
 		<div className={styles.editor}>
-			<div className={styles.toolbar}>
+			<div ref={toolbarRef} className={styles.toolbar}>
 				{tool === 'bezier' && bezierPoints.length >= 4 && (
 					<button
 						className={styles.doneButton}
@@ -1400,15 +1443,15 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 					📦 Load Default
 				</button>
 			</div>
-			<div className={styles.instructions}>
+			<div ref={instructionsRef} className={styles.instructions}>
 				<strong>Controls:</strong> Click to place | Shift+Click for precise placement |
 				Alt+Click for right flipper | Triangle needs 3 clicks | Bezier needs 4 clicks | Delete key to remove selected | Esc to cancel/deselect
 			</div>
 			<canvas
 				ref={canvasRef}
-				width={width * devicePixelRatio}
-				height={height * devicePixelRatio}
-				style={{ width: `${width}px`, height: `${height}px`, cursor: isDragging ? 'grabbing' : (tool === 'select' && selectedId ? 'grab' : 'crosshair') }}
+				width={canvasDimensions.width * devicePixelRatio}
+				height={canvasDimensions.height * devicePixelRatio}
+				style={{ width: `${canvasDimensions.width}px`, height: `${canvasDimensions.height}px`, cursor: isDragging ? 'grabbing' : (tool === 'select' && selectedId ? 'grab' : 'crosshair') }}
 				onClick={handleCanvasClick}
 				onMouseDown={handleMouseDown}
 				onMouseMove={handleMouseMove}

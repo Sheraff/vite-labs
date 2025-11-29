@@ -49,10 +49,14 @@ export class PinballGame {
 	constructor({ canvas, config, width, height }: { canvas: HTMLCanvasElement; config?: BoardConfig, width: number; height: number }) {
 		this.canvas = canvas
 		this.ctx = this.canvas.getContext('2d')!
-		const scale = window.devicePixelRatio
-		this.ctx.scale(scale, scale)
 		this.width = width
 		this.height = height
+
+		// Calculate scale to map game coordinates to canvas
+		// Canvas is already sized with devicePixelRatio, so we scale to match
+		const scaleX = this.canvas.width / this.width
+		const scaleY = this.canvas.height / this.height
+		this.ctx.scale(scaleX, scaleY)
 
 		this.ball = {
 			x: this.width - 20,

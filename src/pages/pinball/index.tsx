@@ -18,6 +18,8 @@ const WIDTH = 400
 const HEIGHT = 600
 // const WIDTH = 500
 // const HEIGHT = 750
+// const WIDTH = 1000
+// const HEIGHT = 1500
 
 export default function PinballPage() {
 	const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -38,11 +40,36 @@ export default function PinballPage() {
 		if (mode !== 'play') return
 
 		const canvas = canvasRef.current!
-		const size = Math.min(window.innerWidth, window.innerHeight)
-		canvas.width = size * devicePixelRatio
-		canvas.height = size * devicePixelRatio
-		canvas.style.width = `${size}px`
-		canvas.style.height = `${size}px`
+
+		// Calculate the aspect ratio of the game
+		const gameAspectRatio = WIDTH / HEIGHT
+
+		// Calculate available space
+		const availableWidth = window.innerWidth
+		const availableHeight = window.innerHeight
+		const availableAspectRatio = availableWidth / availableHeight
+
+		// Determine the canvas size that preserves aspect ratio and maximizes space
+		let canvasWidth: number
+		let canvasHeight: number
+
+		if (availableAspectRatio > gameAspectRatio) {
+			// Available space is wider than game ratio - constrain by height
+			canvasHeight = availableHeight
+			canvasWidth = canvasHeight * gameAspectRatio
+		} else {
+			// Available space is taller than game ratio - constrain by width
+			canvasWidth = availableWidth
+			canvasHeight = canvasWidth / gameAspectRatio
+		}
+
+		// Set canvas resolution (accounting for device pixel ratio)
+		canvas.width = canvasWidth * devicePixelRatio
+		canvas.height = canvasHeight * devicePixelRatio
+
+		// Set canvas display size
+		canvas.style.width = `${canvasWidth}px`
+		canvas.style.height = `${canvasHeight}px`
 
 		gameRef.current = new PinballGame({ canvas, config: boardConfig, width: WIDTH, height: HEIGHT })
 		return () => {
