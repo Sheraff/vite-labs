@@ -8,9 +8,9 @@ export interface BumperConfig {
 
 export interface TriangularBumperConfig {
 	id: string
-	x: number
-	y: number
-	size: number
+	v1: { x: number; y: number }
+	v2: { x: number; y: number }
+	v3: { x: number; y: number }
 	points: number
 }
 

@@ -71,26 +71,17 @@ export class Bumper {
 }
 
 export class TriangularBumper {
-	x: number
-	y: number
-	size: number
 	points: number
 	hitAnimation: number = 0
 	vertices: Array<{ x: number; y: number }>
+	centerX: number
+	centerY: number
 
-	constructor(x: number, y: number, size: number, points: number) {
-		this.x = x
-		this.y = y
-		this.size = size
+	constructor(v1: { x: number; y: number }, v2: { x: number; y: number }, v3: { x: number; y: number }, points: number) {
+		this.vertices = [v1, v2, v3]
 		this.points = points
-
-		// Create equilateral triangle pointing up
-		const height = (Math.sqrt(3) / 2) * size
-		this.vertices = [
-			{ x: x, y: y - height * 0.6 }, // Top
-			{ x: x - size / 2, y: y + height * 0.4 }, // Bottom left
-			{ x: x + size / 2, y: y + height * 0.4 }  // Bottom right
-		]
+		this.centerX = (v1.x + v2.x + v3.x) / 3
+		this.centerY = (v1.y + v2.y + v3.y) / 3
 	}
 
 	draw(ctx: CanvasRenderingContext2D) {
@@ -103,9 +94,9 @@ export class TriangularBumper {
 		const alpha = 1 - (this.hitAnimation / 20) * 0.5
 
 		ctx.save()
-		ctx.translate(this.x, this.y)
+		ctx.translate(this.centerX, this.centerY)
 		ctx.scale(scale, scale)
-		ctx.translate(-this.x, -this.y)
+		ctx.translate(-this.centerX, -this.centerY)
 
 		// Draw triangle
 		ctx.beginPath()

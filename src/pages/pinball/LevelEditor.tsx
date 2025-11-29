@@ -24,6 +24,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 	const [selectedId, setSelectedId] = useState<string | null>(null)
 	const [railStart, setRailStart] = useState<{ x: number; y: number } | null>(null)
 	const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null)
+	const [isAltPressed, setIsAltPressed] = useState(false)
 
 	// Draw the editor view
 	useEffect(() => {
@@ -72,17 +73,10 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 		})
 
 		config.triangularBumpers.forEach((t) => {
-			const height = (Math.sqrt(3) / 2) * t.size
-			const vertices = [
-				{ x: t.x, y: t.y - height * 0.6 },
-				{ x: t.x - t.size / 2, y: t.y + height * 0.4 },
-				{ x: t.x + t.size / 2, y: t.y + height * 0.4 }
-			]
-
 			ctx.beginPath()
-			ctx.moveTo(vertices[0].x, vertices[0].y)
-			ctx.lineTo(vertices[1].x, vertices[1].y)
-			ctx.lineTo(vertices[2].x, vertices[2].y)
+			ctx.moveTo(t.v1.x, t.v1.y)
+			ctx.lineTo(t.v2.x, t.v2.y)
+			ctx.lineTo(t.v3.x, t.v3.y)
 			ctx.closePath()
 			ctx.fillStyle = selectedId === t.id ? '#ffd93d' : '#f6b93b'
 			ctx.fill()
@@ -90,10 +84,25 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 			ctx.lineWidth = 3
 			ctx.stroke()
 
+			// Draw vertices as handles
+			if (selectedId === t.id) {
+				[t.v1, t.v2, t.v3].forEach(v => {
+					ctx.beginPath()
+					ctx.arc(v.x, v.y, 4, 0, Math.PI * 2)
+					ctx.fillStyle = '#fff'
+					ctx.fill()
+					ctx.strokeStyle = '#e55039'
+					ctx.lineWidth = 2
+					ctx.stroke()
+				})
+			}
+
+			const centerX = (t.v1.x + t.v2.x + t.v3.x) / 3
+			const centerY = (t.v1.y + t.v2.y + t.v3.y) / 3
 			ctx.fillStyle = '#fff'
 			ctx.font = '12px Arial'
 			ctx.textAlign = 'center'
-			ctx.fillText(`${t.points}`, t.x, t.y + 4)
+			ctx.fillText(`${t.points}`, centerX, centerY + 4)
 		})
 
 		config.rails.forEach((r) => {
@@ -142,6 +151,26 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 			ctx.restore()
 		})
 
+		// Draw launch lane (always visible)
+		const launchLaneWidth = 40
+		ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'
+		ctx.lineWidth = 2
+		ctx.setLineDash([5, 5])
+		ctx.beginPath()
+		ctx.moveTo(width - launchLaneWidth, 80)
+		ctx.lineTo(width - launchLaneWidth, height)
+		ctx.stroke()
+		ctx.setLineDash([])
+
+		// Draw plunger area
+		ctx.fillStyle = 'rgba(231, 76, 60, 0.1)'
+		ctx.fillRect(width - launchLaneWidth, height - 150, launchLaneWidth, 150)
+		ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'
+		ctx.font = '10px Arial'
+		ctx.textAlign = 'center'
+		ctx.fillText('LAUNCH', width - launchLaneWidth / 2, height - 130)
+		ctx.fillText('LANE', width - launchLaneWidth / 2, height - 118)
+
 		// Draw preview of tool
 		if (hoverPos && tool !== 'select' && tool !== 'delete') {
 			ctx.globalAlpha = 0.5
@@ -170,13 +199,22 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 				ctx.stroke()
 			} else if (tool === 'curve') {
 				ctx.beginPath()
-				ctx.arc(hoverPos.x, hoverPos.y, 40, 0, Math.PI)
+				ctx.arc(hoverPos.x, hoverPos.y, 40, -Math.PI, 0)
 				ctx.strokeStyle = '#48dbfb'
 				ctx.lineWidth = 10
 				ctx.stroke()
 			} else if (tool === 'flipper') {
+				ctx.save()
+				ctx.translate(hoverPos.x, hoverPos.y)
+				const angle = isAltPressed ? -Math.PI / 6 : Math.PI / 6
+				ctx.rotate(angle)
 				ctx.fillStyle = '#48dbfb'
-				ctx.fillRect(hoverPos.x, hoverPos.y - 7.5, 70, 15)
+				if (isAltPressed) {
+					ctx.fillRect(-70, -7.5, 70, 15)
+				} else {
+					ctx.fillRect(0, -7.5, 70, 15)
+				}
+				ctx.restore()
 			}
 			ctx.globalAlpha = 1
 		}
@@ -220,8 +258,15 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 			if (!found) {
 				// Check triangular bumpers
 				for (const t of config.triangularBumpers) {
-					const dist = Math.sqrt((t.x - pos.x) ** 2 + (t.y - pos.y) ** 2)
-					if (dist < t.size) {
+					// Point in triangle test
+					const sign = (p1: { x: number, y: number }, p2: { x: number, y: number }, p3: { x: number, y: number }) =>
+						(p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y)
+					const d1 = sign(pos, t.v1, t.v2)
+					const d2 = sign(pos, t.v2, t.v3)
+					const d3 = sign(pos, t.v3, t.v1)
+					const hasNeg = (d1 < 0) || (d2 < 0) || (d3 < 0)
+					const hasPos = (d1 > 0) || (d2 > 0) || (d3 > 0)
+					if (!(hasNeg && hasPos)) {
 						setSelectedId(t.id)
 						found = true
 						break
@@ -287,8 +332,14 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 					return dist >= b.radius
 				}),
 				triangularBumpers: config.triangularBumpers.filter(t => {
-					const dist = Math.sqrt((t.x - pos.x) ** 2 + (t.y - pos.y) ** 2)
-					return dist >= t.size
+					const sign = (p1: { x: number, y: number }, p2: { x: number, y: number }, p3: { x: number, y: number }) =>
+						(p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y)
+					const d1 = sign(pos, t.v1, t.v2)
+					const d2 = sign(pos, t.v2, t.v3)
+					const d3 = sign(pos, t.v3, t.v1)
+					const hasNeg = (d1 < 0) || (d2 < 0) || (d3 < 0)
+					const hasPos = (d1 > 0) || (d2 > 0) || (d3 > 0)
+					return hasNeg && hasPos
 				}),
 				rails: config.rails.filter(r => {
 					const dist = distanceToSegment(pos, { x: r.x1, y: r.y1 }, { x: r.x2, y: r.y2 })
@@ -325,13 +376,15 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 				}]
 			})
 		} else if (tool === 'triangular') {
+			const size = 30
+			const height = (Math.sqrt(3) / 2) * size
 			setConfig({
 				...config,
 				triangularBumpers: [...config.triangularBumpers, {
 					id: `triangular-${Date.now()}`,
-					x: snapped.x,
-					y: snapped.y,
-					size: 30,
+					v1: { x: snapped.x, y: snapped.y - height * 0.6 },
+					v2: { x: snapped.x - size / 2, y: snapped.y + height * 0.4 },
+					v3: { x: snapped.x + size / 2, y: snapped.y + height * 0.4 },
 					points: 250
 				}]
 			})
@@ -384,6 +437,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 		const pos = getCanvasCoords(e)
 		const snapped = e.shiftKey ? pos : snapToGrid(pos.x, pos.y)
 		setHoverPos(snapped)
+		setIsAltPressed(e.altKey)
 	}
 
 	const handleKeyDown = (e: KeyboardEvent) => {
@@ -522,8 +576,20 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 							{ id: 'b6', x: 200, y: 360, radius: 22, points: 175 }
 						],
 						triangularBumpers: [
-							{ id: 't1', x: 90, y: height - 150, size: 30, points: 250 },
-							{ id: 't2', x: 310, y: height - 150, size: 30, points: 250 }
+							{
+								id: 't1',
+								v1: { x: 90, y: height - 150 - 15.6 },
+								v2: { x: 75, y: height - 150 + 10.4 },
+								v3: { x: 105, y: height - 150 + 10.4 },
+								points: 250
+							},
+							{
+								id: 't2',
+								v1: { x: 310, y: height - 150 - 15.6 },
+								v2: { x: 295, y: height - 150 + 10.4 },
+								v3: { x: 325, y: height - 150 + 10.4 },
+								points: 250
+							}
 						],
 						rails: [
 							{ id: 'r1', x1: 50, y1: 150, x2: 150, y2: 200, radius: 12 },
@@ -623,22 +689,46 @@ function PropertyPanel({ id, config, onChange }: {
 	}
 
 	if (triangular) {
+		const updateVertex = (vertex: 'v1' | 'v2' | 'v3', coord: 'x' | 'y', value: number) => {
+			onChange({
+				...config,
+				triangularBumpers: config.triangularBumpers.map(t =>
+					t.id === id ? { ...t, [vertex]: { ...t[vertex], [coord]: value } } : t
+				)
+			})
+		}
+
 		return (
 			<div>
 				<label>
-					Size:
-					<input
-						type="number"
-						value={triangular.size}
-						onChange={(e) => {
-							onChange({
-								...config,
-								triangularBumpers: config.triangularBumpers.map(t =>
-									t.id === id ? { ...t, size: Number(e.target.value) } : t
-								)
-							})
-						}}
-					/>
+					Vertex 1 X:
+					<input type="number" value={Math.round(triangular.v1.x)}
+						onChange={(e) => updateVertex('v1', 'x', Number(e.target.value))} />
+				</label>
+				<label>
+					Vertex 1 Y:
+					<input type="number" value={Math.round(triangular.v1.y)}
+						onChange={(e) => updateVertex('v1', 'y', Number(e.target.value))} />
+				</label>
+				<label>
+					Vertex 2 X:
+					<input type="number" value={Math.round(triangular.v2.x)}
+						onChange={(e) => updateVertex('v2', 'x', Number(e.target.value))} />
+				</label>
+				<label>
+					Vertex 2 Y:
+					<input type="number" value={Math.round(triangular.v2.y)}
+						onChange={(e) => updateVertex('v2', 'y', Number(e.target.value))} />
+				</label>
+				<label>
+					Vertex 3 X:
+					<input type="number" value={Math.round(triangular.v3.x)}
+						onChange={(e) => updateVertex('v3', 'x', Number(e.target.value))} />
+				</label>
+				<label>
+					Vertex 3 Y:
+					<input type="number" value={Math.round(triangular.v3.y)}
+						onChange={(e) => updateVertex('v3', 'y', Number(e.target.value))} />
 				</label>
 				<label>
 					Points:

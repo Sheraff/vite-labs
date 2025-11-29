@@ -87,7 +87,7 @@ export class PinballGame {
 
 			this.obstacles = [
 				...config.bumpers.map(b => new Bumper(b.x, b.y, b.radius, b.points)),
-				...config.triangularBumpers.map(t => new TriangularBumper(t.x, t.y, t.size, t.points))
+				...config.triangularBumpers.map(t => new TriangularBumper(t.v1, t.v2, t.v3, t.points))
 			]
 
 			this.rails = [
@@ -116,8 +116,18 @@ export class PinballGame {
 				new Bumper(260, 280, 25, 150),
 				new Bumper(200, 360, 22, 175),
 				// Triangular bumpers above flippers
-				new TriangularBumper(90, this.height - 150, 30, 250),
-				new TriangularBumper(310, this.height - 150, 30, 250)
+				new TriangularBumper(
+					{ x: 90, y: this.height - 150 - 15.6 },
+					{ x: 75, y: this.height - 150 + 10.4 },
+					{ x: 105, y: this.height - 150 + 10.4 },
+					250
+				),
+				new TriangularBumper(
+					{ x: 310, y: this.height - 150 - 15.6 },
+					{ x: 295, y: this.height - 150 + 10.4 },
+					{ x: 325, y: this.height - 150 + 10.4 },
+					250
+				)
 			]
 
 			this.rails = [
@@ -289,9 +299,11 @@ export class PinballGame {
 			const points = obstacle.handleBallCollision(this.ball)
 			if (points > 0) {
 				this.score += points
+				const x = obstacle instanceof Bumper ? obstacle.x : obstacle.centerX
+				const y = obstacle instanceof Bumper ? obstacle.y : obstacle.centerY
 				this.scorePopups.push({
-					x: obstacle.x,
-					y: obstacle.y,
+					x,
+					y,
 					score: points,
 					life: 60,
 					maxLife: 60
