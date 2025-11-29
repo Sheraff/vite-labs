@@ -94,7 +94,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 				{ v1: t.v2, v2: t.v3, bouncy: t.edge2Bouncy },
 				{ v1: t.v3, v2: t.v1, bouncy: t.edge3Bouncy }
 			]
-			
+
 			edges.forEach(edge => {
 				ctx.beginPath()
 				ctx.moveTo(edge.v1.x, edge.v1.y)
@@ -192,7 +192,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 		config.bezierPaths?.forEach((b) => {
 			const drawBezierSegment = (p0: any, p1: any, p2: any, p3: any, halfWidth: number, side: number, isFirst: boolean) => {
 				const samples = 50
-				
+
 				for (let i = 0; i <= samples; i++) {
 					const t = i / samples
 					const mt = 1 - t
@@ -200,24 +200,24 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 					const mt3 = mt2 * mt
 					const t2 = t * t
 					const t3 = t2 * t
-					
+
 					// Bezier point
 					const px = mt3 * p0.x + 3 * mt2 * t * p1.x + 3 * mt * t2 * p2.x + t3 * p3.x
 					const py = mt3 * p0.y + 3 * mt2 * t * p1.y + 3 * mt * t2 * p2.y + t3 * p3.y
-					
+
 					// Bezier derivative (tangent)
 					const tx = 3 * mt2 * (p1.x - p0.x) + 6 * mt * t * (p2.x - p1.x) + 3 * t2 * (p3.x - p2.x)
 					const ty = 3 * mt2 * (p1.y - p0.y) + 6 * mt * t * (p2.y - p1.y) + 3 * t2 * (p3.y - p2.y)
 					const tlen = Math.sqrt(tx * tx + ty * ty)
-					
+
 					// Normal vector
 					const nx = -ty / tlen
 					const ny = tx / tlen
-					
+
 					// Offset point
 					const offsetX = px + nx * halfWidth * side
 					const offsetY = py + ny * halfWidth * side
-					
+
 					if (i === 0 && isFirst) {
 						ctx.moveTo(offsetX, offsetY)
 					} else {
@@ -225,13 +225,13 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 					}
 				}
 			}
-			
+
 			const halfWidth = b.trackWidth / 2
-			
+
 			// Draw segments for each side
 			for (let side = -1; side <= 1; side += 2) {
 				ctx.beginPath()
-				
+
 				// Draw all segments
 				for (let i = 0; i < b.points.length - 3; i += 3) {
 					drawBezierSegment(
@@ -244,25 +244,25 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 						i === 0
 					)
 				}
-				
+
 				ctx.strokeStyle = selectedId === b.id ? '#fff' : '#48dbfb'
 				ctx.lineWidth = 3
 				ctx.lineCap = 'round'
 				ctx.lineJoin = 'round'
 				ctx.stroke()
 			}
-			
+
 			// Draw entrance indicators
 			ctx.beginPath()
 			ctx.arc(b.points[0].x, b.points[0].y, 5, 0, Math.PI * 2)
 			ctx.fillStyle = '#00d2d3'
 			ctx.fill()
-			
+
 			ctx.beginPath()
 			ctx.arc(b.points[b.points.length - 1].x, b.points[b.points.length - 1].y, 5, 0, Math.PI * 2)
 			ctx.fillStyle = '#00d2d3'
 			ctx.fill()
-			
+
 			// Draw control points when selected
 			if (selectedId === b.id) {
 				// Control lines for each segment
@@ -274,14 +274,14 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 					ctx.strokeStyle = '#aaa'
 					ctx.lineWidth = 1
 					ctx.stroke()
-					
+
 					ctx.beginPath()
 					ctx.moveTo(b.points[i + 3].x, b.points[i + 3].y)
 					ctx.lineTo(b.points[i + 2].x, b.points[i + 2].y)
 					ctx.stroke()
 				}
 				ctx.globalAlpha = 1
-				
+
 				// Control point handles
 				b.points.forEach((p, i) => {
 					const isEndpoint = i === 0 || i === b.points.length - 1 || i % 3 === 0
@@ -365,7 +365,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 				ctx.textAlign = 'center'
 				ctx.fillText(`${i + 1}`, v.x, v.y + 3)
 			})
-			
+
 			// Draw control lines for all segments
 			ctx.globalAlpha = 0.5
 			if (bezierPoints.length >= 4) {
@@ -376,7 +376,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 					ctx.strokeStyle = '#aaa'
 					ctx.lineWidth = 1
 					ctx.stroke()
-					
+
 					ctx.beginPath()
 					ctx.moveTo(bezierPoints[i + 3].x, bezierPoints[i + 3].y)
 					ctx.lineTo(bezierPoints[i + 2].x, bezierPoints[i + 2].y)
@@ -384,22 +384,22 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 				}
 			}
 			ctx.globalAlpha = 1
-			
+
 			// Draw all complete bezier curve segments
 			if (bezierPoints.length >= 4) {
 				ctx.globalAlpha = 0.6
 				const samples = 30
-				
+
 				// Draw each complete segment
 				for (let segIdx = 0; segIdx < Math.floor((bezierPoints.length - 1) / 3); segIdx++) {
 					const baseIdx = segIdx * 3
 					if (baseIdx + 3 >= bezierPoints.length) break
-					
+
 					const p0 = bezierPoints[baseIdx]
 					const p1 = bezierPoints[baseIdx + 1]
 					const p2 = bezierPoints[baseIdx + 2]
 					const p3 = bezierPoints[baseIdx + 3]
-					
+
 					ctx.beginPath()
 					for (let i = 0; i <= samples; i++) {
 						const t = i / samples
@@ -408,10 +408,10 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 						const mt3 = mt2 * mt
 						const t2 = t * t
 						const t3 = t2 * t
-						
+
 						const x = mt3 * p0.x + 3 * mt2 * t * p1.x + 3 * mt * t2 * p2.x + t3 * p3.x
 						const y = mt3 * p0.y + 3 * mt2 * t * p1.y + 3 * mt * t2 * p2.y + t3 * p3.y
-						
+
 						if (i === 0) {
 							ctx.moveTo(x, y)
 						} else {
@@ -577,7 +577,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 			}
 
 			// Check if clicking on the selected object to start dragging
-			const selected = 
+			const selected =
 				config.bumpers.find(b => b.id === selectedId) ||
 				config.triangularBumpers.find(t => t.id === selectedId) ||
 				config.rails.find(r => r.id === selectedId) ||
@@ -647,13 +647,13 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 					const b = selected as any
 					// Check if click is on any segment of the bezier curve
 					const samples = 30
-					
+
 					for (let segIdx = 0; segIdx < b.points.length - 3; segIdx += 3) {
 						const p0 = b.points[segIdx]
 						const p1 = b.points[segIdx + 1]
 						const p2 = b.points[segIdx + 2]
 						const p3 = b.points[segIdx + 3]
-						
+
 						for (let i = 0; i <= samples; i++) {
 							const t = i / samples
 							const mt = 1 - t
@@ -661,10 +661,10 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 							const mt3 = mt2 * mt
 							const t2 = t * t
 							const t3 = t2 * t
-							
+
 							const x = mt3 * p0.x + 3 * mt2 * t * p1.x + 3 * mt * t2 * p2.x + t3 * p3.x
 							const y = mt3 * p0.y + 3 * mt2 * t * p1.y + 3 * mt * t2 * p2.y + t3 * p3.y
-							
+
 							const dist = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2)
 							if (dist < b.trackWidth) {
 								isOnObject = true
@@ -780,13 +780,13 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 				for (const b of config.bezierPaths || []) {
 					// Check distance to all segments
 					const samples = 30
-					
+
 					for (let segIdx = 0; segIdx < b.points.length - 3; segIdx += 3) {
 						const p0 = b.points[segIdx]
 						const p1 = b.points[segIdx + 1]
 						const p2 = b.points[segIdx + 2]
 						const p3 = b.points[segIdx + 3]
-						
+
 						for (let i = 0; i <= samples; i++) {
 							const t = i / samples
 							const mt = 1 - t
@@ -794,10 +794,10 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 							const mt3 = mt2 * mt
 							const t2 = t * t
 							const t3 = t2 * t
-							
+
 							const x = mt3 * p0.x + 3 * mt2 * t * p1.x + 3 * mt * t2 * p2.x + t3 * p3.x
 							const y = mt3 * p0.y + 3 * mt2 * t * p1.y + 3 * mt * t2 * p2.y + t3 * p3.y
-							
+
 							const dist = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2)
 							if (dist < b.trackWidth) {
 								setSelectedId(b.id)
@@ -854,22 +854,30 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 					return dist >= f.length
 				}),
 				bezierPaths: (config.bezierPaths || []).filter(b => {
-					// Check distance to bezier curve
+					// Check distance to all segments of the bezier curve
 					const samples = 30
-					for (let i = 0; i <= samples; i++) {
-						const t = i / samples
-						const mt = 1 - t
-						const mt2 = mt * mt
-						const mt3 = mt2 * mt
-						const t2 = t * t
-						const t3 = t2 * t
-						
-						const x = mt3 * b.p0.x + 3 * mt2 * t * b.p1.x + 3 * mt * t2 * b.p2.x + t3 * b.p3.x
-						const y = mt3 * b.p0.y + 3 * mt2 * t * b.p1.y + 3 * mt * t2 * b.p2.y + t3 * b.p3.y
-						
-						const dist = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2)
-						if (dist < b.trackWidth) {
-							return false // Delete this one
+
+					for (let segIdx = 0; segIdx < b.points.length - 3; segIdx += 3) {
+						const p0 = b.points[segIdx]
+						const p1 = b.points[segIdx + 1]
+						const p2 = b.points[segIdx + 2]
+						const p3 = b.points[segIdx + 3]
+
+						for (let i = 0; i <= samples; i++) {
+							const t = i / samples
+							const mt = 1 - t
+							const mt2 = mt * mt
+							const mt3 = mt2 * mt
+							const t2 = t * t
+							const t3 = t2 * t
+
+							const x = mt3 * p0.x + 3 * mt2 * t * p1.x + 3 * mt * t2 * p2.x + t3 * p3.x
+							const y = mt3 * p0.y + 3 * mt2 * t * p1.y + 3 * mt * t2 * p2.y + t3 * p3.y
+
+							const dist = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2)
+							if (dist < b.trackWidth) {
+								return false // Delete this one
+							}
 						}
 					}
 					return true // Keep this one
@@ -1137,7 +1145,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 					validPointCount = 4 + (completeExtraSegments * 3)
 				}
 			}
-			
+
 			// Only save if we have at least 4 valid points
 			if (validPointCount >= 4) {
 				const trimmedPoints = bezierPoints.slice(0, validPointCount)
@@ -1191,27 +1199,27 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 		} else if (e.key === 'f' || e.key === 'F') {
 			saveIncompleteBezier()
 			setTool('flipper')
-	} else if (e.key === 'z' || e.key === 'Z') {
-		saveIncompleteBezier()
-		setTool('bezier')
-	} else if (e.key === 'd' || e.key === 'D') {
-		saveIncompleteBezier()
-		setTool('delete')
-	} else if (e.key === 'Enter' && tool === 'bezier' && bezierPoints.length >= 4) {
-		// Complete bezier path with Enter key
-		const defaultTrackWidth = 14
-		setConfig({
-			...config,
-			bezierPaths: [...(config.bezierPaths || []), {
-				id: `bezier-${Date.now()}`,
-				points: bezierPoints,
-				trackWidth: defaultTrackWidth
-			}]
-		})
-		setBezierPoints([])
-		setTool('select')
+		} else if (e.key === 'z' || e.key === 'Z') {
+			saveIncompleteBezier()
+			setTool('bezier')
+		} else if (e.key === 'd' || e.key === 'D') {
+			saveIncompleteBezier()
+			setTool('delete')
+		} else if (e.key === 'Enter' && tool === 'bezier' && bezierPoints.length >= 4) {
+			// Complete bezier path with Enter key
+			const defaultTrackWidth = 14
+			setConfig({
+				...config,
+				bezierPaths: [...(config.bezierPaths || []), {
+					id: `bezier-${Date.now()}`,
+					points: bezierPoints,
+					trackWidth: defaultTrackWidth
+				}]
+			})
+			setBezierPoints([])
+			setTool('select')
+		}
 	}
-}
 
 	useEffect(() => {
 		window.addEventListener('keydown', handleKeyDown)
@@ -1244,56 +1252,56 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 				)}
 				<button
 					className={tool === 'select' ? styles.active : ''}
-					onClick={() => { saveIncompleteBezier(); setTool('select'); }}
+					onClick={() => { saveIncompleteBezier(); setTool('select') }}
 					title="Select (V)"
 				>
 					Select
 				</button>
 				<button
 					className={tool === 'bumper' ? styles.active : ''}
-					onClick={() => { saveIncompleteBezier(); setTool('bumper'); }}
+					onClick={() => { saveIncompleteBezier(); setTool('bumper') }}
 					title="Bumper (B)"
 				>
 					Bumper
 				</button>
 				<button
 					className={tool === 'triangular' ? styles.active : ''}
-					onClick={() => { saveIncompleteBezier(); setTool('triangular'); }}
+					onClick={() => { saveIncompleteBezier(); setTool('triangular') }}
 					title="Triangle (T)"
 				>
 					Triangle
 				</button>
 				<button
 					className={tool === 'rail' ? styles.active : ''}
-					onClick={() => { saveIncompleteBezier(); setTool('rail'); }}
+					onClick={() => { saveIncompleteBezier(); setTool('rail') }}
 					title="Rail (R)"
 				>
 					Rail
 				</button>
 				<button
 					className={tool === 'curve' ? styles.active : ''}
-					onClick={() => { saveIncompleteBezier(); setTool('curve'); }}
+					onClick={() => { saveIncompleteBezier(); setTool('curve') }}
 					title="Curve (C)"
 				>
 					Curve
 				</button>
 				<button
 					className={tool === 'flipper' ? styles.active : ''}
-					onClick={() => { saveIncompleteBezier(); setTool('flipper'); }}
+					onClick={() => { saveIncompleteBezier(); setTool('flipper') }}
 					title="Flipper (F) | Alt+Click for right"
 				>
 					Flipper
 				</button>
 				<button
 					className={tool === 'bezier' ? styles.active : ''}
-					onClick={() => { saveIncompleteBezier(); setTool('bezier'); }}
+					onClick={() => { saveIncompleteBezier(); setTool('bezier') }}
 					title="Bezier Path (Z) | Click to add points (4 minimum), then click Done"
 				>
 					Bezier {bezierPoints.length > 0 && `(${bezierPoints.length})`}
 				</button>
 				<button
 					className={tool === 'delete' ? styles.active : ''}
-					onClick={() => { saveIncompleteBezier(); setTool('delete'); }}
+					onClick={() => { saveIncompleteBezier(); setTool('delete') }}
 					title="Delete (D)"
 				>
 					Delete
