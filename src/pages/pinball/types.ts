@@ -12,6 +12,10 @@ export interface TriangularBumperConfig {
 	v2: { x: number; y: number }
 	v3: { x: number; y: number }
 	points: number
+	// Edge properties: true = bouncy, false = static wall
+	edge1Bouncy: boolean // edge from v1 to v2
+	edge2Bouncy: boolean // edge from v2 to v3
+	edge3Bouncy: boolean // edge from v3 to v1
 }
 
 export interface RailConfig {

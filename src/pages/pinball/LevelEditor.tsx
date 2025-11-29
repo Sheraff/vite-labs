@@ -74,6 +74,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 		})
 
 		config.triangularBumpers.forEach((t) => {
+			// Draw fill
 			ctx.beginPath()
 			ctx.moveTo(t.v1.x, t.v1.y)
 			ctx.lineTo(t.v2.x, t.v2.y)
@@ -81,9 +82,26 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 			ctx.closePath()
 			ctx.fillStyle = selectedId === t.id ? '#ffd93d' : '#f6b93b'
 			ctx.fill()
-			ctx.strokeStyle = '#e55039'
-			ctx.lineWidth = 3
-			ctx.stroke()
+
+			// Draw edges with different styles based on type
+			const edges = [
+				{ v1: t.v1, v2: t.v2, bouncy: t.edge1Bouncy },
+				{ v1: t.v2, v2: t.v3, bouncy: t.edge2Bouncy },
+				{ v1: t.v3, v2: t.v1, bouncy: t.edge3Bouncy }
+			]
+			
+			edges.forEach(edge => {
+				ctx.beginPath()
+				ctx.moveTo(edge.v1.x, edge.v1.y)
+				ctx.lineTo(edge.v2.x, edge.v2.y)
+				if (edge.bouncy) {
+					ctx.strokeStyle = '#e55039' // orange for bouncy
+				} else {
+					ctx.strokeStyle = '#ddd' // gray for static
+				}
+				ctx.lineWidth = 3
+				ctx.stroke()
+			})
 
 			// Draw vertices as handles
 			if (selectedId === t.id) {
@@ -449,7 +467,10 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 						v1: triangleVertices[0],
 						v2: triangleVertices[1],
 						v3: snapped,
-						points: 250
+						points: 250,
+						edge1Bouncy: true,
+						edge2Bouncy: true,
+						edge3Bouncy: true
 					}]
 				})
 				setTriangleVertices([])
@@ -648,14 +669,20 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 								v1: { x: 90, y: height - 150 - 15.6 },
 								v2: { x: 75, y: height - 150 + 10.4 },
 								v3: { x: 105, y: height - 150 + 10.4 },
-								points: 250
+								points: 250,
+								edge1Bouncy: true,
+								edge2Bouncy: true,
+								edge3Bouncy: true
 							},
 							{
 								id: 't2',
 								v1: { x: 310, y: height - 150 - 15.6 },
 								v2: { x: 295, y: height - 150 + 10.4 },
 								v3: { x: 325, y: height - 150 + 10.4 },
-								points: 250
+								points: 250,
+								edge1Bouncy: true,
+								edge2Bouncy: true,
+								edge3Bouncy: true
 							}
 						],
 						rails: [
@@ -797,6 +824,54 @@ function PropertyPanel({ id, config, onChange }: {
 					<input type="number" value={Math.round(triangular.v3.y)}
 						onChange={(e) => updateVertex('v3', 'y', Number(e.target.value))} />
 				</label>
+				<div style={{ marginTop: '1em', paddingTop: '1em', borderTop: '1px solid #48dbfb' }}>
+					<strong style={{ color: '#48dbfb', display: 'block', marginBottom: '0.5em' }}>Edge Properties</strong>
+					<label style={{ display: 'flex', alignItems: 'center', gap: '0.5em' }}>
+						<input
+							type="checkbox"
+							checked={triangular.edge1Bouncy}
+							onChange={(e) => {
+								onChange({
+									...config,
+									triangularBumpers: config.triangularBumpers.map(t =>
+										t.id === id ? { ...t, edge1Bouncy: e.target.checked } : t
+									)
+								})
+							}}
+						/>
+						<span>Edge 1→2 Bouncy</span>
+					</label>
+					<label style={{ display: 'flex', alignItems: 'center', gap: '0.5em' }}>
+						<input
+							type="checkbox"
+							checked={triangular.edge2Bouncy}
+							onChange={(e) => {
+								onChange({
+									...config,
+									triangularBumpers: config.triangularBumpers.map(t =>
+										t.id === id ? { ...t, edge2Bouncy: e.target.checked } : t
+									)
+								})
+							}}
+						/>
+						<span>Edge 2→3 Bouncy</span>
+					</label>
+					<label style={{ display: 'flex', alignItems: 'center', gap: '0.5em' }}>
+						<input
+							type="checkbox"
+							checked={triangular.edge3Bouncy}
+							onChange={(e) => {
+								onChange({
+									...config,
+									triangularBumpers: config.triangularBumpers.map(t =>
+										t.id === id ? { ...t, edge3Bouncy: e.target.checked } : t
+									)
+								})
+							}}
+						/>
+						<span>Edge 3→1 Bouncy</span>
+					</label>
+				</div>
 				<label>
 					Points:
 					<input

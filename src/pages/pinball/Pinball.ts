@@ -87,7 +87,10 @@ export class PinballGame {
 
 			this.obstacles = [
 				...config.bumpers.map(b => new Bumper(b.x, b.y, b.radius, b.points)),
-				...config.triangularBumpers.map(t => new TriangularBumper(t.v1, t.v2, t.v3, t.points))
+				...config.triangularBumpers.map(t => new TriangularBumper(
+					t.v1, t.v2, t.v3, t.points,
+					t.edge1Bouncy, t.edge2Bouncy, t.edge3Bouncy
+				))
 			]
 
 			this.rails = [
@@ -120,13 +123,15 @@ export class PinballGame {
 					{ x: 90, y: this.height - 150 - 15.6 },
 					{ x: 75, y: this.height - 150 + 10.4 },
 					{ x: 105, y: this.height - 150 + 10.4 },
-					250
+					250,
+					true, true, true // all edges bouncy
 				),
 				new TriangularBumper(
 					{ x: 310, y: this.height - 150 - 15.6 },
 					{ x: 295, y: this.height - 150 + 10.4 },
 					{ x: 325, y: this.height - 150 + 10.4 },
-					250
+					250,
+					true, true, true // all edges bouncy
 				)
 			]
 
