@@ -151,12 +151,23 @@ export class TriangularBumper {
 	}
 
 	handleBallCollision(ball: { x: number; y: number; radius: number; vx: number; vy: number }): number {
-		// Check if ball is inside triangle or colliding with edges
+		// First check if ball center is inside triangle
+		const sign = (px: number, py: number, ax: number, ay: number, bx: number, by: number) => 
+			(px - bx) * (ay - by) - (ax - bx) * (py - by)
+		
+		const d1 = sign(ball.x, ball.y, this.vertices[0].x, this.vertices[0].y, this.vertices[1].x, this.vertices[1].y)
+		const d2 = sign(ball.x, ball.y, this.vertices[1].x, this.vertices[1].y, this.vertices[2].x, this.vertices[2].y)
+		const d3 = sign(ball.x, ball.y, this.vertices[2].x, this.vertices[2].y, this.vertices[0].x, this.vertices[0].y)
+		
+		const hasNeg = (d1 < 0) || (d2 < 0) || (d3 < 0)
+		const hasPos = (d1 > 0) || (d2 > 0) || (d3 > 0)
+		const isInside = !(hasNeg && hasPos)
+
+		// Check each edge of the triangle
 		let closestPoint = { x: ball.x, y: ball.y }
 		let minDist = Infinity
 		let closestEdge = -1
 
-		// Check each edge of the triangle
 		for (let i = 0; i < 3; i++) {
 			const v1 = this.vertices[i]
 			const v2 = this.vertices[(i + 1) % 3]
@@ -185,7 +196,9 @@ export class TriangularBumper {
 			}
 		}
 
-		if (minDist < ball.radius && closestEdge >= 0) {
+		// If ball is inside triangle, always push it out
+		if (isInside || minDist < ball.radius) {
+			if (closestEdge < 0) return 0
 			// Collision!
 			const dx = ball.x - closestPoint.x
 			const dy = ball.y - closestPoint.y
@@ -195,18 +208,21 @@ export class TriangularBumper {
 				const nx = dx / dist
 				const ny = dy / dist
 
-				// Move ball out
-				const overlap = ball.radius - minDist
-				ball.x += nx * overlap
-				ball.y += ny * overlap
+				// Move ball out - push ball away from edge
+				// When inside, minDist is distance from ball to edge, need to add radius to get fully outside
+				// When outside colliding, need to push by (radius - minDist) overlap amount
+				const targetDist = ball.radius
+				const overlap = targetDist - minDist
+				ball.x += nx * Math.abs(overlap)
+				ball.y += ny * Math.abs(overlap)
 
 				const isBouncy = this.edgeBouncy[closestEdge]
 
 				if (isBouncy) {
 					// Bouncy edge - strong reflection with boost
 					const vDotN = ball.vx * nx + ball.vy * ny
-					ball.vx -= 2 * vDotN * nx * 1.2
-					ball.vy -= 2 * vDotN * ny * 1.2
+					ball.vx -= 2 * vDotN * nx * 1.0
+					ball.vy -= 2 * vDotN * ny * 1.0
 
 					// Trigger hit animation
 					this.hitAnimation = 20

@@ -129,11 +129,11 @@ export class Flipper {
 			// V = omega x R where omega is angular velocity
 			const rx = closestX - this.x
 			const ry = closestY - this.y
-			const fvx = -this.angularVelocity * ry * 60 // Scale up for better effect
-			const fvy = this.angularVelocity * rx * 60
+			const fvx = -this.angularVelocity * ry * 4 // Scale up for better effect
+			const fvy = this.angularVelocity * rx * 4
 
 			// Add flipper velocity to ball
-			const kickStrength = 1.8
+			const kickStrength = 0.3
 			ball.vx += fvx * kickStrength
 			ball.vy += fvy * kickStrength
 

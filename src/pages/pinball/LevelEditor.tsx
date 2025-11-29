@@ -26,6 +26,8 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 	const [triangleVertices, setTriangleVertices] = useState<Array<{ x: number; y: number }>>([])
 	const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null)
 	const [isAltPressed, setIsAltPressed] = useState(false)
+	const [isDragging, setIsDragging] = useState(false)
+	const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null)
 
 	// Draw the editor view
 	useEffect(() => {
@@ -316,7 +318,90 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 		}
 	}
 
+	const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+		const pos = getCanvasCoords(e)
+
+		if (tool === 'select' && selectedId) {
+			// Check if clicking on the selected object to start dragging
+			const selected = 
+				config.bumpers.find(b => b.id === selectedId) ||
+				config.triangularBumpers.find(t => t.id === selectedId) ||
+				config.rails.find(r => r.id === selectedId) ||
+				config.curves.find(c => c.id === selectedId) ||
+				config.flippers.find(f => f.id === selectedId)
+
+			if (selected) {
+				let isOnObject = false
+				let offsetX = 0
+				let offsetY = 0
+
+				if ('radius' in selected && 'x' in selected && !('v1' in selected)) {
+					// Bumper
+					const dist = Math.sqrt((selected.x - pos.x) ** 2 + (selected.y - pos.y) ** 2)
+					if (dist < selected.radius) {
+						isOnObject = true
+						offsetX = selected.x - pos.x
+						offsetY = selected.y - pos.y
+					}
+				} else if ('v1' in selected) {
+					// Triangular bumper
+					const t = selected as any
+					const sign = (p1: { x: number, y: number }, p2: { x: number, y: number }, p3: { x: number, y: number }) =>
+						(p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y)
+					const d1 = sign(pos, t.v1, t.v2)
+					const d2 = sign(pos, t.v2, t.v3)
+					const d3 = sign(pos, t.v3, t.v1)
+					const hasNeg = (d1 < 0) || (d2 < 0) || (d3 < 0)
+					const hasPos = (d1 > 0) || (d2 > 0) || (d3 > 0)
+					if (!(hasNeg && hasPos)) {
+						isOnObject = true
+						const centerX = (t.v1.x + t.v2.x + t.v3.x) / 3
+						const centerY = (t.v1.y + t.v2.y + t.v3.y) / 3
+						offsetX = centerX - pos.x
+						offsetY = centerY - pos.y
+					}
+				} else if ('x1' in selected) {
+					// Rail
+					const dist = distanceToSegment(pos, { x: selected.x1, y: selected.y1 }, { x: selected.x2, y: selected.y2 })
+					if (dist < (selected as any).radius) {
+						isOnObject = true
+						const centerX = (selected.x1 + (selected as any).x2) / 2
+						const centerY = (selected.y1 + (selected as any).y2) / 2
+						offsetX = centerX - pos.x
+						offsetY = centerY - pos.y
+					}
+				} else if ('startAngle' in selected) {
+					// Curve
+					const c = selected as any
+					const dist = Math.sqrt((c.x - pos.x) ** 2 + (c.y - pos.y) ** 2)
+					if (Math.abs(dist - c.radius) < c.thickness) {
+						isOnObject = true
+						offsetX = c.x - pos.x
+						offsetY = c.y - pos.y
+					}
+				} else if ('side' in selected) {
+					// Flipper
+					const f = selected as any
+					const dist = Math.sqrt((f.x - pos.x) ** 2 + (f.y - pos.y) ** 2)
+					if (dist < f.length) {
+						isOnObject = true
+						offsetX = f.x - pos.x
+						offsetY = f.y - pos.y
+					}
+				}
+
+				if (isOnObject) {
+					setIsDragging(true)
+					setDragOffset({ x: offsetX, y: offsetY })
+					return
+				}
+			}
+		}
+	}
+
 	const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+		if (isDragging) return // Don't process clicks while dragging
+
 		const pos = getCanvasCoords(e)
 		const snapped = e.shiftKey ? pos : snapToGrid(pos.x, pos.y)
 
@@ -525,6 +610,97 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 		const snapped = e.shiftKey ? pos : snapToGrid(pos.x, pos.y)
 		setHoverPos(snapped)
 		setIsAltPressed(e.altKey)
+
+		// Handle dragging
+		if (isDragging && dragOffset && selectedId) {
+			const newPos = {
+				x: snapped.x + dragOffset.x,
+				y: snapped.y + dragOffset.y
+			}
+
+			setConfig(prevConfig => {
+				// Update bumper position
+				const bumper = prevConfig.bumpers.find(b => b.id === selectedId)
+				if (bumper) {
+					return {
+						...prevConfig,
+						bumpers: prevConfig.bumpers.map(b =>
+							b.id === selectedId ? { ...b, x: newPos.x, y: newPos.y } : b
+						)
+					}
+				}
+
+				// Update triangular bumper position
+				const triangular = prevConfig.triangularBumpers.find(t => t.id === selectedId)
+				if (triangular) {
+					const oldCenterX = (triangular.v1.x + triangular.v2.x + triangular.v3.x) / 3
+					const oldCenterY = (triangular.v1.y + triangular.v2.y + triangular.v3.y) / 3
+					const dx = newPos.x - oldCenterX
+					const dy = newPos.y - oldCenterY
+					return {
+						...prevConfig,
+						triangularBumpers: prevConfig.triangularBumpers.map(t =>
+							t.id === selectedId ? {
+								...t,
+								v1: { x: t.v1.x + dx, y: t.v1.y + dy },
+								v2: { x: t.v2.x + dx, y: t.v2.y + dy },
+								v3: { x: t.v3.x + dx, y: t.v3.y + dy }
+							} : t
+						)
+					}
+				}
+
+				// Update rail position
+				const rail = prevConfig.rails.find(r => r.id === selectedId)
+				if (rail) {
+					const oldCenterX = (rail.x1 + rail.x2) / 2
+					const oldCenterY = (rail.y1 + rail.y2) / 2
+					const dx = newPos.x - oldCenterX
+					const dy = newPos.y - oldCenterY
+					return {
+						...prevConfig,
+						rails: prevConfig.rails.map(r =>
+							r.id === selectedId ? {
+								...r,
+								x1: r.x1 + dx,
+								y1: r.y1 + dy,
+								x2: r.x2 + dx,
+								y2: r.y2 + dy
+							} : r
+						)
+					}
+				}
+
+				// Update curve position
+				const curve = prevConfig.curves.find(c => c.id === selectedId)
+				if (curve) {
+					return {
+						...prevConfig,
+						curves: prevConfig.curves.map(c =>
+							c.id === selectedId ? { ...c, x: newPos.x, y: newPos.y } : c
+						)
+					}
+				}
+
+				// Update flipper position
+				const flipper = prevConfig.flippers.find(f => f.id === selectedId)
+				if (flipper) {
+					return {
+						...prevConfig,
+						flippers: prevConfig.flippers.map(f =>
+							f.id === selectedId ? { ...f, x: newPos.x, y: newPos.y } : f
+						)
+					}
+				}
+
+				return prevConfig
+			})
+		}
+	}
+
+	const handleMouseUp = () => {
+		setIsDragging(false)
+		setDragOffset(null)
 	}
 
 	const handleKeyDown = (e: KeyboardEvent) => {
@@ -715,10 +891,15 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 				ref={canvasRef}
 				width={width * devicePixelRatio}
 				height={height * devicePixelRatio}
-				style={{ width: `${width}px`, height: `${height}px` }}
+				style={{ width: `${width}px`, height: `${height}px`, cursor: isDragging ? 'grabbing' : (tool === 'select' && selectedId ? 'grab' : 'crosshair') }}
 				onClick={handleCanvasClick}
+				onMouseDown={handleMouseDown}
 				onMouseMove={handleMouseMove}
-				onMouseLeave={() => setHoverPos(null)}
+				onMouseUp={handleMouseUp}
+				onMouseLeave={() => {
+					setHoverPos(null)
+					handleMouseUp()
+				}}
 			/>
 			{selectedId && (
 				<div className={styles.properties}>
