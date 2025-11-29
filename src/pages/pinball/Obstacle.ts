@@ -307,8 +307,8 @@ export class TriangularBumper {
 			if (vDotN < 0) { // Ball is moving towards surface
 				if (isBouncy) {
 					// Bouncy edge - strong reflection with boost
-					ball.vx -= 2 * vDotN * nx * 1.0
-					ball.vy -= 2 * vDotN * ny * 1.0
+					ball.vx -= 2 * vDotN * nx * 1.3
+					ball.vy -= 2 * vDotN * ny * 1.3
 
 					// Trigger hit animation
 					this.hitAnimation = 20

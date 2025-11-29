@@ -1,6 +1,7 @@
 import { CurvedSurface } from "./CurvedSurface"
 import { Rail } from "./Rail"
 import { SmoothPath } from "./SmoothPath"
+import { BezierPath } from "./BezierPath"
 import { Bumper, TriangularBumper } from "./Obstacle"
 import { Flipper } from "./Flipper"
 import type { BoardConfig } from "./types"
@@ -28,6 +29,7 @@ export class PinballGame {
 	rails: Array<Rail>
 	curves: Array<CurvedSurface>
 	smoothPaths: Array<SmoothPath>
+	bezierPaths: Array<BezierPath>
 
 	score: number
 	lives: number = 3
@@ -95,6 +97,10 @@ export class PinballGame {
 			)
 
 			this.smoothPaths = []
+
+			this.bezierPaths = config.bezierPaths?.map(b =>
+				new BezierPath(b.p0, b.p1, b.p2, b.p3, b.trackWidth)
+			) || []
 		} else {
 			// Default layout
 			this.flippers = {
@@ -145,6 +151,8 @@ export class PinballGame {
 			]
 
 			this.smoothPaths = []
+
+			this.bezierPaths = []
 		}
 
 		this.score = 0
@@ -245,6 +253,27 @@ export class PinballGame {
 	}
 
 	updateBall() {
+		// Check if ball is on a bezier path - if so, skip normal physics
+		let onBezierPath = false
+		for (const bezierPath of this.bezierPaths) {
+			if (bezierPath.checkBallCollision(this.ball)) {
+				bezierPath.handleBallCollision(this.ball)
+				onBezierPath = true
+				break
+			}
+		}
+		
+		// If on bezier path, skip all other physics and collisions
+		if (onBezierPath) {
+			// Add trail
+			this.ballTrail.push({ x: this.ball.x, y: this.ball.y, life: 10 })
+			this.ballTrail = this.ballTrail.filter(t => {
+				t.life--
+				return t.life > 0
+			}).slice(-15)
+			return
+		}
+
 		// Apply gravity
 		this.ball.vy += this.ball.gravity
 
@@ -394,6 +423,7 @@ export class PinballGame {
 		this.rails.forEach(rail => rail.draw(this.ctx))
 		this.curves.forEach(curve => curve.draw(this.ctx))
 		this.smoothPaths.forEach(path => path.draw(this.ctx))
+		this.bezierPaths.forEach(path => path.draw(this.ctx))
 
 		// Draw flippers
 		this.flippers.left.forEach(flipper => flipper.draw(this.ctx))

@@ -46,10 +46,21 @@ export interface FlipperConfig {
 	width: number
 }
 
+export interface BezierPathConfig {
+	id: string
+	// Cubic bezier: start, control1, control2, end
+	p0: { x: number; y: number }
+	p1: { x: number; y: number }
+	p2: { x: number; y: number }
+	p3: { x: number; y: number }
+	trackWidth: number // Width of the track (slightly less than ball diameter)
+}
+
 export interface BoardConfig {
 	bumpers: BumperConfig[]
 	triangularBumpers: TriangularBumperConfig[]
 	rails: RailConfig[]
 	curves: CurveConfig[]
 	flippers: FlipperConfig[]
+	bezierPaths: BezierPathConfig[]
 }
