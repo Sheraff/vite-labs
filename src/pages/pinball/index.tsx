@@ -14,8 +14,10 @@ export const meta: RouteMeta = {
 
 const STORAGE_KEY = 'pinball-board-config'
 
-const WIDTH = 500
-const HEIGHT = 750
+const WIDTH = 400
+const HEIGHT = 600
+// const WIDTH = 500
+// const HEIGHT = 750
 
 export default function PinballPage() {
 	const canvasRef = useRef<HTMLCanvasElement>(null)
