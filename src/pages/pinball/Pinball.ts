@@ -1,7 +1,7 @@
 import { CurvedSurface } from "./CurvedSurface"
 import { Rail } from "./Rail"
 import { SmoothPath } from "./SmoothPath"
-import { Bumper } from "./Obstacle"
+import { Bumper, TriangularBumper } from "./Obstacle"
 import { Flipper } from "./Flipper"
 
 export class PinballGame {
@@ -23,7 +23,7 @@ export class PinballGame {
 		right: Flipper
 	}
 
-	obstacles: Array<Bumper>
+	obstacles: Array<Bumper | TriangularBumper>
 	rails: Array<Rail>
 	curves: Array<CurvedSurface>
 	smoothPaths: Array<SmoothPath>
@@ -57,13 +57,13 @@ export class PinballGame {
 			radius: 8,
 			vx: 0,
 			vy: 0,
-			gravity: 0.3,
-			bounce: 0.8
+			gravity: 0.2,
+			bounce: 0.7
 		}
 
 		this.flippers = {
-			left: new Flipper(80, this.height - 80, 'left', 80),
-			right: new Flipper(320, this.height - 80, 'right', 80)
+			left: new Flipper(120, this.height - 80, 'left', 70),
+			right: new Flipper(280, this.height - 80, 'right', 70)
 		}
 
 		this.obstacles = [
@@ -72,7 +72,10 @@ export class PinballGame {
 			new Bumper(200, 120, 18, 200),
 			new Bumper(140, 280, 25, 150),
 			new Bumper(260, 280, 25, 150),
-			new Bumper(200, 360, 22, 175)
+			new Bumper(200, 360, 22, 175),
+			// Triangular bumpers above flippers
+			new TriangularBumper(90, this.height - 150, 30, 250),
+			new TriangularBumper(310, this.height - 150, 30, 250)
 		]
 
 		this.rails = [
@@ -88,9 +91,9 @@ export class PinballGame {
 			new CurvedSurface(300, 420, 40, Math.PI / 4, 3 * Math.PI / 4, 10),
 			// Top right curve to guide ball from launch lane
 			new CurvedSurface(this.width - 40, 40, 40, -Math.PI / 2, 0, 10),
-			// Outlanes protection
-			new CurvedSurface(40, this.height - 120, 35, -Math.PI / 2, 0, 8),
-			new CurvedSurface(this.width - this.launchLaneWidth - 40, this.height - 120, 35, Math.PI, Math.PI / 2, 8)
+			// Inlane guides - direct ball to flippers
+			new CurvedSurface(75, this.height - 140, 40, -Math.PI / 2, Math.PI / 8, 8),
+			new CurvedSurface(this.width - this.launchLaneWidth - 75, this.height - 140, 40, Math.PI - Math.PI / 8, Math.PI / 2, 8)
 		]
 
 		this.smoothPaths = [

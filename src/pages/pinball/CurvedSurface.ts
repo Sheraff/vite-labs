@@ -28,21 +28,23 @@ export class CurvedSurface {
 		let normalizedAngle = angle
 		if (normalizedAngle < 0) normalizedAngle += 2 * Math.PI
 
-		// Check if within angular range
+		// Check if within angular range (with small margin for high speed)
 		let startAngle = this.startAngle
 		let endAngle = this.endAngle
 		if (startAngle < 0) startAngle += 2 * Math.PI
 		if (endAngle < 0) endAngle += 2 * Math.PI
 
+		// Add angular margin to prevent tunneling at curve edges
+		const angleMargin = 0.2 // radians
 		const withinAngle = (startAngle <= endAngle) ?
-			(normalizedAngle >= startAngle && normalizedAngle <= endAngle) :
-			(normalizedAngle >= startAngle || normalizedAngle <= endAngle)
+			(normalizedAngle >= startAngle - angleMargin && normalizedAngle <= endAngle + angleMargin) :
+			(normalizedAngle >= startAngle - angleMargin || normalizedAngle <= endAngle + angleMargin)
 
 		if (!withinAngle) return { collision: false } as const
 
-		// Check distance collision
-		const minDist = this.innerRadius - ball.radius
-		const maxDist = this.outerRadius + ball.radius
+		// Check distance collision with expanded range for high speed
+		const minDist = this.innerRadius - ball.radius - 2
+		const maxDist = this.outerRadius + ball.radius + 2
 
 		if (distance >= minDist && distance <= maxDist) {
 			// Determine which surface (inner or outer)
@@ -71,27 +73,43 @@ export class CurvedSurface {
 		const collision = this.checkBallCollision(ball)
 		if (!collision.collision) return
 
-		// Position correction
-		const targetDistance = collision.targetRadius + ball.radius
-		const currentDistance = Math.sqrt(
-			Math.pow(ball.x - this.center.x, 2) +
-			Math.pow(ball.y - this.center.y, 2)
-		)
+		// Calculate current distance from center
+		const dx = ball.x - this.center.x
+		const dy = ball.y - this.center.y
+		const currentDistance = Math.sqrt(dx * dx + dy * dy)
 
-		const correctionFactor = targetDistance / currentDistance
-		ball.x = this.center.x + (ball.x - this.center.x) * correctionFactor
-		ball.y = this.center.y + (ball.y - this.center.y) * correctionFactor
+		// Determine which surface we're colliding with
+		const isInnerSurface = collision.targetRadius < this.radius
+		const targetDistance = collision.targetRadius + (isInnerSurface ? -ball.radius : ball.radius)
 
-		// Velocity reflection
-		const dotProduct = ball.vx * collision.normal.x + ball.vy * collision.normal.y
-		ball.vx -= 2 * dotProduct * collision.normal.x * 0.9
-		ball.vy -= 2 * dotProduct * collision.normal.y * 0.9
+		// Position correction - push ball to correct side
+		if (currentDistance > 0) {
+			const correctionFactor = targetDistance / currentDistance
+			ball.x = this.center.x + dx * correctionFactor
+			ball.y = this.center.y + dy * correctionFactor
+		}
 
-		// Add some curve momentum
-		const tangent = { x: -collision.normal.y, y: collision.normal.x }
-		const tangentSpeed = ball.vx * tangent.x + ball.vy * tangent.y
-		ball.vx += tangent.x * tangentSpeed * 0.1
-		ball.vy += tangent.y * tangentSpeed * 0.1
+		// Recalculate normal after position correction
+		const ndx = ball.x - this.center.x
+		const ndy = ball.y - this.center.y
+		const ndist = Math.sqrt(ndx * ndx + ndy * ndy)
+		const normal = {
+			x: ndx / ndist * (isInnerSurface ? -1 : 1),
+			y: ndy / ndist * (isInnerSurface ? -1 : 1)
+		}
+
+		// Only reflect if moving toward the surface
+		const dotProduct = ball.vx * normal.x + ball.vy * normal.y
+		if (dotProduct < 0) {
+			ball.vx -= 2 * dotProduct * normal.x * 0.9
+			ball.vy -= 2 * dotProduct * normal.y * 0.9
+
+			// Add some curve momentum
+			const tangent = { x: -normal.y, y: normal.x }
+			const tangentSpeed = ball.vx * tangent.x + ball.vy * tangent.y
+			ball.vx += tangent.x * tangentSpeed * 0.1
+			ball.vy += tangent.y * tangentSpeed * 0.1
+		}
 	}
 
 	draw(ctx: CanvasRenderingContext2D) {
