@@ -28,6 +28,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 	const [isAltPressed, setIsAltPressed] = useState(false)
 	const [isDragging, setIsDragging] = useState(false)
 	const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null)
+	const [dragVertex, setDragVertex] = useState<{ type: 'triangle' | 'rail', vertex: number } | null>(null)
 
 	// Draw the editor view
 	useEffect(() => {
@@ -134,6 +135,19 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 			ctx.lineWidth = r.radius * 2
 			ctx.lineCap = 'round'
 			ctx.stroke()
+
+			// Draw endpoint handles when selected
+			if (selectedId === r.id) {
+				[{ x: r.x1, y: r.y1 }, { x: r.x2, y: r.y2 }].forEach(v => {
+					ctx.beginPath()
+					ctx.arc(v.x, v.y, 4, 0, Math.PI * 2)
+					ctx.fillStyle = '#fff'
+					ctx.fill()
+					ctx.strokeStyle = '#48dbfb'
+					ctx.lineWidth = 2
+					ctx.stroke()
+				})
+			}
 		})
 
 		config.curves.forEach((c) => {
@@ -322,6 +336,35 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 		const pos = getCanvasCoords(e)
 
 		if (tool === 'select' && selectedId) {
+			// First check if clicking on a vertex handle
+			const triangular = config.triangularBumpers.find(t => t.id === selectedId)
+			if (triangular) {
+				const vertices = [triangular.v1, triangular.v2, triangular.v3]
+				for (let i = 0; i < vertices.length; i++) {
+					const v = vertices[i]
+					const dist = Math.sqrt((v.x - pos.x) ** 2 + (v.y - pos.y) ** 2)
+					if (dist < 8) { // Click threshold
+						setDragVertex({ type: 'triangle', vertex: i })
+						setIsDragging(true)
+						return
+					}
+				}
+			}
+
+			const rail = config.rails.find(r => r.id === selectedId)
+			if (rail) {
+				const endpoints = [{ x: rail.x1, y: rail.y1 }, { x: rail.x2, y: rail.y2 }]
+				for (let i = 0; i < endpoints.length; i++) {
+					const v = endpoints[i]
+					const dist = Math.sqrt((v.x - pos.x) ** 2 + (v.y - pos.y) ** 2)
+					if (dist < 8) { // Click threshold
+						setDragVertex({ type: 'rail', vertex: i })
+						setIsDragging(true)
+						return
+					}
+				}
+			}
+
 			// Check if clicking on the selected object to start dragging
 			const selected = 
 				config.bumpers.find(b => b.id === selectedId) ||
@@ -611,6 +654,42 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 		setHoverPos(snapped)
 		setIsAltPressed(e.altKey)
 
+		// Handle vertex dragging
+		if (isDragging && dragVertex && selectedId) {
+			setConfig(prevConfig => {
+				if (dragVertex.type === 'triangle') {
+					return {
+						...prevConfig,
+						triangularBumpers: prevConfig.triangularBumpers.map(t => {
+							if (t.id !== selectedId) return t
+							const vertices = [t.v1, t.v2, t.v3]
+							vertices[dragVertex.vertex] = { x: snapped.x, y: snapped.y }
+							return {
+								...t,
+								v1: vertices[0],
+								v2: vertices[1],
+								v3: vertices[2]
+							}
+						})
+					}
+				} else if (dragVertex.type === 'rail') {
+					return {
+						...prevConfig,
+						rails: prevConfig.rails.map(r => {
+							if (r.id !== selectedId) return r
+							if (dragVertex.vertex === 0) {
+								return { ...r, x1: snapped.x, y1: snapped.y }
+							} else {
+								return { ...r, x2: snapped.x, y2: snapped.y }
+							}
+						})
+					}
+				}
+				return prevConfig
+			})
+			return
+		}
+
 		// Handle dragging
 		if (isDragging && dragOffset && selectedId) {
 			const newPos = {
@@ -701,6 +780,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 	const handleMouseUp = () => {
 		setIsDragging(false)
 		setDragOffset(null)
+		setDragVertex(null)
 	}
 
 	const handleKeyDown = (e: KeyboardEvent) => {
