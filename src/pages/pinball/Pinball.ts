@@ -2,13 +2,7 @@ import { CurvedSurface } from "./CurvedSurface"
 import { Rail } from "./Rail"
 import { SmoothPath } from "./SmoothPath"
 import { Bumper } from "./Obstacle"
-
-type Flipper = {
-	x: number
-	y: number
-	angle: number
-	targetAngle: number
-}
+import { Flipper } from "./Flipper"
 
 export class PinballGame {
 	canvas: HTMLCanvasElement
@@ -46,8 +40,8 @@ export class PinballGame {
 	constructor({ canvas }: { canvas: HTMLCanvasElement }) {
 		this.canvas = canvas
 		this.ctx = this.canvas.getContext('2d')!
-		this.width = this.canvas.width
-		this.height = this.canvas.height
+		this.width = 400
+		this.height = 600
 
 		this.ball = {
 			x: this.width - 20,
@@ -60,8 +54,8 @@ export class PinballGame {
 		}
 
 		this.flippers = {
-			left: { x: 100, y: this.height - 50, angle: 0, targetAngle: 0 },
-			right: { x: 300, y: this.height - 50, angle: 0, targetAngle: 0 }
+			left: new Flipper(80, this.height - 80, 'left', 80),
+			right: new Flipper(320, this.height - 80, 'right', 80)
 		}
 
 		this.obstacles = [
@@ -80,20 +74,20 @@ export class PinballGame {
 		]
 
 		this.curves = [
-			new CurvedSurface(200, 100, 60, 0, Math.PI, 15), // Half circle at top
+			new CurvedSurface(200, 100, 60, -Math.PI, 0, 15), // Half circle at top
 			new CurvedSurface(100, 400, 40, Math.PI / 4, 3 * Math.PI / 4, 10),
 			new CurvedSurface(300, 400, 40, Math.PI / 4, 3 * Math.PI / 4, 10),
 			// Top right curve to guide ball from launch lane
-			new CurvedSurface(this.width - 40, 40, 40, 0, Math.PI, 10)
+			new CurvedSurface(this.width - 40, 40, 40, -Math.PI, 0, 10)
 		]
 
 		this.smoothPaths = [
-			new SmoothPath([
-				{ x: 20, y: 300 },
-				{ x: 80, y: 280 },
-				{ x: 120, y: 320 },
-				{ x: 180, y: 310 }
-			], 18)
+			// new SmoothPath([
+			// 	{ x: 20, y: 300 },
+			// 	{ x: 80, y: 280 },
+			// 	{ x: 120, y: 320 },
+			// 	{ x: 180, y: 310 }
+			// ], 18)
 		]
 
 		this.score = 0
@@ -110,10 +104,10 @@ export class PinballGame {
 		const controller = new AbortController()
 		document.addEventListener('keydown', (e) => {
 			if (e.key === 'ArrowLeft' || e.key === 'a') {
-				this.flippers.left.targetAngle = -Math.PI / 4
+				this.flippers.left.flipUp()
 			}
 			if (e.key === 'ArrowRight' || e.key === 'd') {
-				this.flippers.right.targetAngle = Math.PI / 4
+				this.flippers.right.flipUp()
 			}
 			if (e.key === ' ') {
 				e.preventDefault()
@@ -125,10 +119,10 @@ export class PinballGame {
 
 		document.addEventListener('keyup', (e) => {
 			if (e.key === 'ArrowLeft' || e.key === 'a') {
-				this.flippers.left.targetAngle = 0
+				this.flippers.left.flipDown()
 			}
 			if (e.key === 'ArrowRight' || e.key === 'd') {
-				this.flippers.right.targetAngle = 0
+				this.flippers.right.flipDown()
 			}
 			if (e.key === ' ') {
 				if (this.launching) {
@@ -203,33 +197,13 @@ export class PinballGame {
 		})
 
 		// Flipper collisions
-		this.checkFlipperCollision(this.flippers.left, true)
-		this.checkFlipperCollision(this.flippers.right, false)
-	}
-
-	checkFlipperCollision(flipper: Flipper, isLeft: boolean) {
-		const dx = this.ball.x - flipper.x
-		const dy = this.ball.y - flipper.y
-		const distance = Math.sqrt(dx * dx + dy * dy)
-
-		if (distance < this.ball.radius + 30) { // 30 is flipper length
-			const angle = Math.atan2(dy, dx)
-			const force = Math.abs(flipper.angle - flipper.targetAngle) * 20
-
-			this.ball.vx = Math.cos(angle) * (8 + force)
-			this.ball.vy = Math.sin(angle) * (8 + force)
-
-			// Move ball away from flipper
-			const overlap = this.ball.radius + 30 - distance
-			this.ball.x += Math.cos(angle) * overlap
-			this.ball.y += Math.sin(angle) * overlap
-		}
+		this.flippers.left.checkCollision(this.ball)
+		this.flippers.right.checkCollision(this.ball)
 	}
 
 	updateFlippers() {
-		// Smooth flipper animation
-		this.flippers.left.angle += (this.flippers.left.targetAngle - this.flippers.left.angle) * 0.3
-		this.flippers.right.angle += (this.flippers.right.targetAngle - this.flippers.right.angle) * 0.3
+		this.flippers.left.update()
+		this.flippers.right.update()
 	}
 
 	resetBall() {
@@ -251,8 +225,8 @@ export class PinballGame {
 		this.smoothPaths.forEach(path => path.draw(this.ctx))
 
 		// Draw flippers
-		this.drawFlipper(this.flippers.left, true)
-		this.drawFlipper(this.flippers.right, false)
+		this.flippers.left.draw(this.ctx)
+		this.flippers.right.draw(this.ctx)
 
 		// Draw ball
 		this.ctx.beginPath()
@@ -273,20 +247,6 @@ export class PinballGame {
 			this.ctx.fillStyle = '#ff4757'
 			this.ctx.fillRect(this.width - 30, this.height - 100 - this.launchPower * 3, 20, this.launchPower * 3)
 		}
-	}
-
-	drawFlipper(flipper: Flipper, isLeft: boolean) {
-		this.ctx.save()
-		this.ctx.translate(flipper.x, flipper.y)
-		this.ctx.rotate(flipper.angle)
-
-		this.ctx.fillStyle = '#48dbfb'
-		this.ctx.fillRect(isLeft ? -30 : 0, -5, 30, 10)
-		this.ctx.strokeStyle = '#0abde3'
-		this.ctx.lineWidth = 2
-		this.ctx.strokeRect(isLeft ? -30 : 0, -5, 30, 10)
-
-		this.ctx.restore()
 	}
 
 	gameLoop() {
