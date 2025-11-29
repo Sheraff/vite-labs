@@ -20,8 +20,8 @@ export class PinballGame {
 		bounce: number
 	}
 	flippers: {
-		left: Flipper
-		right: Flipper
+		left: Flipper[]
+		right: Flipper[]
 	}
 
 	obstacles: Array<Bumper | TriangularBumper>
@@ -64,25 +64,16 @@ export class PinballGame {
 
 		// Load from config or use defaults
 		if (config) {
+			const leftFlippers = config.flippers.filter(f => f.side === 'left')
+			const rightFlippers = config.flippers.filter(f => f.side === 'right')
+			
 			this.flippers = {
-				left: config.flippers.find(f => f.side === 'left')
-					? new Flipper(
-						config.flippers.find(f => f.side === 'left')!.x,
-						config.flippers.find(f => f.side === 'left')!.y,
-						'left',
-						config.flippers.find(f => f.side === 'left')!.length,
-						config.flippers.find(f => f.side === 'left')!.width
-					)
-					: new Flipper(120, this.height - 80, 'left', 70),
-				right: config.flippers.find(f => f.side === 'right')
-					? new Flipper(
-						config.flippers.find(f => f.side === 'right')!.x,
-						config.flippers.find(f => f.side === 'right')!.y,
-						'right',
-						config.flippers.find(f => f.side === 'right')!.length,
-						config.flippers.find(f => f.side === 'right')!.width
-					)
-					: new Flipper(280, this.height - 80, 'right', 70)
+				left: leftFlippers.length > 0
+					? leftFlippers.map(f => new Flipper(f.x, f.y, 'left', f.length, f.width))
+					: [new Flipper(120, this.height - 80, 'left', 70)],
+				right: rightFlippers.length > 0
+					? rightFlippers.map(f => new Flipper(f.x, f.y, 'right', f.length, f.width))
+					: [new Flipper(280, this.height - 80, 'right', 70)]
 			}
 
 			this.obstacles = [
@@ -107,8 +98,8 @@ export class PinballGame {
 		} else {
 			// Default layout
 			this.flippers = {
-				left: new Flipper(120, this.height - 80, 'left', 70),
-				right: new Flipper(280, this.height - 80, 'right', 70)
+				left: [new Flipper(120, this.height - 80, 'left', 70)],
+				right: [new Flipper(280, this.height - 80, 'right', 70)]
 			}
 
 			this.obstacles = [
@@ -170,10 +161,10 @@ export class PinballGame {
 		const controller = new AbortController()
 		document.addEventListener('keydown', (e) => {
 			if (e.key === 'ArrowLeft' || e.key === 'a') {
-				this.flippers.left.flipUp()
+				this.flippers.left.forEach(f => f.flipUp())
 			}
 			if (e.key === 'ArrowRight' || e.key === 'd') {
-				this.flippers.right.flipUp()
+				this.flippers.right.forEach(f => f.flipUp())
 			}
 			if (e.key === ' ') {
 				e.preventDefault()
@@ -185,10 +176,10 @@ export class PinballGame {
 
 		document.addEventListener('keyup', (e) => {
 			if (e.key === 'ArrowLeft' || e.key === 'a') {
-				this.flippers.left.flipDown()
+				this.flippers.left.forEach(f => f.flipDown())
 			}
 			if (e.key === 'ArrowRight' || e.key === 'd') {
-				this.flippers.right.flipDown()
+				this.flippers.right.forEach(f => f.flipDown())
 			}
 			if (e.key === ' ') {
 				if (this.launching) {
@@ -335,8 +326,8 @@ export class PinballGame {
 		})
 
 		// Flipper collisions
-		this.flippers.left.checkCollision(this.ball)
-		this.flippers.right.checkCollision(this.ball)
+		this.flippers.left.forEach(flipper => flipper.checkCollision(this.ball))
+		this.flippers.right.forEach(flipper => flipper.checkCollision(this.ball))
 
 		// Add trail
 		this.ballTrail.push({ x: this.ball.x, y: this.ball.y, life: 10 })
@@ -347,8 +338,8 @@ export class PinballGame {
 	}
 
 	updateFlippers() {
-		this.flippers.left.update()
-		this.flippers.right.update()
+		this.flippers.left.forEach(flipper => flipper.update())
+		this.flippers.right.forEach(flipper => flipper.update())
 	}
 
 	resetBall() {
@@ -379,8 +370,8 @@ export class PinballGame {
 		this.smoothPaths.forEach(path => path.draw(this.ctx))
 
 		// Draw flippers
-		this.flippers.left.draw(this.ctx)
-		this.flippers.right.draw(this.ctx)
+		this.flippers.left.forEach(flipper => flipper.draw(this.ctx))
+		this.flippers.right.forEach(flipper => flipper.draw(this.ctx))
 
 		// Draw ball trail
 		this.ballTrail.forEach((point, i) => {
