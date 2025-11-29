@@ -252,9 +252,22 @@ export class PinballGame {
 		this.ball.vx *= 0.995
 		this.ball.vy *= 0.998
 
-		// Update position
-		this.ball.x += this.ball.vx
-		this.ball.y += this.ball.vy
+		// Sub-step physics to prevent tunneling at high speeds
+		const speed = Math.sqrt(this.ball.vx * this.ball.vx + this.ball.vy * this.ball.vy)
+		const substeps = Math.max(1, Math.ceil(speed / 5)) // More steps for faster balls
+		const subVx = this.ball.vx / substeps
+		const subVy = this.ball.vy / substeps
+		
+		for (let step = 0; step < substeps; step++) {
+			// Update position in small increments
+			this.ball.x += subVx
+			this.ball.y += subVy
+			
+			// Check collisions after each substep
+			this.checkCollisionsSubstep()
+		}
+		
+		// Handle walls and boundaries after sub-stepping
 
 		// Left wall
 		if (this.ball.x - this.ball.radius <= 0) {
@@ -290,6 +303,17 @@ export class PinballGame {
 			this.resetBall()
 		}
 
+
+
+		// Add trail
+		this.ballTrail.push({ x: this.ball.x, y: this.ball.y, life: 10 })
+		this.ballTrail = this.ballTrail.filter(t => {
+			t.life--
+			return t.life > 0
+		}).slice(-15) // Keep only last 15 trail points
+	}
+
+	checkCollisionsSubstep() {
 		// Check obstacle collisions
 		this.obstacles.forEach(obstacle => {
 			const points = obstacle.handleBallCollision(this.ball)
@@ -328,13 +352,6 @@ export class PinballGame {
 		// Flipper collisions
 		this.flippers.left.forEach(flipper => flipper.checkCollision(this.ball))
 		this.flippers.right.forEach(flipper => flipper.checkCollision(this.ball))
-
-		// Add trail
-		this.ballTrail.push({ x: this.ball.x, y: this.ball.y, life: 10 })
-		this.ballTrail = this.ballTrail.filter(t => {
-			t.life--
-			return t.life > 0
-		}).slice(-15) // Keep only last 15 trail points
 	}
 
 	updateFlippers() {

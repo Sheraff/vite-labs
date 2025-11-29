@@ -89,27 +89,44 @@ export class Flipper {
 			p2y = this.y - sin * this.length
 		}
 
-		// Closest point on segment to ball
-		const dx = p2x - p1x
-		const dy = p2y - p1y
-		const lenSq = dx * dx + dy * dy
+		// Check both current position and previous frame position (swept collision)
+		const prevBallX = ball.x - ball.vx
+		const prevBallY = ball.y - ball.vy
+		
+		const checkPoint = (bx: number, by: number) => {
+			// Closest point on segment to ball
+			const dx = p2x - p1x
+			const dy = p2y - p1y
+			const lenSq = dx * dx + dy * dy
 
-		let t = ((ball.x - p1x) * dx + (ball.y - p1y) * dy) / lenSq
-		t = Math.max(0, Math.min(1, t))
+			let t = ((bx - p1x) * dx + (by - p1y) * dy) / lenSq
+			t = Math.max(0, Math.min(1, t))
 
-		const closestX = p1x + t * dx
-		const closestY = p1y + t * dy
+			const closestX = p1x + t * dx
+			const closestY = p1y + t * dy
 
-		const distX = ball.x - closestX
-		const distY = ball.y - closestY
-		const distSq = distX * distX + distY * distY
-
+			const distX = bx - closestX
+			const distY = by - closestY
+			const distSq = distX * distX + distY * distY
+			
+			return { closestX, closestY, distSq }
+		}
+		
+		const current = checkPoint(ball.x, ball.y)
+		const previous = checkPoint(prevBallX, prevBallY)
+		
 		const minDist = ball.radius + this.width / 2
+		
+		// Use whichever is closer to detect collision
+		const usePoint = current.distSq < previous.distSq ? current : previous
 
-		if (distSq < minDist * minDist) {
+		if (usePoint.distSq < minDist * minDist) {
 			// Collision!
-			const dist = Math.sqrt(distSq)
+			const dist = Math.sqrt(usePoint.distSq)
 			if (dist === 0) return
+			
+			const distX = ball.x - usePoint.closestX
+			const distY = ball.y - usePoint.closestY
 
 			const nx = distX / dist
 			const ny = distY / dist
@@ -119,21 +136,25 @@ export class Flipper {
 			ball.x += nx * overlap
 			ball.y += ny * overlap
 
-			// Reflect velocity
+			// Only apply bounce if ball is moving towards flipper
 			const vDotN = ball.vx * nx + ball.vy * ny
+			
+			if (vDotN >= 0) return // Ball moving away, don't bounce
+			
+			// Reflect velocity
 			ball.vx -= 2 * vDotN * nx
 			ball.vy -= 2 * vDotN * ny
 
 			// Add flipper kick using actual angular velocity
 			// Flipper velocity vector at contact point
 			// V = omega x R where omega is angular velocity
-			const rx = closestX - this.x
-			const ry = closestY - this.y
+			const rx = usePoint.closestX - this.x
+			const ry = usePoint.closestY - this.y
 			const fvx = -this.angularVelocity * ry * 4 // Scale up for better effect
 			const fvy = this.angularVelocity * rx * 4
 
 			// Add flipper velocity to ball
-			const kickStrength = 0.3
+			const kickStrength = 0.35
 			ball.vx += fvx * kickStrength
 			ball.vy += fvy * kickStrength
 
