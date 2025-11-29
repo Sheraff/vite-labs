@@ -39,7 +39,7 @@ import ants_shader_image from "./pages/ants-shader/screen.png"
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "visual-exec" | "tinkerbell-map" | "swarm-pathfinding" | "star-rating" | "spring-fluid" | "spider-inverse-kinematics" | "snakebird" | "silky-modal" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "polka-fireflies" | "perlin-ripples" | "particle-life-gpu" | "particle-life" | "paint-worklet" | "pacman" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "maze-generation" | "lightning" | "intl-tuesday" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "fireflies" | "deterministic-plinko" | "cursor-projection" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "any-string-to-css-color" | "ants-shader" | "ants" | "a-star"
+export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "visual-exec" | "tinkerbell-map" | "swarm-pathfinding" | "star-rating" | "spring-fluid" | "spider-inverse-kinematics" | "snakebird" | "silky-modal" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "polka-fireflies" | "pinball" | "perlin-ripples" | "particle-life-gpu" | "particle-life" | "paint-worklet" | "pacman" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "maze-generation" | "lightning" | "intl-tuesday" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "fireflies" | "deterministic-plinko" | "cursor-projection" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "any-string-to-css-color" | "ants-shader" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
@@ -175,7 +175,7 @@ export const ROUTES = {
 			tags: ['css']
 		},
 		git: {
-			lastModified: 1764350392000,
+			lastModified: 1764372609000,
 			firstAdded: 1764198910000
 		},
 	},
@@ -225,6 +225,18 @@ export const ROUTES = {
 		git: {
 			lastModified: 1761222754000,
 			firstAdded: 1761173482000
+		},
+	},
+	"pinball": {
+		Component: lazy(() => import("./pages/pinball/index.tsx")),
+		meta: {
+			title: 'Pinball',
+			tags: ['game', 'wip']
+		
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
 		},
 	},
 	"perlin-ripples": {
