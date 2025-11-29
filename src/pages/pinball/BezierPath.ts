@@ -102,7 +102,7 @@ export class BezierPath {
 	private bezier(t: number): Point {
 		const segmentIndex = Math.min(Math.floor(t * this.segments.length), this.segments.length - 1)
 		const segment = this.segments[segmentIndex]
-		const localT = (t * this.segments.length) % 1
+		const localT = t === 1 ? 1 : (t * this.segments.length) % 1
 		return this.bezierSegment(segment, localT)
 	}
 
@@ -110,7 +110,7 @@ export class BezierPath {
 	private bezierDerivative(t: number): Point {
 		const segmentIndex = Math.min(Math.floor(t * this.segments.length), this.segments.length - 1)
 		const segment = this.segments[segmentIndex]
-		const localT = (t * this.segments.length) % 1
+		const localT = t === 1 ? 1 : (t * this.segments.length) % 1
 		return this.bezierDerivativeSegment(segment, localT)
 	}
 
@@ -285,7 +285,8 @@ export class BezierPath {
 		// Check if ball exited
 		if (currentArcLength < 0 || currentArcLength > this.length) {
 			// Ball exits the path
-			const exitT = currentArcLength < 0 ? 0 : 1
+			const exitingFromStart = currentArcLength < 0
+			const exitT = exitingFromStart ? 0 : 1
 			const exitPoint = this.bezier(exitT)
 			const tangent = this.bezierDerivative(exitT)
 			const tangentLen = Math.sqrt(tangent.x * tangent.x + tangent.y * tangent.y)
@@ -294,8 +295,10 @@ export class BezierPath {
 			ball.x = exitPoint.x
 			ball.y = exitPoint.y
 
-			// Set ball velocity along tangent
-			const direction = this.ballOnPath.forward ? 1 : -1
+			// Set ball velocity pointing AWAY from the exit point
+			// At start (t=0): tangent points forward (into curve), so negate it to point away
+			// At end (t=1): tangent points forward (out of curve), so keep it to point away
+			const direction = exitingFromStart ? -1 : 1
 			ball.vx = (tangent.x / tangentLen) * this.ballOnPath.speed * direction
 			ball.vy = (tangent.y / tangentLen) * this.ballOnPath.speed * direction
 
