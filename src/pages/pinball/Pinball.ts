@@ -3,6 +3,7 @@ import { Rail } from "./Rail"
 import { SmoothPath } from "./SmoothPath"
 import { Bumper, TriangularBumper } from "./Obstacle"
 import { Flipper } from "./Flipper"
+import type { BoardConfig } from "./types"
 
 export class PinballGame {
 	canvas: HTMLCanvasElement
@@ -43,7 +44,7 @@ export class PinballGame {
 	cleanup = new Set<() => void>()
 	rafId: number | null = null
 
-	constructor({ canvas }: { canvas: HTMLCanvasElement }) {
+	constructor({ canvas, config }: { canvas: HTMLCanvasElement; config?: BoardConfig }) {
 		this.canvas = canvas
 		this.ctx = this.canvas.getContext('2d')!
 		const scale = window.devicePixelRatio
@@ -61,49 +62,84 @@ export class PinballGame {
 			bounce: 0.7
 		}
 
-		this.flippers = {
-			left: new Flipper(120, this.height - 80, 'left', 70),
-			right: new Flipper(280, this.height - 80, 'right', 70)
+		// Load from config or use defaults
+		if (config) {
+			this.flippers = {
+				left: config.flippers.find(f => f.side === 'left')
+					? new Flipper(
+						config.flippers.find(f => f.side === 'left')!.x,
+						config.flippers.find(f => f.side === 'left')!.y,
+						'left',
+						config.flippers.find(f => f.side === 'left')!.length,
+						config.flippers.find(f => f.side === 'left')!.width
+					)
+					: new Flipper(120, this.height - 80, 'left', 70),
+				right: config.flippers.find(f => f.side === 'right')
+					? new Flipper(
+						config.flippers.find(f => f.side === 'right')!.x,
+						config.flippers.find(f => f.side === 'right')!.y,
+						'right',
+						config.flippers.find(f => f.side === 'right')!.length,
+						config.flippers.find(f => f.side === 'right')!.width
+					)
+					: new Flipper(280, this.height - 80, 'right', 70)
+			}
+
+			this.obstacles = [
+				...config.bumpers.map(b => new Bumper(b.x, b.y, b.radius, b.points)),
+				...config.triangularBumpers.map(t => new TriangularBumper(t.x, t.y, t.size, t.points))
+			]
+
+			this.rails = [
+				...config.rails.map(r => new Rail(r.x1, r.y1, r.x2, r.y2, r.radius)),
+				// Always include launch lane wall
+				new Rail(this.width - this.launchLaneWidth, this.height, this.width - this.launchLaneWidth, 80, 5)
+			]
+
+			this.curves = config.curves.map(c =>
+				new CurvedSurface(c.x, c.y, c.radius, c.startAngle, c.endAngle, c.thickness)
+			)
+
+			this.smoothPaths = []
+		} else {
+			// Default layout
+			this.flippers = {
+				left: new Flipper(120, this.height - 80, 'left', 70),
+				right: new Flipper(280, this.height - 80, 'right', 70)
+			}
+
+			this.obstacles = [
+				new Bumper(100, 180, 20, 100),
+				new Bumper(300, 180, 20, 100),
+				new Bumper(200, 120, 18, 200),
+				new Bumper(140, 280, 25, 150),
+				new Bumper(260, 280, 25, 150),
+				new Bumper(200, 360, 22, 175),
+				// Triangular bumpers above flippers
+				new TriangularBumper(90, this.height - 150, 30, 250),
+				new TriangularBumper(310, this.height - 150, 30, 250)
+			]
+
+			this.rails = [
+				new Rail(50, 150, 150, 200, 12),
+				new Rail(250, 200, 350, 150, 12),
+				// Launch lane wall
+				new Rail(this.width - this.launchLaneWidth, this.height, this.width - this.launchLaneWidth, 80, 5)
+			]
+
+			this.curves = [
+				new CurvedSurface(200, 100, 60, -Math.PI, 0, 15), // Half circle at top
+				new CurvedSurface(100, 420, 40, Math.PI / 4, 3 * Math.PI / 4, 10),
+				new CurvedSurface(300, 420, 40, Math.PI / 4, 3 * Math.PI / 4, 10),
+				// Top right curve to guide ball from launch lane
+				new CurvedSurface(this.width - 40, 40, 40, -Math.PI / 2, 0, 10),
+				// Inlane guides - direct ball to flippers
+				new CurvedSurface(75, this.height - 140, 40, -Math.PI / 2, Math.PI / 8, 8),
+				new CurvedSurface(this.width - this.launchLaneWidth - 75, this.height - 140, 40, Math.PI - Math.PI / 8, Math.PI / 2, 8)
+			]
+
+			this.smoothPaths = []
 		}
-
-		this.obstacles = [
-			new Bumper(100, 180, 20, 100),
-			new Bumper(300, 180, 20, 100),
-			new Bumper(200, 120, 18, 200),
-			new Bumper(140, 280, 25, 150),
-			new Bumper(260, 280, 25, 150),
-			new Bumper(200, 360, 22, 175),
-			// Triangular bumpers above flippers
-			new TriangularBumper(90, this.height - 150, 30, 250),
-			new TriangularBumper(310, this.height - 150, 30, 250)
-		]
-
-		this.rails = [
-			new Rail(50, 150, 150, 200, 12),
-			new Rail(250, 200, 350, 150, 12),
-			// Launch lane wall
-			new Rail(this.width - this.launchLaneWidth, this.height, this.width - this.launchLaneWidth, 80, 5)
-		]
-
-		this.curves = [
-			new CurvedSurface(200, 100, 60, -Math.PI, 0, 15), // Half circle at top
-			new CurvedSurface(100, 420, 40, Math.PI / 4, 3 * Math.PI / 4, 10),
-			new CurvedSurface(300, 420, 40, Math.PI / 4, 3 * Math.PI / 4, 10),
-			// Top right curve to guide ball from launch lane
-			new CurvedSurface(this.width - 40, 40, 40, -Math.PI / 2, 0, 10),
-			// Inlane guides - direct ball to flippers
-			new CurvedSurface(75, this.height - 140, 40, -Math.PI / 2, Math.PI / 8, 8),
-			new CurvedSurface(this.width - this.launchLaneWidth - 75, this.height - 140, 40, Math.PI - Math.PI / 8, Math.PI / 2, 8)
-		]
-
-		this.smoothPaths = [
-			// new SmoothPath([
-			// 	{ x: 20, y: 300 },
-			// 	{ x: 80, y: 280 },
-			// 	{ x: 120, y: 320 },
-			// 	{ x: 180, y: 310 }
-			// ], 18)
-		]
 
 		this.score = 0
 		this.setupControls()
