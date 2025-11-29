@@ -267,6 +267,19 @@ export class PinballGame {
 			this.checkCollisionsSubstep()
 		}
 		
+		// Flipper collisions (outside substep loop - they have swept collision built in)
+		this.flippers.left.forEach(flipper => flipper.checkCollision(this.ball))
+		this.flippers.right.forEach(flipper => flipper.checkCollision(this.ball))
+		
+		// Clamp maximum velocity as a safety measure
+		const maxSpeed = 25
+		const finalSpeed = Math.sqrt(this.ball.vx * this.ball.vx + this.ball.vy * this.ball.vy)
+		if (finalSpeed > maxSpeed) {
+			const scale = maxSpeed / finalSpeed
+			this.ball.vx *= scale
+			this.ball.vy *= scale
+		}
+		
 		// Handle walls and boundaries after sub-stepping
 
 		// Left wall
@@ -348,10 +361,6 @@ export class PinballGame {
 				path.handleBallCollision(this.ball)
 			}
 		})
-
-		// Flipper collisions
-		this.flippers.left.forEach(flipper => flipper.checkCollision(this.ball))
-		this.flippers.right.forEach(flipper => flipper.checkCollision(this.ball))
 	}
 
 	updateFlippers() {

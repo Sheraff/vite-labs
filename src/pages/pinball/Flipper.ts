@@ -10,6 +10,7 @@ export class Flipper {
 	maxRotation: number = Math.PI / 4
 	angularVelocity: number = 0
 	previousAngle: number = 0
+	collisionCooldown: number = 0
 
 	constructor(x: number, y: number, side: 'left' | 'right', length: number = 80, width: number = 15) {
 		this.x = x
@@ -54,6 +55,7 @@ export class Flipper {
 		this.previousAngle = this.angle
 		this.angle += (this.targetAngle - this.angle) * this.angularSpeed
 		this.angularVelocity = this.angle - this.previousAngle
+		if (this.collisionCooldown > 0) this.collisionCooldown--
 	}
 
 	flipUp() {
@@ -121,6 +123,9 @@ export class Flipper {
 		const usePoint = current.distSq < previous.distSq ? current : previous
 
 		if (usePoint.distSq < minDist * minDist) {
+			// Skip if on cooldown to prevent multiple rapid hits
+			if (this.collisionCooldown > 0) return
+			
 			// Collision!
 			const dist = Math.sqrt(usePoint.distSq)
 			if (dist === 0) return
@@ -155,12 +160,27 @@ export class Flipper {
 
 			// Add flipper velocity to ball
 			const kickStrength = 0.35
-			ball.vx += fvx * kickStrength
-			ball.vy += fvy * kickStrength
+			const kickVx = fvx * kickStrength
+			const kickVy = fvy * kickStrength
+			
+			// Clamp the kick to prevent extreme velocities
+			const maxKick = 8
+			const kickMag = Math.sqrt(kickVx * kickVx + kickVy * kickVy)
+			if (kickMag > maxKick) {
+				const scale = maxKick / kickMag
+				ball.vx += kickVx * scale
+				ball.vy += kickVy * scale
+			} else {
+				ball.vx += kickVx
+				ball.vy += kickVy
+			}
 
 			// Add elasticity
 			ball.vx *= 0.98
 			ball.vy *= 0.98
+			
+			// Set cooldown to prevent multiple hits
+			this.collisionCooldown = 3
 		}
 	}
 
