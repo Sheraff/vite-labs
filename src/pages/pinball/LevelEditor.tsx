@@ -23,6 +23,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 	})
 	const [selectedId, setSelectedId] = useState<string | null>(null)
 	const [railStart, setRailStart] = useState<{ x: number; y: number } | null>(null)
+	const [triangleVertices, setTriangleVertices] = useState<Array<{ x: number; y: number }>>([])
 	const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null)
 	const [isAltPressed, setIsAltPressed] = useState(false)
 
@@ -171,6 +172,36 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 		ctx.fillText('LAUNCH', width - launchLaneWidth / 2, height - 130)
 		ctx.fillText('LANE', width - launchLaneWidth / 2, height - 118)
 
+		// Draw in-progress triangle vertices
+		if (tool === 'triangular' && triangleVertices.length > 0) {
+			ctx.globalAlpha = 1
+			triangleVertices.forEach((v, i) => {
+				ctx.beginPath()
+				ctx.arc(v.x, v.y, 5, 0, Math.PI * 2)
+				ctx.fillStyle = '#fff'
+				ctx.fill()
+				ctx.strokeStyle = '#f6b93b'
+				ctx.lineWidth = 2
+				ctx.stroke()
+				// Draw number
+				ctx.fillStyle = '#001122'
+				ctx.font = 'bold 10px Arial'
+				ctx.textAlign = 'center'
+				ctx.fillText(`${i + 1}`, v.x, v.y + 3)
+			})
+			// Draw lines between vertices
+			if (triangleVertices.length >= 2) {
+				ctx.beginPath()
+				ctx.moveTo(triangleVertices[0].x, triangleVertices[0].y)
+				for (let i = 1; i < triangleVertices.length; i++) {
+					ctx.lineTo(triangleVertices[i].x, triangleVertices[i].y)
+				}
+				ctx.strokeStyle = 'rgba(246, 185, 59, 0.5)'
+				ctx.lineWidth = 2
+				ctx.stroke()
+			}
+		}
+
 		// Draw preview of tool
 		if (hoverPos && tool !== 'select' && tool !== 'delete') {
 			ctx.globalAlpha = 0.5
@@ -180,15 +211,45 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 				ctx.fillStyle = '#ff6b6b'
 				ctx.fill()
 			} else if (tool === 'triangular') {
-				const size = 30
-				const height = (Math.sqrt(3) / 2) * size
-				ctx.beginPath()
-				ctx.moveTo(hoverPos.x, hoverPos.y - height * 0.6)
-				ctx.lineTo(hoverPos.x - size / 2, hoverPos.y + height * 0.4)
-				ctx.lineTo(hoverPos.x + size / 2, hoverPos.y + height * 0.4)
-				ctx.closePath()
-				ctx.fillStyle = '#f6b93b'
-				ctx.fill()
+				if (triangleVertices.length === 0) {
+					// Show preview of first vertex
+					ctx.beginPath()
+					ctx.arc(hoverPos.x, hoverPos.y, 4, 0, Math.PI * 2)
+					ctx.fillStyle = '#f6b93b'
+					ctx.fill()
+				} else if (triangleVertices.length === 1) {
+					// Show line from first vertex to cursor
+					ctx.beginPath()
+					ctx.moveTo(triangleVertices[0].x, triangleVertices[0].y)
+					ctx.lineTo(hoverPos.x, hoverPos.y)
+					ctx.strokeStyle = '#f6b93b'
+					ctx.lineWidth = 3
+					ctx.stroke()
+					// Show vertices
+					ctx.beginPath()
+					ctx.arc(triangleVertices[0].x, triangleVertices[0].y, 4, 0, Math.PI * 2)
+					ctx.fillStyle = '#f6b93b'
+					ctx.fill()
+					ctx.beginPath()
+					ctx.arc(hoverPos.x, hoverPos.y, 4, 0, Math.PI * 2)
+					ctx.fill()
+				} else if (triangleVertices.length === 2) {
+					// Show incomplete triangle
+					ctx.beginPath()
+					ctx.moveTo(triangleVertices[0].x, triangleVertices[0].y)
+					ctx.lineTo(triangleVertices[1].x, triangleVertices[1].y)
+					ctx.lineTo(hoverPos.x, hoverPos.y)
+					ctx.closePath()
+					ctx.fillStyle = '#f6b93b'
+					ctx.fill()
+					// Show vertices
+					;[triangleVertices[0], triangleVertices[1], hoverPos].forEach(v => {
+						ctx.beginPath()
+						ctx.arc(v.x, v.y, 4, 0, Math.PI * 2)
+						ctx.fillStyle = '#fff'
+						ctx.fill()
+					})
+				}
 			} else if (tool === 'rail' && railStart) {
 				ctx.beginPath()
 				ctx.moveTo(railStart.x, railStart.y)
@@ -220,7 +281,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 		}
 
 		ctx.restore()
-	}, [config, selectedId, tool, hoverPos, railStart, width, height])
+	}, [config, selectedId, tool, hoverPos, railStart, triangleVertices, width, height])
 
 	const getCanvasCoords = (e: React.MouseEvent<HTMLCanvasElement>) => {
 		const canvas = canvasRef.current!
@@ -376,18 +437,23 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 				}]
 			})
 		} else if (tool === 'triangular') {
-			const size = 30
-			const height = (Math.sqrt(3) / 2) * size
-			setConfig({
-				...config,
-				triangularBumpers: [...config.triangularBumpers, {
-					id: `triangular-${Date.now()}`,
-					v1: { x: snapped.x, y: snapped.y - height * 0.6 },
-					v2: { x: snapped.x - size / 2, y: snapped.y + height * 0.4 },
-					v3: { x: snapped.x + size / 2, y: snapped.y + height * 0.4 },
-					points: 250
-				}]
-			})
+			if (triangleVertices.length < 2) {
+				// Add vertex
+				setTriangleVertices([...triangleVertices, snapped])
+			} else {
+				// Third click - complete the triangle
+				setConfig({
+					...config,
+					triangularBumpers: [...config.triangularBumpers, {
+						id: `triangular-${Date.now()}`,
+						v1: triangleVertices[0],
+						v2: triangleVertices[1],
+						v3: snapped,
+						points: 250
+					}]
+				})
+				setTriangleVertices([])
+			}
 		} else if (tool === 'rail') {
 			if (!railStart) {
 				setRailStart(snapped)
@@ -452,6 +518,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 			setSelectedId(null)
 		} else if (e.key === 'Escape') {
 			setRailStart(null)
+			setTriangleVertices([])
 			setSelectedId(null)
 		} else if (e.key === 'v' || e.key === 'V') {
 			setTool('select')
@@ -615,7 +682,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 			</div>
 			<div className={styles.instructions}>
 				<strong>Controls:</strong> Click to place | Shift+Click for precise placement |
-				Alt+Click for right flipper | Delete key to remove selected | Esc to deselect
+				Alt+Click for right flipper | Triangle needs 3 clicks | Delete key to remove selected | Esc to cancel/deselect
 			</div>
 			<canvas
 				ref={canvasRef}
