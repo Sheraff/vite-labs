@@ -8,6 +8,8 @@ export class Flipper {
 	side: 'left' | 'right'
 	angularSpeed: number = 0.3
 	maxRotation: number = Math.PI / 4
+	angularVelocity: number = 0
+	previousAngle: number = 0
 
 	constructor(x: number, y: number, side: 'left' | 'right', length: number = 80, width: number = 15) {
 		this.x = x
@@ -49,7 +51,9 @@ export class Flipper {
 	}
 
 	update() {
+		this.previousAngle = this.angle
 		this.angle += (this.targetAngle - this.angle) * this.angularSpeed
+		this.angularVelocity = this.angle - this.previousAngle
 	}
 
 	flipUp() {
@@ -120,28 +124,22 @@ export class Flipper {
 			ball.vx -= 2 * vDotN * nx
 			ball.vy -= 2 * vDotN * ny
 
-			// Add flipper kick
-			const angularVel = (this.targetAngle - this.angle) * this.angularSpeed
+			// Add flipper kick using actual angular velocity
+			// Flipper velocity vector at contact point
+			// V = omega x R where omega is angular velocity
+			const rx = closestX - this.x
+			const ry = closestY - this.y
+			const fvx = -this.angularVelocity * ry * 60 // Scale up for better effect
+			const fvy = this.angularVelocity * rx * 60
 
-			// Flipper velocity vector at closest point
-			// V = omega x R
-			// R = (closestX - this.x, closestY - this.y)
-			// V_x = -omega * R_y
-			// V_y = omega * R_x
+			// Add flipper velocity to ball
+			const kickStrength = 1.8
+			ball.vx += fvx * kickStrength
+			ball.vy += fvy * kickStrength
 
-			const fvx = -angularVel * (closestY - this.y)
-			const fvy = angularVel * (closestX - this.x)
-
-			const vRel = fvx * nx + fvy * ny
-
-			if (vRel > 0) {
-				ball.vx += nx * vRel * 1.5
-				ball.vy += ny * vRel * 1.5
-			}
-
-			// Add some elasticity
-			ball.vx *= 0.95
-			ball.vy *= 0.95
+			// Add elasticity
+			ball.vx *= 0.98
+			ball.vy *= 0.98
 		}
 	}
 
