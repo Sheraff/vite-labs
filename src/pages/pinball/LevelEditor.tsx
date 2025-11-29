@@ -242,13 +242,13 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 					ctx.closePath()
 					ctx.fillStyle = '#f6b93b'
 					ctx.fill()
-					// Show vertices
-					;[triangleVertices[0], triangleVertices[1], hoverPos].forEach(v => {
-						ctx.beginPath()
-						ctx.arc(v.x, v.y, 4, 0, Math.PI * 2)
-						ctx.fillStyle = '#fff'
-						ctx.fill()
-					})
+						// Show vertices
+						;[triangleVertices[0], triangleVertices[1], hoverPos].forEach(v => {
+							ctx.beginPath()
+							ctx.arc(v.x, v.y, 4, 0, Math.PI * 2)
+							ctx.fillStyle = '#fff'
+							ctx.fill()
+						})
 				}
 			} else if (tool === 'rail' && railStart) {
 				ctx.beginPath()
