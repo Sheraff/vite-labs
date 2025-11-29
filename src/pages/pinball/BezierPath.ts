@@ -307,7 +307,7 @@ export class BezierPath {
 		const samples = 50
 		const halfWidth = this.trackWidth / 2
 		
-		// Draw both track lines
+		// Draw both track lines (keep them separate to avoid visual connection at ends)
 		for (let side = -1; side <= 1; side += 2) {
 			ctx.beginPath()
 			
@@ -334,7 +334,7 @@ export class BezierPath {
 			
 			ctx.strokeStyle = '#48dbfb'
 			ctx.lineWidth = 3
-			ctx.lineCap = 'round'
+			ctx.lineCap = 'butt' // Use butt instead of round to avoid extending past endpoints
 			ctx.lineJoin = 'round'
 			ctx.stroke()
 		}

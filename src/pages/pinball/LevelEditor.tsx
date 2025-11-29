@@ -348,11 +348,13 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 
 		// Draw in-progress bezier points
 		if (tool === 'bezier' && bezierPoints.length > 0) {
+			// Draw bezier points being created
 			ctx.globalAlpha = 1
 			bezierPoints.forEach((v, i) => {
+				const isEndpoint = i === 0 || i === bezierPoints.length - 1 || (i >= 3 && (i - 3) % 3 === 0)
 				ctx.beginPath()
-				ctx.arc(v.x, v.y, 5, 0, Math.PI * 2)
-				ctx.fillStyle = i === 0 || i === 3 ? '#00d2d3' : '#fff'
+				ctx.arc(v.x, v.y, isEndpoint ? 6 : 4, 0, Math.PI * 2)
+				ctx.fillStyle = isEndpoint ? '#00d2d3' : '#fff'
 				ctx.fill()
 				ctx.strokeStyle = '#48dbfb'
 				ctx.lineWidth = 2
@@ -364,54 +366,62 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 				ctx.fillText(`${i + 1}`, v.x, v.y + 3)
 			})
 			
-			// Draw control lines
-			if (bezierPoints.length >= 2) {
-				ctx.globalAlpha = 0.5
-				ctx.beginPath()
-				ctx.moveTo(bezierPoints[0].x, bezierPoints[0].y)
-				ctx.lineTo(bezierPoints[1].x, bezierPoints[1].y)
-				ctx.strokeStyle = '#aaa'
-				ctx.lineWidth = 1
-				ctx.stroke()
-			}
+			// Draw control lines for all segments
+			ctx.globalAlpha = 0.5
 			if (bezierPoints.length >= 4) {
-				ctx.beginPath()
-				ctx.moveTo(bezierPoints[3].x, bezierPoints[3].y)
-				ctx.lineTo(bezierPoints[2].x, bezierPoints[2].y)
-				ctx.stroke()
+				for (let i = 0; i < bezierPoints.length - 3; i += 3) {
+					ctx.beginPath()
+					ctx.moveTo(bezierPoints[i].x, bezierPoints[i].y)
+					ctx.lineTo(bezierPoints[i + 1].x, bezierPoints[i + 1].y)
+					ctx.strokeStyle = '#aaa'
+					ctx.lineWidth = 1
+					ctx.stroke()
+					
+					ctx.beginPath()
+					ctx.moveTo(bezierPoints[i + 3].x, bezierPoints[i + 3].y)
+					ctx.lineTo(bezierPoints[i + 2].x, bezierPoints[i + 2].y)
+					ctx.stroke()
+				}
 			}
 			ctx.globalAlpha = 1
 			
-			// Draw partial bezier curve if we have at least 2 points
-			if (bezierPoints.length >= 2) {
-				const p0 = bezierPoints[0]
-				const p1 = bezierPoints[1]
-				const p2 = bezierPoints.length >= 3 ? bezierPoints[2] : p1
-				const p3 = bezierPoints.length >= 4 ? bezierPoints[3] : p2
-				
+			// Draw all complete bezier curve segments
+			if (bezierPoints.length >= 4) {
 				ctx.globalAlpha = 0.6
 				const samples = 30
-				ctx.beginPath()
-				for (let i = 0; i <= samples; i++) {
-					const t = i / samples
-					const mt = 1 - t
-					const mt2 = mt * mt
-					const mt3 = mt2 * mt
-					const t2 = t * t
-					const t3 = t2 * t
+				
+				// Draw each complete segment
+				for (let segIdx = 0; segIdx < Math.floor((bezierPoints.length - 1) / 3); segIdx++) {
+					const baseIdx = segIdx * 3
+					if (baseIdx + 3 >= bezierPoints.length) break
 					
-					const x = mt3 * p0.x + 3 * mt2 * t * p1.x + 3 * mt * t2 * p2.x + t3 * p3.x
-					const y = mt3 * p0.y + 3 * mt2 * t * p1.y + 3 * mt * t2 * p2.y + t3 * p3.y
+					const p0 = bezierPoints[baseIdx]
+					const p1 = bezierPoints[baseIdx + 1]
+					const p2 = bezierPoints[baseIdx + 2]
+					const p3 = bezierPoints[baseIdx + 3]
 					
-					if (i === 0) {
-						ctx.moveTo(x, y)
-					} else {
-						ctx.lineTo(x, y)
+					ctx.beginPath()
+					for (let i = 0; i <= samples; i++) {
+						const t = i / samples
+						const mt = 1 - t
+						const mt2 = mt * mt
+						const mt3 = mt2 * mt
+						const t2 = t * t
+						const t3 = t2 * t
+						
+						const x = mt3 * p0.x + 3 * mt2 * t * p1.x + 3 * mt * t2 * p2.x + t3 * p3.x
+						const y = mt3 * p0.y + 3 * mt2 * t * p1.y + 3 * mt * t2 * p2.y + t3 * p3.y
+						
+						if (i === 0) {
+							ctx.moveTo(x, y)
+						} else {
+							ctx.lineTo(x, y)
+						}
 					}
+					ctx.strokeStyle = '#48dbfb'
+					ctx.lineWidth = 3
+					ctx.stroke()
 				}
-				ctx.strokeStyle = '#48dbfb'
-				ctx.lineWidth = 3
-				ctx.stroke()
 				ctx.globalAlpha = 1
 			}
 		}
@@ -1111,6 +1121,26 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 		setDragVertex(null)
 	}
 
+	// Helper to save incomplete bezier path when switching tools
+	const saveIncompleteBezier = () => {
+		if (tool === 'bezier' && bezierPoints.length > 0) {
+			const validPointCount = bezierPoints.length >= 4 ? 4 + Math.floor((bezierPoints.length - 4) / 3) * 3 : 0
+			if (validPointCount >= 4) {
+				const trimmedPoints = bezierPoints.slice(0, validPointCount)
+				const defaultTrackWidth = 14
+				setConfig({
+					...config,
+					bezierPaths: [...(config.bezierPaths || []), {
+						id: `bezier-${Date.now()}`,
+						points: trimmedPoints,
+						trackWidth: defaultTrackWidth
+					}]
+				})
+			}
+			setBezierPoints([])
+		}
+	}
+
 	const handleKeyDown = (e: KeyboardEvent) => {
 		if (e.key === 'Delete' && selectedId) {
 			setConfig({
@@ -1123,25 +1153,34 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 			})
 			setSelectedId(null)
 		} else if (e.key === 'Escape') {
+			saveIncompleteBezier()
 			setRailStart(null)
 			setTriangleVertices([])
-			setBezierPoints([])
 			setSelectedId(null)
+			setTool('select')
 		} else if (e.key === 'v' || e.key === 'V') {
+			saveIncompleteBezier()
 			setTool('select')
 		} else if (e.key === 'b' || e.key === 'B') {
+			saveIncompleteBezier()
 			setTool('bumper')
 		} else if (e.key === 't' || e.key === 'T') {
+			saveIncompleteBezier()
 			setTool('triangular')
 		} else if (e.key === 'r' || e.key === 'R') {
+			saveIncompleteBezier()
 			setTool('rail')
 		} else if (e.key === 'c' || e.key === 'C') {
+			saveIncompleteBezier()
 			setTool('curve')
 		} else if (e.key === 'f' || e.key === 'F') {
+			saveIncompleteBezier()
 			setTool('flipper')
 	} else if (e.key === 'z' || e.key === 'Z') {
+		saveIncompleteBezier()
 		setTool('bezier')
 	} else if (e.key === 'd' || e.key === 'D') {
+		saveIncompleteBezier()
 		setTool('delete')
 	} else if (e.key === 'Enter' && tool === 'bezier' && bezierPoints.length >= 4) {
 		// Complete bezier path with Enter key
@@ -1190,56 +1229,56 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 				)}
 				<button
 					className={tool === 'select' ? styles.active : ''}
-					onClick={() => setTool('select')}
+					onClick={() => { saveIncompleteBezier(); setTool('select'); }}
 					title="Select (V)"
 				>
 					Select
 				</button>
 				<button
 					className={tool === 'bumper' ? styles.active : ''}
-					onClick={() => setTool('bumper')}
+					onClick={() => { saveIncompleteBezier(); setTool('bumper'); }}
 					title="Bumper (B)"
 				>
 					Bumper
 				</button>
 				<button
 					className={tool === 'triangular' ? styles.active : ''}
-					onClick={() => setTool('triangular')}
+					onClick={() => { saveIncompleteBezier(); setTool('triangular'); }}
 					title="Triangle (T)"
 				>
 					Triangle
 				</button>
 				<button
 					className={tool === 'rail' ? styles.active : ''}
-					onClick={() => setTool('rail')}
+					onClick={() => { saveIncompleteBezier(); setTool('rail'); }}
 					title="Rail (R)"
 				>
 					Rail
 				</button>
 				<button
 					className={tool === 'curve' ? styles.active : ''}
-					onClick={() => setTool('curve')}
+					onClick={() => { saveIncompleteBezier(); setTool('curve'); }}
 					title="Curve (C)"
 				>
 					Curve
 				</button>
 				<button
 					className={tool === 'flipper' ? styles.active : ''}
-					onClick={() => setTool('flipper')}
+					onClick={() => { saveIncompleteBezier(); setTool('flipper'); }}
 					title="Flipper (F) | Alt+Click for right"
 				>
 					Flipper
 				</button>
 				<button
 					className={tool === 'bezier' ? styles.active : ''}
-					onClick={() => setTool('bezier')}
+					onClick={() => { saveIncompleteBezier(); setTool('bezier'); }}
 					title="Bezier Path (Z) | Click to add points (4 minimum), then click Done"
 				>
 					Bezier {bezierPoints.length > 0 && `(${bezierPoints.length})`}
 				</button>
 				<button
 					className={tool === 'delete' ? styles.active : ''}
-					onClick={() => setTool('delete')}
+					onClick={() => { saveIncompleteBezier(); setTool('delete'); }}
 					title="Delete (D)"
 				>
 					Delete
