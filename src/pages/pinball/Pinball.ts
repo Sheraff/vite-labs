@@ -1,19 +1,13 @@
 import { CurvedSurface } from "./CurvedSurface"
 import { Rail } from "./Rail"
 import { SmoothPath } from "./SmoothPath"
+import { Bumper } from "./Obstacle"
 
 type Flipper = {
 	x: number
 	y: number
 	angle: number
 	targetAngle: number
-}
-
-type Obstacle = {
-	x: number
-	y: number
-	radius: number
-	points: number
 }
 
 export class PinballGame {
@@ -35,12 +29,16 @@ export class PinballGame {
 		right: Flipper
 	}
 
-	obstacles: Array<Obstacle>
+	obstacles: Array<Bumper>
 	rails: Array<Rail>
 	curves: Array<CurvedSurface>
 	smoothPaths: Array<SmoothPath>
 
 	score: number
+	launching: boolean = false
+	launchPower: number = 0
+	maxLaunchPower: number = 30
+	launchLaneWidth: number = 40
 
 	cleanup = new Set<() => void>()
 	rafId: number | null = null
@@ -52,8 +50,8 @@ export class PinballGame {
 		this.height = this.canvas.height
 
 		this.ball = {
-			x: this.width / 2,
-			y: this.height - 100,
+			x: this.width - 20,
+			y: this.height - 50,
 			radius: 8,
 			vx: 0,
 			vy: 0,
@@ -67,22 +65,26 @@ export class PinballGame {
 		}
 
 		this.obstacles = [
-			{ x: 100, y: 200, radius: 20, points: 100 },
-			{ x: 300, y: 200, radius: 20, points: 100 },
-			{ x: 200, y: 150, radius: 15, points: 200 },
-			{ x: 150, y: 300, radius: 25, points: 150 },
-			{ x: 250, y: 300, radius: 25, points: 150 }
+			new Bumper(100, 200, 20, 100),
+			new Bumper(300, 200, 20, 100),
+			new Bumper(200, 150, 15, 200),
+			new Bumper(150, 300, 25, 150),
+			new Bumper(250, 300, 25, 150)
 		]
 
 		this.rails = [
 			new Rail(50, 150, 150, 200, 12),
-			new Rail(250, 200, 350, 150, 12)
+			new Rail(250, 200, 350, 150, 12),
+			// Launch lane wall
+			new Rail(this.width - this.launchLaneWidth, this.height, this.width - this.launchLaneWidth, 80, 5)
 		]
 
 		this.curves = [
 			new CurvedSurface(200, 100, 60, 0, Math.PI, 15), // Half circle at top
 			new CurvedSurface(100, 400, 40, Math.PI / 4, 3 * Math.PI / 4, 10),
-			new CurvedSurface(300, 400, 40, Math.PI / 4, 3 * Math.PI / 4, 10)
+			new CurvedSurface(300, 400, 40, Math.PI / 4, 3 * Math.PI / 4, 10),
+			// Top right curve to guide ball from launch lane
+			new CurvedSurface(this.width - 40, 40, 40, 0, Math.PI, 10)
 		]
 
 		this.smoothPaths = [
@@ -115,7 +117,9 @@ export class PinballGame {
 			}
 			if (e.key === ' ') {
 				e.preventDefault()
-				this.launchBall()
+				if (this.ball.x > this.width - this.launchLaneWidth && this.ball.y > this.height - 100) {
+					this.launching = true
+				}
 			}
 		}, { signal: controller.signal })
 
@@ -126,14 +130,20 @@ export class PinballGame {
 			if (e.key === 'ArrowRight' || e.key === 'd') {
 				this.flippers.right.targetAngle = 0
 			}
+			if (e.key === ' ') {
+				if (this.launching) {
+					this.launching = false
+					this.launchBall()
+				}
+			}
 		}, { signal: controller.signal })
 		this.cleanup.add(() => controller.abort())
 	}
 
 	launchBall() {
-		if (this.ball.y > this.height - 120) {
-			this.ball.vx = (Math.random() - 0.5) * 4
-			this.ball.vy = -15
+		if (this.ball.x > this.width - this.launchLaneWidth && this.ball.y > this.height - 100) {
+			this.ball.vy = -this.launchPower
+			this.launchPower = 0
 		}
 	}
 
@@ -163,24 +173,7 @@ export class PinballGame {
 
 		// Check obstacle collisions
 		this.obstacles.forEach(obstacle => {
-			const dx = this.ball.x - obstacle.x
-			const dy = this.ball.y - obstacle.y
-			const distance = Math.sqrt(dx * dx + dy * dy)
-
-			if (distance < this.ball.radius + obstacle.radius) {
-				// Collision response
-				const angle = Math.atan2(dy, dx)
-				this.ball.vx = Math.cos(angle) * 8
-				this.ball.vy = Math.sin(angle) * 8
-
-				// Move ball out of obstacle
-				const overlap = this.ball.radius + obstacle.radius - distance
-				this.ball.x += Math.cos(angle) * overlap
-				this.ball.y += Math.sin(angle) * overlap
-
-				// Add score
-				this.score += obstacle.points
-			}
+			this.score += obstacle.handleBallCollision(this.ball)
 		})
 
 		// Check rail collisions
@@ -240,8 +233,8 @@ export class PinballGame {
 	}
 
 	resetBall() {
-		this.ball.x = this.width / 2
-		this.ball.y = this.height - 100
+		this.ball.x = this.width - 20
+		this.ball.y = this.height - 50
 		this.ball.vx = 0
 		this.ball.vy = 0
 	}
@@ -252,15 +245,7 @@ export class PinballGame {
 		this.ctx.fillRect(0, 0, this.width, this.height)
 
 		// Draw obstacles
-		this.obstacles.forEach(obstacle => {
-			this.ctx.beginPath()
-			this.ctx.arc(obstacle.x, obstacle.y, obstacle.radius, 0, Math.PI * 2)
-			this.ctx.fillStyle = '#ff6b6b'
-			this.ctx.fill()
-			this.ctx.strokeStyle = '#ff4757'
-			this.ctx.lineWidth = 2
-			this.ctx.stroke()
-		})
+		this.obstacles.forEach(obstacle => obstacle.draw(this.ctx))
 		this.rails.forEach(rail => rail.draw(this.ctx))
 		this.curves.forEach(curve => curve.draw(this.ctx))
 		this.smoothPaths.forEach(path => path.draw(this.ctx))
@@ -277,6 +262,17 @@ export class PinballGame {
 		this.ctx.strokeStyle = '#ff9ff3'
 		this.ctx.lineWidth = 2
 		this.ctx.stroke()
+
+		// Draw score
+		this.ctx.fillStyle = '#fff'
+		this.ctx.font = '24px Arial'
+		this.ctx.fillText(`Score: ${this.score}`, 20, 40)
+
+		// Draw launch power
+		if (this.launching || this.launchPower > 0) {
+			this.ctx.fillStyle = '#ff4757'
+			this.ctx.fillRect(this.width - 30, this.height - 100 - this.launchPower * 3, 20, this.launchPower * 3)
+		}
 	}
 
 	drawFlipper(flipper: Flipper, isLeft: boolean) {
@@ -294,6 +290,9 @@ export class PinballGame {
 	}
 
 	gameLoop() {
+		if (this.launching) {
+			this.launchPower = Math.min(this.launchPower + 0.5, this.maxLaunchPower)
+		}
 		this.updateBall()
 		this.updateFlippers()
 		this.render()
