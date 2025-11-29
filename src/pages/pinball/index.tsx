@@ -14,6 +14,9 @@ export const meta: RouteMeta = {
 
 const STORAGE_KEY = 'pinball-board-config'
 
+const WIDTH = 500
+const HEIGHT = 750
+
 export default function PinballPage() {
 	const canvasRef = useRef<HTMLCanvasElement>(null)
 	const [mode, setMode] = useState<'play' | 'edit'>('play')
@@ -39,7 +42,7 @@ export default function PinballPage() {
 		canvas.style.width = `${size}px`
 		canvas.style.height = `${size}px`
 
-		gameRef.current = new PinballGame({ canvas, config: boardConfig })
+		gameRef.current = new PinballGame({ canvas, config: boardConfig, width: WIDTH, height: HEIGHT })
 		return () => {
 			gameRef.current?.destroy()
 			gameRef.current = null
@@ -61,8 +64,8 @@ export default function PinballPage() {
 				<canvas ref={canvasRef} />
 			) : (
 				<LevelEditor
-					width={400}
-					height={600}
+					width={WIDTH}
+					height={HEIGHT}
 					onSave={handleSaveConfig}
 					initialConfig={boardConfig}
 				/>

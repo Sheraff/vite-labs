@@ -46,13 +46,13 @@ export class PinballGame {
 	cleanup = new Set<() => void>()
 	rafId: number | null = null
 
-	constructor({ canvas, config }: { canvas: HTMLCanvasElement; config?: BoardConfig }) {
+	constructor({ canvas, config, width, height }: { canvas: HTMLCanvasElement; config?: BoardConfig, width: number; height: number }) {
 		this.canvas = canvas
 		this.ctx = this.canvas.getContext('2d')!
 		const scale = window.devicePixelRatio
 		this.ctx.scale(scale, scale)
-		this.width = 400
-		this.height = 600
+		this.width = width
+		this.height = height
 
 		this.ball = {
 			x: this.width - 20,
@@ -68,7 +68,7 @@ export class PinballGame {
 		if (config) {
 			const leftFlippers = config.flippers.filter(f => f.side === 'left')
 			const rightFlippers = config.flippers.filter(f => f.side === 'right')
-			
+
 			this.flippers = {
 				left: leftFlippers.length > 0
 					? leftFlippers.map(f => new Flipper(f.x, f.y, 'left', f.length, f.width))
@@ -96,11 +96,11 @@ export class PinballGame {
 				new CurvedSurface(c.x, c.y, c.radius, c.startAngle, c.endAngle, c.thickness)
 			)
 
-		this.smoothPaths = []
+			this.smoothPaths = []
 
-		this.bezierPaths = config.bezierPaths?.map(b =>
-			new BezierPath(b.points, b.trackWidth)
-		) || []
+			this.bezierPaths = config.bezierPaths?.map(b =>
+				new BezierPath(b.points, b.trackWidth)
+			) || []
 		} else {
 			// Default layout
 			this.flippers = {
@@ -200,46 +200,6 @@ export class PinballGame {
 			}
 		}, { signal: controller.signal })
 
-		// Touch controls
-		this.canvas.addEventListener('pointerdown', (e) => {
-			if (this.gameOver) {
-				this.restart()
-				return
-			}
-
-			const rect = this.canvas.getBoundingClientRect()
-			const x = e.clientX - rect.left
-			const centerX = rect.width / 2
-
-			if (x < centerX) {
-				this.flippers.left.flipUp()
-			} else {
-				this.flippers.right.flipUp()
-			}
-
-			// Check for launch
-			if (this.ball.x >= this.width - this.launchLaneWidth && this.ball.y > this.height - 150) {
-				this.launching = true
-			}
-		}, { signal: controller.signal })
-
-		this.canvas.addEventListener('pointerup', (e) => {
-			const rect = this.canvas.getBoundingClientRect()
-			const x = e.clientX - rect.left
-			const centerX = rect.width / 2
-
-			if (x < centerX) {
-				this.flippers.left.flipDown()
-			} else {
-				this.flippers.right.flipDown()
-			}
-
-			if (this.launching) {
-				this.launching = false
-				this.launchBall()
-			}
-		}, { signal: controller.signal })
-
 		this.cleanup.add(() => controller.abort())
 	}
 
@@ -262,7 +222,7 @@ export class PinballGame {
 				break
 			}
 		}
-		
+
 		// If on bezier path, skip all other physics and collisions
 		if (onBezierPath) {
 			// Add trail
@@ -286,20 +246,20 @@ export class PinballGame {
 		const substeps = Math.max(1, Math.ceil(speed / 5)) // More steps for faster balls
 		const subVx = this.ball.vx / substeps
 		const subVy = this.ball.vy / substeps
-		
+
 		for (let step = 0; step < substeps; step++) {
 			// Update position in small increments
 			this.ball.x += subVx
 			this.ball.y += subVy
-			
+
 			// Check collisions after each substep
 			this.checkCollisionsSubstep()
 		}
-		
+
 		// Flipper collisions (outside substep loop - they have swept collision built in)
 		this.flippers.left.forEach(flipper => flipper.checkCollision(this.ball))
 		this.flippers.right.forEach(flipper => flipper.checkCollision(this.ball))
-		
+
 		// Clamp maximum velocity as a safety measure
 		const maxSpeed = 25
 		const finalSpeed = Math.sqrt(this.ball.vx * this.ball.vx + this.ball.vy * this.ball.vy)
@@ -308,7 +268,7 @@ export class PinballGame {
 			this.ball.vx *= scale
 			this.ball.vy *= scale
 		}
-		
+
 		// Handle walls and boundaries after sub-stepping
 
 		// Left wall

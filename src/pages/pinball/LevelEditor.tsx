@@ -1124,7 +1124,21 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 	// Helper to save incomplete bezier path when switching tools
 	const saveIncompleteBezier = () => {
 		if (tool === 'bezier' && bezierPoints.length > 0) {
-			const validPointCount = bezierPoints.length >= 4 ? 4 + Math.floor((bezierPoints.length - 4) / 3) * 3 : 0
+			// Calculate valid point count: must be 4, 7, 10, 13, etc. (4 + 3n)
+			// If we have 5 points, trim to 4. If we have 8 points, trim to 7, etc.
+			let validPointCount = 0
+			if (bezierPoints.length >= 4) {
+				if (bezierPoints.length === 4) {
+					validPointCount = 4
+				} else {
+					// For multi-segment: 4 + 3n where n = number of additional segments
+					const extraPoints = bezierPoints.length - 4
+					const completeExtraSegments = Math.floor(extraPoints / 3)
+					validPointCount = 4 + (completeExtraSegments * 3)
+				}
+			}
+			
+			// Only save if we have at least 4 valid points
 			if (validPointCount >= 4) {
 				const trimmedPoints = bezierPoints.slice(0, validPointCount)
 				const defaultTrackWidth = 14
@@ -1137,6 +1151,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 					}]
 				})
 			}
+			// If validPointCount < 4, we just discard the incomplete path
 			setBezierPoints([])
 		}
 	}
@@ -1783,44 +1798,11 @@ function PropertyPanel({ id, config, onChange, onDelete }: {
 	}
 
 	if (bezier) {
-		const updatePoint = (index: number, coord: 'x' | 'y', value: number) => {
-			onChange({
-				...config,
-				bezierPaths: (config.bezierPaths || []).map(b => {
-					if (b.id !== id) return b
-					const newPoints = [...b.points]
-					newPoints[index] = { ...newPoints[index], [coord]: value }
-					return { ...b, points: newPoints }
-				})
-			})
-		}
-
 		return (
 			<div>
 				<div style={{ marginBottom: '1em' }}>
 					<strong>{bezier.points.length} points ({Math.floor((bezier.points.length - 1) / 3)} segment{Math.floor((bezier.points.length - 1) / 3) !== 1 ? 's' : ''})</strong>
 				</div>
-				{bezier.points.map((p, i) => {
-					const isEndpoint = i === 0 || i === bezier.points.length - 1 || i % 3 === 0
-					const label = i === 0 ? 'Start' : i === bezier.points.length - 1 ? 'End' : isEndpoint ? `Joint ${Math.floor(i / 3)}` : `Control ${i}`
-					return (
-						<div key={i} style={{ marginBottom: '0.5em', paddingBottom: '0.5em', borderBottom: isEndpoint ? '1px solid #48dbfb' : 'none' }}>
-							<div style={{ color: isEndpoint ? '#00d2d3' : '#aaa', fontWeight: isEndpoint ? 'bold' : 'normal', marginBottom: '0.3em' }}>
-								{label}
-							</div>
-							<label>
-								X:
-								<input type="number" value={Math.round(p.x)}
-									onChange={(e) => updatePoint(i, 'x', Number(e.target.value))} />
-							</label>
-							<label>
-								Y:
-								<input type="number" value={Math.round(p.y)}
-									onChange={(e) => updatePoint(i, 'y', Number(e.target.value))} />
-							</label>
-						</div>
-					)
-				})}
 				<label>
 					Track Width:
 					<input
