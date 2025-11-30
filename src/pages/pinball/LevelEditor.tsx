@@ -1002,7 +1002,37 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 			})
 		} else if (tool === 'bezier') {
 			// Keep adding points - user will click "Done" button to finish
-			setBezierPoints([...bezierPoints, snapped])
+			// For the first 4 points, add normally
+			// After that, for each new segment, automatically add the first control point
+			// symmetrically from the last control point
+			if (bezierPoints.length === 0 || bezierPoints.length === 1 || bezierPoints.length === 2 || bezierPoints.length === 3) {
+				// First segment: add points normally
+				setBezierPoints([...bezierPoints, snapped])
+			} else {
+				// Starting a new segment
+				const pointsAfterFirst = bezierPoints.length - 4
+				const isStartingNewSegment = pointsAfterFirst % 3 === 0
+
+				if (isStartingNewSegment) {
+					// This click is for the new endpoint (p3 of new segment)
+					// We need to auto-generate the first control point of this new segment
+					// which should be symmetric to the last control point of the previous segment
+					const lastEndpoint = bezierPoints[bezierPoints.length - 1]
+					const lastControlPoint = bezierPoints[bezierPoints.length - 2]
+
+					// Calculate symmetric control point
+					const symmetricControl = {
+						x: lastEndpoint.x + (lastEndpoint.x - lastControlPoint.x),
+						y: lastEndpoint.y + (lastEndpoint.y - lastControlPoint.y)
+					}
+
+					// Add the symmetric control point, then this endpoint
+					setBezierPoints([...bezierPoints, symmetricControl, snapped])
+				} else {
+					// This is a control point within the current segment
+					setBezierPoints([...bezierPoints, snapped])
+				}
+			}
 		}
 	}
 
@@ -1048,7 +1078,58 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 						bezierPaths: (prevConfig.bezierPaths || []).map(b => {
 							if (b.id !== selectedId) return b
 							const newPoints = [...b.points]
-							newPoints[dragVertex.vertex] = { x: snapped.x, y: snapped.y }
+							const movedIndex = dragVertex.vertex
+							newPoints[movedIndex] = { x: snapped.x, y: snapped.y }
+
+							// Check if this is a control point (not an endpoint)
+							const isEndpoint = movedIndex === 0 || movedIndex === b.points.length - 1 || movedIndex % 3 === 0
+
+							if (!isEndpoint) {
+								// This is a control point - find its associated endpoint and opposite control point
+								let endpointIndex: number
+								let oppositeControlIndex: number
+
+								// Determine which endpoint this control point belongs to
+								const segmentStart = Math.floor(movedIndex / 3) * 3
+
+								if (movedIndex === segmentStart + 1) {
+									// This is the first control point of a segment (after p0)
+									endpointIndex = segmentStart
+									// Opposite control is the last control of the previous segment
+									oppositeControlIndex = segmentStart - 1
+								} else if (movedIndex === segmentStart + 2) {
+									// This is the second control point of a segment (before p3)
+									endpointIndex = segmentStart + 3
+									// Opposite control is the first control of the next segment
+									oppositeControlIndex = segmentStart + 4
+								} else {
+									// Shouldn't reach here
+									return { ...b, points: newPoints }
+								}
+
+								// Check if opposite control point exists
+								if (oppositeControlIndex >= 0 && oppositeControlIndex < b.points.length) {
+									const endpoint = newPoints[endpointIndex]
+									const movedControl = newPoints[movedIndex]
+									const oppositeControl = newPoints[oppositeControlIndex]
+
+									// Calculate the angle from endpoint to moved control
+									const newAngle = Math.atan2(movedControl.y - endpoint.y, movedControl.x - endpoint.x)
+
+									// Calculate the current distance of opposite control from endpoint
+									const oppDx = oppositeControl.x - endpoint.x
+									const oppDy = oppositeControl.y - endpoint.y
+									const oppDist = Math.sqrt(oppDx * oppDx + oppDy * oppDy)
+
+									// Set opposite control at the same angle (180 degrees opposite) with its original distance
+									const oppositeAngle = newAngle + Math.PI
+									newPoints[oppositeControlIndex] = {
+										x: endpoint.x + Math.cos(oppositeAngle) * oppDist,
+										y: endpoint.y + Math.sin(oppositeAngle) * oppDist
+									}
+								}
+							}
+
 							return {
 								...b,
 								points: newPoints
