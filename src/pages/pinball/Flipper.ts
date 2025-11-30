@@ -75,7 +75,7 @@ export class Flipper {
 	}
 
 	checkCollision(ball: { x: number, y: number, radius: number, vx: number, vy: number }) {
-		// Calculate flipper vector
+		// Calculate current flipper endpoints
 		const cos = Math.cos(this.angle)
 		const sin = Math.sin(this.angle)
 
@@ -91,47 +91,82 @@ export class Flipper {
 			p2y = this.y - sin * this.length
 		}
 
-		// Check both current position and previous frame position (swept collision)
+		// Calculate previous flipper endpoints
+		const prevCos = Math.cos(this.previousAngle)
+		const prevSin = Math.sin(this.previousAngle)
+		let prevP1x = this.x
+		let prevP1y = this.y
+		let prevP2x, prevP2y
+
+		if (this.side === 'left') {
+			prevP2x = this.x + prevCos * this.length
+			prevP2y = this.y + prevSin * this.length
+		} else {
+			prevP2x = this.x - prevCos * this.length
+			prevP2y = this.y - prevSin * this.length
+		}
+
+		// Ball's previous position
 		const prevBallX = ball.x - ball.vx
 		const prevBallY = ball.y - ball.vy
-		
-		const checkPoint = (bx: number, by: number) => {
-			// Closest point on segment to ball
-			const dx = p2x - p1x
-			const dy = p2y - p1y
+
+		const checkPoint = (bx: number, by: number, fp1x: number, fp1y: number, fp2x: number, fp2y: number) => {
+			// Closest point on flipper segment to ball
+			const dx = fp2x - fp1x
+			const dy = fp2y - fp1y
 			const lenSq = dx * dx + dy * dy
 
-			let t = ((bx - p1x) * dx + (by - p1y) * dy) / lenSq
+			let t = ((bx - fp1x) * dx + (by - fp1y) * dy) / lenSq
 			t = Math.max(0, Math.min(1, t))
 
-			const closestX = p1x + t * dx
-			const closestY = p1y + t * dy
+			const closestX = fp1x + t * dx
+			const closestY = fp1y + t * dy
 
 			const distX = bx - closestX
 			const distY = by - closestY
 			const distSq = distX * distX + distY * distY
-			
-			return { closestX, closestY, distSq }
-		}
-		
-		const current = checkPoint(ball.x, ball.y)
-		const previous = checkPoint(prevBallX, prevBallY)
-		
-		const minDist = ball.radius + this.width / 2
-		
-		// Use whichever is closer to detect collision
-		const usePoint = current.distSq < previous.distSq ? current : previous
 
-		if (usePoint.distSq < minDist * minDist) {
+			return { closestX, closestY, distSq, t }
+		}
+
+		// Sample multiple points along both the ball's and flipper's swept paths
+		const samples = 5
+		let minDistSq = Infinity
+		let bestPoint = null
+
+		for (let i = 0; i <= samples; i++) {
+			const alpha = i / samples
+
+			// Interpolate ball position
+			const bx = prevBallX + (ball.x - prevBallX) * alpha
+			const by = prevBallY + (ball.y - prevBallY) * alpha
+
+			// Interpolate flipper position
+			const fp1x = prevP1x + (p1x - prevP1x) * alpha
+			const fp1y = prevP1y + (p1y - prevP1y) * alpha
+			const fp2x = prevP2x + (p2x - prevP2x) * alpha
+			const fp2y = prevP2y + (p2y - prevP2y) * alpha
+
+			const point = checkPoint(bx, by, fp1x, fp1y, fp2x, fp2y)
+
+			if (point.distSq < minDistSq) {
+				minDistSq = point.distSq
+				bestPoint = point
+			}
+		}
+
+		const minDist = ball.radius + this.width / 2
+
+		if (minDistSq < minDist * minDist && bestPoint) {
 			// Skip if on cooldown to prevent multiple rapid hits
 			if (this.collisionCooldown > 0) return
-			
+
 			// Collision!
-			const dist = Math.sqrt(usePoint.distSq)
+			const dist = Math.sqrt(minDistSq)
 			if (dist === 0) return
-			
-			const distX = ball.x - usePoint.closestX
-			const distY = ball.y - usePoint.closestY
+
+			const distX = ball.x - bestPoint.closestX
+			const distY = ball.y - bestPoint.closestY
 
 			const nx = distX / dist
 			const ny = distY / dist
@@ -143,9 +178,9 @@ export class Flipper {
 
 			// Only apply bounce if ball is moving towards flipper
 			const vDotN = ball.vx * nx + ball.vy * ny
-			
+
 			if (vDotN >= 0) return // Ball moving away, don't bounce
-			
+
 			// Reflect velocity
 			ball.vx -= 2 * vDotN * nx
 			ball.vy -= 2 * vDotN * ny
@@ -153,8 +188,8 @@ export class Flipper {
 			// Add flipper kick using actual angular velocity
 			// Flipper velocity vector at contact point
 			// V = omega x R where omega is angular velocity
-			const rx = usePoint.closestX - this.x
-			const ry = usePoint.closestY - this.y
+			const rx = bestPoint.closestX - this.x
+			const ry = bestPoint.closestY - this.y
 			const fvx = -this.angularVelocity * ry * 4 // Scale up for better effect
 			const fvy = this.angularVelocity * rx * 4
 
@@ -162,7 +197,7 @@ export class Flipper {
 			const kickStrength = 0.35
 			const kickVx = fvx * kickStrength
 			const kickVy = fvy * kickStrength
-			
+
 			// Clamp the kick to prevent extreme velocities
 			const maxKick = 8
 			const kickMag = Math.sqrt(kickVx * kickVx + kickVy * kickVy)
@@ -178,7 +213,7 @@ export class Flipper {
 			// Add elasticity
 			ball.vx *= 0.98
 			ball.vy *= 0.98
-			
+
 			// Set cooldown to prevent multiple hits
 			this.collisionCooldown = 3
 		}
