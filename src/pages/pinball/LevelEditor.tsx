@@ -625,7 +625,8 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 				config.triangularBumpers.find(t => t.id === selectedId) ||
 				config.rails.find(r => r.id === selectedId) ||
 				config.curves.find(c => c.id === selectedId) ||
-				config.flippers.find(f => f.id === selectedId)
+				config.flippers.find(f => f.id === selectedId) ||
+				config.bezierPaths?.find(b => b.id === selectedId)
 
 			if (selected) {
 				let isOnObject = false
