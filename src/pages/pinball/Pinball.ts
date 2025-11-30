@@ -64,8 +64,8 @@ export class PinballGame {
 			radius: 8,
 			vx: 0,
 			vy: 0,
-			gravity: 0.2,
-			bounce: 0.7
+			gravity: 0.25,
+			bounce: 0.1
 		}
 
 		// Load from config or use defaults

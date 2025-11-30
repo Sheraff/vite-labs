@@ -253,7 +253,7 @@ export class BezierPath {
 		// Speed modification based on whether moving toward or away from midpoint
 		// Moving toward midpoint = decelerate (going uphill)
 		// Moving away from midpoint = accelerate (going downhill)
-		const accelerationRate = 0.2
+		const accelerationRate = 0.1
 
 		const movingTowardMid = this.ballOnPath.forward
 			? currentArcLength < halfLength  // forward and before mid = toward
@@ -322,7 +322,7 @@ export class BezierPath {
 
 	// Draw the bezier path with two parallel lines like train tracks
 	draw(ctx: CanvasRenderingContext2D, debugMode: boolean = false) {
-		const samples = 50
+		const samples = 100
 		const halfWidth = this.trackWidth / 2
 
 		// Draw both track lines as open paths (not closed loops)
