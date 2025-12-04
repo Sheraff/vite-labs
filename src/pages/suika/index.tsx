@@ -59,10 +59,10 @@ const CHAIN = [
 	{ r: 60, color: '#118ab2', score: 11 },
 	{ r: 70, color: '#7209b7', score: 20 },
 	{ r: 80, color: '#d90429', score: 50 },
-	{ r: 90, color: '#ef233c', score: 100 },
+	{ r: 90, color: '#ef23efff', score: 100 },
 	{ r: 100, color: '#ffd60a', score: 200 },
 	{ r: 110, color: '#003566', score: 500 },
-	{ r: 120, color: '#000814', score: 1000 },
+	{ r: 120, color: '#3f0139', score: 1000 },
 ]
 
 type Entity = {
@@ -183,7 +183,7 @@ function start(signal: AbortSignal, ctx: CanvasRenderingContext2D, setScore: (up
 						vx: (a.vx + b.vx) / 2,
 						vy: (a.vy + b.vy) / 2,
 					})
-					max = Math.max(max, newId)
+					max = Math.max(Math.min(Math.max(max, newId), CHAIN.length - 2), 0)
 					setScore(prev => prev + base.score)
 					// Remove merged entities
 					entities.splice(j, 1)
