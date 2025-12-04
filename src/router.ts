@@ -126,8 +126,8 @@ export const ROUTES = {
 			tags: ['game'],
 		},
 		git: {
-			lastModified: 0,
-			firstAdded: 0
+			lastModified: 1764878117000,
+			firstAdded: 1764878117000
 		},
 	},
 	"star-rating": {
@@ -246,7 +246,7 @@ export const ROUTES = {
 		
 		},
 		git: {
-			lastModified: 1764505750000,
+			lastModified: 1764878110000,
 			firstAdded: 1764431682000
 		},
 	},

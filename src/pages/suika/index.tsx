@@ -51,16 +51,18 @@ export default function SuikaGamePage() {
  * This earns the player points (score).
  */
 const CHAIN = [
-	{ r: 10, color: 'red', score: 0 },
-	{ r: 20, color: 'orange', score: 1 },
-	{ r: 30, color: 'yellow', score: 3 },
-	{ r: 40, color: 'green', score: 5 },
-	{ r: 50, color: 'blue', score: 7 },
-	{ r: 60, color: 'indigo', score: 11 },
-	{ r: 70, color: 'violet', score: 20 },
-	{ r: 80, color: 'black', score: 50 },
-	{ r: 90, color: 'white', score: 100 },
-	{ r: 100, color: 'gold', score: 200 },
+	{ r: 10, color: '#ff6b6b', score: 0 },
+	{ r: 20, color: '#ff8e53', score: 1 },
+	{ r: 30, color: '#ffbe0b', score: 3 },
+	{ r: 40, color: '#8ac926', score: 5 },
+	{ r: 50, color: '#06ffa5', score: 7 },
+	{ r: 60, color: '#118ab2', score: 11 },
+	{ r: 70, color: '#7209b7', score: 20 },
+	{ r: 80, color: '#d90429', score: 50 },
+	{ r: 90, color: '#ef233c', score: 100 },
+	{ r: 100, color: '#ffd60a', score: 200 },
+	{ r: 110, color: '#003566', score: 500 },
+	{ r: 120, color: '#000814', score: 1000 },
 ]
 
 type Entity = {
@@ -107,6 +109,7 @@ function start(signal: AbortSignal, ctx: CanvasRenderingContext2D, setScore: (up
 		nextId = Math.floor(Math.random() * max + 1)
 	}, { signal })
 
+	const WALL_THICKNESS = 10
 	const CONTAINER_WIDTH = 700
 	const CONTAINER_HEIGHT = 1000
 	const containerX = ctx.canvas.width / devicePixelRatio / 2 - CONTAINER_WIDTH / 2
@@ -119,21 +122,27 @@ function start(signal: AbortSignal, ctx: CanvasRenderingContext2D, setScore: (up
 		lastTime = time
 		if (dt > 1) return // skip frame if too much time has passed
 
-		const steps = Math.floor(dt / 0.1)
+		const steps = 20
 
 		for (let step = 0; step < steps; step++) {
 			const dti = dt / steps
 
 			// Update entities
 			for (const entity of entities) {
-				entity.vy += 0.4 * dti // gravity
+				entity.vy += 0.7 * dti // gravity
+
+				// Apply damping to reduce vibration
+				const damping = (1 - 0.04 * dti)
+				entity.vx *= damping
+				entity.vy *= damping
+
 				entity.x += entity.vx * dti
 				entity.y += entity.vy * dti
 
 				// floor collision
-				if (entity.y + entity.r > window.innerHeight) {
-					entity.y = window.innerHeight - entity.r
-					entity.vy *= -0.3
+				if (entity.y + entity.r > window.innerHeight - WALL_THICKNESS) {
+					entity.y = window.innerHeight - WALL_THICKNESS - entity.r
+					entity.vy *= -0.5
 				}
 
 				// wall collisions
@@ -197,8 +206,14 @@ function start(signal: AbortSignal, ctx: CanvasRenderingContext2D, setScore: (up
 
 					// Collision detected - separate entities
 					const overlap = minDist - dist
-					const separationX = (dx / dist) * overlap * 0.5
-					const separationY = (dy / dist) * overlap * 0.5
+
+					// Allow small overlap (slop) to prevent micro-corrections
+					const slop = 0.5
+					if (overlap < slop) continue
+
+					const correctedOverlap = overlap - slop
+					const separationX = (dx / dist) * correctedOverlap * 0.5
+					const separationY = (dy / dist) * correctedOverlap * 0.5
 
 					a.x += separationX
 					a.y += separationY
@@ -229,10 +244,10 @@ function start(signal: AbortSignal, ctx: CanvasRenderingContext2D, setScore: (up
 		ctx.clearRect(0, 0, window.innerWidth, window.innerHeight)
 
 		// Draw walls
-		ctx.fillStyle = 'black'
-		ctx.fillRect(containerX - 10, containerY - 10, 10, CONTAINER_HEIGHT + 20) // left
-		ctx.fillRect(containerX + CONTAINER_WIDTH, containerY - 10, 10, CONTAINER_HEIGHT + 20) // right
-		ctx.fillRect(containerX - 10, containerY + CONTAINER_HEIGHT, CONTAINER_WIDTH + 20, 10) // bottom
+		ctx.fillStyle = 'white'
+		ctx.fillRect(containerX - WALL_THICKNESS, containerY - WALL_THICKNESS, WALL_THICKNESS, CONTAINER_HEIGHT + WALL_THICKNESS * 2) // left
+		ctx.fillRect(containerX + CONTAINER_WIDTH, containerY - WALL_THICKNESS, WALL_THICKNESS, CONTAINER_HEIGHT + WALL_THICKNESS * 2) // right
+		ctx.fillRect(containerX - WALL_THICKNESS, innerHeight - WALL_THICKNESS, CONTAINER_WIDTH + WALL_THICKNESS * 2, WALL_THICKNESS) // bottom
 
 		// Draw hand
 		{
@@ -250,7 +265,7 @@ function start(signal: AbortSignal, ctx: CanvasRenderingContext2D, setScore: (up
 			ctx.fillStyle = base.color
 			ctx.globalAlpha = 0.5
 			ctx.beginPath()
-			ctx.arc(window.innerWidth - 50, 50, base.r, 0, Math.PI * 2)
+			ctx.arc(containerX + CONTAINER_WIDTH + WALL_THICKNESS + 10 + base.r, base.r + 10, base.r, 0, Math.PI * 2)
 			ctx.fill()
 			ctx.globalAlpha = 1
 		}
