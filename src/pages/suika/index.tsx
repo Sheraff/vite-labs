@@ -107,7 +107,7 @@ function start(signal: AbortSignal, ctx: CanvasRenderingContext2D, setScore: (up
 			vy: 0,
 		})
 		handId = nextId
-		nextId = Math.floor(Math.random() * max + 1)
+		nextId = Math.floor(Math.random() * max)
 	}, { signal })
 
 	const WALL_THICKNESS = 10
@@ -182,9 +182,10 @@ function start(signal: AbortSignal, ctx: CanvasRenderingContext2D, setScore: (up
 						x: (a.x + b.x) / 2,
 						y: (a.y + b.y) / 2,
 						vx: (a.vx + b.vx) / 2,
-						vy: (a.vy + b.vy) / 2,
+						vy: (a.vy + b.vy) / 2 - 7, // slight upward boost on merge
 					})
-					max = Math.max(Math.min(Math.max(max, newId), CHAIN.length - 2), 0)
+					if (newId < CHAIN.length - 2)
+						max = Math.max(max, newId)
 					setScore(prev => prev + base.score)
 					// Remove merged entities
 					entities.splice(j, 1)
