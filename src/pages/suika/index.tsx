@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react"
 
 export const meta: RouteMeta = {
 	title: 'Suika Game',
+	image: './screen.png',
 	tags: ['game'],
 }
 export default function SuikaGamePage() {

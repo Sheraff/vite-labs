@@ -6,6 +6,7 @@ import wave_function_collapse_image from "./pages/wave-function-collapse/screen.
 import visual_exec_image from "./pages/visual-exec/screen.png"
 import tinkerbell_map_image from "./pages/tinkerbell-map/screen.png"
 import swarm_pathfinding_image from "./pages/swarm-pathfinding/screen.png"
+import suika_image from "./pages/suika/screen.png"
 import star_rating_image from "./pages/star-rating/screen.png"
 import spring_fluid_image from "./pages/spring-fluid/screen.png"
 import spider_inverse_kinematics_image from "./pages/spider-inverse-kinematics/screen.png"
@@ -123,10 +124,11 @@ export const ROUTES = {
 		Component: lazy(() => import("./pages/suika/index.tsx")),
 		meta: {
 			title: 'Suika Game',
+			image: suika_image,
 			tags: ['game'],
 		},
 		git: {
-			lastModified: 1764879336000,
+			lastModified: 1764879595000,
 			firstAdded: 1764878117000
 		},
 	},
