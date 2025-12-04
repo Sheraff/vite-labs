@@ -39,7 +39,7 @@ import ants_shader_image from "./pages/ants-shader/screen.png"
 import ants_image from "./pages/ants/screen.png"
 import a_star_image from "./pages/a-star/screen.png"
 
-export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "visual-exec" | "tinkerbell-map" | "swarm-pathfinding" | "star-rating" | "spring-fluid" | "spider-inverse-kinematics" | "snakebird" | "silky-modal" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "polka-fireflies" | "pinball" | "perlin-ripples" | "particle-life-gpu" | "particle-life" | "paint-worklet" | "pacman" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "maze-generation" | "lightning" | "intl-tuesday" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "fireflies" | "deterministic-plinko" | "cursor-projection" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "any-string-to-css-color" | "ants-shader" | "ants" | "a-star"
+export type Routes = "wave-function-collapse-ascii" | "wave-function-collapse" | "visual-exec" | "tinkerbell-map" | "swarm-pathfinding" | "suika" | "star-rating" | "spring-fluid" | "spider-inverse-kinematics" | "snakebird" | "silky-modal" | "quad-tree-collisions" | "quad-tree" | "pong-pang" | "polka-fireflies" | "pinball" | "perlin-ripples" | "particle-life-gpu" | "particle-life" | "paint-worklet" | "pacman" | "normal-map" | "neat" | "modern-modal" | "minesweeper" | "maze-generation" | "lightning" | "intl-tuesday" | "hex-a-star" | "hacker-background" | "grainy-texture" | "fragment-portal" | "fourrier-series" | "flow-field" | "flask" | "fireflies" | "deterministic-plinko" | "cursor-projection" | "collision-threads" | "cellular-automata" | "boids" | "bird-inverse-kinematics" | "any-string-to-css-color" | "ants-shader" | "ants" | "a-star"
 
 export type RouteMeta = {
 	title: string
@@ -117,6 +117,17 @@ export const ROUTES = {
 		git: {
 			lastModified: 1752533354000,
 			firstAdded: 1741025883000
+		},
+	},
+	"suika": {
+		Component: lazy(() => import("./pages/suika/index.tsx")),
+		meta: {
+			title: 'Suika Game',
+			tags: ['game'],
+		},
+		git: {
+			lastModified: 0,
+			firstAdded: 0
 		},
 	},
 	"star-rating": {
@@ -235,7 +246,7 @@ export const ROUTES = {
 		
 		},
 		git: {
-			lastModified: 1764453472000,
+			lastModified: 1764505750000,
 			firstAdded: 1764431682000
 		},
 	},
