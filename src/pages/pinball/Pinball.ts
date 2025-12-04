@@ -216,12 +216,12 @@ export class PinballGame {
 		}
 	}
 
-	updateBall() {
+	updateBall(dt: number) {
 		// Check if ball is on a bezier path - if so, skip normal physics
 		let onBezierPath = false
 		for (const bezierPath of this.bezierPaths) {
 			if (bezierPath.checkBallCollision(this.ball)) {
-				bezierPath.handleBallCollision(this.ball)
+				bezierPath.handleBallCollision(this.ball, dt)
 				onBezierPath = true
 				break
 			}
@@ -232,24 +232,25 @@ export class PinballGame {
 			// Add trail
 			this.ballTrail.push({ x: this.ball.x, y: this.ball.y, life: 10 })
 			this.ballTrail = this.ballTrail.filter(t => {
-				t.life--
+				t.life -= dt
 				return t.life > 0
 			}).slice(-15)
 			return
 		}
 
 		// Apply gravity
-		this.ball.vy += this.ball.gravity
+		this.ball.vy += this.ball.gravity * dt
 
 		// Apply air resistance/damping
-		this.ball.vx *= 0.995
-		this.ball.vy *= 0.998
+		const damping = Math.pow(0.995, dt)
+		this.ball.vx *= damping
+		this.ball.vy *= Math.pow(0.998, dt)
 
 		// Sub-step physics to prevent tunneling at high speeds
 		const speed = Math.sqrt(this.ball.vx * this.ball.vx + this.ball.vy * this.ball.vy)
-		const substeps = Math.max(1, Math.ceil(speed / 5)) // More steps for faster balls
-		const subVx = this.ball.vx / substeps
-		const subVy = this.ball.vy / substeps
+		const substeps = Math.max(1, Math.ceil(speed * dt / 5)) // More steps for faster balls
+		const subVx = (this.ball.vx * dt) / substeps
+		const subVy = (this.ball.vy * dt) / substeps
 
 		for (let step = 0; step < substeps; step++) {
 			// Update position in small increments
@@ -314,7 +315,7 @@ export class PinballGame {
 		// Add trail
 		this.ballTrail.push({ x: this.ball.x, y: this.ball.y, life: 10 })
 		this.ballTrail = this.ballTrail.filter(t => {
-			t.life--
+			t.life -= dt
 			return t.life > 0
 		}).slice(-15) // Keep only last 15 trail points
 	}
@@ -356,9 +357,9 @@ export class PinballGame {
 		})
 	}
 
-	updateFlippers() {
-		this.flippers.left.forEach(flipper => flipper.update())
-		this.flippers.right.forEach(flipper => flipper.update())
+	updateFlippers(dt: number) {
+		this.flippers.left.forEach(flipper => flipper.update(dt))
+		this.flippers.right.forEach(flipper => flipper.update(dt))
 	}
 
 	resetBall() {
@@ -377,7 +378,7 @@ export class PinballGame {
 		this.resetBall()
 	}
 
-	render() {
+	render(dt: number) {
 		// Clear canvas
 		this.ctx.fillStyle = '#001122'
 		this.ctx.fillRect(0, 0, this.width, this.height)
@@ -437,7 +438,7 @@ export class PinballGame {
 
 		// Draw score popups
 		this.scorePopups = this.scorePopups.filter(popup => {
-			popup.life--
+			popup.life -= dt
 			if (popup.life <= 0) return false
 
 			const alpha = popup.life / popup.maxLife
@@ -500,14 +501,25 @@ export class PinballGame {
 	}
 
 	gameLoop() {
-		if (!this.gameOver) {
-			if (this.launching) {
-				this.launchPower = Math.min(this.launchPower + 0.5, this.maxLaunchPower)
+		let lastTime = 0
+		const loop = (time: number) => {
+			this.rafId = requestAnimationFrame(loop)
+			const deltaTime = time - lastTime
+			lastTime = time
+			if (deltaTime === time) return // First frame, skip update
+
+			// Normalize deltaTime to 60fps (16.67ms per frame) as baseline
+			const dt = deltaTime / 16.67
+
+			if (!this.gameOver) {
+				if (this.launching) {
+					this.launchPower = Math.min(this.launchPower + 0.5 * dt, this.maxLaunchPower)
+				}
+				this.updateBall(dt)
+				this.updateFlippers(dt)
 			}
-			this.updateBall()
-			this.updateFlippers()
+			this.render(dt)
 		}
-		this.render()
-		this.rafId = requestAnimationFrame(() => this.gameLoop())
+		this.rafId = requestAnimationFrame(loop)
 	}
 }

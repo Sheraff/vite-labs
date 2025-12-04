@@ -51,11 +51,11 @@ export class Flipper {
 		}
 	}
 
-	update() {
+	update(dt: number = 1) {
 		this.previousAngle = this.angle
-		this.angle += (this.targetAngle - this.angle) * this.angularSpeed
+		this.angle += (this.targetAngle - this.angle) * this.angularSpeed * dt
 		this.angularVelocity = this.angle - this.previousAngle
-		if (this.collisionCooldown > 0) this.collisionCooldown--
+		if (this.collisionCooldown > 0) this.collisionCooldown -= dt
 	}
 
 	flipUp() {

@@ -242,7 +242,7 @@ export class BezierPath {
 		return false
 	}
 
-	handleBallCollision(ball: Ball) {
+	handleBallCollision(ball: Ball, dt: number = 1) {
 		if (!this.ballOnPath) return
 
 		const halfLength = this.length / 2
@@ -253,7 +253,7 @@ export class BezierPath {
 		// Speed modification based on whether moving toward or away from midpoint
 		// Moving toward midpoint = decelerate (going uphill)
 		// Moving away from midpoint = accelerate (going downhill)
-		const accelerationRate = 0.1
+		const accelerationRate = 0.2 * dt
 
 		const movingTowardMid = this.ballOnPath.forward
 			? currentArcLength < halfLength  // forward and before mid = toward
@@ -277,9 +277,9 @@ export class BezierPath {
 
 		// Update position along curve
 		if (this.ballOnPath.forward) {
-			currentArcLength += this.ballOnPath.speed
+			currentArcLength += this.ballOnPath.speed * dt
 		} else {
-			currentArcLength -= this.ballOnPath.speed
+			currentArcLength -= this.ballOnPath.speed * dt
 		}
 
 		// Check if ball exited
