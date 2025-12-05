@@ -4,7 +4,8 @@
     "react"
   ],
   "categories": {
-    "correctness": "off"
+    "correctness": "error",
+    "suspicious": "warn"
   },
   "env": {
     "builtin": true
@@ -26,7 +27,10 @@
     "react/no-is-mounted": "error",
     "react/no-render-return-value": "error",
     "react/no-string-refs": "error",
-    "react/no-unescaped-entities": "error"
+    "react/no-unescaped-entities": "error",
+    "react-in-jsx-scope": "off",
+    "no-array-index-key": "off",
+    "exhaustive-deps": "off"
   },
   "overrides": [
     {
