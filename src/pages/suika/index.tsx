@@ -2,6 +2,7 @@ import styles from './styles.module.css'
 import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
 import { useEffect, useRef, useState } from "react"
+import { makeFrameCounter } from "#components/makeFrameCounter"
 
 export const meta: RouteMeta = {
 	title: 'Suika Game',
@@ -11,6 +12,8 @@ export const meta: RouteMeta = {
 export default function SuikaGamePage() {
 	const canvasRef = useRef<HTMLCanvasElement>(null)
 	const [score, setScore] = useState(0)
+	const [ups, setUps] = useState('')
+	const [fps, setFps] = useState('')
 
 	useEffect(() => {
 		const canvas = canvasRef.current!
@@ -24,7 +27,21 @@ export default function SuikaGamePage() {
 		ctx.scale(devicePixelRatio, devicePixelRatio)
 
 		const controller = new AbortController()
-		start(controller.signal, ctx, setScore)
+		const updateCounter = makeFrameCounter(200)
+		const frameCounter = makeFrameCounter(60)
+
+		const formatter = new Intl.NumberFormat('en-US', {
+			maximumFractionDigits: 1,
+			minimumFractionDigits: 1,
+		})
+
+		start({
+			signal: controller.signal,
+			ctx,
+			setScore,
+			onUpdate: (dt) => setUps(formatter.format(updateCounter(dt))),
+			onFrame: (dt) => setFps(formatter.format(frameCounter(dt)))
+		})
 
 		return () => {
 			controller.abort()
@@ -35,6 +52,8 @@ export default function SuikaGamePage() {
 		<div className={styles.main}>
 			<div className={styles.head}>
 				<Head />
+				<output>UPS: {ups}</output>
+				<output>FPS: {fps}</output>
 				<output>Score: {score}</output>
 			</div>
 			<canvas ref={canvasRef} className={styles.canvas} />
@@ -44,7 +63,7 @@ export default function SuikaGamePage() {
 
 /** 
  * When 2 entities of the same level (index) touch,
- * they fuse in 1 single entity of the next level.
+ * they fuse into 1 single entity of the next level.
  * 
  * The new entity is created at the position of the touch,
  * with velocity being the average of the 2 original entities.
@@ -60,7 +79,7 @@ const CHAIN = [
 	{ r: 60, color: '#118ab2', score: 11 },
 	{ r: 70, color: '#7209b7', score: 20 },
 	{ r: 80, color: '#d90429', score: 50 },
-	{ r: 90, color: '#ef23efff', score: 100 },
+	{ r: 90, color: '#ef23ef', score: 100 },
 	{ r: 100, color: '#ffd60a', score: 200 },
 	{ r: 110, color: '#003566', score: 500 },
 	{ r: 120, color: '#3f0139', score: 1000 },
@@ -75,18 +94,31 @@ type Entity = {
 	y: number
 	vx: number
 	vy: number
+	/** r**3 */
+	mass: number
 }
 
-function start(signal: AbortSignal, ctx: CanvasRenderingContext2D, setScore: (update: (prev: number) => number) => void) {
+function start({
+	signal,
+	ctx,
+	setScore,
+	onUpdate,
+	onFrame,
+}: {
+	signal: AbortSignal,
+	ctx: CanvasRenderingContext2D,
+	setScore: (update: (prev: number) => number) => void
+	onUpdate: (dt: number) => void
+	onFrame: (dt: number) => void
+}) {
 	/** All entities currently in the game */
 	const entities: Entity[] = []
 	/** the maximum level (index) of entity present in the game */
 	let max = 0
-	let nextId = 0
 	/** what will be dropped when the user clicks (index in CHAIN) */
 	let handId = 0
 	/** preview of the next handId (index in CHAIN), will become handId when the user clicks */
-
+	let nextId = 0
 	/** position at which to drop the new entity (handId) on click */
 	let mouseX = 0
 
@@ -102,9 +134,10 @@ function start(signal: AbortSignal, ctx: CanvasRenderingContext2D, setScore: (up
 			r: base.r,
 			color: base.color,
 			x,
-			y: base.r,
+			y: DROP_Y,
 			vx: 0,
 			vy: 0,
+			mass: base.r ** 3,
 		})
 		handId = nextId
 		nextId = Math.floor(Math.random() * max)
@@ -115,18 +148,23 @@ function start(signal: AbortSignal, ctx: CanvasRenderingContext2D, setScore: (up
 	const CONTAINER_HEIGHT = 1000
 	const containerX = ctx.canvas.width / devicePixelRatio / 2 - CONTAINER_WIDTH / 2
 	const containerY = ctx.canvas.height / devicePixelRatio - CONTAINER_HEIGHT
+	const DROP_Y = 50
 
-	let lastTime = performance.now()
+	let lastTime = 0
 	let rafId = requestAnimationFrame(function loop(time) {
 		rafId = requestAnimationFrame(loop)
-		const dt = (time - lastTime) / 16.6667
+		const diff = time - lastTime
 		lastTime = time
-		if (dt > 1) return // skip frame if too much time has passed
+		if (diff === time || diff > 1000) return
+		onFrame(diff / 1000)
+		const dt = diff / 16.6667
 
-		const steps = 20
+		const steps = Math.ceil(dt / 0.1) * 3
+		const timeStep = diff / 1000 / steps
+		const dti = dt / steps
 
 		for (let step = 0; step < steps; step++) {
-			const dti = dt / steps
+			onUpdate(timeStep)
 
 			// Update entities
 			for (const entity of entities) {
@@ -183,6 +221,7 @@ function start(signal: AbortSignal, ctx: CanvasRenderingContext2D, setScore: (up
 						y: (a.y + b.y) / 2,
 						vx: (a.vx + b.vx) / 2,
 						vy: (a.vy + b.vy) / 2 - 7, // slight upward boost on merge
+						mass: base.r ** 3,
 					})
 					if (newId < CHAIN.length - 2)
 						max = Math.max(max, newId)
@@ -231,13 +270,11 @@ function start(signal: AbortSignal, ctx: CanvasRenderingContext2D, setScore: (up
 
 					if (speed > 0) continue // Objects separating
 
-					const massA = a.r ** 3
-					const massB = b.r ** 3
-					const impulse = 2 * speed / (massA + massB) * 0.8 // restitution coefficient
-					a.vx -= impulse * massB * normalX
-					a.vy -= impulse * massB * normalY
-					b.vx += impulse * massA * normalX
-					b.vy += impulse * massA * normalY
+					const impulse = 2 * speed / (a.mass + b.mass) * 0.8 // restitution coefficient
+					a.vx -= impulse * b.mass * normalX
+					a.vy -= impulse * b.mass * normalY
+					b.vx += impulse * a.mass * normalX
+					b.vy += impulse * a.mass * normalY
 				}
 			}
 		}
@@ -257,7 +294,7 @@ function start(signal: AbortSignal, ctx: CanvasRenderingContext2D, setScore: (up
 			ctx.fillStyle = base.color
 			ctx.beginPath()
 			const x = Math.max(containerX + base.r, Math.min(containerX + CONTAINER_WIDTH - base.r, mouseX))
-			ctx.arc(x, 50, base.r, 0, Math.PI * 2)
+			ctx.arc(x, DROP_Y, base.r, 0, Math.PI * 2)
 			ctx.fill()
 		}
 

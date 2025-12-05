@@ -17,6 +17,12 @@
 		z-index: 0;
 		pointer-events: none;
 	}
+
+	output {
+		display: block;
+		font-family: monospace;
+		font-variant-numeric: tabular-nums;
+	}
 }
 
 .head {
