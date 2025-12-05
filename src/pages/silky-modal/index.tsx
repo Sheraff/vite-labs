@@ -4,7 +4,6 @@ import { Head } from "#components/Head"
 import { useId, type MouseEvent, type ReactNode } from "react"
 
 import src from "./lorem.jpg"
-/* eslint-disable react/no-unknown-property */
 import styles from "./styles.module.css"
 
 export const meta: RouteMeta = {

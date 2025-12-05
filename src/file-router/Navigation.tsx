@@ -1,5 +1,4 @@
 import { ROUTES, type Routes } from "#router"
-/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState, type ComponentPropsWithoutRef, type ReactNode } from "react"
 import { flushSync } from "react-dom"
 

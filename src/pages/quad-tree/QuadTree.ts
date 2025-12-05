@@ -10,13 +10,20 @@ export class QuadTree<T extends Entity = Entity> {
 
 	objects = new Set<T & Entity>()
 
+	x: number
+	y: number
+	width: number
+	height: number
+	parent: QuadTree<T> | undefined
+	depth: number
+
 	constructor(
-		public x: number,
-		public y: number,
-		public width: number,
-		public height: number,
-		public parent: QuadTree<T> | undefined = undefined,
-		public depth: number = 0,
+		x: number,
+		y: number,
+		width: number,
+		height: number,
+		parent: QuadTree<T> | undefined = undefined,
+		depth: number = 0,
 		objectQuadrantMap: WeakMap<T & Entity, QuadTree<T>> = new WeakMap(),
 	) {
 		this.x = x

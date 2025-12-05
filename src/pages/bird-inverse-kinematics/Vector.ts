@@ -1,7 +1,10 @@
 export class Vector {
+	x: number
+	y: number
+
 	constructor(
-		public x: number,
-		public y: number,
+		x: number,
+		y: number,
 	) {
 		this.x = x
 		this.y = y

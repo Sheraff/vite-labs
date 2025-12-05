@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "echo \"node:$(node -v) pnpm:v$(pnpm -v)\\n\" && vite",
     "build": "vite build",
-    "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
+    "lint": "oxlint . --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "tsc": "tsc",
     "format": "oxfmt",
@@ -33,21 +33,17 @@
     "react-dom": "19.2.1"
   },
   "devDependencies": {
-    "@eslint/js": "^9.37.0",
     "@types/node": "^24.6.2",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
-    "@typescript-eslint/eslint-plugin": "^8.45.0",
     "@typescript-eslint/parser": "^8.45.0",
     "@typescript-eslint/typescript-estree": "^8.45.0",
     "@typescript-eslint/utils": "^8.45.0",
     "@vitejs/plugin-react": "5.1.1",
     "@webgpu/types": "0.1.67",
-    "eslint": "^9.37.0",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-refresh": "^0.4.23",
     "globals": "16.4.0",
     "oxfmt": "0.16.0",
+    "oxlint": "^1.31.0",
     "typescript": "^5.9.3",
     "vite": "8.0.0-beta.0"
   },
