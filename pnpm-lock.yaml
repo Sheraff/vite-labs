@@ -9,14 +9,14 @@ importers:
   .:
     dependencies:
       acorn:
-        specifier: ^8.15.0
+        specifier: 8.15.0
         version: 8.15.0
       acorn-walk:
-        specifier: ^8.3.4
+        specifier: 8.3.4
         version: 8.3.4
       magic-string:
-        specifier: ^0.30.19
-        version: 0.30.19
+        specifier: 0.30.21
+        version: 0.30.21
       react:
         specifier: 19.2.1
         version: 19.2.1
@@ -25,8 +25,8 @@ importers:
         version: 19.2.1(react@19.2.1)
     devDependencies:
       '@types/node':
-        specifier: ^24.6.2
-        version: 24.6.2
+        specifier: 24.10.1
+        version: 24.10.1
       '@types/react':
         specifier: 19.2.7
         version: 19.2.7
@@ -38,25 +38,25 @@ importers:
         version: 7.0.0-dev.20251204.1
       '@vitejs/plugin-react':
         specifier: 5.1.1
-        version: 5.1.1(vite@8.0.0-beta.0(@types/node@24.6.2)(esbuild@0.25.6))
+        version: 5.1.1(vite@8.0.0-beta.0(@types/node@24.10.1)(esbuild@0.25.6))
       '@webgpu/types':
         specifier: 0.1.67
         version: 0.1.67
       globals:
-        specifier: 16.4.0
-        version: 16.4.0
+        specifier: 16.5.0
+        version: 16.5.0
       oxc-parser:
-        specifier: ^0.101.0
+        specifier: 0.101.0
         version: 0.101.0
       oxfmt:
         specifier: 0.16.0
         version: 0.16.0
       oxlint:
-        specifier: ^1.31.0
+        specifier: 1.31.0
         version: 1.31.0
       vite:
         specifier: 8.0.0-beta.0
-        version: 8.0.0-beta.0(@types/node@24.6.2)(esbuild@0.25.6)
+        version: 8.0.0-beta.0(@types/node@24.10.1)(esbuild@0.25.6)
 
 packages:
 
@@ -619,8 +619,8 @@ packages:
   '@types/babel__traverse@7.28.0':
     resolution: {integrity: sha512-8PvcXf70gTDZBgt9ptxJ8elBeBjcLOAcOtoO/mPJjtji1+CdGbHgm77om1GrsPxsiE+uXIpNSK64UYaIwQXd4Q==}
 
-  '@types/node@24.6.2':
-    resolution: {integrity: sha512-d2L25Y4j+W3ZlNAeMKcy7yDsK425ibcAOO2t7aPTz6gNMH0z2GThtwENCDc0d/Pw9wgyRqE5Px1wkV7naz8ang==}
+  '@types/node@24.10.1':
+    resolution: {integrity: sha512-GNWcUTRBgIRJD5zj+Tq0fKOJ5XZajIiBroOF0yvj2bSU1WvNdYS/dn9UxwsujGW4JX06dnHyjV2y9rRaybH0iQ==}
 
   '@types/react-dom@19.2.3':
     resolution: {integrity: sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ==}
@@ -748,8 +748,8 @@ packages:
     resolution: {integrity: sha512-3hN7NaskYvMDLQY55gnW3NQ+mesEAepTqlg+VEbj7zzqEMBVNhzcGYYeqFo/TlYz6eQiFcp1HcsCZO+nGgS8zg==}
     engines: {node: '>=6.9.0'}
 
-  globals@16.4.0:
-    resolution: {integrity: sha512-ob/2LcVVaVGCYN+r14cnwnoDPUufjiYgSqRhiFD0Q1iI4Odora5RE8Iv1D24hAz5oMophRGkGz+yuvQmmUMnMw==}
+  globals@16.5.0:
+    resolution: {integrity: sha512-c/c15i26VrJ4IRt5Z89DnIzCGDn9EcebibhAOjw5ibqEHsE1wLUgkPn9RDmNcUKyU87GeaL633nyJ+pplFR2ZQ==}
     engines: {node: '>=18'}
 
   js-tokens@4.0.0:
@@ -842,8 +842,8 @@ packages:
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
 
-  magic-string@0.30.19:
-    resolution: {integrity: sha512-2N21sPY9Ws53PZvsEpVtNuSW+ScYbQdp4b9qUaL+9QkHUrGFKo56Lg9Emg5s9V/qrtNBmiR01sYhUOwu3H+VOw==}
+  magic-string@0.30.21:
+    resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
 
   ms@2.1.2:
     resolution: {integrity: sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==}
@@ -922,8 +922,8 @@ packages:
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
 
-  undici-types@7.13.0:
-    resolution: {integrity: sha512-Ov2Rr9Sx+fRgagJ5AX0qvItZG/JKKoBRAVITs1zk7IqZGTJUwgUr7qoYBpWwakpWilTZFM98rG/AFRocu10iIQ==}
+  undici-types@7.16.0:
+    resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
 
   update-browserslist-db@1.2.2:
     resolution: {integrity: sha512-E85pfNzMQ9jpKkA7+TJAi4TJN+tBCuWh5rUcS/sv6cFi+1q9LYDwDI5dpUL0u/73EElyQ8d3TEaeW4sPedBqYA==}
@@ -1378,9 +1378,9 @@ snapshots:
     dependencies:
       '@babel/types': 7.28.5
 
-  '@types/node@24.6.2':
+  '@types/node@24.10.1':
     dependencies:
-      undici-types: 7.13.0
+      undici-types: 7.16.0
 
   '@types/react-dom@19.2.3(@types/react@19.2.7)':
     dependencies:
@@ -1421,7 +1421,7 @@ snapshots:
       '@typescript/native-preview-win32-arm64': 7.0.0-dev.20251204.1
       '@typescript/native-preview-win32-x64': 7.0.0-dev.20251204.1
 
-  '@vitejs/plugin-react@5.1.1(vite@8.0.0-beta.0(@types/node@24.6.2)(esbuild@0.25.6))':
+  '@vitejs/plugin-react@5.1.1(vite@8.0.0-beta.0(@types/node@24.10.1)(esbuild@0.25.6))':
     dependencies:
       '@babel/core': 7.28.5
       '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.28.5)
@@ -1429,7 +1429,7 @@ snapshots:
       '@rolldown/pluginutils': 1.0.0-beta.47
       '@types/babel__core': 7.20.5
       react-refresh: 0.18.0
-      vite: 8.0.0-beta.0(@types/node@24.6.2)(esbuild@0.25.6)
+      vite: 8.0.0-beta.0(@types/node@24.10.1)(esbuild@0.25.6)
     transitivePeerDependencies:
       - supports-color
 
@@ -1506,7 +1506,7 @@ snapshots:
 
   gensync@1.0.0-beta.2: {}
 
-  globals@16.4.0: {}
+  globals@16.5.0: {}
 
   js-tokens@4.0.0: {}
 
@@ -1567,7 +1567,7 @@ snapshots:
     dependencies:
       yallist: 3.1.1
 
-  magic-string@0.30.19:
+  magic-string@0.30.21:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
 
@@ -1671,7 +1671,7 @@ snapshots:
   tslib@2.8.1:
     optional: true
 
-  undici-types@7.13.0: {}
+  undici-types@7.16.0: {}
 
   update-browserslist-db@1.2.2(browserslist@4.28.1):
     dependencies:
@@ -1679,7 +1679,7 @@ snapshots:
       escalade: 3.2.0
       picocolors: 1.1.1
 
-  vite@8.0.0-beta.0(@types/node@24.6.2)(esbuild@0.25.6):
+  vite@8.0.0-beta.0(@types/node@24.10.1)(esbuild@0.25.6):
     dependencies:
       '@oxc-project/runtime': 0.101.0
       fdir: 6.5.0(picomatch@4.0.3)
@@ -1689,7 +1689,7 @@ snapshots:
       rolldown: 1.0.0-beta.53
       tinyglobby: 0.2.15
     optionalDependencies:
-      '@types/node': 24.6.2
+      '@types/node': 24.10.1
       esbuild: 0.25.6
       fsevents: 2.3.3
 
