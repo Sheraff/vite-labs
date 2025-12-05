@@ -64,269 +64,268 @@ export const ROUTES = {
 	"wave-function-collapse-ascii": {
 		Component: lazy(() => import("./pages/wave-function-collapse-ascii/index.tsx")),
 		meta: {
-			title: 'Ascii wave function collapse',
+			title: "Ascii wave function collapse",
 			image: wave_function_collapse_ascii_image,
-			tags: ['procedural', 'random', 'ascii']
+			tags: ["procedural", "random", "ascii"],
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1764972333000,
 			firstAdded: 1740479450000
 		},
 	},
 	"wave-function-collapse": {
 		Component: lazy(() => import("./pages/wave-function-collapse/index.tsx")),
 		meta: {
-			title: 'Wave Function Collapse',
+			title: "Wave Function Collapse",
 			image: wave_function_collapse_image,
-			tags: ['procedural', 'random']
+			tags: ["procedural", "random"],
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1764972333000,
 			firstAdded: 1727995709000
 		},
 	},
 	"visual-exec": {
 		Component: lazy(() => import("./pages/visual-exec/index.tsx")),
 		meta: {
-			title: 'Visual Exec',
-			image: visual_exec_image
+			title: "Visual Exec",
+			image: visual_exec_image,
 		},
 		git: {
-			lastModified: 1761395963000,
+			lastModified: 1764972333000,
 			firstAdded: 1760983403000
 		},
 	},
 	"tinkerbell-map": {
 		Component: lazy(() => import("./pages/tinkerbell-map/index.tsx")),
 		meta: {
-			title: 'Tinkerbell Map',
+			title: "Tinkerbell Map",
 			image: tinkerbell_map_image,
-			tags: ['math', 'chaos', 'attractor']
+			tags: ["math", "chaos", "attractor"],
 		},
 		git: {
-			lastModified: 1761778560000,
+			lastModified: 1764972333000,
 			firstAdded: 1761778472000
 		},
 	},
 	"swarm-pathfinding": {
 		Component: lazy(() => import("./pages/swarm-pathfinding/index.tsx")),
 		meta: {
-			title: 'Swarm Pathfinding',
+			title: "Swarm Pathfinding",
 			image: swarm_pathfinding_image,
-			tags: ['pathfinding', 'performance']
+			tags: ["pathfinding", "performance"],
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1764972333000,
 			firstAdded: 1741025883000
 		},
 	},
 	"suika": {
 		Component: lazy(() => import("./pages/suika/index.tsx")),
 		meta: {
-			title: 'Suika Game',
+			title: "Suika Game",
 			image: suika_image,
-			tags: ['game'],
+			tags: ["game"],
 		},
 		git: {
-			lastModified: 1764970562000,
+			lastModified: 1764972333000,
 			firstAdded: 1764878117000
 		},
 	},
 	"star-rating": {
 		Component: lazy(() => import("./pages/star-rating/index.tsx")),
 		meta: {
-			title: 'Star Rating',
+			title: "Star Rating",
 			image: star_rating_image,
-			tags: ['html', 'components', 'wip']
+			tags: ["html", "components", "wip"],
 		},
 		git: {
-			lastModified: 1759587108000,
+			lastModified: 1764972333000,
 			firstAdded: 1744563053000
 		},
 	},
 	"spring-fluid": {
 		Component: lazy(() => import("./pages/spring-fluid/index.tsx")),
 		meta: {
-			title: 'Spring fluid',
-			description: 'A fluid simulation based on a spring-mass system, on the GPU. Click and drag to introduce disturbances. Warning: flashing lights.',
+			title: "Spring fluid",
+			description:
+				"A fluid simulation based on a spring-mass system, on the GPU. Click and drag to introduce disturbances. Warning: flashing lights.",
 			image: spring_fluid_image,
-			tags: ['webgl', 'fluid', 'shader', 'physics'],
+			tags: ["webgl", "fluid", "shader", "physics"],
 		},
 		git: {
-			lastModified: 1762693908000,
+			lastModified: 1764972333000,
 			firstAdded: 1760259852000
 		},
 	},
 	"spider-inverse-kinematics": {
 		Component: lazy(() => import("./pages/spider-inverse-kinematics/index.tsx")),
 		meta: {
-			title: 'Spider Inverse Kinematics',
+			title: "Spider Inverse Kinematics",
 			image: spider_inverse_kinematics_image,
-			tags: ['animation', 'procedural']
+			tags: ["animation", "procedural"],
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1764972333000,
 			firstAdded: 1717364036000
 		},
 	},
 	"snakebird": {
 		Component: lazy(() => import("./pages/snakebird/index.tsx")),
 		meta: {
-			title: 'Snakebird',
+			title: "Snakebird",
 			image: snakebird_image,
-			tags: ['game']
+			tags: ["game"],
 		},
 		git: {
-			lastModified: 1761521307000,
+			lastModified: 1764972333000,
 			firstAdded: 1761415795000
 		},
 	},
 	"silky-modal": {
 		Component: lazy(() => import("./pages/silky-modal/index.tsx")),
 		meta: {
-			title: 'Silky Modal',
-			tags: ['css']
+			title: "Silky Modal",
+			tags: ["css"],
 		},
 		git: {
-			lastModified: 1764372609000,
+			lastModified: 1764973199000,
 			firstAdded: 1764198910000
 		},
 	},
 	"quad-tree-collisions": {
 		Component: lazy(() => import("./pages/quad-tree-collisions/index.tsx")),
 		meta: {
-			title: 'Quad Tree Collisions',
+			title: "Quad Tree Collisions",
 			image: quad_tree_collisions_image,
-			tags: ['data structures', 'performance']
+			tags: ["data structures", "performance"],
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1764972333000,
 			firstAdded: 1740318342000
 		},
 	},
 	"quad-tree": {
 		Component: lazy(() => import("./pages/quad-tree/index.tsx")),
 		meta: {
-			title: 'Quad Tree',
+			title: "Quad Tree",
 			image: quad_tree_image,
-			tags: ['data structures', '101']
+			tags: ["data structures", "101"],
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1764973199000,
 			firstAdded: 1717339261000
 		},
 	},
 	"pong-pang": {
 		Component: lazy(() => import("./pages/pong-pang/index.tsx")),
 		meta: {
-			title: 'Pong Pang',
+			title: "Pong Pang",
 			image: pong_pang_image,
-			tags: ['game']
+			tags: ["game"],
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1764972333000,
 			firstAdded: 1717337533000
 		},
 	},
 	"polka-fireflies": {
 		Component: lazy(() => import("./pages/polka-fireflies/index.tsx")),
 		meta: {
-			title: 'Polka Fireflies',
-			image: polka_fireflies_image
-		
+			title: "Polka Fireflies",
+			image: polka_fireflies_image,
 		},
 		git: {
-			lastModified: 1761222754000,
+			lastModified: 1764972333000,
 			firstAdded: 1761173482000
 		},
 	},
 	"pinball": {
 		Component: lazy(() => import("./pages/pinball/index.tsx")),
 		meta: {
-			title: 'Pinball',
-			tags: ['game', 'wip']
-		
+			title: "Pinball",
+			tags: ["game", "wip"],
 		},
 		git: {
-			lastModified: 1764878110000,
+			lastModified: 1764972333000,
 			firstAdded: 1764431682000
 		},
 	},
 	"perlin-ripples": {
 		Component: lazy(() => import("./pages/perlin-ripples/index.tsx")),
 		meta: {
-			title: 'Perlin ripples',
+			title: "Perlin ripples",
 			image: perlin_ripples_image,
-			tags: ['random', 'animation']
+			tags: ["random", "animation"],
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1764972333000,
 			firstAdded: 1721823247000
 		},
 	},
 	"particle-life-gpu": {
 		Component: lazy(() => import("./pages/particle-life-gpu/index.tsx")),
 		meta: {
-			title: 'Particle Life GPU',
-			tags: ['simulation', 'webgpu', 'particles'],
-			image: particle_life_gpu_image
+			title: "Particle Life GPU",
+			tags: ["simulation", "webgpu", "particles"],
+			image: particle_life_gpu_image,
 		},
 		git: {
-			lastModified: 1762636452000,
+			lastModified: 1764972333000,
 			firstAdded: 1762551884000
 		},
 	},
 	"particle-life": {
 		Component: lazy(() => import("./pages/particle-life/index.tsx")),
 		meta: {
-			title: 'Particle Life',
+			title: "Particle Life",
 			image: particle_life_image,
-			tags: ['simulation', 'canvas', 'particles'],
+			tags: ["simulation", "canvas", "particles"],
 		},
 		git: {
-			lastModified: 1762433687000,
+			lastModified: 1764972333000,
 			firstAdded: 1760880322000
 		},
 	},
 	"paint-worklet": {
 		Component: lazy(() => import("./pages/paint-worklet/index.tsx")),
 		meta: {
-			title: 'Paint Worklet',
+			title: "Paint Worklet",
 			image: paint_worklet_image,
-			tags: ['css']
+			tags: ["css"],
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1764972333000,
 			firstAdded: 1717321960000
 		},
 	},
 	"pacman": {
 		Component: lazy(() => import("./pages/pacman/index.tsx")),
 		meta: {
-			title: 'Pacman',
-			tags: ['wip']
+			title: "Pacman",
+			tags: ["wip"],
 		},
 		git: {
-			lastModified: 1761257121000,
+			lastModified: 1764972333000,
 			firstAdded: 1761257121000
 		},
 	},
 	"normal-map": {
 		Component: lazy(() => import("./pages/normal-map/index.tsx")),
 		meta: {
-			title: 'Normal Map',
+			title: "Normal Map",
 			image: normal_map_image,
-			tags: ['webgl', 'lighting']
+			tags: ["webgl", "lighting"],
 		},
 		git: {
-			lastModified: 1760191038000,
+			lastModified: 1764972333000,
 			firstAdded: 1742666916000
 		},
 	},
 	"neat": {
 		Component: lazy(() => import("./pages/neat/index.tsx")),
 		meta: {
-			title: 'N.E.A.T',
+			title: "N.E.A.T",
 			description: `
 				NeuroEvolution of Augmenting Topologies. A genetic algorithm that evolves neural networks to solve a task
 				(here: collect as many orange dots as possible). Every generation, we simulate 2000 entities,
@@ -334,284 +333,284 @@ export const ROUTES = {
 				a new generation by copying them and mutating them.
 			`,
 			image: neat_image,
-			tags: ['simulation', 'genetic algorithm', 'neural network']
+			tags: ["simulation", "genetic algorithm", "neural network"],
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1764972333000,
 			firstAdded: 1741456619000
 		},
 	},
 	"modern-modal": {
 		Component: lazy(() => import("./pages/modern-modal/index.tsx")),
 		meta: {
-			title: 'Modern Modal',
-			tags: ['html', 'components']
+			title: "Modern Modal",
+			tags: ["html", "components"],
 		},
 		git: {
-			lastModified: 1759674908000,
+			lastModified: 1764972333000,
 			firstAdded: 1717538613000
 		},
 	},
 	"minesweeper": {
 		Component: lazy(() => import("./pages/minesweeper/index.tsx")),
 		meta: {
-			title: 'Minesweeper',
+			title: "Minesweeper",
 			image: minesweeper_image,
-			tags: ['game']
+			tags: ["game"],
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1764972333000,
 			firstAdded: 1738530954000
 		},
 	},
 	"maze-generation": {
 		Component: lazy(() => import("./pages/maze-generation/index.tsx")),
 		meta: {
-			title: 'Maze Generation',
+			title: "Maze Generation",
 			image: maze_generation_image,
-			tags: ['algorithm', 'procedural']
+			tags: ["algorithm", "procedural"],
 		},
 		git: {
-			lastModified: 1760980166000,
+			lastModified: 1764972333000,
 			firstAdded: 1760825464000
 		},
 	},
 	"lightning": {
 		Component: lazy(() => import("./pages/lightning/index.tsx")),
 		meta: {
-			title: 'Lightning',
+			title: "Lightning",
 			image: lightning_image,
-			tags: ['animation']
+			tags: ["animation"],
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1764972333000,
 			firstAdded: 1717331001000
 		},
 	},
 	"intl-tuesday": {
 		Component: lazy(() => import("./pages/intl-tuesday/index.tsx")),
 		meta: {
-			title: 'Intl Tuesday',
+			title: "Intl Tuesday",
 			image: intl_tuesday_image,
-			tags: ['Intl', 'locales']
+			tags: ["Intl", "locales"],
 		},
 		git: {
-			lastModified: 1759673611000,
+			lastModified: 1764972333000,
 			firstAdded: 1759672364000
 		},
 	},
 	"hex-a-star": {
 		Component: lazy(() => import("./pages/hex-a-star/index.tsx")),
 		meta: {
-			title: 'Hexagonal A*',
+			title: "Hexagonal A*",
 			image: hex_a_star_image,
-			tags: ['pathfinding', 'data structures']
+			tags: ["pathfinding", "data structures"],
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1764972333000,
 			firstAdded: 1740491184000
 		},
 	},
 	"hacker-background": {
 		Component: lazy(() => import("./pages/hacker-background/index.tsx")),
 		meta: {
-			title: 'Hacker Background',
+			title: "Hacker Background",
 			image: hacker_background_image,
-			tags: ['animation', 'ascii']
+			tags: ["animation", "ascii"],
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1764972333000,
 			firstAdded: 1739742825000
 		},
 	},
 	"grainy-texture": {
 		Component: lazy(() => import("./pages/grainy-texture/index.tsx")),
 		meta: {
-			title: 'Grainy Texture',
-			tags: ['css', 'svg', 'wip'],
+			title: "Grainy Texture",
+			tags: ["css", "svg", "wip"],
 		},
 		git: {
-			lastModified: 1759587155000,
+			lastModified: 1764972333000,
 			firstAdded: 1741450768000
 		},
 	},
 	"fragment-portal": {
 		Component: lazy(() => import("./pages/fragment-portal/index.tsx")),
 		meta: {
-			title: 'Fragment Portal',
-			tags: ['react']
+			title: "Fragment Portal",
+			tags: ["react"],
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1764972333000,
 			firstAdded: 1717340075000
 		},
 	},
 	"fourrier-series": {
 		Component: lazy(() => import("./pages/fourrier-series/index.tsx")),
 		meta: {
-			title: 'Fourrier Series',
-			tags: ['animation', 'music'],
-			image: fourrier_series_image
+			title: "Fourrier Series",
+			tags: ["animation", "music"],
+			image: fourrier_series_image,
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1764972333000,
 			firstAdded: 1752508497000
 		},
 	},
 	"flow-field": {
 		Component: lazy(() => import("./pages/flow-field/index.tsx")),
 		meta: {
-			title: 'Flow Field',
+			title: "Flow Field",
 			image: flow_field_image,
-			tags: ['pathfinding', 'performance']
+			tags: ["pathfinding", "performance"],
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1764972333000,
 			firstAdded: 1740833468000
 		},
 	},
 	"flask": {
 		Component: lazy(() => import("./pages/flask/index.tsx")),
 		meta: {
-			title: 'Flask',
+			title: "Flask",
 			image: flask_image,
-			tags: ['animation', 'css']
+			tags: ["animation", "css"],
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1764972333000,
 			firstAdded: 1737497494000
 		},
 	},
 	"fireflies": {
 		Component: lazy(() => import("./pages/fireflies/index.tsx")),
 		meta: {
-			title: 'Fireflies',
-			image: fireflies_image
+			title: "Fireflies",
+			image: fireflies_image,
 		},
 		git: {
-			lastModified: 1761222888000,
+			lastModified: 1764972333000,
 			firstAdded: 1761222754000
 		},
 	},
 	"deterministic-plinko": {
 		Component: lazy(() => import("./pages/deterministic-plinko/index.tsx")),
 		meta: {
-			title: 'Deterministic Plinko',
+			title: "Deterministic Plinko",
 			image: deterministic_plinko_image,
-			tags: ['game', 'physics', 'simulation']
+			tags: ["game", "physics", "simulation"],
 		},
 		git: {
-			lastModified: 1760864627000,
+			lastModified: 1764972333000,
 			firstAdded: 1760809990000
 		},
 	},
 	"cursor-projection": {
 		Component: lazy(() => import("./pages/cursor-projection/index.tsx")),
 		meta: {
-			title: '3D Cursor Projection',
+			title: "3D Cursor Projection",
 			image: cursor_projection_image,
-			tags: ['perspective', 'css', 'projection']
+			tags: ["perspective", "css", "projection"],
 		},
 		git: {
-			lastModified: 1759672738000,
+			lastModified: 1764972333000,
 			firstAdded: 1759672720000
 		},
 	},
 	"collision-threads": {
 		Component: lazy(() => import("./pages/collision-threads/index.tsx")),
 		meta: {
-			title: 'Collision Threads',
+			title: "Collision Threads",
 			image: collision_threads_image,
-			tags: ['simulation', 'performance', 'physics']
+			tags: ["simulation", "performance", "physics"],
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1764972333000,
 			firstAdded: 1740501679000
 		},
 	},
 	"cellular-automata": {
 		Component: lazy(() => import("./pages/cellular-automata/index.tsx")),
 		meta: {
-			title: 'Cellular Automata',
-			tags: ['wip']
+			title: "Cellular Automata",
+			tags: ["wip"],
 		},
 		git: {
-			lastModified: 1752584880000,
+			lastModified: 1764972333000,
 			firstAdded: 1752407483000
 		},
 	},
 	"boids": {
 		Component: lazy(() => import("./pages/boids/index.tsx")),
 		meta: {
-			title: 'Boids',
+			title: "Boids",
 			description: `
 				Boids is an artificial life program which simulates the flocking behaviour of birds.
 				It is an example of emergent behavior; that is, the complexity of Boids arises from the interaction of individual agents adhering to a set of simple rules.
 			`,
 			image: boids_image,
-			tags: ['simulation', 'animation', 'performance']
+			tags: ["simulation", "animation", "performance"],
 		},
 		git: {
-			lastModified: 1762253834000,
+			lastModified: 1764972333000,
 			firstAdded: 1752336310000
 		},
 	},
 	"bird-inverse-kinematics": {
 		Component: lazy(() => import("./pages/bird-inverse-kinematics/index.tsx")),
 		meta: {
-			title: 'Bird Inverse Kinematics',
+			title: "Bird Inverse Kinematics",
 			image: bird_inverse_kinematics_image,
-			tags: ['animation', 'procedural']
+			tags: ["animation", "procedural"],
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1764973199000,
 			firstAdded: 1717365547000
 		},
 	},
 	"any-string-to-css-color": {
 		Component: lazy(() => import("./pages/any-string-to-css-color/index.tsx")),
 		meta: {
-			title: 'Any string to CSS color',
-			tags: ['wip']
+			title: "Any string to CSS color",
+			tags: ["wip"],
 		},
 		git: {
-			lastModified: 1762902567000,
+			lastModified: 1764972333000,
 			firstAdded: 1762902567000
 		},
 	},
 	"ants-shader": {
 		Component: lazy(() => import("./pages/ants-shader/index.tsx")),
 		meta: {
-			title: 'Ants on shader',
-			tags: ['simulation', 'performance', 'webgl', 'shader'],
-			image: ants_shader_image
+			title: "Ants on shader",
+			tags: ["simulation", "performance", "webgl", "shader"],
+			image: ants_shader_image,
 		},
 		git: {
-			lastModified: 1760207398000,
+			lastModified: 1764972333000,
 			firstAdded: 1742739684000
 		},
 	},
 	"ants": {
 		Component: lazy(() => import("./pages/ants/index.tsx")),
 		meta: {
-			title: 'Ants',
+			title: "Ants",
 			image: ants_image,
-			tags: ['simulation', 'performance']
+			tags: ["simulation", "performance"],
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1764972333000,
 			firstAdded: 1728081821000
 		},
 	},
 	"a-star": {
 		Component: lazy(() => import("./pages/a-star/index.tsx")),
 		meta: {
-			title: 'A*',
+			title: "A*",
 			image: a_star_image,
-			tags: ['pathfinding', '101']
+			tags: ["pathfinding", "101"],
 		},
 		git: {
-			lastModified: 1752533354000,
+			lastModified: 1764972333000,
 			firstAdded: 1740478315000
 		},
 	}
