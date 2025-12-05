@@ -6,3 +6,5 @@ onlyBuiltDependencies:
 
 minimumReleaseAge: 1440 # 1 day in minutes
 
+minimumReleaseAgeExclude:
+  - "@typescript/native-preview"
