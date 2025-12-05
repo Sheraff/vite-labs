@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "echo \"node:$(node -v) pnpm:v$(pnpm -v)\\n\" && vite",
+    "predev": "echo \"node:$(node -v) pnpm:v$(pnpm -v)\\n\"",
+    "prebuild": "echo \"node:$(node -v) pnpm:v$(pnpm -v)\\n\"",
+    "dev": "vite",
     "build": "vite build",
     "lint": "oxlint . --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
@@ -45,5 +47,10 @@
     "oxlint": "1.31.0",
     "vite": "8.0.0-beta.0"
   },
-  "packageManager": "pnpm@10.18.0"
+  "pnpm": {
+    "executionEnv": {
+      "nodeVersion": "24.11.1"
+    }
+  },
+  "packageManager": "pnpm@10.24.0"
 }
