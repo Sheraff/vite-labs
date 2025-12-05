@@ -49,35 +49,29 @@ ${routes
 `
 
 async function getGitMeta(index: string) {
-	const lastAuthorTime: Promise<string>[] = []
-	const firstCommit: Promise<string>[] = []
-	for await (const file of glob(`${dirname(index)}/**/*`)) {
-		lastAuthorTime.push(
-			new Promise<string>((resolve, reject) =>
-				exec(`git log -1 --pretty="format:%ai" "${file}"`, (error, stdout, stderr) => {
-					if (error || stderr) return reject(error || stderr)
-					resolve(stdout.trim())
-				}),
-			),
-		)
-		firstCommit.push(
-			new Promise<string>((resolve, reject) =>
-				exec(`git log --diff-filter=A --format="%ad" --date=iso "${file}" | head -1`, (error, stdout, stderr) => {
-					if (error || stderr) return reject(error || stderr)
-					resolve(stdout.trim())
-				}),
-			),
-		)
-	}
-	const lastModTime = await Promise.all(lastAuthorTime)
-	let max = Math.max(...lastModTime.filter(Boolean).map((t) => new Date(t).getTime()))
-	max = max === -Infinity ? 0 : max
+	const dir = dirname(index)
 
-	const firstAddTime = await Promise.all(firstCommit)
-	let min = Math.min(...firstAddTime.filter(Boolean).map((t) => new Date(t).getTime()))
-	min = min === Infinity ? 0 : min
+	// Get last modification time for the entire directory
+	const lastModTime = new Promise<number>((resolve, reject) => {
+		exec(`git log -1 --pretty="format:%ai" -- "${dir}"`, (error, stdout, stderr) => {
+			if (error || stderr) return reject(error || stderr)
+			const timestamp = stdout.trim() ? new Date(stdout.trim()).getTime() : 0
+			resolve(timestamp || 0)
+		})
+	})
 
-	const git = `{\n\t\t\tlastModified: ${max},\n\t\t\tfirstAdded: ${min}\n\t\t}`
+	// Get first commit time for the entire directory
+	const firstAddTime = new Promise<number>((resolve, reject) => {
+		exec(`git log --diff-filter=A --format="%ad" --date=iso --reverse -- "${dir}" | head -1`, (error, stdout, stderr) => {
+			if (error || stderr) return reject(error || stderr)
+			const timestamp = stdout.trim() ? new Date(stdout.trim()).getTime() : 0
+			resolve(timestamp || 0)
+		})
+	})
+
+
+
+	const git = `{\n\t\t\tlastModified: ${await lastModTime},\n\t\t\tfirstAdded: ${await firstAddTime}\n\t\t}`
 	return git
 }
 
