@@ -1,10 +1,11 @@
+import type { BoardConfig } from "./types"
+
+import { BezierPath } from "./BezierPath"
 import { CurvedSurface } from "./CurvedSurface"
+import { Flipper } from "./Flipper"
+import { Bumper, TriangularBumper } from "./Obstacle"
 import { Rail } from "./Rail"
 import { SmoothPath } from "./SmoothPath"
-import { BezierPath } from "./BezierPath"
-import { Bumper, TriangularBumper } from "./Obstacle"
-import { Flipper } from "./Flipper"
-import type { BoardConfig } from "./types"
 
 export class PinballGame {
 	canvas: HTMLCanvasElement
@@ -46,9 +47,19 @@ export class PinballGame {
 	cleanup = new Set<() => void>()
 	rafId: number | null = null
 
-	constructor({ canvas, config, width, height }: { canvas: HTMLCanvasElement; config?: BoardConfig, width: number; height: number }) {
+	constructor({
+		canvas,
+		config,
+		width,
+		height,
+	}: {
+		canvas: HTMLCanvasElement
+		config?: BoardConfig
+		width: number
+		height: number
+	}) {
 		this.canvas = canvas
-		this.ctx = this.canvas.getContext('2d')!
+		this.ctx = this.canvas.getContext("2d")!
 		this.width = width
 		this.height = height
 
@@ -65,51 +76,50 @@ export class PinballGame {
 			vx: 0,
 			vy: 0,
 			gravity: 0.25,
-			bounce: 0.1
+			bounce: 0.1,
 		}
 
 		// Load from config or use defaults
 		if (config) {
-			const leftFlippers = config.flippers.filter(f => f.side === 'left')
-			const rightFlippers = config.flippers.filter(f => f.side === 'right')
+			const leftFlippers = config.flippers.filter((f) => f.side === "left")
+			const rightFlippers = config.flippers.filter((f) => f.side === "right")
 
 			this.flippers = {
-				left: leftFlippers.length > 0
-					? leftFlippers.map(f => new Flipper(f.x, f.y, 'left', f.length, f.width))
-					: [new Flipper(120, this.height - 80, 'left', 70)],
-				right: rightFlippers.length > 0
-					? rightFlippers.map(f => new Flipper(f.x, f.y, 'right', f.length, f.width))
-					: [new Flipper(280, this.height - 80, 'right', 70)]
+				left:
+					leftFlippers.length > 0
+						? leftFlippers.map((f) => new Flipper(f.x, f.y, "left", f.length, f.width))
+						: [new Flipper(120, this.height - 80, "left", 70)],
+				right:
+					rightFlippers.length > 0
+						? rightFlippers.map((f) => new Flipper(f.x, f.y, "right", f.length, f.width))
+						: [new Flipper(280, this.height - 80, "right", 70)],
 			}
 
 			this.obstacles = [
-				...config.bumpers.map(b => new Bumper(b.x, b.y, b.radius, b.points)),
-				...config.triangularBumpers.map(t => new TriangularBumper(
-					t.v1, t.v2, t.v3, t.points,
-					t.edge1Bouncy, t.edge2Bouncy, t.edge3Bouncy
-				))
+				...config.bumpers.map((b) => new Bumper(b.x, b.y, b.radius, b.points)),
+				...config.triangularBumpers.map(
+					(t) => new TriangularBumper(t.v1, t.v2, t.v3, t.points, t.edge1Bouncy, t.edge2Bouncy, t.edge3Bouncy),
+				),
 			]
 
 			this.rails = [
-				...config.rails.map(r => new Rail(r.x1, r.y1, r.x2, r.y2, r.radius)),
+				...config.rails.map((r) => new Rail(r.x1, r.y1, r.x2, r.y2, r.radius)),
 				// Always include launch lane wall
-				new Rail(this.width - this.launchLaneWidth, this.height, this.width - this.launchLaneWidth, 80, 5)
+				new Rail(this.width - this.launchLaneWidth, this.height, this.width - this.launchLaneWidth, 80, 5),
 			]
 
-			this.curves = config.curves.map(c =>
-				new CurvedSurface(c.x, c.y, c.radius, c.startAngle, c.endAngle, c.thickness)
+			this.curves = config.curves.map(
+				(c) => new CurvedSurface(c.x, c.y, c.radius, c.startAngle, c.endAngle, c.thickness),
 			)
 
 			this.smoothPaths = []
 
-			this.bezierPaths = config.bezierPaths?.map(b =>
-				new BezierPath(b.points, b.trackWidth)
-			) || []
+			this.bezierPaths = config.bezierPaths?.map((b) => new BezierPath(b.points, b.trackWidth)) || []
 		} else {
 			// Default layout
 			this.flippers = {
-				left: [new Flipper(120, this.height - 80, 'left', 70)],
-				right: [new Flipper(280, this.height - 80, 'right', 70)]
+				left: [new Flipper(120, this.height - 80, "left", 70)],
+				right: [new Flipper(280, this.height - 80, "right", 70)],
 			}
 
 			this.obstacles = [
@@ -125,33 +135,44 @@ export class PinballGame {
 					{ x: 75, y: this.height - 150 + 10.4 },
 					{ x: 105, y: this.height - 150 + 10.4 },
 					250,
-					true, true, true // all edges bouncy
+					true,
+					true,
+					true, // all edges bouncy
 				),
 				new TriangularBumper(
 					{ x: 310, y: this.height - 150 - 15.6 },
 					{ x: 295, y: this.height - 150 + 10.4 },
 					{ x: 325, y: this.height - 150 + 10.4 },
 					250,
-					true, true, true // all edges bouncy
-				)
+					true,
+					true,
+					true, // all edges bouncy
+				),
 			]
 
 			this.rails = [
 				new Rail(50, 150, 150, 200, 12),
 				new Rail(250, 200, 350, 150, 12),
 				// Launch lane wall
-				new Rail(this.width - this.launchLaneWidth, this.height, this.width - this.launchLaneWidth, 80, 5)
+				new Rail(this.width - this.launchLaneWidth, this.height, this.width - this.launchLaneWidth, 80, 5),
 			]
 
 			this.curves = [
 				new CurvedSurface(200, 100, 60, -Math.PI, 0, 15), // Half circle at top
-				new CurvedSurface(100, 420, 40, Math.PI / 4, 3 * Math.PI / 4, 10),
-				new CurvedSurface(300, 420, 40, Math.PI / 4, 3 * Math.PI / 4, 10),
+				new CurvedSurface(100, 420, 40, Math.PI / 4, (3 * Math.PI) / 4, 10),
+				new CurvedSurface(300, 420, 40, Math.PI / 4, (3 * Math.PI) / 4, 10),
 				// Top right curve to guide ball from launch lane
 				new CurvedSurface(this.width - 40, 40, 40, -Math.PI / 2, 0, 10),
 				// Inlane guides - direct ball to flippers
 				new CurvedSurface(75, this.height - 140, 40, -Math.PI / 2, Math.PI / 8, 8),
-				new CurvedSurface(this.width - this.launchLaneWidth - 75, this.height - 140, 40, Math.PI - Math.PI / 8, Math.PI / 2, 8)
+				new CurvedSurface(
+					this.width - this.launchLaneWidth - 75,
+					this.height - 140,
+					40,
+					Math.PI - Math.PI / 8,
+					Math.PI / 2,
+					8,
+				),
 			]
 
 			this.smoothPaths = []
@@ -166,43 +187,51 @@ export class PinballGame {
 	}
 
 	destroy() {
-		this.cleanup.forEach(fn => fn())
+		this.cleanup.forEach((fn) => fn())
 	}
 
 	setupControls() {
 		const controller = new AbortController()
-		document.addEventListener('keydown', (e) => {
-			if (e.key === 'ArrowLeft' || e.key === 'a') {
-				this.flippers.left.forEach(f => f.flipUp())
-			}
-			if (e.key === 'ArrowRight' || e.key === 'd') {
-				this.flippers.right.forEach(f => f.flipUp())
-			}
-			if (e.key === ' ') {
-				e.preventDefault()
-				if (this.ball.x >= this.width - this.launchLaneWidth && this.ball.y > this.height - 100) {
-					this.launching = true
+		document.addEventListener(
+			"keydown",
+			(e) => {
+				if (e.key === "ArrowLeft" || e.key === "a") {
+					this.flippers.left.forEach((f) => f.flipUp())
 				}
-			}
-		}, { signal: controller.signal })
+				if (e.key === "ArrowRight" || e.key === "d") {
+					this.flippers.right.forEach((f) => f.flipUp())
+				}
+				if (e.key === " ") {
+					e.preventDefault()
+					if (this.ball.x >= this.width - this.launchLaneWidth && this.ball.y > this.height - 100) {
+						this.launching = true
+					}
+				}
+			},
+			{ signal: controller.signal },
+		)
 
-		document.addEventListener('keyup', (e) => {
-			if (e.key === 'ArrowLeft' || e.key === 'a') {
-				this.flippers.left.forEach(f => f.flipDown())
-			}
-			if (e.key === 'ArrowRight' || e.key === 'd') {
-				this.flippers.right.forEach(f => f.flipDown())
-			}
-			if (e.key === ' ') {
-				if (this.launching) {
-					this.launching = false
-					this.launchBall()
+		document.addEventListener(
+			"keyup",
+			(e) => {
+				if (e.key === "ArrowLeft" || e.key === "a") {
+					this.flippers.left.forEach((f) => f.flipDown())
 				}
-			}
-			if (e.key === 'r' && this.gameOver) {
-				this.restart()
-			}
-		}, { signal: controller.signal })
+				if (e.key === "ArrowRight" || e.key === "d") {
+					this.flippers.right.forEach((f) => f.flipDown())
+				}
+				if (e.key === " ") {
+					if (this.launching) {
+						this.launching = false
+						this.launchBall()
+					}
+				}
+				if (e.key === "r" && this.gameOver) {
+					this.restart()
+				}
+			},
+			{ signal: controller.signal },
+		)
 
 		this.cleanup.add(() => controller.abort())
 	}
@@ -231,10 +260,12 @@ export class PinballGame {
 		if (onBezierPath) {
 			// Add trail
 			this.ballTrail.push({ x: this.ball.x, y: this.ball.y, life: 10 })
-			this.ballTrail = this.ballTrail.filter(t => {
-				t.life -= dt
-				return t.life > 0
-			}).slice(-15)
+			this.ballTrail = this.ballTrail
+				.filter((t) => {
+					t.life -= dt
+					return t.life > 0
+				})
+				.slice(-15)
 			return
 		}
 
@@ -248,7 +279,7 @@ export class PinballGame {
 
 		// Sub-step physics to prevent tunneling at high speeds
 		const speed = Math.sqrt(this.ball.vx * this.ball.vx + this.ball.vy * this.ball.vy)
-		const substeps = Math.max(1, Math.ceil(speed * dt / 5)) // More steps for faster balls
+		const substeps = Math.max(1, Math.ceil((speed * dt) / 5)) // More steps for faster balls
 		const subVx = (this.ball.vx * dt) / substeps
 		const subVy = (this.ball.vy * dt) / substeps
 
@@ -262,8 +293,8 @@ export class PinballGame {
 		}
 
 		// Flipper collisions (outside substep loop - they have swept collision built in)
-		this.flippers.left.forEach(flipper => flipper.checkCollision(this.ball))
-		this.flippers.right.forEach(flipper => flipper.checkCollision(this.ball))
+		this.flippers.left.forEach((flipper) => flipper.checkCollision(this.ball))
+		this.flippers.right.forEach((flipper) => flipper.checkCollision(this.ball))
 
 		// Clamp maximum velocity as a safety measure
 		const maxSpeed = 25
@@ -310,19 +341,19 @@ export class PinballGame {
 			this.resetBall()
 		}
 
-
-
 		// Add trail
 		this.ballTrail.push({ x: this.ball.x, y: this.ball.y, life: 10 })
-		this.ballTrail = this.ballTrail.filter(t => {
-			t.life -= dt
-			return t.life > 0
-		}).slice(-15) // Keep only last 15 trail points
+		this.ballTrail = this.ballTrail
+			.filter((t) => {
+				t.life -= dt
+				return t.life > 0
+			})
+			.slice(-15) // Keep only last 15 trail points
 	}
 
 	checkCollisionsSubstep() {
 		// Check obstacle collisions
-		this.obstacles.forEach(obstacle => {
+		this.obstacles.forEach((obstacle) => {
 			const points = obstacle.handleBallCollision(this.ball)
 			if (points > 0) {
 				this.score += points
@@ -333,23 +364,23 @@ export class PinballGame {
 					y,
 					score: points,
 					life: 60,
-					maxLife: 60
+					maxLife: 60,
 				})
 			}
 		})
 
 		// Check rail collisions
-		this.rails.forEach(rail => {
+		this.rails.forEach((rail) => {
 			rail.handleBallCollision(this.ball)
 		})
 
 		// Check curved surface collisions
-		this.curves.forEach(curve => {
+		this.curves.forEach((curve) => {
 			curve.handleBallCollision(this.ball)
 		})
 
 		// Check smooth path collisions
-		this.smoothPaths.forEach(path => {
+		this.smoothPaths.forEach((path) => {
 			const collision = path.checkBallCollision(this.ball)
 			if (collision) {
 				path.handleBallCollision(this.ball)
@@ -358,8 +389,8 @@ export class PinballGame {
 	}
 
 	updateFlippers(dt: number) {
-		this.flippers.left.forEach(flipper => flipper.update(dt))
-		this.flippers.right.forEach(flipper => flipper.update(dt))
+		this.flippers.left.forEach((flipper) => flipper.update(dt))
+		this.flippers.right.forEach((flipper) => flipper.update(dt))
 	}
 
 	resetBall() {
@@ -380,19 +411,19 @@ export class PinballGame {
 
 	render(dt: number) {
 		// Clear canvas
-		this.ctx.fillStyle = '#001122'
+		this.ctx.fillStyle = "#001122"
 		this.ctx.fillRect(0, 0, this.width, this.height)
 
 		// Draw obstacles
-		this.obstacles.forEach(obstacle => obstacle.draw(this.ctx))
-		this.rails.forEach(rail => rail.draw(this.ctx))
-		this.curves.forEach(curve => curve.draw(this.ctx))
-		this.smoothPaths.forEach(path => path.draw(this.ctx))
-		this.bezierPaths.forEach(path => path.draw(this.ctx))
+		this.obstacles.forEach((obstacle) => obstacle.draw(this.ctx))
+		this.rails.forEach((rail) => rail.draw(this.ctx))
+		this.curves.forEach((curve) => curve.draw(this.ctx))
+		this.smoothPaths.forEach((path) => path.draw(this.ctx))
+		this.bezierPaths.forEach((path) => path.draw(this.ctx))
 
 		// Draw flippers
-		this.flippers.left.forEach(flipper => flipper.draw(this.ctx))
-		this.flippers.right.forEach(flipper => flipper.draw(this.ctx))
+		this.flippers.left.forEach((flipper) => flipper.draw(this.ctx))
+		this.flippers.right.forEach((flipper) => flipper.draw(this.ctx))
 
 		// Draw ball trail
 		this.ballTrail.forEach((point, i) => {
@@ -408,36 +439,40 @@ export class PinballGame {
 		this.ctx.beginPath()
 		this.ctx.arc(this.ball.x, this.ball.y, this.ball.radius, 0, Math.PI * 2)
 		const gradient = this.ctx.createRadialGradient(
-			this.ball.x - 2, this.ball.y - 2, 1,
-			this.ball.x, this.ball.y, this.ball.radius
+			this.ball.x - 2,
+			this.ball.y - 2,
+			1,
+			this.ball.x,
+			this.ball.y,
+			this.ball.radius,
 		)
-		gradient.addColorStop(0, '#fff9e6')
-		gradient.addColorStop(0.5, '#feca57')
-		gradient.addColorStop(1, '#ff9f43')
+		gradient.addColorStop(0, "#fff9e6")
+		gradient.addColorStop(0.5, "#feca57")
+		gradient.addColorStop(1, "#ff9f43")
 		this.ctx.fillStyle = gradient
 		this.ctx.fill()
-		this.ctx.strokeStyle = '#ff9ff3'
+		this.ctx.strokeStyle = "#ff9ff3"
 		this.ctx.lineWidth = 2
 		this.ctx.stroke()
 
 		// Draw score and lives
-		this.ctx.fillStyle = '#fff'
-		this.ctx.font = 'bold 24px Arial'
+		this.ctx.fillStyle = "#fff"
+		this.ctx.font = "bold 24px Arial"
 		this.ctx.fillText(`Score: ${this.score}`, 20, 40)
 
 		// Draw lives
 		for (let i = 0; i < this.lives; i++) {
 			this.ctx.beginPath()
 			this.ctx.arc(20 + i * 25, 70, 8, 0, Math.PI * 2)
-			this.ctx.fillStyle = '#feca57'
+			this.ctx.fillStyle = "#feca57"
 			this.ctx.fill()
-			this.ctx.strokeStyle = '#ff9ff3'
+			this.ctx.strokeStyle = "#ff9ff3"
 			this.ctx.lineWidth = 2
 			this.ctx.stroke()
 		}
 
 		// Draw score popups
-		this.scorePopups = this.scorePopups.filter(popup => {
+		this.scorePopups = this.scorePopups.filter((popup) => {
 			popup.life -= dt
 			if (popup.life <= 0) return false
 
@@ -445,17 +480,17 @@ export class PinballGame {
 			const yOffset = (popup.maxLife - popup.life) * 0.5
 			this.ctx.save()
 			this.ctx.globalAlpha = alpha
-			this.ctx.fillStyle = '#feca57'
-			this.ctx.font = 'bold 20px Arial'
-			this.ctx.textAlign = 'center'
+			this.ctx.fillStyle = "#feca57"
+			this.ctx.font = "bold 20px Arial"
+			this.ctx.textAlign = "center"
 			this.ctx.fillText(`+${popup.score}`, popup.x, popup.y - yOffset)
 			this.ctx.restore()
 			return true
 		})
-		this.ctx.textAlign = 'start'
+		this.ctx.textAlign = "start"
 
 		// Draw launch lane guide
-		this.ctx.strokeStyle = '#555'
+		this.ctx.strokeStyle = "#555"
 		this.ctx.lineWidth = 2
 		this.ctx.beginPath()
 		this.ctx.moveTo(this.width - this.launchLaneWidth, 80)
@@ -465,38 +500,38 @@ export class PinballGame {
 		// Draw plunger
 		const plungerY = this.height - 120
 		const plungerOffset = this.launching ? this.launchPower * 2 : 0
-		this.ctx.fillStyle = '#e74c3c'
+		this.ctx.fillStyle = "#e74c3c"
 		this.ctx.fillRect(this.width - 30, plungerY + plungerOffset, 20, 80 - plungerOffset)
-		this.ctx.strokeStyle = '#c0392b'
+		this.ctx.strokeStyle = "#c0392b"
 		this.ctx.lineWidth = 2
 		this.ctx.strokeRect(this.width - 30, plungerY + plungerOffset, 20, 80 - plungerOffset)
 
 		// Draw launch power indicator
 		if (this.launching && this.launchPower > 0) {
-			this.ctx.fillStyle = 'rgba(255, 71, 87, 0.3)'
+			this.ctx.fillStyle = "rgba(255, 71, 87, 0.3)"
 			this.ctx.fillRect(this.width - 35, this.height - 150 - this.launchPower * 3, 30, this.launchPower * 3)
-			this.ctx.strokeStyle = '#ff4757'
+			this.ctx.strokeStyle = "#ff4757"
 			this.ctx.lineWidth = 2
 			this.ctx.strokeRect(this.width - 35, this.height - 150 - this.launchPower * 3, 30, this.launchPower * 3)
 		}
 
 		// Draw game over screen
 		if (this.gameOver) {
-			this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
+			this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)"
 			this.ctx.fillRect(0, 0, this.width, this.height)
 
-			this.ctx.fillStyle = '#fff'
-			this.ctx.font = 'bold 48px Arial'
-			this.ctx.textAlign = 'center'
-			this.ctx.fillText('GAME OVER', this.width / 2, this.height / 2 - 40)
+			this.ctx.fillStyle = "#fff"
+			this.ctx.font = "bold 48px Arial"
+			this.ctx.textAlign = "center"
+			this.ctx.fillText("GAME OVER", this.width / 2, this.height / 2 - 40)
 
-			this.ctx.font = 'bold 32px Arial'
+			this.ctx.font = "bold 32px Arial"
 			this.ctx.fillText(`Final Score: ${this.score}`, this.width / 2, this.height / 2 + 20)
 
-			this.ctx.font = '20px Arial'
-			this.ctx.fillStyle = '#feca57'
-			this.ctx.fillText('Press R to Restart', this.width / 2, this.height / 2 + 70)
-			this.ctx.textAlign = 'start'
+			this.ctx.font = "20px Arial"
+			this.ctx.fillStyle = "#feca57"
+			this.ctx.fillText("Press R to Restart", this.width / 2, this.height / 2 + 70)
+			this.ctx.textAlign = "start"
 		}
 	}
 

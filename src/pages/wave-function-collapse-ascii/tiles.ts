@@ -5,167 +5,167 @@ export type Tile = {
 
 export default [
 	{
-		symbol: ' ',
+		symbol: " ",
 		is: [0, 0, 0, 0],
 	},
 	{
-		symbol: '═',
+		symbol: "═",
 		is: [0, 2, 0, 2],
 	},
 	{
-		symbol: '║',
+		symbol: "║",
 		is: [2, 0, 2, 0],
 	},
 	{
-		symbol: '╔',
+		symbol: "╔",
 		is: [0, 2, 2, 0],
 	},
 	{
-		symbol: '╗',
+		symbol: "╗",
 		is: [0, 0, 2, 2],
 	},
 	{
-		symbol: '╚',
+		symbol: "╚",
 		is: [2, 2, 0, 0],
 	},
 	{
-		symbol: '╝',
+		symbol: "╝",
 		is: [2, 0, 0, 2],
 	},
 	{
-		symbol: '╠',
+		symbol: "╠",
 		is: [2, 2, 2, 0],
 	},
 	{
-		symbol: '╣',
+		symbol: "╣",
 		is: [2, 0, 2, 2],
 	},
 	{
-		symbol: '╦',
+		symbol: "╦",
 		is: [0, 2, 2, 2],
 	},
 	{
-		symbol: '╩',
+		symbol: "╩",
 		is: [2, 2, 0, 2],
 	},
 	{
-		symbol: '╬',
+		symbol: "╬",
 		is: [2, 2, 2, 2],
 	},
 	{
-		symbol: '╨',
+		symbol: "╨",
 		is: [2, 1, 0, 1],
 	},
 	{
-		symbol: '╧',
+		symbol: "╧",
 		is: [1, 2, 0, 2],
 	},
 	{
-		symbol: '╤',
+		symbol: "╤",
 		is: [0, 2, 1, 2],
 	},
 	{
-		symbol: '╥',
+		symbol: "╥",
 		is: [0, 1, 2, 1],
 	},
 	{
-		symbol: '╙',
+		symbol: "╙",
 		is: [2, 1, 0, 0],
 	},
 	{
-		symbol: '╘',
+		symbol: "╘",
 		is: [1, 2, 0, 0],
 	},
 	{
-		symbol: '╒',
+		symbol: "╒",
 		is: [0, 2, 1, 0],
 	},
 	{
-		symbol: '╓',
+		symbol: "╓",
 		is: [0, 1, 2, 0],
 	},
 	{
-		symbol: '╕',
+		symbol: "╕",
 		is: [0, 0, 1, 2],
 	},
 	{
-		symbol: '╖',
+		symbol: "╖",
 		is: [0, 0, 2, 1],
 	},
 	{
-		symbol: '╜',
+		symbol: "╜",
 		is: [2, 0, 0, 1],
 	},
 	{
-		symbol: '╛',
+		symbol: "╛",
 		is: [1, 0, 0, 2],
 	},
 	{
-		symbol: '╪',
+		symbol: "╪",
 		is: [1, 2, 1, 2],
 	},
 	{
-		symbol: '╫',
+		symbol: "╫",
 		is: [2, 1, 2, 1],
 	},
 	{
-		symbol: '╞',
+		symbol: "╞",
 		is: [1, 2, 1, 0],
 	},
 	{
-		symbol: '╟',
+		symbol: "╟",
 		is: [2, 1, 2, 0],
 	},
 	{
-		symbol: '╡',
+		symbol: "╡",
 		is: [1, 0, 1, 2],
 	},
 	{
-		symbol: '╢',
+		symbol: "╢",
 		is: [2, 0, 2, 1],
 	},
 	{
-		symbol: '┐',
+		symbol: "┐",
 		is: [0, 0, 1, 1],
 	},
 	{
-		symbol: '└',
+		symbol: "└",
 		is: [1, 1, 0, 0],
 	},
 	{
-		symbol: '┘',
+		symbol: "┘",
 		is: [1, 0, 0, 1],
 	},
 	{
-		symbol: '┌',
+		symbol: "┌",
 		is: [0, 1, 1, 0],
 	},
 	{
-		symbol: '│',
+		symbol: "│",
 		is: [1, 0, 1, 0],
 	},
 	{
-		symbol: '─',
+		symbol: "─",
 		is: [0, 1, 0, 1],
 	},
 	{
-		symbol: '┤',
+		symbol: "┤",
 		is: [1, 0, 1, 1],
 	},
 	{
-		symbol: '┴',
+		symbol: "┴",
 		is: [1, 1, 0, 1],
 	},
 	{
-		symbol: '┬',
+		symbol: "┬",
 		is: [0, 1, 1, 1],
 	},
 	{
-		symbol: '├',
+		symbol: "├",
 		is: [1, 1, 1, 0],
 	},
 	{
-		symbol: '┼',
+		symbol: "┼",
 		is: [1, 1, 1, 1],
 	},
 	// {
@@ -184,7 +184,6 @@ export default [
 	// 	symbol: '╴',
 	// 	is: [0, 0, 0, 1],
 	// },
-
 
 	// {
 	// 	symbol: '┍',

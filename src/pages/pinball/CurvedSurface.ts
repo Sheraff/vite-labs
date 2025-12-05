@@ -1,5 +1,3 @@
-
-
 export class CurvedSurface {
 	center: { x: number; y: number }
 	radius: number
@@ -36,9 +34,10 @@ export class CurvedSurface {
 
 		// Add angular margin to prevent tunneling at curve edges
 		const angleMargin = 0.2 // radians
-		const withinAngle = (startAngle <= endAngle) ?
-			(normalizedAngle >= startAngle - angleMargin && normalizedAngle <= endAngle + angleMargin) :
-			(normalizedAngle >= startAngle - angleMargin || normalizedAngle <= endAngle + angleMargin)
+		const withinAngle =
+			startAngle <= endAngle
+				? normalizedAngle >= startAngle - angleMargin && normalizedAngle <= endAngle + angleMargin
+				: normalizedAngle >= startAngle - angleMargin || normalizedAngle <= endAngle + angleMargin
 
 		if (!withinAngle) return { collision: false } as const
 
@@ -59,10 +58,10 @@ export class CurvedSurface {
 				collision: true,
 				normal: {
 					x: (dx / distance) * normalDirection,
-					y: (dy / distance) * normalDirection
+					y: (dy / distance) * normalDirection,
 				},
 				targetRadius,
-				distance
+				distance,
 			} as const
 		}
 
@@ -94,8 +93,8 @@ export class CurvedSurface {
 		const ndy = ball.y - this.center.y
 		const ndist = Math.sqrt(ndx * ndx + ndy * ndy)
 		const normal = {
-			x: ndx / ndist * (isInnerSurface ? -1 : 1),
-			y: ndy / ndist * (isInnerSurface ? -1 : 1)
+			x: (ndx / ndist) * (isInnerSurface ? -1 : 1),
+			y: (ndy / ndist) * (isInnerSurface ? -1 : 1),
 		}
 
 		// Only reflect if moving toward the surface
@@ -116,16 +115,15 @@ export class CurvedSurface {
 		// Draw the curved surface
 		ctx.beginPath()
 		ctx.arc(this.center.x, this.center.y, this.radius, this.startAngle, this.endAngle)
-		ctx.strokeStyle = '#48dbfb'
+		ctx.strokeStyle = "#48dbfb"
 		ctx.lineWidth = this.thickness
-		ctx.lineCap = 'round'
+		ctx.lineCap = "round"
 		ctx.stroke()
 
 		// Add inner highlight
 		ctx.beginPath()
-		ctx.arc(this.center.x, this.center.y, this.radius - this.thickness / 4,
-			this.startAngle, this.endAngle)
-		ctx.strokeStyle = '#fff'
+		ctx.arc(this.center.x, this.center.y, this.radius - this.thickness / 4, this.startAngle, this.endAngle)
+		ctx.strokeStyle = "#fff"
 		ctx.lineWidth = 2
 		ctx.stroke()
 	}

@@ -1,15 +1,16 @@
-import { useEffect, useRef, useState } from "react"
-import { useFragment, Receptacle, Portal, type FragmentPortal } from './FragmentPortal'
-import styles from './styles.module.css'
 import { Head } from "#components/Head"
+import { useEffect, useRef, useState } from "react"
+
+import { useFragment, Receptacle, Portal, type FragmentPortal } from "./FragmentPortal"
+import styles from "./styles.module.css"
 
 export const meta = {
-	title: 'Fragment Portal',
-	tags: ['react']
+	title: "Fragment Portal",
+	tags: ["react"],
 }
 
 export default function FragmentPortal() {
-	const fragment = useFragment('div')
+	const fragment = useFragment("div")
 
 	return (
 		<div className={styles.main}>
@@ -33,7 +34,6 @@ function LiveComponents({ fragment }: { fragment: FragmentPortal }) {
 	)
 }
 
-
 function Slots({ fragment }: { fragment: FragmentPortal }) {
 	const [side, setSide] = useState([0, 0])
 	const onClick = () => {
@@ -49,21 +49,19 @@ function Slots({ fragment }: { fragment: FragmentPortal }) {
 	}
 	return (
 		<>
-			<button onClick={onClick}>
-				move somewhere else in DOM
-			</button>
+			<button onClick={onClick}>move somewhere else in DOM</button>
 			<ul className={styles.grid}>
 				{/* make many receptacles */}
-				{[0, 1].map((i) => (
+				{[0, 1].map((i) =>
 					[0, 1, 2].map((j) => (
-						<li key={i + '-' + j}>
+						<li key={i + "-" + j}>
 							<Receptacle
-								fragment={(side[0] === i && side[1] === j) ? fragment : undefined}
+								fragment={side[0] === i && side[1] === j ? fragment : undefined}
 								props={{ label: `${j + 1}x${i + 1}` }}
 							/>
 						</li>
-					))
-				))}
+					)),
+				)}
 			</ul>
 		</>
 	)
@@ -73,7 +71,7 @@ function Video({ label }: { label?: string }) {
 	const i = useRef(0).current++
 	return (
 		<>
-			<video width="320" height="240" controls loop muted autoPlay playsInline crossOrigin="anonymous" >
+			<video width="320" height="240" controls loop muted autoPlay playsInline crossOrigin="anonymous">
 				<source
 					src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
 					type="video/mp4"

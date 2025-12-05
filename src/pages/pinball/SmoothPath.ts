@@ -28,7 +28,7 @@ export class SmoothPath {
 
 		return {
 			x: mt * mt * mt * p0.x + 3 * mt * mt * t * p1.x + 3 * mt * t * t * p2.x + t * t * t * p3.x,
-			y: mt * mt * mt * p0.y + 3 * mt * mt * t * p1.y + 3 * mt * t * t * p2.y + t * t * t * p3.y
+			y: mt * mt * mt * p0.y + 3 * mt * mt * t * p1.y + 3 * mt * t * t * p2.y + t * t * t * p3.y,
 		}
 	}
 
@@ -78,7 +78,7 @@ export class SmoothPath {
 					closestY,
 					distance: dist,
 					normal: { x: distX / dist, y: distY / dist },
-					tangent: { x: dx / Math.sqrt(lenSq), y: dy / Math.sqrt(lenSq) }
+					tangent: { x: dx / Math.sqrt(lenSq), y: dy / Math.sqrt(lenSq) },
 				}
 			}
 		}
@@ -109,13 +109,16 @@ export class SmoothPath {
 		ctx.beginPath()
 		ctx.moveTo(this.points[0].x, this.points[0].y)
 		ctx.bezierCurveTo(
-			this.points[1].x, this.points[1].y,
-			this.points[2].x, this.points[2].y,
-			this.points[3].x, this.points[3].y
+			this.points[1].x,
+			this.points[1].y,
+			this.points[2].x,
+			this.points[2].y,
+			this.points[3].x,
+			this.points[3].y,
 		)
-		ctx.strokeStyle = '#48dbfb'
+		ctx.strokeStyle = "#48dbfb"
 		ctx.lineWidth = this.width
-		ctx.lineCap = 'round'
+		ctx.lineCap = "round"
 		ctx.stroke()
 	}
 }

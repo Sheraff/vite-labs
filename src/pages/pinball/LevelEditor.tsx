@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
-import styles from './styles.module.css'
-import type { BoardConfig } from './types'
+import { useEffect, useRef, useState } from "react"
 
-type Tool = 'bumper' | 'triangular' | 'rail' | 'curve' | 'flipper' | 'bezier' | 'select' | 'delete'
+import type { BoardConfig } from "./types"
+
+import styles from "./styles.module.css"
+
+type Tool = "bumper" | "triangular" | "rail" | "curve" | "flipper" | "bezier" | "select" | "delete"
 
 interface Props {
 	width: number
@@ -13,15 +15,17 @@ interface Props {
 
 export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 	const canvasRef = useRef<HTMLCanvasElement>(null)
-	const [tool, setTool] = useState<Tool>('select')
-	const [config, setConfig] = useState<BoardConfig>(initialConfig || {
-		bumpers: [],
-		triangularBumpers: [],
-		rails: [],
-		curves: [],
-		flippers: [],
-		bezierPaths: []
-	})
+	const [tool, setTool] = useState<Tool>("select")
+	const [config, setConfig] = useState<BoardConfig>(
+		initialConfig || {
+			bumpers: [],
+			triangularBumpers: [],
+			rails: [],
+			curves: [],
+			flippers: [],
+			bezierPaths: [],
+		},
+	)
 	const [selectedId, setSelectedId] = useState<string | null>(null)
 	const [railStart, setRailStart] = useState<{ x: number; y: number } | null>(null)
 	const [triangleVertices, setTriangleVertices] = useState<Array<{ x: number; y: number }>>([])
@@ -30,7 +34,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 	const [isAltPressed, setIsAltPressed] = useState(false)
 	const [isDragging, setIsDragging] = useState(false)
 	const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null)
-	const [dragVertex, setDragVertex] = useState<{ type: 'triangle' | 'rail' | 'bezier', vertex: number } | null>(null)
+	const [dragVertex, setDragVertex] = useState<{ type: "triangle" | "rail" | "bezier"; vertex: number } | null>(null)
 	const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 1200 })
 	const toolbarRef = useRef<HTMLDivElement>(null)
 	const instructionsRef = useRef<HTMLDivElement>(null)
@@ -67,8 +71,8 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 		}
 
 		calculateDimensions()
-		window.addEventListener('resize', calculateDimensions)
-		return () => window.removeEventListener('resize', calculateDimensions)
+		window.addEventListener("resize", calculateDimensions)
+		return () => window.removeEventListener("resize", calculateDimensions)
 	}, [width, height])
 
 	// Draw the editor view
@@ -76,19 +80,19 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 		const canvas = canvasRef.current
 		if (!canvas) return
 
-		const ctx = canvas.getContext('2d')!
+		const ctx = canvas.getContext("2d")!
 		ctx.save()
 		ctx.setTransform(1, 0, 0, 1, 0, 0) // Reset transform
 
 		// Calculate scale to map game coordinates to canvas display coordinates
-		const scaleX = canvasDimensions.width / width * window.devicePixelRatio
-		const scaleY = canvasDimensions.height / height * window.devicePixelRatio
+		const scaleX = (canvasDimensions.width / width) * window.devicePixelRatio
+		const scaleY = (canvasDimensions.height / height) * window.devicePixelRatio
 		ctx.scale(scaleX, scaleY)
 
 		// Clear canvas
-		ctx.fillStyle = '#001122'
-		ctx.fillRect(0, 0, width, height)		// Draw grid
-		ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)'
+		ctx.fillStyle = "#001122"
+		ctx.fillRect(0, 0, width, height) // Draw grid
+		ctx.strokeStyle = "rgba(255, 255, 255, 0.1)"
 		ctx.lineWidth = 1
 		const gridSize = 20
 		for (let x = 0; x < width; x += gridSize) {
@@ -108,16 +112,16 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 		config.bumpers.forEach((b) => {
 			ctx.beginPath()
 			ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2)
-			ctx.fillStyle = selectedId === b.id ? '#ff9ff3' : '#ff6b6b'
+			ctx.fillStyle = selectedId === b.id ? "#ff9ff3" : "#ff6b6b"
 			ctx.fill()
-			ctx.strokeStyle = '#ff4757'
+			ctx.strokeStyle = "#ff4757"
 			ctx.lineWidth = 2
 			ctx.stroke()
 
 			// Draw points text
-			ctx.fillStyle = '#fff'
-			ctx.font = '12px Arial'
-			ctx.textAlign = 'center'
+			ctx.fillStyle = "#fff"
+			ctx.font = "12px Arial"
+			ctx.textAlign = "center"
 			ctx.fillText(`${b.points}`, b.x, b.y + 4)
 		})
 
@@ -128,24 +132,24 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 			ctx.lineTo(t.v2.x, t.v2.y)
 			ctx.lineTo(t.v3.x, t.v3.y)
 			ctx.closePath()
-			ctx.fillStyle = selectedId === t.id ? '#ffd93d' : '#f6b93b'
+			ctx.fillStyle = selectedId === t.id ? "#ffd93d" : "#f6b93b"
 			ctx.fill()
 
 			// Draw edges with different styles based on type
 			const edges = [
 				{ v1: t.v1, v2: t.v2, bouncy: t.edge1Bouncy },
 				{ v1: t.v2, v2: t.v3, bouncy: t.edge2Bouncy },
-				{ v1: t.v3, v2: t.v1, bouncy: t.edge3Bouncy }
+				{ v1: t.v3, v2: t.v1, bouncy: t.edge3Bouncy },
 			]
 
-			edges.forEach(edge => {
+			edges.forEach((edge) => {
 				ctx.beginPath()
 				ctx.moveTo(edge.v1.x, edge.v1.y)
 				ctx.lineTo(edge.v2.x, edge.v2.y)
 				if (edge.bouncy) {
-					ctx.strokeStyle = '#e55039' // orange for bouncy
+					ctx.strokeStyle = "#e55039" // orange for bouncy
 				} else {
-					ctx.strokeStyle = '#ddd' // gray for static
+					ctx.strokeStyle = "#ddd" // gray for static
 				}
 				ctx.lineWidth = 3
 				ctx.stroke()
@@ -153,12 +157,12 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 
 			// Draw vertices as handles
 			if (selectedId === t.id) {
-				[t.v1, t.v2, t.v3].forEach(v => {
+				;[t.v1, t.v2, t.v3].forEach((v) => {
 					ctx.beginPath()
 					ctx.arc(v.x, v.y, 4, 0, Math.PI * 2)
-					ctx.fillStyle = '#fff'
+					ctx.fillStyle = "#fff"
 					ctx.fill()
-					ctx.strokeStyle = '#e55039'
+					ctx.strokeStyle = "#e55039"
 					ctx.lineWidth = 2
 					ctx.stroke()
 				})
@@ -166,9 +170,9 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 
 			const centerX = (t.v1.x + t.v2.x + t.v3.x) / 3
 			const centerY = (t.v1.y + t.v2.y + t.v3.y) / 3
-			ctx.fillStyle = '#fff'
-			ctx.font = '12px Arial'
-			ctx.textAlign = 'center'
+			ctx.fillStyle = "#fff"
+			ctx.font = "12px Arial"
+			ctx.textAlign = "center"
 			ctx.fillText(`${t.points}`, centerX, centerY + 4)
 		})
 
@@ -176,19 +180,22 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 			ctx.beginPath()
 			ctx.moveTo(r.x1, r.y1)
 			ctx.lineTo(r.x2, r.y2)
-			ctx.strokeStyle = selectedId === r.id ? '#fff' : '#ddd'
+			ctx.strokeStyle = selectedId === r.id ? "#fff" : "#ddd"
 			ctx.lineWidth = r.radius * 2
-			ctx.lineCap = 'round'
+			ctx.lineCap = "round"
 			ctx.stroke()
 
 			// Draw endpoint handles when selected
 			if (selectedId === r.id) {
-				[{ x: r.x1, y: r.y1 }, { x: r.x2, y: r.y2 }].forEach(v => {
+				;[
+					{ x: r.x1, y: r.y1 },
+					{ x: r.x2, y: r.y2 },
+				].forEach((v) => {
 					ctx.beginPath()
 					ctx.arc(v.x, v.y, 4, 0, Math.PI * 2)
-					ctx.fillStyle = '#fff'
+					ctx.fillStyle = "#fff"
 					ctx.fill()
-					ctx.strokeStyle = '#48dbfb'
+					ctx.strokeStyle = "#48dbfb"
 					ctx.lineWidth = 2
 					ctx.stroke()
 				})
@@ -198,29 +205,29 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 		config.curves.forEach((c) => {
 			ctx.beginPath()
 			ctx.arc(c.x, c.y, c.radius, c.startAngle, c.endAngle)
-			ctx.strokeStyle = selectedId === c.id ? '#fff' : '#48dbfb'
+			ctx.strokeStyle = selectedId === c.id ? "#fff" : "#48dbfb"
 			ctx.lineWidth = c.thickness
-			ctx.lineCap = 'round'
+			ctx.lineCap = "round"
 			ctx.stroke()
 
 			// Draw center point
 			ctx.beginPath()
 			ctx.arc(c.x, c.y, 3, 0, Math.PI * 2)
-			ctx.fillStyle = '#ff4757'
+			ctx.fillStyle = "#ff4757"
 			ctx.fill()
 		})
 
 		config.flippers.forEach((f) => {
 			ctx.save()
 			ctx.translate(f.x, f.y)
-			const angle = f.side === 'left' ? Math.PI / 6 : -Math.PI / 6
+			const angle = f.side === "left" ? Math.PI / 6 : -Math.PI / 6
 			ctx.rotate(angle)
 
-			ctx.fillStyle = selectedId === f.id ? '#fff' : '#48dbfb'
-			ctx.strokeStyle = '#0abde3'
+			ctx.fillStyle = selectedId === f.id ? "#fff" : "#48dbfb"
+			ctx.strokeStyle = "#0abde3"
 			ctx.lineWidth = 2
 
-			if (f.side === 'left') {
+			if (f.side === "left") {
 				ctx.fillRect(0, -f.width / 2, f.length, f.width)
 				ctx.strokeRect(0, -f.width / 2, f.length, f.width)
 			} else {
@@ -233,7 +240,15 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 
 		// Draw bezier paths
 		config.bezierPaths?.forEach((b) => {
-			const drawBezierSegment = (p0: any, p1: any, p2: any, p3: any, halfWidth: number, side: number, isFirst: boolean) => {
+			const drawBezierSegment = (
+				p0: any,
+				p1: any,
+				p2: any,
+				p3: any,
+				halfWidth: number,
+				side: number,
+				isFirst: boolean,
+			) => {
 				const samples = 50
 
 				for (let i = 0; i <= samples; i++) {
@@ -277,33 +292,25 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 
 				// Draw all segments
 				for (let i = 0; i < b.points.length - 3; i += 3) {
-					drawBezierSegment(
-						b.points[i],
-						b.points[i + 1],
-						b.points[i + 2],
-						b.points[i + 3],
-						halfWidth,
-						side,
-						i === 0
-					)
+					drawBezierSegment(b.points[i], b.points[i + 1], b.points[i + 2], b.points[i + 3], halfWidth, side, i === 0)
 				}
 
-				ctx.strokeStyle = selectedId === b.id ? '#fff' : '#48dbfb'
+				ctx.strokeStyle = selectedId === b.id ? "#fff" : "#48dbfb"
 				ctx.lineWidth = 3
-				ctx.lineCap = 'round'
-				ctx.lineJoin = 'round'
+				ctx.lineCap = "round"
+				ctx.lineJoin = "round"
 				ctx.stroke()
 			}
 
 			// Draw entrance indicators
 			ctx.beginPath()
 			ctx.arc(b.points[0].x, b.points[0].y, 5, 0, Math.PI * 2)
-			ctx.fillStyle = '#00d2d3'
+			ctx.fillStyle = "#00d2d3"
 			ctx.fill()
 
 			ctx.beginPath()
 			ctx.arc(b.points[b.points.length - 1].x, b.points[b.points.length - 1].y, 5, 0, Math.PI * 2)
-			ctx.fillStyle = '#00d2d3'
+			ctx.fillStyle = "#00d2d3"
 			ctx.fill()
 
 			// Draw control points when selected
@@ -314,7 +321,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 					ctx.beginPath()
 					ctx.moveTo(b.points[i].x, b.points[i].y)
 					ctx.lineTo(b.points[i + 1].x, b.points[i + 1].y)
-					ctx.strokeStyle = '#aaa'
+					ctx.strokeStyle = "#aaa"
 					ctx.lineWidth = 1
 					ctx.stroke()
 
@@ -330,9 +337,9 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 					const isEndpoint = i === 0 || i === b.points.length - 1 || i % 3 === 0
 					ctx.beginPath()
 					ctx.arc(p.x, p.y, isEndpoint ? 5 : 4, 0, Math.PI * 2)
-					ctx.fillStyle = isEndpoint ? '#00d2d3' : '#fff'
+					ctx.fillStyle = isEndpoint ? "#00d2d3" : "#fff"
 					ctx.fill()
-					ctx.strokeStyle = '#48dbfb'
+					ctx.strokeStyle = "#48dbfb"
 					ctx.lineWidth = 2
 					ctx.stroke()
 				})
@@ -341,7 +348,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 
 		// Draw launch lane (always visible)
 		const launchLaneWidth = 40
-		ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'
+		ctx.strokeStyle = "rgba(255, 255, 255, 0.2)"
 		ctx.lineWidth = 2
 		ctx.setLineDash([5, 5])
 		ctx.beginPath()
@@ -351,29 +358,29 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 		ctx.setLineDash([])
 
 		// Draw plunger area
-		ctx.fillStyle = 'rgba(231, 76, 60, 0.1)'
+		ctx.fillStyle = "rgba(231, 76, 60, 0.1)"
 		ctx.fillRect(width - launchLaneWidth, height - 150, launchLaneWidth, 150)
-		ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'
-		ctx.font = '10px Arial'
-		ctx.textAlign = 'center'
-		ctx.fillText('LAUNCH', width - launchLaneWidth / 2, height - 130)
-		ctx.fillText('LANE', width - launchLaneWidth / 2, height - 118)
+		ctx.fillStyle = "rgba(255, 255, 255, 0.3)"
+		ctx.font = "10px Arial"
+		ctx.textAlign = "center"
+		ctx.fillText("LAUNCH", width - launchLaneWidth / 2, height - 130)
+		ctx.fillText("LANE", width - launchLaneWidth / 2, height - 118)
 
 		// Draw in-progress triangle vertices
-		if (tool === 'triangular' && triangleVertices.length > 0) {
+		if (tool === "triangular" && triangleVertices.length > 0) {
 			ctx.globalAlpha = 1
 			triangleVertices.forEach((v, i) => {
 				ctx.beginPath()
 				ctx.arc(v.x, v.y, 5, 0, Math.PI * 2)
-				ctx.fillStyle = '#fff'
+				ctx.fillStyle = "#fff"
 				ctx.fill()
-				ctx.strokeStyle = '#f6b93b'
+				ctx.strokeStyle = "#f6b93b"
 				ctx.lineWidth = 2
 				ctx.stroke()
 				// Draw number
-				ctx.fillStyle = '#001122'
-				ctx.font = 'bold 10px Arial'
-				ctx.textAlign = 'center'
+				ctx.fillStyle = "#001122"
+				ctx.font = "bold 10px Arial"
+				ctx.textAlign = "center"
 				ctx.fillText(`${i + 1}`, v.x, v.y + 3)
 			})
 			// Draw lines between vertices
@@ -383,29 +390,29 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 				for (let i = 1; i < triangleVertices.length; i++) {
 					ctx.lineTo(triangleVertices[i].x, triangleVertices[i].y)
 				}
-				ctx.strokeStyle = 'rgba(246, 185, 59, 0.5)'
+				ctx.strokeStyle = "rgba(246, 185, 59, 0.5)"
 				ctx.lineWidth = 2
 				ctx.stroke()
 			}
 		}
 
 		// Draw in-progress bezier points
-		if (tool === 'bezier' && bezierPoints.length > 0) {
+		if (tool === "bezier" && bezierPoints.length > 0) {
 			// Draw bezier points being created
 			ctx.globalAlpha = 1
 			bezierPoints.forEach((v, i) => {
 				const isEndpoint = i === 0 || i === bezierPoints.length - 1 || (i >= 3 && (i - 3) % 3 === 0)
 				ctx.beginPath()
 				ctx.arc(v.x, v.y, isEndpoint ? 6 : 4, 0, Math.PI * 2)
-				ctx.fillStyle = isEndpoint ? '#00d2d3' : '#fff'
+				ctx.fillStyle = isEndpoint ? "#00d2d3" : "#fff"
 				ctx.fill()
-				ctx.strokeStyle = '#48dbfb'
+				ctx.strokeStyle = "#48dbfb"
 				ctx.lineWidth = 2
 				ctx.stroke()
 				// Draw number
-				ctx.fillStyle = '#001122'
-				ctx.font = 'bold 10px Arial'
-				ctx.textAlign = 'center'
+				ctx.fillStyle = "#001122"
+				ctx.font = "bold 10px Arial"
+				ctx.textAlign = "center"
 				ctx.fillText(`${i + 1}`, v.x, v.y + 3)
 			})
 
@@ -416,7 +423,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 					ctx.beginPath()
 					ctx.moveTo(bezierPoints[i].x, bezierPoints[i].y)
 					ctx.lineTo(bezierPoints[i + 1].x, bezierPoints[i + 1].y)
-					ctx.strokeStyle = '#aaa'
+					ctx.strokeStyle = "#aaa"
 					ctx.lineWidth = 1
 					ctx.stroke()
 
@@ -461,7 +468,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 							ctx.lineTo(x, y)
 						}
 					}
-					ctx.strokeStyle = '#48dbfb'
+					ctx.strokeStyle = "#48dbfb"
 					ctx.lineWidth = 3
 					ctx.stroke()
 				}
@@ -470,32 +477,32 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 		}
 
 		// Draw preview of tool
-		if (hoverPos && tool !== 'select' && tool !== 'delete') {
+		if (hoverPos && tool !== "select" && tool !== "delete") {
 			ctx.globalAlpha = 0.5
-			if (tool === 'bumper') {
+			if (tool === "bumper") {
 				ctx.beginPath()
 				ctx.arc(hoverPos.x, hoverPos.y, 20, 0, Math.PI * 2)
-				ctx.fillStyle = '#ff6b6b'
+				ctx.fillStyle = "#ff6b6b"
 				ctx.fill()
-			} else if (tool === 'triangular') {
+			} else if (tool === "triangular") {
 				if (triangleVertices.length === 0) {
 					// Show preview of first vertex
 					ctx.beginPath()
 					ctx.arc(hoverPos.x, hoverPos.y, 4, 0, Math.PI * 2)
-					ctx.fillStyle = '#f6b93b'
+					ctx.fillStyle = "#f6b93b"
 					ctx.fill()
 				} else if (triangleVertices.length === 1) {
 					// Show line from first vertex to cursor
 					ctx.beginPath()
 					ctx.moveTo(triangleVertices[0].x, triangleVertices[0].y)
 					ctx.lineTo(hoverPos.x, hoverPos.y)
-					ctx.strokeStyle = '#f6b93b'
+					ctx.strokeStyle = "#f6b93b"
 					ctx.lineWidth = 3
 					ctx.stroke()
 					// Show vertices
 					ctx.beginPath()
 					ctx.arc(triangleVertices[0].x, triangleVertices[0].y, 4, 0, Math.PI * 2)
-					ctx.fillStyle = '#f6b93b'
+					ctx.fillStyle = "#f6b93b"
 					ctx.fill()
 					ctx.beginPath()
 					ctx.arc(hoverPos.x, hoverPos.y, 4, 0, Math.PI * 2)
@@ -507,48 +514,48 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 					ctx.lineTo(triangleVertices[1].x, triangleVertices[1].y)
 					ctx.lineTo(hoverPos.x, hoverPos.y)
 					ctx.closePath()
-					ctx.fillStyle = '#f6b93b'
+					ctx.fillStyle = "#f6b93b"
 					ctx.fill()
-						// Show vertices
-						;[triangleVertices[0], triangleVertices[1], hoverPos].forEach(v => {
-							ctx.beginPath()
-							ctx.arc(v.x, v.y, 4, 0, Math.PI * 2)
-							ctx.fillStyle = '#fff'
-							ctx.fill()
-						})
+					// Show vertices
+					;[triangleVertices[0], triangleVertices[1], hoverPos].forEach((v) => {
+						ctx.beginPath()
+						ctx.arc(v.x, v.y, 4, 0, Math.PI * 2)
+						ctx.fillStyle = "#fff"
+						ctx.fill()
+					})
 				}
-			} else if (tool === 'rail' && railStart) {
+			} else if (tool === "rail" && railStart) {
 				ctx.beginPath()
 				ctx.moveTo(railStart.x, railStart.y)
 				ctx.lineTo(hoverPos.x, hoverPos.y)
-				ctx.strokeStyle = '#ddd'
+				ctx.strokeStyle = "#ddd"
 				ctx.lineWidth = 24
-				ctx.lineCap = 'round'
+				ctx.lineCap = "round"
 				ctx.stroke()
-			} else if (tool === 'curve') {
+			} else if (tool === "curve") {
 				ctx.beginPath()
 				ctx.arc(hoverPos.x, hoverPos.y, 40, -Math.PI, 0)
-				ctx.strokeStyle = '#48dbfb'
+				ctx.strokeStyle = "#48dbfb"
 				ctx.lineWidth = 10
 				ctx.stroke()
-			} else if (tool === 'flipper') {
+			} else if (tool === "flipper") {
 				ctx.save()
 				ctx.translate(hoverPos.x, hoverPos.y)
 				const angle = isAltPressed ? -Math.PI / 6 : Math.PI / 6
 				ctx.rotate(angle)
-				ctx.fillStyle = '#48dbfb'
+				ctx.fillStyle = "#48dbfb"
 				if (isAltPressed) {
 					ctx.fillRect(-70, -7.5, 70, 15)
 				} else {
 					ctx.fillRect(0, -7.5, 70, 15)
 				}
 				ctx.restore()
-			} else if (tool === 'bezier') {
+			} else if (tool === "bezier") {
 				if (bezierPoints.length === 0) {
 					// Show preview of first point
 					ctx.beginPath()
 					ctx.arc(hoverPos.x, hoverPos.y, 5, 0, Math.PI * 2)
-					ctx.fillStyle = '#00d2d3'
+					ctx.fillStyle = "#00d2d3"
 					ctx.fill()
 				}
 			}
@@ -556,7 +563,19 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 		}
 
 		ctx.restore()
-	}, [config, selectedId, tool, hoverPos, railStart, triangleVertices, bezierPoints, width, height, isAltPressed, canvasDimensions])
+	}, [
+		config,
+		selectedId,
+		tool,
+		hoverPos,
+		railStart,
+		triangleVertices,
+		bezierPoints,
+		width,
+		height,
+		isAltPressed,
+		canvasDimensions,
+	])
 
 	const getCanvasCoords = (e: React.MouseEvent<HTMLCanvasElement>) => {
 		const canvas = canvasRef.current!
@@ -569,50 +588,56 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 	const snapToGrid = (x: number, y: number, gridSize = 20) => {
 		return {
 			x: Math.round(x / gridSize) * gridSize,
-			y: Math.round(y / gridSize) * gridSize
+			y: Math.round(y / gridSize) * gridSize,
 		}
 	}
 
 	const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
 		const pos = getCanvasCoords(e)
 
-		if (tool === 'select' && selectedId) {
+		if (tool === "select" && selectedId) {
 			// First check if clicking on a vertex handle
-			const triangular = config.triangularBumpers.find(t => t.id === selectedId)
+			const triangular = config.triangularBumpers.find((t) => t.id === selectedId)
 			if (triangular) {
 				const vertices = [triangular.v1, triangular.v2, triangular.v3]
 				for (let i = 0; i < vertices.length; i++) {
 					const v = vertices[i]
 					const dist = Math.sqrt((v.x - pos.x) ** 2 + (v.y - pos.y) ** 2)
-					if (dist < 8) { // Click threshold
-						setDragVertex({ type: 'triangle', vertex: i })
+					if (dist < 8) {
+						// Click threshold
+						setDragVertex({ type: "triangle", vertex: i })
 						setIsDragging(true)
 						return
 					}
 				}
 			}
 
-			const rail = config.rails.find(r => r.id === selectedId)
+			const rail = config.rails.find((r) => r.id === selectedId)
 			if (rail) {
-				const endpoints = [{ x: rail.x1, y: rail.y1 }, { x: rail.x2, y: rail.y2 }]
+				const endpoints = [
+					{ x: rail.x1, y: rail.y1 },
+					{ x: rail.x2, y: rail.y2 },
+				]
 				for (let i = 0; i < endpoints.length; i++) {
 					const v = endpoints[i]
 					const dist = Math.sqrt((v.x - pos.x) ** 2 + (v.y - pos.y) ** 2)
-					if (dist < 8) { // Click threshold
-						setDragVertex({ type: 'rail', vertex: i })
+					if (dist < 8) {
+						// Click threshold
+						setDragVertex({ type: "rail", vertex: i })
 						setIsDragging(true)
 						return
 					}
 				}
 			}
 
-			const bezier = config.bezierPaths?.find(b => b.id === selectedId)
+			const bezier = config.bezierPaths?.find((b) => b.id === selectedId)
 			if (bezier) {
 				for (let i = 0; i < bezier.points.length; i++) {
 					const v = bezier.points[i]
 					const dist = Math.sqrt((v.x - pos.x) ** 2 + (v.y - pos.y) ** 2)
-					if (dist < 8) { // Click threshold
-						setDragVertex({ type: 'bezier', vertex: i })
+					if (dist < 8) {
+						// Click threshold
+						setDragVertex({ type: "bezier", vertex: i })
 						setIsDragging(true)
 						return
 					}
@@ -621,19 +646,19 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 
 			// Check if clicking on the selected object to start dragging
 			const selected =
-				config.bumpers.find(b => b.id === selectedId) ||
-				config.triangularBumpers.find(t => t.id === selectedId) ||
-				config.rails.find(r => r.id === selectedId) ||
-				config.curves.find(c => c.id === selectedId) ||
-				config.flippers.find(f => f.id === selectedId) ||
-				config.bezierPaths?.find(b => b.id === selectedId)
+				config.bumpers.find((b) => b.id === selectedId) ||
+				config.triangularBumpers.find((t) => t.id === selectedId) ||
+				config.rails.find((r) => r.id === selectedId) ||
+				config.curves.find((c) => c.id === selectedId) ||
+				config.flippers.find((f) => f.id === selectedId) ||
+				config.bezierPaths?.find((b) => b.id === selectedId)
 
 			if (selected) {
 				let isOnObject = false
 				let offsetX = 0
 				let offsetY = 0
 
-				if ('radius' in selected && 'x' in selected && !('v1' in selected)) {
+				if ("radius" in selected && "x" in selected && !("v1" in selected)) {
 					// Bumper
 					const dist = Math.sqrt((selected.x - pos.x) ** 2 + (selected.y - pos.y) ** 2)
 					if (dist < selected.radius) {
@@ -641,16 +666,16 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 						offsetX = selected.x - pos.x
 						offsetY = selected.y - pos.y
 					}
-				} else if ('v1' in selected) {
+				} else if ("v1" in selected) {
 					// Triangular bumper
 					const t = selected as any
-					const sign = (p1: { x: number, y: number }, p2: { x: number, y: number }, p3: { x: number, y: number }) =>
+					const sign = (p1: { x: number; y: number }, p2: { x: number; y: number }, p3: { x: number; y: number }) =>
 						(p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y)
 					const d1 = sign(pos, t.v1, t.v2)
 					const d2 = sign(pos, t.v2, t.v3)
 					const d3 = sign(pos, t.v3, t.v1)
-					const hasNeg = (d1 < 0) || (d2 < 0) || (d3 < 0)
-					const hasPos = (d1 > 0) || (d2 > 0) || (d3 > 0)
+					const hasNeg = d1 < 0 || d2 < 0 || d3 < 0
+					const hasPos = d1 > 0 || d2 > 0 || d3 > 0
 					if (!(hasNeg && hasPos)) {
 						isOnObject = true
 						const centerX = (t.v1.x + t.v2.x + t.v3.x) / 3
@@ -658,7 +683,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 						offsetX = centerX - pos.x
 						offsetY = centerY - pos.y
 					}
-				} else if ('x1' in selected) {
+				} else if ("x1" in selected) {
 					// Rail
 					const dist = distanceToSegment(pos, { x: selected.x1, y: selected.y1 }, { x: selected.x2, y: selected.y2 })
 					if (dist < (selected as any).radius) {
@@ -668,7 +693,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 						offsetX = centerX - pos.x
 						offsetY = centerY - pos.y
 					}
-				} else if ('startAngle' in selected) {
+				} else if ("startAngle" in selected) {
 					// Curve
 					const c = selected as any
 					const dist = Math.sqrt((c.x - pos.x) ** 2 + (c.y - pos.y) ** 2)
@@ -677,7 +702,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 						offsetX = c.x - pos.x
 						offsetY = c.y - pos.y
 					}
-				} else if ('side' in selected) {
+				} else if ("side" in selected) {
 					// Flipper
 					const f = selected as any
 					const dist = Math.sqrt((f.x - pos.x) ** 2 + (f.y - pos.y) ** 2)
@@ -686,7 +711,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 						offsetX = f.x - pos.x
 						offsetY = f.y - pos.y
 					}
-				} else if ('points' in selected && Array.isArray((selected as any).points)) {
+				} else if ("points" in selected && Array.isArray((selected as any).points)) {
 					// Bezier path
 					const b = selected as any
 					// Check if click is on any segment of the bezier curve
@@ -739,7 +764,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 		const pos = getCanvasCoords(e)
 		const snapped = e.shiftKey ? pos : snapToGrid(pos.x, pos.y)
 
-		if (tool === 'select') {
+		if (tool === "select") {
 			// Find clicked object
 			let found = false
 
@@ -757,13 +782,13 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 				// Check triangular bumpers
 				for (const t of config.triangularBumpers) {
 					// Point in triangle test
-					const sign = (p1: { x: number, y: number }, p2: { x: number, y: number }, p3: { x: number, y: number }) =>
+					const sign = (p1: { x: number; y: number }, p2: { x: number; y: number }, p3: { x: number; y: number }) =>
 						(p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y)
 					const d1 = sign(pos, t.v1, t.v2)
 					const d2 = sign(pos, t.v2, t.v3)
 					const d3 = sign(pos, t.v3, t.v1)
-					const hasNeg = (d1 < 0) || (d2 < 0) || (d3 < 0)
-					const hasPos = (d1 > 0) || (d2 > 0) || (d3 > 0)
+					const hasNeg = d1 < 0 || d2 < 0 || d3 < 0
+					const hasPos = d1 > 0 || d2 > 0 || d3 > 0
 					if (!(hasNeg && hasPos)) {
 						setSelectedId(t.id)
 						found = true
@@ -794,9 +819,10 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 						let startAngle = c.startAngle < 0 ? c.startAngle + 2 * Math.PI : c.startAngle
 						let endAngle = c.endAngle < 0 ? c.endAngle + 2 * Math.PI : c.endAngle
 
-						const withinAngle = (startAngle <= endAngle) ?
-							(normalizedAngle >= startAngle && normalizedAngle <= endAngle) :
-							(normalizedAngle >= startAngle || normalizedAngle <= endAngle)
+						const withinAngle =
+							startAngle <= endAngle
+								? normalizedAngle >= startAngle && normalizedAngle <= endAngle
+								: normalizedAngle >= startAngle || normalizedAngle <= endAngle
 
 						if (withinAngle) {
 							setSelectedId(c.id)
@@ -858,28 +884,28 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 			if (!found) {
 				setSelectedId(null)
 			}
-		} else if (tool === 'delete') {
+		} else if (tool === "delete") {
 			// Delete clicked object
 			setConfig({
-				bumpers: config.bumpers.filter(b => {
+				bumpers: config.bumpers.filter((b) => {
 					const dist = Math.sqrt((b.x - pos.x) ** 2 + (b.y - pos.y) ** 2)
 					return dist >= b.radius
 				}),
-				triangularBumpers: config.triangularBumpers.filter(t => {
-					const sign = (p1: { x: number, y: number }, p2: { x: number, y: number }, p3: { x: number, y: number }) =>
+				triangularBumpers: config.triangularBumpers.filter((t) => {
+					const sign = (p1: { x: number; y: number }, p2: { x: number; y: number }, p3: { x: number; y: number }) =>
 						(p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y)
 					const d1 = sign(pos, t.v1, t.v2)
 					const d2 = sign(pos, t.v2, t.v3)
 					const d3 = sign(pos, t.v3, t.v1)
-					const hasNeg = (d1 < 0) || (d2 < 0) || (d3 < 0)
-					const hasPos = (d1 > 0) || (d2 > 0) || (d3 > 0)
+					const hasNeg = d1 < 0 || d2 < 0 || d3 < 0
+					const hasPos = d1 > 0 || d2 > 0 || d3 > 0
 					return hasNeg && hasPos
 				}),
-				rails: config.rails.filter(r => {
+				rails: config.rails.filter((r) => {
 					const dist = distanceToSegment(pos, { x: r.x1, y: r.y1 }, { x: r.x2, y: r.y2 })
 					return dist >= r.radius
 				}),
-				curves: config.curves.filter(c => {
+				curves: config.curves.filter((c) => {
 					const dist = Math.sqrt((c.x - pos.x) ** 2 + (c.y - pos.y) ** 2)
 					if (Math.abs(dist - c.radius) >= c.thickness) return true
 					const angle = Math.atan2(pos.y - c.y, pos.x - c.x)
@@ -887,17 +913,18 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 					let startAngle = c.startAngle < 0 ? c.startAngle + 2 * Math.PI : c.startAngle
 					let endAngle = c.endAngle < 0 ? c.endAngle + 2 * Math.PI : c.endAngle
 
-					const withinAngle = (startAngle <= endAngle) ?
-						(normalizedAngle >= startAngle && normalizedAngle <= endAngle) :
-						(normalizedAngle >= startAngle || normalizedAngle <= endAngle)
+					const withinAngle =
+						startAngle <= endAngle
+							? normalizedAngle >= startAngle && normalizedAngle <= endAngle
+							: normalizedAngle >= startAngle || normalizedAngle <= endAngle
 
 					return !withinAngle
 				}),
-				flippers: config.flippers.filter(f => {
+				flippers: config.flippers.filter((f) => {
 					const dist = Math.sqrt((f.x - pos.x) ** 2 + (f.y - pos.y) ** 2)
 					return dist >= f.length
 				}),
-				bezierPaths: (config.bezierPaths || []).filter(b => {
+				bezierPaths: (config.bezierPaths || []).filter((b) => {
 					// Check distance to all segments of the bezier curve
 					const samples = 30
 
@@ -925,20 +952,23 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 						}
 					}
 					return true // Keep this one
-				})
+				}),
 			})
-		} else if (tool === 'bumper') {
+		} else if (tool === "bumper") {
 			setConfig({
 				...config,
-				bumpers: [...config.bumpers, {
-					id: `bumper-${Date.now()}`,
-					x: snapped.x,
-					y: snapped.y,
-					radius: 20,
-					points: 100
-				}]
+				bumpers: [
+					...config.bumpers,
+					{
+						id: `bumper-${Date.now()}`,
+						x: snapped.x,
+						y: snapped.y,
+						radius: 20,
+						points: 100,
+					},
+				],
 			})
-		} else if (tool === 'triangular') {
+		} else if (tool === "triangular") {
 			if (triangleVertices.length < 2) {
 				// Add vertex
 				setTriangleVertices([...triangleVertices, snapped])
@@ -946,67 +976,84 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 				// Third click - complete the triangle
 				setConfig({
 					...config,
-					triangularBumpers: [...config.triangularBumpers, {
-						id: `triangular-${Date.now()}`,
-						v1: triangleVertices[0],
-						v2: triangleVertices[1],
-						v3: snapped,
-						points: 250,
-						edge1Bouncy: true,
-						edge2Bouncy: true,
-						edge3Bouncy: true
-					}]
+					triangularBumpers: [
+						...config.triangularBumpers,
+						{
+							id: `triangular-${Date.now()}`,
+							v1: triangleVertices[0],
+							v2: triangleVertices[1],
+							v3: snapped,
+							points: 250,
+							edge1Bouncy: true,
+							edge2Bouncy: true,
+							edge3Bouncy: true,
+						},
+					],
 				})
 				setTriangleVertices([])
 			}
-		} else if (tool === 'rail') {
+		} else if (tool === "rail") {
 			if (!railStart) {
 				setRailStart(snapped)
 			} else {
 				setConfig({
 					...config,
-					rails: [...config.rails, {
-						id: `rail-${Date.now()}`,
-						x1: railStart.x,
-						y1: railStart.y,
-						x2: snapped.x,
-						y2: snapped.y,
-						radius: 12
-					}]
+					rails: [
+						...config.rails,
+						{
+							id: `rail-${Date.now()}`,
+							x1: railStart.x,
+							y1: railStart.y,
+							x2: snapped.x,
+							y2: snapped.y,
+							radius: 12,
+						},
+					],
 				})
 				setRailStart(null)
 			}
-		} else if (tool === 'curve') {
+		} else if (tool === "curve") {
 			setConfig({
 				...config,
-				curves: [...config.curves, {
-					id: `curve-${Date.now()}`,
-					x: snapped.x,
-					y: snapped.y,
-					radius: 40,
-					startAngle: -Math.PI,
-					endAngle: 0,
-					thickness: 10
-				}]
+				curves: [
+					...config.curves,
+					{
+						id: `curve-${Date.now()}`,
+						x: snapped.x,
+						y: snapped.y,
+						radius: 40,
+						startAngle: -Math.PI,
+						endAngle: 0,
+						thickness: 10,
+					},
+				],
 			})
-		} else if (tool === 'flipper') {
+		} else if (tool === "flipper") {
 			setConfig({
 				...config,
-				flippers: [...config.flippers, {
-					id: `flipper-${Date.now()}`,
-					x: snapped.x,
-					y: snapped.y,
-					side: e.altKey ? 'right' : 'left',
-					length: 70,
-					width: 15
-				}]
+				flippers: [
+					...config.flippers,
+					{
+						id: `flipper-${Date.now()}`,
+						x: snapped.x,
+						y: snapped.y,
+						side: e.altKey ? "right" : "left",
+						length: 70,
+						width: 15,
+					},
+				],
 			})
-		} else if (tool === 'bezier') {
+		} else if (tool === "bezier") {
 			// Keep adding points - user will click "Done" button to finish
 			// For the first 4 points, add normally
 			// After that, for each new segment, automatically add the first control point
 			// symmetrically from the last control point
-			if (bezierPoints.length === 0 || bezierPoints.length === 1 || bezierPoints.length === 2 || bezierPoints.length === 3) {
+			if (
+				bezierPoints.length === 0 ||
+				bezierPoints.length === 1 ||
+				bezierPoints.length === 2 ||
+				bezierPoints.length === 3
+			) {
 				// First segment: add points normally
 				setBezierPoints([...bezierPoints, snapped])
 			} else {
@@ -1024,7 +1071,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 					// Calculate symmetric control point
 					const symmetricControl = {
 						x: lastEndpoint.x + (lastEndpoint.x - lastControlPoint.x),
-						y: lastEndpoint.y + (lastEndpoint.y - lastControlPoint.y)
+						y: lastEndpoint.y + (lastEndpoint.y - lastControlPoint.y),
 					}
 
 					// Add the symmetric control point, then this endpoint
@@ -1045,11 +1092,11 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 
 		// Handle vertex dragging
 		if (isDragging && dragVertex && selectedId) {
-			setConfig(prevConfig => {
-				if (dragVertex.type === 'triangle') {
+			setConfig((prevConfig) => {
+				if (dragVertex.type === "triangle") {
 					return {
 						...prevConfig,
-						triangularBumpers: prevConfig.triangularBumpers.map(t => {
+						triangularBumpers: prevConfig.triangularBumpers.map((t) => {
 							if (t.id !== selectedId) return t
 							const vertices = [t.v1, t.v2, t.v3]
 							vertices[dragVertex.vertex] = { x: snapped.x, y: snapped.y }
@@ -1057,26 +1104,26 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 								...t,
 								v1: vertices[0],
 								v2: vertices[1],
-								v3: vertices[2]
+								v3: vertices[2],
 							}
-						})
+						}),
 					}
-				} else if (dragVertex.type === 'rail') {
+				} else if (dragVertex.type === "rail") {
 					return {
 						...prevConfig,
-						rails: prevConfig.rails.map(r => {
+						rails: prevConfig.rails.map((r) => {
 							if (r.id !== selectedId) return r
 							if (dragVertex.vertex === 0) {
 								return { ...r, x1: snapped.x, y1: snapped.y }
 							} else {
 								return { ...r, x2: snapped.x, y2: snapped.y }
 							}
-						})
+						}),
 					}
-				} else if (dragVertex.type === 'bezier') {
+				} else if (dragVertex.type === "bezier") {
 					return {
 						...prevConfig,
-						bezierPaths: (prevConfig.bezierPaths || []).map(b => {
+						bezierPaths: (prevConfig.bezierPaths || []).map((b) => {
 							if (b.id !== selectedId) return b
 							const newPoints = [...b.points]
 							const movedIndex = dragVertex.vertex
@@ -1126,16 +1173,16 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 									const oppositeAngle = newAngle + Math.PI
 									newPoints[oppositeControlIndex] = {
 										x: endpoint.x + Math.cos(oppositeAngle) * oppDist,
-										y: endpoint.y + Math.sin(oppositeAngle) * oppDist
+										y: endpoint.y + Math.sin(oppositeAngle) * oppDist,
 									}
 								}
 							}
 
 							return {
 								...b,
-								points: newPoints
+								points: newPoints,
 							}
-						})
+						}),
 					}
 				}
 				return prevConfig
@@ -1147,23 +1194,21 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 		if (isDragging && dragOffset && selectedId) {
 			const newPos = {
 				x: snapped.x + dragOffset.x,
-				y: snapped.y + dragOffset.y
+				y: snapped.y + dragOffset.y,
 			}
 
-			setConfig(prevConfig => {
+			setConfig((prevConfig) => {
 				// Update bumper position
-				const bumper = prevConfig.bumpers.find(b => b.id === selectedId)
+				const bumper = prevConfig.bumpers.find((b) => b.id === selectedId)
 				if (bumper) {
 					return {
 						...prevConfig,
-						bumpers: prevConfig.bumpers.map(b =>
-							b.id === selectedId ? { ...b, x: newPos.x, y: newPos.y } : b
-						)
+						bumpers: prevConfig.bumpers.map((b) => (b.id === selectedId ? { ...b, x: newPos.x, y: newPos.y } : b)),
 					}
 				}
 
 				// Update triangular bumper position
-				const triangular = prevConfig.triangularBumpers.find(t => t.id === selectedId)
+				const triangular = prevConfig.triangularBumpers.find((t) => t.id === selectedId)
 				if (triangular) {
 					const oldCenterX = (triangular.v1.x + triangular.v2.x + triangular.v3.x) / 3
 					const oldCenterY = (triangular.v1.y + triangular.v2.y + triangular.v3.y) / 3
@@ -1171,19 +1216,21 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 					const dy = newPos.y - oldCenterY
 					return {
 						...prevConfig,
-						triangularBumpers: prevConfig.triangularBumpers.map(t =>
-							t.id === selectedId ? {
-								...t,
-								v1: { x: t.v1.x + dx, y: t.v1.y + dy },
-								v2: { x: t.v2.x + dx, y: t.v2.y + dy },
-								v3: { x: t.v3.x + dx, y: t.v3.y + dy }
-							} : t
-						)
+						triangularBumpers: prevConfig.triangularBumpers.map((t) =>
+							t.id === selectedId
+								? {
+										...t,
+										v1: { x: t.v1.x + dx, y: t.v1.y + dy },
+										v2: { x: t.v2.x + dx, y: t.v2.y + dy },
+										v3: { x: t.v3.x + dx, y: t.v3.y + dy },
+									}
+								: t,
+						),
 					}
 				}
 
 				// Update rail position
-				const rail = prevConfig.rails.find(r => r.id === selectedId)
+				const rail = prevConfig.rails.find((r) => r.id === selectedId)
 				if (rail) {
 					const oldCenterX = (rail.x1 + rail.x2) / 2
 					const oldCenterY = (rail.y1 + rail.y2) / 2
@@ -1191,42 +1238,40 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 					const dy = newPos.y - oldCenterY
 					return {
 						...prevConfig,
-						rails: prevConfig.rails.map(r =>
-							r.id === selectedId ? {
-								...r,
-								x1: r.x1 + dx,
-								y1: r.y1 + dy,
-								x2: r.x2 + dx,
-								y2: r.y2 + dy
-							} : r
-						)
+						rails: prevConfig.rails.map((r) =>
+							r.id === selectedId
+								? {
+										...r,
+										x1: r.x1 + dx,
+										y1: r.y1 + dy,
+										x2: r.x2 + dx,
+										y2: r.y2 + dy,
+									}
+								: r,
+						),
 					}
 				}
 
 				// Update curve position
-				const curve = prevConfig.curves.find(c => c.id === selectedId)
+				const curve = prevConfig.curves.find((c) => c.id === selectedId)
 				if (curve) {
 					return {
 						...prevConfig,
-						curves: prevConfig.curves.map(c =>
-							c.id === selectedId ? { ...c, x: newPos.x, y: newPos.y } : c
-						)
+						curves: prevConfig.curves.map((c) => (c.id === selectedId ? { ...c, x: newPos.x, y: newPos.y } : c)),
 					}
 				}
 
 				// Update flipper position
-				const flipper = prevConfig.flippers.find(f => f.id === selectedId)
+				const flipper = prevConfig.flippers.find((f) => f.id === selectedId)
 				if (flipper) {
 					return {
 						...prevConfig,
-						flippers: prevConfig.flippers.map(f =>
-							f.id === selectedId ? { ...f, x: newPos.x, y: newPos.y } : f
-						)
+						flippers: prevConfig.flippers.map((f) => (f.id === selectedId ? { ...f, x: newPos.x, y: newPos.y } : f)),
 					}
 				}
 
 				// Update bezier path position
-				const bezier = (prevConfig.bezierPaths || []).find(b => b.id === selectedId)
+				const bezier = (prevConfig.bezierPaths || []).find((b) => b.id === selectedId)
 				if (bezier) {
 					const oldCenterX = bezier.points.reduce((sum, p) => sum + p.x, 0) / bezier.points.length
 					const oldCenterY = bezier.points.reduce((sum, p) => sum + p.y, 0) / bezier.points.length
@@ -1234,12 +1279,14 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 					const dy = newPos.y - oldCenterY
 					return {
 						...prevConfig,
-						bezierPaths: (prevConfig.bezierPaths || []).map(b =>
-							b.id === selectedId ? {
-								...b,
-								points: b.points.map(p => ({ x: p.x + dx, y: p.y + dy }))
-							} : b
-						)
+						bezierPaths: (prevConfig.bezierPaths || []).map((b) =>
+							b.id === selectedId
+								? {
+										...b,
+										points: b.points.map((p) => ({ x: p.x + dx, y: p.y + dy })),
+									}
+								: b,
+						),
 					}
 				}
 
@@ -1256,7 +1303,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 
 	// Helper to save incomplete bezier path when switching tools
 	const saveIncompleteBezier = () => {
-		if (tool === 'bezier' && bezierPoints.length > 0) {
+		if (tool === "bezier" && bezierPoints.length > 0) {
 			// Calculate valid point count: must be 4, 7, 10, 13, etc. (4 + 3n)
 			// If we have 5 points, trim to 4. If we have 8 points, trim to 7, etc.
 			let validPointCount = 0
@@ -1267,7 +1314,7 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 					// For multi-segment: 4 + 3n where n = number of additional segments
 					const extraPoints = bezierPoints.length - 4
 					const completeExtraSegments = Math.floor(extraPoints / 3)
-					validPointCount = 4 + (completeExtraSegments * 3)
+					validPointCount = 4 + completeExtraSegments * 3
 				}
 			}
 
@@ -1277,11 +1324,14 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 				const defaultTrackWidth = 14
 				setConfig({
 					...config,
-					bezierPaths: [...(config.bezierPaths || []), {
-						id: `bezier-${Date.now()}`,
-						points: trimmedPoints,
-						trackWidth: defaultTrackWidth
-					}]
+					bezierPaths: [
+						...(config.bezierPaths || []),
+						{
+							id: `bezier-${Date.now()}`,
+							points: trimmedPoints,
+							trackWidth: defaultTrackWidth,
+						},
+					],
 				})
 			}
 			// If validPointCount < 4, we just discard the incomplete path
@@ -1290,250 +1340,323 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 	}
 
 	const handleKeyDown = (e: KeyboardEvent) => {
-		if (e.key === 'Delete' && selectedId) {
+		if (e.key === "Delete" && selectedId) {
 			setConfig({
-				bumpers: config.bumpers.filter(b => b.id !== selectedId),
-				triangularBumpers: config.triangularBumpers.filter(t => t.id !== selectedId),
-				rails: config.rails.filter(r => r.id !== selectedId),
-				curves: config.curves.filter(c => c.id !== selectedId),
-				flippers: config.flippers.filter(f => f.id !== selectedId),
-				bezierPaths: (config.bezierPaths || []).filter(b => b.id !== selectedId)
+				bumpers: config.bumpers.filter((b) => b.id !== selectedId),
+				triangularBumpers: config.triangularBumpers.filter((t) => t.id !== selectedId),
+				rails: config.rails.filter((r) => r.id !== selectedId),
+				curves: config.curves.filter((c) => c.id !== selectedId),
+				flippers: config.flippers.filter((f) => f.id !== selectedId),
+				bezierPaths: (config.bezierPaths || []).filter((b) => b.id !== selectedId),
 			})
 			setSelectedId(null)
-		} else if (e.key === 'Escape') {
+		} else if (e.key === "Escape") {
 			saveIncompleteBezier()
 			setRailStart(null)
 			setTriangleVertices([])
 			setSelectedId(null)
-			setTool('select')
-		} else if (e.key === 'v' || e.key === 'V') {
+			setTool("select")
+		} else if (e.key === "v" || e.key === "V") {
 			saveIncompleteBezier()
-			setTool('select')
-		} else if (e.key === 'b' || e.key === 'B') {
+			setTool("select")
+		} else if (e.key === "b" || e.key === "B") {
 			saveIncompleteBezier()
-			setTool('bumper')
-		} else if (e.key === 't' || e.key === 'T') {
+			setTool("bumper")
+		} else if (e.key === "t" || e.key === "T") {
 			saveIncompleteBezier()
-			setTool('triangular')
-		} else if (e.key === 'r' || e.key === 'R') {
+			setTool("triangular")
+		} else if (e.key === "r" || e.key === "R") {
 			saveIncompleteBezier()
-			setTool('rail')
-		} else if (e.key === 'c' || e.key === 'C') {
+			setTool("rail")
+		} else if (e.key === "c" || e.key === "C") {
 			saveIncompleteBezier()
-			setTool('curve')
-		} else if (e.key === 'f' || e.key === 'F') {
+			setTool("curve")
+		} else if (e.key === "f" || e.key === "F") {
 			saveIncompleteBezier()
-			setTool('flipper')
-		} else if (e.key === 'z' || e.key === 'Z') {
+			setTool("flipper")
+		} else if (e.key === "z" || e.key === "Z") {
 			saveIncompleteBezier()
-			setTool('bezier')
-		} else if (e.key === 'd' || e.key === 'D') {
+			setTool("bezier")
+		} else if (e.key === "d" || e.key === "D") {
 			saveIncompleteBezier()
-			setTool('delete')
-		} else if (e.key === 'Enter' && tool === 'bezier' && bezierPoints.length >= 4) {
+			setTool("delete")
+		} else if (e.key === "Enter" && tool === "bezier" && bezierPoints.length >= 4) {
 			// Complete bezier path with Enter key
 			const defaultTrackWidth = 14
 			setConfig({
 				...config,
-				bezierPaths: [...(config.bezierPaths || []), {
-					id: `bezier-${Date.now()}`,
-					points: bezierPoints,
-					trackWidth: defaultTrackWidth
-				}]
+				bezierPaths: [
+					...(config.bezierPaths || []),
+					{
+						id: `bezier-${Date.now()}`,
+						points: bezierPoints,
+						trackWidth: defaultTrackWidth,
+					},
+				],
 			})
 			setBezierPoints([])
-			setTool('select')
+			setTool("select")
 		}
 	}
 
 	useEffect(() => {
-		window.addEventListener('keydown', handleKeyDown)
-		return () => window.removeEventListener('keydown', handleKeyDown)
+		window.addEventListener("keydown", handleKeyDown)
+		return () => window.removeEventListener("keydown", handleKeyDown)
 	}, [selectedId, config, tool, bezierPoints])
 
 	return (
 		<div className={styles.editor}>
 			<div ref={toolbarRef} className={styles.toolbar}>
-				{tool === 'bezier' && bezierPoints.length >= 4 && (
+				{tool === "bezier" && bezierPoints.length >= 4 && (
 					<button
 						className={styles.doneButton}
 						onClick={() => {
 							const defaultTrackWidth = 14 // Slightly less than ball diameter (16)
 							setConfig({
 								...config,
-								bezierPaths: [...(config.bezierPaths || []), {
-									id: `bezier-${Date.now()}`,
-									points: bezierPoints,
-									trackWidth: defaultTrackWidth
-								}]
+								bezierPaths: [
+									...(config.bezierPaths || []),
+									{
+										id: `bezier-${Date.now()}`,
+										points: bezierPoints,
+										trackWidth: defaultTrackWidth,
+									},
+								],
 							})
 							setBezierPoints([])
-							setTool('select')
+							setTool("select")
 						}}
 						title="Complete bezier path"
 					>
-						✓ Done ({bezierPoints.length} points, {Math.floor((bezierPoints.length - 1) / 3)} segment{Math.floor((bezierPoints.length - 1) / 3) !== 1 ? 's' : ''})
+						✓ Done ({bezierPoints.length} points, {Math.floor((bezierPoints.length - 1) / 3)} segment
+						{Math.floor((bezierPoints.length - 1) / 3) !== 1 ? "s" : ""})
 					</button>
 				)}
 				<button
-					className={tool === 'select' ? styles.active : ''}
-					onClick={() => { saveIncompleteBezier(); setTool('select') }}
+					className={tool === "select" ? styles.active : ""}
+					onClick={() => {
+						saveIncompleteBezier()
+						setTool("select")
+					}}
 					title="Select (V)"
 				>
 					Select
 				</button>
 				<button
-					className={tool === 'bumper' ? styles.active : ''}
-					onClick={() => { saveIncompleteBezier(); setTool('bumper') }}
+					className={tool === "bumper" ? styles.active : ""}
+					onClick={() => {
+						saveIncompleteBezier()
+						setTool("bumper")
+					}}
 					title="Bumper (B)"
 				>
 					Bumper
 				</button>
 				<button
-					className={tool === 'triangular' ? styles.active : ''}
-					onClick={() => { saveIncompleteBezier(); setTool('triangular') }}
+					className={tool === "triangular" ? styles.active : ""}
+					onClick={() => {
+						saveIncompleteBezier()
+						setTool("triangular")
+					}}
 					title="Triangle (T)"
 				>
 					Triangle
 				</button>
 				<button
-					className={tool === 'rail' ? styles.active : ''}
-					onClick={() => { saveIncompleteBezier(); setTool('rail') }}
+					className={tool === "rail" ? styles.active : ""}
+					onClick={() => {
+						saveIncompleteBezier()
+						setTool("rail")
+					}}
 					title="Rail (R)"
 				>
 					Rail
 				</button>
 				<button
-					className={tool === 'curve' ? styles.active : ''}
-					onClick={() => { saveIncompleteBezier(); setTool('curve') }}
+					className={tool === "curve" ? styles.active : ""}
+					onClick={() => {
+						saveIncompleteBezier()
+						setTool("curve")
+					}}
 					title="Curve (C)"
 				>
 					Curve
 				</button>
 				<button
-					className={tool === 'flipper' ? styles.active : ''}
-					onClick={() => { saveIncompleteBezier(); setTool('flipper') }}
+					className={tool === "flipper" ? styles.active : ""}
+					onClick={() => {
+						saveIncompleteBezier()
+						setTool("flipper")
+					}}
 					title="Flipper (F) | Alt+Click for right"
 				>
 					Flipper
 				</button>
 				<button
-					className={tool === 'bezier' ? styles.active : ''}
-					onClick={() => { saveIncompleteBezier(); setTool('bezier') }}
+					className={tool === "bezier" ? styles.active : ""}
+					onClick={() => {
+						saveIncompleteBezier()
+						setTool("bezier")
+					}}
 					title="Bezier Path (Z) | Click to add points (4 minimum), then click Done"
 				>
 					Bezier {bezierPoints.length > 0 && `(${bezierPoints.length})`}
 				</button>
 				<button
-					className={tool === 'delete' ? styles.active : ''}
-					onClick={() => { saveIncompleteBezier(); setTool('delete') }}
+					className={tool === "delete" ? styles.active : ""}
+					onClick={() => {
+						saveIncompleteBezier()
+						setTool("delete")
+					}}
 					title="Delete (D)"
 				>
 					Delete
 				</button>
 				<div className={styles.spacer} />
-				<button onClick={() => onSave(config)}>
-					💾 Save & Play
-				</button>
-				<button onClick={() => {
-					const json = JSON.stringify(config, null, 2)
-					navigator.clipboard.writeText(json)
-					alert('Board config copied to clipboard!')
-				}}>
+				<button onClick={() => onSave(config)}>💾 Save & Play</button>
+				<button
+					onClick={() => {
+						const json = JSON.stringify(config, null, 2)
+						navigator.clipboard.writeText(json)
+						alert("Board config copied to clipboard!")
+					}}
+				>
 					📋 Export
 				</button>
-				<button onClick={() => {
-					const json = prompt('Paste board config JSON:')
-					if (json) {
-						try {
-							const parsed = JSON.parse(json)
-							setConfig(parsed)
-						} catch (e) {
-							alert('Invalid JSON')
+				<button
+					onClick={() => {
+						const json = prompt("Paste board config JSON:")
+						if (json) {
+							try {
+								const parsed = JSON.parse(json)
+								setConfig(parsed)
+							} catch (e) {
+								alert("Invalid JSON")
+							}
 						}
-					}
-				}}>
+					}}
+				>
 					📥 Import
 				</button>
-				<button onClick={() => {
-					if (confirm('Clear all objects?')) {
-						setConfig({
-							bumpers: [],
-							triangularBumpers: [],
-							rails: [],
-							curves: [],
-							flippers: [],
-							bezierPaths: []
-						})
-						setSelectedId(null)
-					}
-				}}>
+				<button
+					onClick={() => {
+						if (confirm("Clear all objects?")) {
+							setConfig({
+								bumpers: [],
+								triangularBumpers: [],
+								rails: [],
+								curves: [],
+								flippers: [],
+								bezierPaths: [],
+							})
+							setSelectedId(null)
+						}
+					}}
+				>
 					🗑️ Clear
 				</button>
-				<button onClick={() => {
-					const defaultBoard: BoardConfig = {
-						bumpers: [
-							{ id: 'b1', x: 100, y: 180, radius: 20, points: 100 },
-							{ id: 'b2', x: 300, y: 180, radius: 20, points: 100 },
-							{ id: 'b3', x: 200, y: 120, radius: 18, points: 200 },
-							{ id: 'b4', x: 140, y: 280, radius: 25, points: 150 },
-							{ id: 'b5', x: 260, y: 280, radius: 25, points: 150 },
-							{ id: 'b6', x: 200, y: 360, radius: 22, points: 175 }
-						],
-						triangularBumpers: [
-							{
-								id: 't1',
-								v1: { x: 90, y: height - 150 - 15.6 },
-								v2: { x: 75, y: height - 150 + 10.4 },
-								v3: { x: 105, y: height - 150 + 10.4 },
-								points: 250,
-								edge1Bouncy: true,
-								edge2Bouncy: true,
-								edge3Bouncy: true
-							},
-							{
-								id: 't2',
-								v1: { x: 310, y: height - 150 - 15.6 },
-								v2: { x: 295, y: height - 150 + 10.4 },
-								v3: { x: 325, y: height - 150 + 10.4 },
-								points: 250,
-								edge1Bouncy: true,
-								edge2Bouncy: true,
-								edge3Bouncy: true
-							}
-						],
-						rails: [
-							{ id: 'r1', x1: 50, y1: 150, x2: 150, y2: 200, radius: 12 },
-							{ id: 'r2', x1: 250, y1: 200, x2: 350, y2: 150, radius: 12 }
-						],
-						curves: [
-							{ id: 'c1', x: 200, y: 100, radius: 60, startAngle: -Math.PI, endAngle: 0, thickness: 15 },
-							{ id: 'c2', x: 100, y: 420, radius: 40, startAngle: Math.PI / 4, endAngle: 3 * Math.PI / 4, thickness: 10 },
-							{ id: 'c3', x: 300, y: 420, radius: 40, startAngle: Math.PI / 4, endAngle: 3 * Math.PI / 4, thickness: 10 },
-							{ id: 'c4', x: width - 40, y: 40, radius: 40, startAngle: -Math.PI / 2, endAngle: 0, thickness: 10 },
-							{ id: 'c5', x: 75, y: height - 140, radius: 40, startAngle: -Math.PI / 2, endAngle: Math.PI / 8, thickness: 8 },
-							{ id: 'c6', x: 325, y: height - 140, radius: 40, startAngle: Math.PI - Math.PI / 8, endAngle: Math.PI / 2, thickness: 8 }
-						],
-						flippers: [
-							{ id: 'f1', x: 120, y: height - 80, side: 'left', length: 70, width: 15 },
-							{ id: 'f2', x: 280, y: height - 80, side: 'right', length: 70, width: 15 }
-						],
-						bezierPaths: []
-					}
-					setConfig(defaultBoard)
-				}}>
+				<button
+					onClick={() => {
+						const defaultBoard: BoardConfig = {
+							bumpers: [
+								{ id: "b1", x: 100, y: 180, radius: 20, points: 100 },
+								{ id: "b2", x: 300, y: 180, radius: 20, points: 100 },
+								{ id: "b3", x: 200, y: 120, radius: 18, points: 200 },
+								{ id: "b4", x: 140, y: 280, radius: 25, points: 150 },
+								{ id: "b5", x: 260, y: 280, radius: 25, points: 150 },
+								{ id: "b6", x: 200, y: 360, radius: 22, points: 175 },
+							],
+							triangularBumpers: [
+								{
+									id: "t1",
+									v1: { x: 90, y: height - 150 - 15.6 },
+									v2: { x: 75, y: height - 150 + 10.4 },
+									v3: { x: 105, y: height - 150 + 10.4 },
+									points: 250,
+									edge1Bouncy: true,
+									edge2Bouncy: true,
+									edge3Bouncy: true,
+								},
+								{
+									id: "t2",
+									v1: { x: 310, y: height - 150 - 15.6 },
+									v2: { x: 295, y: height - 150 + 10.4 },
+									v3: { x: 325, y: height - 150 + 10.4 },
+									points: 250,
+									edge1Bouncy: true,
+									edge2Bouncy: true,
+									edge3Bouncy: true,
+								},
+							],
+							rails: [
+								{ id: "r1", x1: 50, y1: 150, x2: 150, y2: 200, radius: 12 },
+								{ id: "r2", x1: 250, y1: 200, x2: 350, y2: 150, radius: 12 },
+							],
+							curves: [
+								{ id: "c1", x: 200, y: 100, radius: 60, startAngle: -Math.PI, endAngle: 0, thickness: 15 },
+								{
+									id: "c2",
+									x: 100,
+									y: 420,
+									radius: 40,
+									startAngle: Math.PI / 4,
+									endAngle: (3 * Math.PI) / 4,
+									thickness: 10,
+								},
+								{
+									id: "c3",
+									x: 300,
+									y: 420,
+									radius: 40,
+									startAngle: Math.PI / 4,
+									endAngle: (3 * Math.PI) / 4,
+									thickness: 10,
+								},
+								{ id: "c4", x: width - 40, y: 40, radius: 40, startAngle: -Math.PI / 2, endAngle: 0, thickness: 10 },
+								{
+									id: "c5",
+									x: 75,
+									y: height - 140,
+									radius: 40,
+									startAngle: -Math.PI / 2,
+									endAngle: Math.PI / 8,
+									thickness: 8,
+								},
+								{
+									id: "c6",
+									x: 325,
+									y: height - 140,
+									radius: 40,
+									startAngle: Math.PI - Math.PI / 8,
+									endAngle: Math.PI / 2,
+									thickness: 8,
+								},
+							],
+							flippers: [
+								{ id: "f1", x: 120, y: height - 80, side: "left", length: 70, width: 15 },
+								{ id: "f2", x: 280, y: height - 80, side: "right", length: 70, width: 15 },
+							],
+							bezierPaths: [],
+						}
+						setConfig(defaultBoard)
+					}}
+				>
 					📦 Load Default
 				</button>
 			</div>
 			<div ref={instructionsRef} className={styles.instructions}>
-				<strong>Controls:</strong> Click to place | Shift+Click for precise placement |
-				Alt+Click for right flipper | Triangle needs 3 clicks | Bezier needs 4 clicks | Delete key to remove selected | Esc to cancel/deselect
+				<strong>Controls:</strong> Click to place | Shift+Click for precise placement | Alt+Click for right flipper |
+				Triangle needs 3 clicks | Bezier needs 4 clicks | Delete key to remove selected | Esc to cancel/deselect
 			</div>
 			<canvas
 				ref={canvasRef}
 				width={canvasDimensions.width * devicePixelRatio}
 				height={canvasDimensions.height * devicePixelRatio}
-				style={{ width: `${canvasDimensions.width}px`, height: `${canvasDimensions.height}px`, cursor: isDragging ? 'grabbing' : (tool === 'select' && selectedId ? 'grab' : 'crosshair') }}
+				style={{
+					width: `${canvasDimensions.width}px`,
+					height: `${canvasDimensions.height}px`,
+					cursor: isDragging ? "grabbing" : tool === "select" && selectedId ? "grab" : "crosshair",
+				}}
 				onClick={handleCanvasClick}
 				onMouseDown={handleMouseDown}
 				onMouseMove={handleMouseMove}
@@ -1552,12 +1675,12 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 						onChange={setConfig}
 						onDelete={() => {
 							setConfig({
-								bumpers: config.bumpers.filter(b => b.id !== selectedId),
-								triangularBumpers: config.triangularBumpers.filter(t => t.id !== selectedId),
-								rails: config.rails.filter(r => r.id !== selectedId),
-								curves: config.curves.filter(c => c.id !== selectedId),
-								flippers: config.flippers.filter(f => f.id !== selectedId),
-								bezierPaths: (config.bezierPaths || []).filter(b => b.id !== selectedId)
+								bumpers: config.bumpers.filter((b) => b.id !== selectedId),
+								triangularBumpers: config.triangularBumpers.filter((t) => t.id !== selectedId),
+								rails: config.rails.filter((r) => r.id !== selectedId),
+								curves: config.curves.filter((c) => c.id !== selectedId),
+								flippers: config.flippers.filter((f) => f.id !== selectedId),
+								bezierPaths: (config.bezierPaths || []).filter((b) => b.id !== selectedId),
 							})
 							setSelectedId(null)
 						}}
@@ -1568,18 +1691,23 @@ export function LevelEditor({ width, height, onSave, initialConfig }: Props) {
 	)
 }
 
-function PropertyPanel({ id, config, onChange, onDelete }: {
+function PropertyPanel({
+	id,
+	config,
+	onChange,
+	onDelete,
+}: {
 	id: string
 	config: BoardConfig
 	onChange: (config: BoardConfig) => void
 	onDelete: () => void
 }) {
-	const bumper = config.bumpers.find(b => b.id === id)
-	const triangular = config.triangularBumpers.find(t => t.id === id)
-	const rail = config.rails.find(r => r.id === id)
-	const curve = config.curves.find(c => c.id === id)
-	const flipper = config.flippers.find(f => f.id === id)
-	const bezier = config.bezierPaths?.find(b => b.id === id)
+	const bumper = config.bumpers.find((b) => b.id === id)
+	const triangular = config.triangularBumpers.find((t) => t.id === id)
+	const rail = config.rails.find((r) => r.id === id)
+	const curve = config.curves.find((c) => c.id === id)
+	const flipper = config.flippers.find((f) => f.id === id)
+	const bezier = config.bezierPaths?.find((b) => b.id === id)
 
 	if (bumper) {
 		return (
@@ -1592,9 +1720,7 @@ function PropertyPanel({ id, config, onChange, onDelete }: {
 						onChange={(e) => {
 							onChange({
 								...config,
-								bumpers: config.bumpers.map(b =>
-									b.id === id ? { ...b, radius: Number(e.target.value) } : b
-								)
+								bumpers: config.bumpers.map((b) => (b.id === id ? { ...b, radius: Number(e.target.value) } : b)),
 							})
 						}}
 					/>
@@ -1607,9 +1733,7 @@ function PropertyPanel({ id, config, onChange, onDelete }: {
 						onChange={(e) => {
 							onChange({
 								...config,
-								bumpers: config.bumpers.map(b =>
-									b.id === id ? { ...b, points: Number(e.target.value) } : b
-								)
+								bumpers: config.bumpers.map((b) => (b.id === id ? { ...b, points: Number(e.target.value) } : b)),
 							})
 						}}
 					/>
@@ -1619,12 +1743,12 @@ function PropertyPanel({ id, config, onChange, onDelete }: {
 	}
 
 	if (triangular) {
-		const updateVertex = (vertex: 'v1' | 'v2' | 'v3', coord: 'x' | 'y', value: number) => {
+		const updateVertex = (vertex: "v1" | "v2" | "v3", coord: "x" | "y", value: number) => {
 			onChange({
 				...config,
-				triangularBumpers: config.triangularBumpers.map(t =>
-					t.id === id ? { ...t, [vertex]: { ...t[vertex], [coord]: value } } : t
-				)
+				triangularBumpers: config.triangularBumpers.map((t) =>
+					t.id === id ? { ...t, [vertex]: { ...t[vertex], [coord]: value } } : t,
+				),
 			})
 		}
 
@@ -1632,76 +1756,94 @@ function PropertyPanel({ id, config, onChange, onDelete }: {
 			<div>
 				<label>
 					Vertex 1 X:
-					<input type="number" value={Math.round(triangular.v1.x)}
-						onChange={(e) => updateVertex('v1', 'x', Number(e.target.value))} />
+					<input
+						type="number"
+						value={Math.round(triangular.v1.x)}
+						onChange={(e) => updateVertex("v1", "x", Number(e.target.value))}
+					/>
 				</label>
 				<label>
 					Vertex 1 Y:
-					<input type="number" value={Math.round(triangular.v1.y)}
-						onChange={(e) => updateVertex('v1', 'y', Number(e.target.value))} />
+					<input
+						type="number"
+						value={Math.round(triangular.v1.y)}
+						onChange={(e) => updateVertex("v1", "y", Number(e.target.value))}
+					/>
 				</label>
 				<label>
 					Vertex 2 X:
-					<input type="number" value={Math.round(triangular.v2.x)}
-						onChange={(e) => updateVertex('v2', 'x', Number(e.target.value))} />
+					<input
+						type="number"
+						value={Math.round(triangular.v2.x)}
+						onChange={(e) => updateVertex("v2", "x", Number(e.target.value))}
+					/>
 				</label>
 				<label>
 					Vertex 2 Y:
-					<input type="number" value={Math.round(triangular.v2.y)}
-						onChange={(e) => updateVertex('v2', 'y', Number(e.target.value))} />
+					<input
+						type="number"
+						value={Math.round(triangular.v2.y)}
+						onChange={(e) => updateVertex("v2", "y", Number(e.target.value))}
+					/>
 				</label>
 				<label>
 					Vertex 3 X:
-					<input type="number" value={Math.round(triangular.v3.x)}
-						onChange={(e) => updateVertex('v3', 'x', Number(e.target.value))} />
+					<input
+						type="number"
+						value={Math.round(triangular.v3.x)}
+						onChange={(e) => updateVertex("v3", "x", Number(e.target.value))}
+					/>
 				</label>
 				<label>
 					Vertex 3 Y:
-					<input type="number" value={Math.round(triangular.v3.y)}
-						onChange={(e) => updateVertex('v3', 'y', Number(e.target.value))} />
+					<input
+						type="number"
+						value={Math.round(triangular.v3.y)}
+						onChange={(e) => updateVertex("v3", "y", Number(e.target.value))}
+					/>
 				</label>
-				<div style={{ marginTop: '1em', paddingTop: '1em', borderTop: '1px solid #48dbfb' }}>
-					<strong style={{ color: '#48dbfb', display: 'block', marginBottom: '0.5em' }}>Edge Properties</strong>
-					<label style={{ display: 'flex', alignItems: 'center', gap: '0.5em' }}>
+				<div style={{ marginTop: "1em", paddingTop: "1em", borderTop: "1px solid #48dbfb" }}>
+					<strong style={{ color: "#48dbfb", display: "block", marginBottom: "0.5em" }}>Edge Properties</strong>
+					<label style={{ display: "flex", alignItems: "center", gap: "0.5em" }}>
 						<input
 							type="checkbox"
 							checked={triangular.edge1Bouncy}
 							onChange={(e) => {
 								onChange({
 									...config,
-									triangularBumpers: config.triangularBumpers.map(t =>
-										t.id === id ? { ...t, edge1Bouncy: e.target.checked } : t
-									)
+									triangularBumpers: config.triangularBumpers.map((t) =>
+										t.id === id ? { ...t, edge1Bouncy: e.target.checked } : t,
+									),
 								})
 							}}
 						/>
 						<span>Edge 1→2 Bouncy</span>
 					</label>
-					<label style={{ display: 'flex', alignItems: 'center', gap: '0.5em' }}>
+					<label style={{ display: "flex", alignItems: "center", gap: "0.5em" }}>
 						<input
 							type="checkbox"
 							checked={triangular.edge2Bouncy}
 							onChange={(e) => {
 								onChange({
 									...config,
-									triangularBumpers: config.triangularBumpers.map(t =>
-										t.id === id ? { ...t, edge2Bouncy: e.target.checked } : t
-									)
+									triangularBumpers: config.triangularBumpers.map((t) =>
+										t.id === id ? { ...t, edge2Bouncy: e.target.checked } : t,
+									),
 								})
 							}}
 						/>
 						<span>Edge 2→3 Bouncy</span>
 					</label>
-					<label style={{ display: 'flex', alignItems: 'center', gap: '0.5em' }}>
+					<label style={{ display: "flex", alignItems: "center", gap: "0.5em" }}>
 						<input
 							type="checkbox"
 							checked={triangular.edge3Bouncy}
 							onChange={(e) => {
 								onChange({
 									...config,
-									triangularBumpers: config.triangularBumpers.map(t =>
-										t.id === id ? { ...t, edge3Bouncy: e.target.checked } : t
-									)
+									triangularBumpers: config.triangularBumpers.map((t) =>
+										t.id === id ? { ...t, edge3Bouncy: e.target.checked } : t,
+									),
 								})
 							}}
 						/>
@@ -1716,9 +1858,9 @@ function PropertyPanel({ id, config, onChange, onDelete }: {
 						onChange={(e) => {
 							onChange({
 								...config,
-								triangularBumpers: config.triangularBumpers.map(t =>
-									t.id === id ? { ...t, points: Number(e.target.value) } : t
-								)
+								triangularBumpers: config.triangularBumpers.map((t) =>
+									t.id === id ? { ...t, points: Number(e.target.value) } : t,
+								),
 							})
 						}}
 					/>
@@ -1726,14 +1868,14 @@ function PropertyPanel({ id, config, onChange, onDelete }: {
 				<button
 					onClick={onDelete}
 					style={{
-						marginTop: '1em',
-						padding: '0.5em 1em',
-						background: '#ff4757',
-						color: 'white',
-						border: 'none',
-						borderRadius: '4px',
-						cursor: 'pointer',
-						width: '100%'
+						marginTop: "1em",
+						padding: "0.5em 1em",
+						background: "#ff4757",
+						color: "white",
+						border: "none",
+						borderRadius: "4px",
+						cursor: "pointer",
+						width: "100%",
 					}}
 				>
 					🗑️ Delete
@@ -1753,9 +1895,7 @@ function PropertyPanel({ id, config, onChange, onDelete }: {
 						onChange={(e) => {
 							onChange({
 								...config,
-								rails: config.rails.map(r =>
-									r.id === id ? { ...r, radius: Number(e.target.value) } : r
-								)
+								rails: config.rails.map((r) => (r.id === id ? { ...r, radius: Number(e.target.value) } : r)),
 							})
 						}}
 					/>
@@ -1763,14 +1903,14 @@ function PropertyPanel({ id, config, onChange, onDelete }: {
 				<button
 					onClick={onDelete}
 					style={{
-						marginTop: '1em',
-						padding: '0.5em 1em',
-						background: '#ff4757',
-						color: 'white',
-						border: 'none',
-						borderRadius: '4px',
-						cursor: 'pointer',
-						width: '100%'
+						marginTop: "1em",
+						padding: "0.5em 1em",
+						background: "#ff4757",
+						color: "white",
+						border: "none",
+						borderRadius: "4px",
+						cursor: "pointer",
+						width: "100%",
 					}}
 				>
 					🗑️ Delete
@@ -1790,9 +1930,7 @@ function PropertyPanel({ id, config, onChange, onDelete }: {
 						onChange={(e) => {
 							onChange({
 								...config,
-								curves: config.curves.map(c =>
-									c.id === id ? { ...c, radius: Number(e.target.value) } : c
-								)
+								curves: config.curves.map((c) => (c.id === id ? { ...c, radius: Number(e.target.value) } : c)),
 							})
 						}}
 					/>
@@ -1805,9 +1943,7 @@ function PropertyPanel({ id, config, onChange, onDelete }: {
 						onChange={(e) => {
 							onChange({
 								...config,
-								curves: config.curves.map(c =>
-									c.id === id ? { ...c, thickness: Number(e.target.value) } : c
-								)
+								curves: config.curves.map((c) => (c.id === id ? { ...c, thickness: Number(e.target.value) } : c)),
 							})
 						}}
 					/>
@@ -1816,13 +1952,13 @@ function PropertyPanel({ id, config, onChange, onDelete }: {
 					Start Angle (deg):
 					<input
 						type="number"
-						value={Math.round(curve.startAngle * 180 / Math.PI)}
+						value={Math.round((curve.startAngle * 180) / Math.PI)}
 						onChange={(e) => {
 							onChange({
 								...config,
-								curves: config.curves.map(c =>
-									c.id === id ? { ...c, startAngle: Number(e.target.value) * Math.PI / 180 } : c
-								)
+								curves: config.curves.map((c) =>
+									c.id === id ? { ...c, startAngle: (Number(e.target.value) * Math.PI) / 180 } : c,
+								),
 							})
 						}}
 					/>
@@ -1831,13 +1967,13 @@ function PropertyPanel({ id, config, onChange, onDelete }: {
 					End Angle (deg):
 					<input
 						type="number"
-						value={Math.round(curve.endAngle * 180 / Math.PI)}
+						value={Math.round((curve.endAngle * 180) / Math.PI)}
 						onChange={(e) => {
 							onChange({
 								...config,
-								curves: config.curves.map(c =>
-									c.id === id ? { ...c, endAngle: Number(e.target.value) * Math.PI / 180 } : c
-								)
+								curves: config.curves.map((c) =>
+									c.id === id ? { ...c, endAngle: (Number(e.target.value) * Math.PI) / 180 } : c,
+								),
 							})
 						}}
 					/>
@@ -1845,14 +1981,14 @@ function PropertyPanel({ id, config, onChange, onDelete }: {
 				<button
 					onClick={onDelete}
 					style={{
-						marginTop: '1em',
-						padding: '0.5em 1em',
-						background: '#ff4757',
-						color: 'white',
-						border: 'none',
-						borderRadius: '4px',
-						cursor: 'pointer',
-						width: '100%'
+						marginTop: "1em",
+						padding: "0.5em 1em",
+						background: "#ff4757",
+						color: "white",
+						border: "none",
+						borderRadius: "4px",
+						cursor: "pointer",
+						width: "100%",
 					}}
 				>
 					🗑️ Delete
@@ -1871,9 +2007,9 @@ function PropertyPanel({ id, config, onChange, onDelete }: {
 						onChange={(e) => {
 							onChange({
 								...config,
-								flippers: config.flippers.map(f =>
-									f.id === id ? { ...f, side: e.target.value as 'left' | 'right' } : f
-								)
+								flippers: config.flippers.map((f) =>
+									f.id === id ? { ...f, side: e.target.value as "left" | "right" } : f,
+								),
 							})
 						}}
 					>
@@ -1889,9 +2025,7 @@ function PropertyPanel({ id, config, onChange, onDelete }: {
 						onChange={(e) => {
 							onChange({
 								...config,
-								flippers: config.flippers.map(f =>
-									f.id === id ? { ...f, length: Number(e.target.value) } : f
-								)
+								flippers: config.flippers.map((f) => (f.id === id ? { ...f, length: Number(e.target.value) } : f)),
 							})
 						}}
 					/>
@@ -1904,9 +2038,7 @@ function PropertyPanel({ id, config, onChange, onDelete }: {
 						onChange={(e) => {
 							onChange({
 								...config,
-								flippers: config.flippers.map(f =>
-									f.id === id ? { ...f, width: Number(e.target.value) } : f
-								)
+								flippers: config.flippers.map((f) => (f.id === id ? { ...f, width: Number(e.target.value) } : f)),
 							})
 						}}
 					/>
@@ -1914,14 +2046,14 @@ function PropertyPanel({ id, config, onChange, onDelete }: {
 				<button
 					onClick={onDelete}
 					style={{
-						marginTop: '1em',
-						padding: '0.5em 1em',
-						background: '#ff4757',
-						color: 'white',
-						border: 'none',
-						borderRadius: '4px',
-						cursor: 'pointer',
-						width: '100%'
+						marginTop: "1em",
+						padding: "0.5em 1em",
+						background: "#ff4757",
+						color: "white",
+						border: "none",
+						borderRadius: "4px",
+						cursor: "pointer",
+						width: "100%",
 					}}
 				>
 					🗑️ Delete
@@ -1933,8 +2065,11 @@ function PropertyPanel({ id, config, onChange, onDelete }: {
 	if (bezier) {
 		return (
 			<div>
-				<div style={{ marginBottom: '1em' }}>
-					<strong>{bezier.points.length} points ({Math.floor((bezier.points.length - 1) / 3)} segment{Math.floor((bezier.points.length - 1) / 3) !== 1 ? 's' : ''})</strong>
+				<div style={{ marginBottom: "1em" }}>
+					<strong>
+						{bezier.points.length} points ({Math.floor((bezier.points.length - 1) / 3)} segment
+						{Math.floor((bezier.points.length - 1) / 3) !== 1 ? "s" : ""})
+					</strong>
 				</div>
 				<label>
 					Track Width:
@@ -1944,9 +2079,9 @@ function PropertyPanel({ id, config, onChange, onDelete }: {
 						onChange={(e) => {
 							onChange({
 								...config,
-								bezierPaths: (config.bezierPaths || []).map(b =>
-									b.id === id ? { ...b, trackWidth: Number(e.target.value) } : b
-								)
+								bezierPaths: (config.bezierPaths || []).map((b) =>
+									b.id === id ? { ...b, trackWidth: Number(e.target.value) } : b,
+								),
 							})
 						}}
 					/>
@@ -1954,14 +2089,14 @@ function PropertyPanel({ id, config, onChange, onDelete }: {
 				<button
 					onClick={onDelete}
 					style={{
-						marginTop: '1em',
-						padding: '0.5em 1em',
-						background: '#ff4757',
-						color: 'white',
-						border: 'none',
-						borderRadius: '4px',
-						cursor: 'pointer',
-						width: '100%'
+						marginTop: "1em",
+						padding: "0.5em 1em",
+						background: "#ff4757",
+						color: "white",
+						border: "none",
+						borderRadius: "4px",
+						cursor: "pointer",
+						width: "100%",
 					}}
 				>
 					🗑️ Delete
@@ -1976,7 +2111,7 @@ function PropertyPanel({ id, config, onChange, onDelete }: {
 function distanceToSegment(
 	point: { x: number; y: number },
 	lineStart: { x: number; y: number },
-	lineEnd: { x: number; y: number }
+	lineEnd: { x: number; y: number },
 ): number {
 	const dx = lineEnd.x - lineStart.x
 	const dy = lineEnd.y - lineStart.y

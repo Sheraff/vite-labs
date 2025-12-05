@@ -1,19 +1,21 @@
-import styles from './styles.module.css'
-import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
-import { useEffect, useRef, useState } from "react"
+
+import { Head } from "#components/Head"
 import { makeFrameCounter } from "#components/makeFrameCounter"
+import { useEffect, useRef, useState } from "react"
+
+import styles from "./styles.module.css"
 
 export const meta: RouteMeta = {
-	title: 'Suika Game',
-	image: './screen.png',
-	tags: ['game'],
+	title: "Suika Game",
+	image: "./screen.png",
+	tags: ["game"],
 }
 export default function SuikaGamePage() {
 	const canvasRef = useRef<HTMLCanvasElement>(null)
 	const [score, setScore] = useState(0)
-	const [ups, setUps] = useState('')
-	const [fps, setFps] = useState('')
+	const [ups, setUps] = useState("")
+	const [fps, setFps] = useState("")
 
 	useEffect(() => {
 		const canvas = canvasRef.current!
@@ -23,14 +25,14 @@ export default function SuikaGamePage() {
 		canvas.style.width = `${window.innerWidth}px`
 		canvas.style.height = `${window.innerHeight}px`
 
-		const ctx = canvas.getContext('2d')!
+		const ctx = canvas.getContext("2d")!
 		ctx.scale(devicePixelRatio, devicePixelRatio)
 
 		const controller = new AbortController()
 		const updateCounter = makeFrameCounter(200)
 		const frameCounter = makeFrameCounter(60)
 
-		const formatter = new Intl.NumberFormat('en-US', {
+		const formatter = new Intl.NumberFormat("en-US", {
 			maximumFractionDigits: 1,
 			minimumFractionDigits: 1,
 		})
@@ -40,7 +42,7 @@ export default function SuikaGamePage() {
 			ctx,
 			setScore,
 			onUpdate: (dt) => setUps(formatter.format(updateCounter(dt))),
-			onFrame: (dt) => setFps(formatter.format(frameCounter(dt)))
+			onFrame: (dt) => setFps(formatter.format(frameCounter(dt))),
 		})
 
 		return () => {
@@ -61,28 +63,28 @@ export default function SuikaGamePage() {
 	)
 }
 
-/** 
+/**
  * When 2 entities of the same level (index) touch,
  * they fuse into 1 single entity of the next level.
- * 
+ *
  * The new entity is created at the position of the touch,
  * with velocity being the average of the 2 original entities.
- * 
+ *
  * This earns the player points (score).
  */
 const CHAIN = [
-	{ r: 10, color: '#ff6b6b', score: 0 },
-	{ r: 20, color: '#ff8e53', score: 1 },
-	{ r: 30, color: '#ffbe0b', score: 3 },
-	{ r: 40, color: '#8ac926', score: 5 },
-	{ r: 50, color: '#06ffa5', score: 7 },
-	{ r: 60, color: '#118ab2', score: 11 },
-	{ r: 70, color: '#7209b7', score: 20 },
-	{ r: 80, color: '#d90429', score: 50 },
-	{ r: 90, color: '#ef23ef', score: 100 },
-	{ r: 100, color: '#ffd60a', score: 200 },
-	{ r: 110, color: '#003566', score: 500 },
-	{ r: 120, color: '#3f0139', score: 1000 },
+	{ r: 10, color: "#ff6b6b", score: 0 },
+	{ r: 20, color: "#ff8e53", score: 1 },
+	{ r: 30, color: "#ffbe0b", score: 3 },
+	{ r: 40, color: "#8ac926", score: 5 },
+	{ r: 50, color: "#06ffa5", score: 7 },
+	{ r: 60, color: "#118ab2", score: 11 },
+	{ r: 70, color: "#7209b7", score: 20 },
+	{ r: 80, color: "#d90429", score: 50 },
+	{ r: 90, color: "#ef23ef", score: 100 },
+	{ r: 100, color: "#ffd60a", score: 200 },
+	{ r: 110, color: "#003566", score: 500 },
+	{ r: 120, color: "#3f0139", score: 1000 },
 ]
 
 type Entity = {
@@ -105,8 +107,8 @@ function start({
 	onUpdate,
 	onFrame,
 }: {
-	signal: AbortSignal,
-	ctx: CanvasRenderingContext2D,
+	signal: AbortSignal
+	ctx: CanvasRenderingContext2D
 	setScore: (update: (prev: number) => number) => void
 	onUpdate: (dt: number) => void
 	onFrame: (dt: number) => void
@@ -122,26 +124,34 @@ function start({
 	/** position at which to drop the new entity (handId) on click */
 	let mouseX = 0
 
-	window.addEventListener('mousemove', (e) => {
-		mouseX = e.clientX
-	}, { signal })
+	window.addEventListener(
+		"mousemove",
+		(e) => {
+			mouseX = e.clientX
+		},
+		{ signal },
+	)
 
-	window.addEventListener('click', () => {
-		const base = CHAIN[handId]
-		const x = Math.max(containerX + base.r, Math.min(containerX + CONTAINER_WIDTH - base.r, mouseX))
-		entities.push({
-			id: handId,
-			r: base.r,
-			color: base.color,
-			x,
-			y: DROP_Y,
-			vx: 0,
-			vy: 0,
-			mass: base.r ** 3,
-		})
-		handId = nextId
-		nextId = Math.floor(Math.random() * max)
-	}, { signal })
+	window.addEventListener(
+		"click",
+		() => {
+			const base = CHAIN[handId]
+			const x = Math.max(containerX + base.r, Math.min(containerX + CONTAINER_WIDTH - base.r, mouseX))
+			entities.push({
+				id: handId,
+				r: base.r,
+				color: base.color,
+				x,
+				y: DROP_Y,
+				vx: 0,
+				vy: 0,
+				mass: base.r ** 3,
+			})
+			handId = nextId
+			nextId = Math.floor(Math.random() * max)
+		},
+		{ signal },
+	)
 
 	const WALL_THICKNESS = 10
 	const CONTAINER_WIDTH = 700
@@ -171,7 +181,7 @@ function start({
 				entity.vy += 0.7 * dti // gravity
 
 				// Apply damping to reduce vibration
-				const damping = (1 - 0.04 * dti)
+				const damping = 1 - 0.04 * dti
 				entity.vx *= damping
 				entity.vy *= damping
 
@@ -223,9 +233,8 @@ function start({
 						vy: (a.vy + b.vy) / 2 - 7, // slight upward boost on merge
 						mass: base.r ** 3,
 					})
-					if (newId < CHAIN.length - 2)
-						max = Math.max(max, newId)
-					setScore(prev => prev + base.score)
+					if (newId < CHAIN.length - 2) max = Math.max(max, newId)
+					setScore((prev) => prev + base.score)
 					// Remove merged entities
 					entities.splice(j, 1)
 					entities.splice(i, 1)
@@ -270,7 +279,7 @@ function start({
 
 					if (speed > 0) continue // Objects separating
 
-					const impulse = 2 * speed / (a.mass + b.mass) * 0.8 // restitution coefficient
+					const impulse = ((2 * speed) / (a.mass + b.mass)) * 0.8 // restitution coefficient
 					a.vx -= impulse * b.mass * normalX
 					a.vy -= impulse * b.mass * normalY
 					b.vx += impulse * a.mass * normalX
@@ -283,10 +292,25 @@ function start({
 		ctx.clearRect(0, 0, window.innerWidth, window.innerHeight)
 
 		// Draw walls
-		ctx.fillStyle = 'white'
-		ctx.fillRect(containerX - WALL_THICKNESS, containerY - WALL_THICKNESS, WALL_THICKNESS, CONTAINER_HEIGHT + WALL_THICKNESS * 2) // left
-		ctx.fillRect(containerX + CONTAINER_WIDTH, containerY - WALL_THICKNESS, WALL_THICKNESS, CONTAINER_HEIGHT + WALL_THICKNESS * 2) // right
-		ctx.fillRect(containerX - WALL_THICKNESS, innerHeight - WALL_THICKNESS, CONTAINER_WIDTH + WALL_THICKNESS * 2, WALL_THICKNESS) // bottom
+		ctx.fillStyle = "white"
+		ctx.fillRect(
+			containerX - WALL_THICKNESS,
+			containerY - WALL_THICKNESS,
+			WALL_THICKNESS,
+			CONTAINER_HEIGHT + WALL_THICKNESS * 2,
+		) // left
+		ctx.fillRect(
+			containerX + CONTAINER_WIDTH,
+			containerY - WALL_THICKNESS,
+			WALL_THICKNESS,
+			CONTAINER_HEIGHT + WALL_THICKNESS * 2,
+		) // right
+		ctx.fillRect(
+			containerX - WALL_THICKNESS,
+			innerHeight - WALL_THICKNESS,
+			CONTAINER_WIDTH + WALL_THICKNESS * 2,
+			WALL_THICKNESS,
+		) // bottom
 
 		// Draw hand
 		{
@@ -318,7 +342,11 @@ function start({
 		}
 	})
 
-	signal.addEventListener('abort', () => {
-		cancelAnimationFrame(rafId)
-	}, { signal })
+	signal.addEventListener(
+		"abort",
+		() => {
+			cancelAnimationFrame(rafId)
+		},
+		{ signal },
+	)
 }

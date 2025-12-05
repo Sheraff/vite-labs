@@ -5,14 +5,14 @@ export class Flipper {
 	width: number
 	angle: number
 	targetAngle: number
-	side: 'left' | 'right'
+	side: "left" | "right"
 	angularSpeed: number = 0.3
 	maxRotation: number = Math.PI / 4
 	angularVelocity: number = 0
 	previousAngle: number = 0
 	collisionCooldown: number = 0
 
-	constructor(x: number, y: number, side: 'left' | 'right', length: number = 80, width: number = 15) {
+	constructor(x: number, y: number, side: "left" | "right", length: number = 80, width: number = 15) {
 		this.x = x
 		this.y = y
 		this.side = side
@@ -42,7 +42,7 @@ export class Flipper {
 		// If it points left (negative x), rotating clockwise (positive angle) moves the tip UP.
 		// So we need negative angle to move tip DOWN.
 
-		if (this.side === 'left') {
+		if (this.side === "left") {
 			this.angle = Math.PI / 6
 			this.targetAngle = Math.PI / 6
 		} else {
@@ -59,7 +59,7 @@ export class Flipper {
 	}
 
 	flipUp() {
-		if (this.side === 'left') {
+		if (this.side === "left") {
 			this.targetAngle = -Math.PI / 6
 		} else {
 			this.targetAngle = Math.PI / 6
@@ -67,14 +67,14 @@ export class Flipper {
 	}
 
 	flipDown() {
-		if (this.side === 'left') {
+		if (this.side === "left") {
 			this.targetAngle = Math.PI / 6
 		} else {
 			this.targetAngle = -Math.PI / 6
 		}
 	}
 
-	checkCollision(ball: { x: number, y: number, radius: number, vx: number, vy: number }) {
+	checkCollision(ball: { x: number; y: number; radius: number; vx: number; vy: number }) {
 		// Calculate current flipper endpoints
 		const cos = Math.cos(this.angle)
 		const sin = Math.sin(this.angle)
@@ -83,7 +83,7 @@ export class Flipper {
 		let p1y = this.y
 		let p2x, p2y
 
-		if (this.side === 'left') {
+		if (this.side === "left") {
 			p2x = this.x + cos * this.length
 			p2y = this.y + sin * this.length
 		} else {
@@ -98,7 +98,7 @@ export class Flipper {
 		let prevP1y = this.y
 		let prevP2x, prevP2y
 
-		if (this.side === 'left') {
+		if (this.side === "left") {
 			prevP2x = this.x + prevCos * this.length
 			prevP2y = this.y + prevSin * this.length
 		} else {
@@ -224,11 +224,11 @@ export class Flipper {
 		ctx.translate(this.x, this.y)
 		ctx.rotate(this.angle)
 
-		ctx.fillStyle = '#48dbfb'
-		ctx.strokeStyle = '#0abde3'
+		ctx.fillStyle = "#48dbfb"
+		ctx.strokeStyle = "#0abde3"
 		ctx.lineWidth = 2
 
-		if (this.side === 'left') {
+		if (this.side === "left") {
 			// Pivot is left, points right
 			ctx.fillRect(0, -this.width / 2, this.length, this.width)
 			ctx.strokeRect(0, -this.width / 2, this.length, this.width)

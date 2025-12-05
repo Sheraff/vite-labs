@@ -10,42 +10,42 @@ export type Island = {
 	id: number
 }
 
-type Graph = Map<number, { islands: Set<Island>, tiles: Map<number, Island> }>
+type Graph = Map<number, { islands: Set<Island>; tiles: Map<number, Island> }>
 type Path = Island[]
 
 export type Incoming =
 	| {
-		type: "init",
-		data: {
-			workersPerRow: number
-			SIDE: number
-			workerSide: number
-			maxCost: number
-			grid: SharedArrayBuffer
-		}
-	}
-	| { type: "graph", data: undefined }
+			type: "init"
+			data: {
+				workersPerRow: number
+				SIDE: number
+				workerSide: number
+				maxCost: number
+				grid: SharedArrayBuffer
+			}
+	  }
+	| { type: "graph"; data: undefined }
 	| {
-		type: "query",
-		data: {
-			from: { x: number, y: number }
-			goal: { x: number, y: number }
-		}
-	}
-	| { type: 'request-graph', data: undefined }
+			type: "query"
+			data: {
+				from: { x: number; y: number }
+				goal: { x: number; y: number }
+			}
+	  }
+	| { type: "request-graph"; data: undefined }
 
-export type SerializedGraph = Array<{ index: number, islands: Array<{ wx: number, wy: number, tiles: number[] }> }>
-export type SerializedPath = Array<{ wx: number, wy: number, tiles: number[], crossings: number[] }>
+export type SerializedGraph = Array<{ index: number; islands: Array<{ wx: number; wy: number; tiles: number[] }> }>
+export type SerializedPath = Array<{ wx: number; wy: number; tiles: number[]; crossings: number[] }>
 export type Outgoing =
 	| {
-		type: "response",
-		data: {
-			path: SerializedPath | false
-			from: { x: number, y: number }
-			goal: { x: number, y: number }
-		}
-	}
-	| { type: 'graph', data: { graph: SerializedGraph } }
+			type: "response"
+			data: {
+				path: SerializedPath | false
+				from: { x: number; y: number }
+				goal: { x: number; y: number }
+			}
+	  }
+	| { type: "graph"; data: { graph: SerializedGraph } }
 
 const graph: Graph = new Map()
 
@@ -59,41 +59,41 @@ let grid: Uint8Array
 	let computeId = 0
 	self.onmessage = (e: MessageEvent<Incoming>) => handleMessage(e.data)
 	function handleMessage(event: Incoming) {
-		if (event.type === 'init') {
+		if (event.type === "init") {
 			workersPerRow = event.data.workersPerRow
 			SIDE = event.data.SIDE
 			workerSide = event.data.workerSide
 			maxCost = event.data.maxCost
 			grid = new Uint8Array(event.data.grid)
-		} else if (event.type === 'graph') {
+		} else if (event.type === "graph") {
 			computeId++
 			const selfComputeId = computeId
 			setTimeout(() => {
 				if (selfComputeId !== computeId) return
 				computeGraph()
 			}, 1)
-		} else if (event.type === 'query') {
+		} else if (event.type === "query") {
 			const { from, goal } = event.data
 			const selfComputeId = computeId
 			setTimeout(() => {
 				if (selfComputeId !== computeId) return
 				const path = pathFinding(from, goal)
 				const response: Outgoing = {
-					type: 'response',
+					type: "response",
 					data: {
 						path: path ? serializePath(path) : false,
 						from,
 						goal,
-					}
+					},
 				}
 				self.postMessage(response) // send the response back to the main thread
 			}, 1)
-		} else if (event.type === 'request-graph') {
+		} else if (event.type === "request-graph") {
 			const response: Outgoing = {
-				type: 'graph',
+				type: "graph",
 				data: {
-					graph: serializeGraph()
-				}
+					graph: serializeGraph(),
+				},
 			}
 			self.postMessage(response)
 		}
@@ -105,9 +105,7 @@ function serializePath(path: Path): SerializedPath {
 	const max = path.length - 1
 	for (let i = 0; i <= max; i++) {
 		const island = path[i]
-		const crossing = i < max
-			? Array.from(island.crossings.get(path[i + 1])!)
-			: []
+		const crossing = i < max ? Array.from(island.crossings.get(path[i + 1])!) : []
 		serialized.push({
 			wx: island.wx,
 			wy: island.wy,
@@ -121,7 +119,7 @@ function serializePath(path: Path): SerializedPath {
 function serializeGraph(): SerializedGraph {
 	const serialized: SerializedGraph = []
 	for (const [index, { islands }] of graph.entries()) {
-		const serializedIslands = Array.from(islands).map(island => ({
+		const serializedIslands = Array.from(islands).map((island) => ({
 			wx: island.wx,
 			wy: island.wy,
 			tiles: Array.from(island.tiles),
@@ -132,8 +130,6 @@ function serializeGraph(): SerializedGraph {
 	return serialized
 }
 
-
-
 /**
  * For each section (worker),
  * - find all islands of connected tiles (flood fill)
@@ -142,7 +138,7 @@ function serializeGraph(): SerializedGraph {
  *   - not a wall
  *   - neighboring tile (other worker section) is not a wall
  *   - all adjacent tiles that are open boundaries to the same neighboring worker section are considered the same boundary
- * 
+ *
  * Store boundaries and islands in a way that allows for A* to be run on them
  */
 function computeGraph() {
@@ -313,10 +309,7 @@ function computeGraph() {
 	}
 }
 
-function pathFinding(
-	from: { x: number, y: number },
-	goal: { x: number, y: number },
-): Path | undefined {
+function pathFinding(from: { x: number; y: number }, goal: { x: number; y: number }): Path | undefined {
 	const goalIndex = goal.y * SIDE + goal.x
 	const workerGoalIndex = Math.floor(goal.x / workerSide) + Math.floor(goal.y / workerSide) * workersPerRow
 	const goalIsland = graph.get(workerGoalIndex)!.tiles.get(goalIndex)!
@@ -332,7 +325,7 @@ function pathFinding(
 		return
 	}
 
-	function h(island: { wx: number, wy: number }) {
+	function h(island: { wx: number; wy: number }) {
 		return Math.hypot(island.wx - goalIsland.wx, island.wy - goalIsland.wy)
 	}
 	function setPath(cameFrom: Map<Island, Island>, current: Island) {
@@ -361,13 +354,13 @@ function pathFinding(
 		if (++counter > 5000) {
 			break
 		}
-		const current = openSet.has(lowestFScore) ? lowestFScore : Array.from(openSet).reduce((min, cell) => {
-			if (!min || !fScore.has(min) || !fScore.get(cell))
-				return cell
-			if (fScore.get(min)! < fScore.get(cell)!)
-				return min
-			return cell
-		}, null!)
+		const current = openSet.has(lowestFScore)
+			? lowestFScore
+			: Array.from(openSet).reduce((min, cell) => {
+					if (!min || !fScore.has(min) || !fScore.get(cell)) return cell
+					if (fScore.get(min)! < fScore.get(cell)!) return min
+					return cell
+				}, null!)
 		lowestFScore = current
 
 		if (current === goalIsland) {
@@ -379,8 +372,7 @@ function pathFinding(
 		for (const [crossing] of current.crossings) {
 			const tentativeGScore = gScore.get(current)! + Math.hypot(current.wx - crossing.wx, current.wy - crossing.wy)
 
-			if (!gScore.has(crossing))
-				gScore.set(crossing, Infinity)
+			if (!gScore.has(crossing)) gScore.set(crossing, Infinity)
 
 			if (tentativeGScore < gScore.get(crossing)!) {
 				cameFrom.set(crossing, current)
@@ -389,11 +381,9 @@ function pathFinding(
 				const newFScore = gScore.get(crossing)! + h(crossing)
 				fScore.set(crossing, newFScore)
 
-				if (newFScore < fScore.get(lowestFScore)!)
-					lowestFScore = crossing
+				if (newFScore < fScore.get(lowestFScore)!) lowestFScore = crossing
 
-				if (!openSet.has(crossing) && newFScore < Infinity)
-					openSet.add(crossing)
+				if (!openSet.has(crossing) && newFScore < Infinity) openSet.add(crossing)
 			}
 		}
 	}

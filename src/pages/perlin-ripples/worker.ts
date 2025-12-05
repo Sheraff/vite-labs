@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-export type Incoming = { type: "canvas", data: { canvas: OffscreenCanvas, width: number, height: number } }
+export type Incoming = { type: "canvas"; data: { canvas: OffscreenCanvas; width: number; height: number } }
 
 self.onmessage = (e: MessageEvent<Incoming>) => handleMessage(e.data)
 
@@ -39,7 +39,7 @@ async function start(ctx: OffscreenCanvasRenderingContext2D, _width: number, _he
 const black = rgb(3, 0, 28)
 
 const thresholds = [100, 165, 200]
-const colors: Record<typeof thresholds[number], [r: number, g: number, b: number]> = {
+const colors: Record<(typeof thresholds)[number], [r: number, g: number, b: number]> = {
 	[thresholds[0]]: rgb(48, 30, 103),
 	[thresholds[1]]: rgb(91, 143, 185),
 	[thresholds[2]]: rgb(182, 234, 218),
@@ -51,7 +51,7 @@ function draw(
 	noiseH: number, // perlin noise height
 	noiseD: number, // perlin noise depth
 	noiseT: number, // perlin noise time
-	get: (x: number, y: number, z: number, t: number) => number
+	get: (x: number, y: number, z: number, t: number) => number,
 ) {
 	let advancement = 0
 
@@ -102,7 +102,7 @@ function draw(
 		}
 
 		for (let cy = 0; cy < canvasH; cy++) {
-			const perlinY = cy / canvasH * noiseH
+			const perlinY = (cy / canvasH) * noiseH
 			const beforeY = Math.floor(perlinY)
 			const afterY = Math.ceil(perlinY)
 			const progressY = perlinY - beforeY
@@ -120,7 +120,7 @@ function draw(
 			}
 
 			for (let cx = 0; cx < canvasW; cx++) {
-				const perlinX = cx / canvasW * noiseW
+				const perlinX = (cx / canvasW) * noiseW
 				const beforeX = Math.floor(perlinX)
 				const afterX = Math.ceil(perlinX)
 				const progressX = perlinX - beforeX
@@ -129,7 +129,7 @@ function draw(
 				const after = tempStore1d[afterX]
 				const value = lerp(progressX, before, after)
 
-				const i = (cy * canvasW + cx)
+				const i = cy * canvasW + cx
 				imgStore[i] = Math.floor(value * 255)
 			}
 		}
@@ -143,7 +143,7 @@ function draw(
 					const top = imgStore[(y - 1) * canvasW + x]
 					const bottom = imgStore[(y + 1) * canvasW + x]
 					if (top === bottom) break vertical
-					const t = thresholds.find(t => (top <= t && bottom > t) || (top >= t && bottom < t))
+					const t = thresholds.find((t) => (top <= t && bottom > t) || (top >= t && bottom < t))
 					if (t) {
 						const color = colors[t]
 						imageData.data[i] = color[0]
@@ -158,7 +158,7 @@ function draw(
 					const left = imgStore[y * canvasW + x - 1]
 					const right = imgStore[y * canvasW + x + 1]
 					if (left === right) break horizontal
-					const t = thresholds.find(t => (left <= t && right > t) || (left >= t && right < t))
+					const t = thresholds.find((t) => (left <= t && right > t) || (left >= t && right < t))
 					if (t) {
 						const color = colors[t]
 						imageData.data[i] = color[0]
@@ -182,12 +182,6 @@ function draw(
 
 	return () => cancelAnimationFrame(rafId)
 }
-
-
-
-
-
-
 
 function fade(t: number): number {
 	return t * t * t * (t * (t * 6 - 15) + 10)
@@ -213,32 +207,62 @@ function grad(hash: number, x: number, y: number, z: number, w: number): number 
 
 function perlin(p: Uint8Array, x: number, y: number, z: number, w: number, resolution: number): number {
 	const mask = resolution - 1
-	const X = Math.floor(x) & mask, Y = Math.floor(y) & mask, Z = Math.floor(z) & mask, W = Math.floor(w) & mask
+	const X = Math.floor(x) & mask,
+		Y = Math.floor(y) & mask,
+		Z = Math.floor(z) & mask,
+		W = Math.floor(w) & mask
 	x -= Math.floor(x)
 	y -= Math.floor(y)
 	z -= Math.floor(z)
 	w -= Math.floor(w)
-	const u = fade(x), v = fade(y), t = fade(z), s = fade(w)
-	const A = p[X] + Y, AA = p[A] + Z, AB = p[A + 1] + Z,
-		B = p[X + 1] + Y, BA = p[B] + Z, BB = p[B + 1] + Z,
-		AAA = p[AA] + W, AAB = p[AA + 1] + W, ABA = p[AB] + W, ABB = p[AB + 1] + W,
-		BAA = p[BA] + W, BAB = p[BA + 1] + W, BBA = p[BB] + W, BBB = p[BB + 1] + W
+	const u = fade(x),
+		v = fade(y),
+		t = fade(z),
+		s = fade(w)
+	const A = p[X] + Y,
+		AA = p[A] + Z,
+		AB = p[A + 1] + Z,
+		B = p[X + 1] + Y,
+		BA = p[B] + Z,
+		BB = p[B + 1] + Z,
+		AAA = p[AA] + W,
+		AAB = p[AA + 1] + W,
+		ABA = p[AB] + W,
+		ABB = p[AB + 1] + W,
+		BAA = p[BA] + W,
+		BAB = p[BA + 1] + W,
+		BBA = p[BB] + W,
+		BBB = p[BB + 1] + W
 
-	return lerp(s,
-		lerp(t,
-			lerp(v,
+	return lerp(
+		s,
+		lerp(
+			t,
+			lerp(
+				v,
 				lerp(u, grad(p[AAA], x, y, z, w), grad(p[BAA], x - 1, y, z, w)),
-				lerp(u, grad(p[ABA], x, y - 1, z, w), grad(p[BBA], x - 1, y - 1, z, w))),
-			lerp(v,
+				lerp(u, grad(p[ABA], x, y - 1, z, w), grad(p[BBA], x - 1, y - 1, z, w)),
+			),
+			lerp(
+				v,
 				lerp(u, grad(p[AAB], x, y, z - 1, w), grad(p[BAB], x - 1, y, z - 1, w)),
-				lerp(u, grad(p[ABB], x, y - 1, z - 1, w), grad(p[BBB], x - 1, y - 1, z - 1, w)))),
-		lerp(t,
-			lerp(v,
+				lerp(u, grad(p[ABB], x, y - 1, z - 1, w), grad(p[BBB], x - 1, y - 1, z - 1, w)),
+			),
+		),
+		lerp(
+			t,
+			lerp(
+				v,
 				lerp(u, grad(p[AAA + 1], x, y, z, w - 1), grad(p[BAA + 1], x - 1, y, z, w - 1)),
-				lerp(u, grad(p[ABA + 1], x, y - 1, z, w - 1), grad(p[BBA + 1], x - 1, y - 1, z, w - 1))),
-			lerp(v,
+				lerp(u, grad(p[ABA + 1], x, y - 1, z, w - 1), grad(p[BBA + 1], x - 1, y - 1, z, w - 1)),
+			),
+			lerp(
+				v,
 				lerp(u, grad(p[AAB + 1], x, y, z - 1, w - 1), grad(p[BAB + 1], x - 1, y, z - 1, w - 1)),
-				lerp(u, grad(p[ABB + 1], x, y - 1, z - 1, w - 1), grad(p[BBB + 1], x - 1, y - 1, z - 1, w - 1)))))
+				lerp(u, grad(p[ABB + 1], x, y - 1, z - 1, w - 1), grad(p[BBB + 1], x - 1, y - 1, z - 1, w - 1)),
+			),
+		),
+	)
 }
 
 function permutations(resolution: number): Uint8Array {
@@ -247,8 +271,8 @@ function permutations(resolution: number): Uint8Array {
 
 	// Shuffle the array using the Fisher-Yates (Durstenfeld) shuffle algorithm
 	for (let i = originalArray.length - 1; i > 0; i--) {
-		const j = Math.floor(Math.random() * (i + 1));
-		[originalArray[i], originalArray[j]] = [originalArray[j], originalArray[i]]
+		const j = Math.floor(Math.random() * (i + 1))
+		;[originalArray[i], originalArray[j]] = [originalArray[j], originalArray[i]]
 	}
 
 	// Repeat the array to avoid modulo operations for wrapping
@@ -268,8 +292,8 @@ function generate4dPerlinNoise(
 		z?: number
 		t?: number
 		resolution?: number
-	} = {}
-): ((x: number, y: number, z: number, t: number) => number) {
+	} = {},
+): (x: number, y: number, z: number, t: number) => number {
 	params.x ??= 0.05
 	params.y ??= 0.05
 	params.z ??= 0.05
@@ -288,14 +312,7 @@ function generate4dPerlinNoise(
 		for (let y = 0; y < height; y++) {
 			for (let x = 0; x < width; x++) {
 				// Adjust the scale factor (0.05 here) as needed for your use case
-				const noiseValue = perlin(
-					p,
-					x * params.x!,
-					y * params.y!,
-					z * params.z!,
-					t * params.t!,
-					params.resolution!
-				)
+				const noiseValue = perlin(p, x * params.x!, y * params.y!, z * params.z!, t * params.t!, params.resolution!)
 				data[i++] = noiseValue
 			}
 		}

@@ -1,13 +1,15 @@
 import type { RouteMeta } from "#router"
-import styles from './styles.module.css'
+
 import { Head } from "#components/Head"
 import { useEffect, useRef } from "react"
+
 import aStar, { type Cell, type Matrix } from "./a-star"
+import styles from "./styles.module.css"
 
 export const meta: RouteMeta = {
-	title: 'A*',
-	image: './screen.png',
-	tags: ['pathfinding', '101']
+	title: "A*",
+	image: "./screen.png",
+	tags: ["pathfinding", "101"],
 }
 
 export default function AStarPage() {
@@ -15,7 +17,7 @@ export default function AStarPage() {
 	useEffect(() => {
 		const canvas = ref.current
 		if (!canvas) return
-		const ctx = canvas.getContext('2d')
+		const ctx = canvas.getContext("2d")
 		if (!ctx) return
 
 		canvas.height = 600
@@ -80,12 +82,7 @@ function animate(ctx: CanvasRenderingContext2D, matrix: Matrix, path: Cell[]) {
 
 function init() {
 	const side = 50
-	const matrix: Matrix = new Array(side)
-		.fill(null)
-		.map((_, y) => new Array(side)
-			.fill(null)
-			.map((_, x) => ({ x, y }))
-		)
+	const matrix: Matrix = new Array(side).fill(null).map((_, y) => new Array(side).fill(null).map((_, x) => ({ x, y })))
 
 	//
 	const { start, end } = getStartEnd(matrix)
@@ -105,27 +102,17 @@ function init() {
 	return { matrix, start, end }
 }
 
-
 function drawMatrix(context: CanvasRenderingContext2D, matrix: Matrix) {
 	const side = context.canvas.height / matrix.length
 	for (let y = 0; y < matrix.length; y++) {
 		for (let x = 0; x < matrix[y].length; x++) {
 			const cell = matrix[y][x]
-			context.fillStyle = cell.isObstacle
-				? 'black'
-				: cell.isPath
-					? 'red'
-					: 'lightgrey'
+			context.fillStyle = cell.isObstacle ? "black" : cell.isPath ? "red" : "lightgrey"
 			context.beginPath()
-			context.rect(
-				x * side + 2,
-				y * side + 2,
-				side - 4,
-				side - 4
-			)
+			context.rect(x * side + 2, y * side + 2, side - 4, side - 4)
 			context.fill()
 			if (cell.isStart || cell.isEnd) {
-				context.strokeStyle = cell.isStart ? 'green' : 'purple'
+				context.strokeStyle = cell.isStart ? "green" : "purple"
 				context.stroke()
 			}
 			context.closePath()
@@ -164,13 +151,14 @@ function addObstacle(matrix: Matrix, exclusions: Cell[]) {
 		end.x = randomInt(side)
 		end.y = randomInt(side)
 	} while (
-		area(start, end) < 10
-		|| area(start, end) > 100
-		|| exclusions.find(cell =>
-			cell.x >= Math.min(start.x, end.x)
-			&& cell.x <= Math.max(start.x, end.x)
-			&& cell.y >= Math.min(start.y, end.y)
-			&& cell.y <= Math.max(start.y, end.y)
+		area(start, end) < 10 ||
+		area(start, end) > 100 ||
+		exclusions.find(
+			(cell) =>
+				cell.x >= Math.min(start.x, end.x) &&
+				cell.x <= Math.max(start.x, end.x) &&
+				cell.y >= Math.min(start.y, end.y) &&
+				cell.y <= Math.max(start.y, end.y),
 		)
 	)
 

@@ -2,14 +2,17 @@ import type { Entity } from "./entity"
 
 type Eaten = Map<number, Set<number>>
 
-export async function simulate(opts: {
-	entities: Entity[],
-	food: ReadonlyArray<(readonly [x: number, y: number])>,
-	iterations: number,
-	side: number,
-	frame?: (state: { entities: Entity[], i: number, eaten: Eaten }) => Promise<void> | void,
-	controller?: AbortController
-}, next: () => void) {
+export async function simulate(
+	opts: {
+		entities: Entity[]
+		food: ReadonlyArray<readonly [x: number, y: number]>
+		iterations: number
+		side: number
+		frame?: (state: { entities: Entity[]; i: number; eaten: Eaten }) => Promise<void> | void
+		controller?: AbortController
+	},
+	next: () => void,
+) {
 	const { controller, entities, frame, side } = opts
 	let iterations = opts.iterations
 	const total_iterations = iterations
@@ -30,7 +33,7 @@ export async function simulate(opts: {
 			// if (entity.state.x > side) entity.state.x = side
 			// if (entity.state.y < 0) entity.state.y = 0
 			// if (entity.state.y > side) entity.state.y = side
-			if (entity.state.angle < 0) entity.state.angle = (-((-entity.state.angle) % (Math.PI * 2))) + Math.PI * 2
+			if (entity.state.angle < 0) entity.state.angle = -(-entity.state.angle % (Math.PI * 2)) + Math.PI * 2
 			if (entity.state.angle > Math.PI * 2) entity.state.angle %= Math.PI * 2
 
 			let has_wall_left = false
@@ -66,7 +69,8 @@ export async function simulate(opts: {
 					entity.state.score += 100 - distance
 					eaten_entity.add(f)
 				} else if (distance < closest_food_distance) {
-					const angle = (Math.atan2(entity.state.y - food_y, entity.state.x - food_x) + Math.PI * 2) % (Math.PI * 2) - Math.PI
+					const angle =
+						((Math.atan2(entity.state.y - food_y, entity.state.x - food_x) + Math.PI * 2) % (Math.PI * 2)) - Math.PI
 					if (angle > -Math.PI / 2 && angle < Math.PI / 2) {
 						closest_food_distance = distance
 						closest_food_x = food_x
@@ -80,18 +84,11 @@ export async function simulate(opts: {
 			let has_food_right = false
 			if (closest_food_distance < 100) {
 				has_food_ahead = Math.abs(angle_to_food - entity.state.angle) < Math.PI / 5
-				has_food_left = !has_food_ahead && angle_to_food < 0 && angle_to_food > - Math.PI / 2
+				has_food_left = !has_food_ahead && angle_to_food < 0 && angle_to_food > -Math.PI / 2
 				has_food_right = !has_food_ahead && angle_to_food > 0 && angle_to_food < Math.PI / 2
 			}
 
-			entity.tick([
-				+has_food_left,
-				+has_food_ahead,
-				+has_food_right,
-				+has_wall_left,
-				+has_wall_ahead,
-				+has_wall_right,
-			])
+			entity.tick([+has_food_left, +has_food_ahead, +has_food_right, +has_wall_left, +has_wall_ahead, +has_wall_right])
 
 			// if (iterations % 10 === 0) {
 			// 	entity.state.history.push(entity.state.x, entity.state.y)

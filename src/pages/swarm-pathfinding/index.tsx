@@ -1,11 +1,9 @@
 import type { RouteMeta } from "#router"
-import styles from './styles.module.css'
+
 import { Head } from "#components/Head"
 import { useEffect, useRef } from "react"
-import FieldWorker from './field.worker?worker'
-import type { Incoming as FieldIncoming } from './field.worker'
-import { fieldMap, ratioFieldMap } from "./utils"
-import GraphWorker from "./fragmented-a-star.worker?worker"
+
+import type { Incoming as FieldIncoming } from "./field.worker"
 import type {
 	Incoming as GraphIncoming,
 	Outgoing as GraphOutgoing,
@@ -13,17 +11,24 @@ import type {
 	SerializedPath,
 } from "./fragmented-a-star.worker"
 
+import FieldWorker from "./field.worker?worker"
+import GraphWorker from "./fragmented-a-star.worker?worker"
+import styles from "./styles.module.css"
+import { fieldMap, ratioFieldMap } from "./utils"
+
 export const meta: RouteMeta = {
-	title: 'Swarm Pathfinding',
-	image: './screen.png',
-	tags: ['pathfinding', 'performance']
+	title: "Swarm Pathfinding",
+	image: "./screen.png",
+	tags: ["pathfinding", "performance"],
 }
 
 const SIDE = 200
 const workersPerRow = 10
 
 if (SIDE % workersPerRow !== 0) {
-	throw new Error(`SIDE must be divisible by workersPerRow, maybe try SIDE=${SIDE - (SIDE % workersPerRow)}, workersPerRow=${workersPerRow}`)
+	throw new Error(
+		`SIDE must be divisible by workersPerRow, maybe try SIDE=${SIDE - (SIDE % workersPerRow)}, workersPerRow=${workersPerRow}`,
+	)
 }
 
 export default function SwarmPathfindingPage() {
@@ -41,7 +46,7 @@ export default function SwarmPathfindingPage() {
 		if (!canvas) return
 		canvas.width = side
 		canvas.height = side
-		const ctx = canvas.getContext('2d')
+		const ctx = canvas.getContext("2d")
 		if (!ctx) return
 
 		const form = formRef.current
@@ -68,9 +73,9 @@ export default function SwarmPathfindingPage() {
 			for (let i = 0; i < count; i++) {
 				const largeSide = Math.random() > 0.5
 				const x1 = Math.floor(Math.random() * SIDE)
-				const x2 = Math.floor(Math.random() * SIDE / (largeSide ? 30 : 8)) + x1
+				const x2 = Math.floor((Math.random() * SIDE) / (largeSide ? 30 : 8)) + x1
 				const y1 = Math.floor(Math.random() * SIDE)
-				const y2 = Math.floor(Math.random() * SIDE / (largeSide ? 8 : 30)) + y1
+				const y2 = Math.floor((Math.random() * SIDE) / (largeSide ? 8 : 30)) + y1
 				for (let y = y1; y < y2; y++) {
 					const row = y * SIDE
 					for (let x = x1; x < x2; x++) {
@@ -88,12 +93,15 @@ export default function SwarmPathfindingPage() {
 		} while (grid[from.y * SIDE + from.x] === maxCost)
 
 		const options = {
-			geometry: true
+			geometry: true,
 		}
 		const onForm = () => {
-			options.geometry = 'geometry' in form.elements && form.elements.geometry instanceof HTMLInputElement ? form.elements.geometry.checked : false
+			options.geometry =
+				"geometry" in form.elements && form.elements.geometry instanceof HTMLInputElement
+					? form.elements.geometry.checked
+					: false
 		}
-		form.addEventListener('input', onForm)
+		form.addEventListener("input", onForm)
 		onForm()
 
 		const pathFinding = createGraphWorkerCacheLayer({
@@ -109,14 +117,18 @@ export default function SwarmPathfindingPage() {
 		for (let wy = 0; wy < workersPerRow; wy++) {
 			for (let wx = 0; wx < workersPerRow; wx++) {
 				const offset = (wy * workersPerRow + wx) * layers * layers
-				const worker = createFieldWorkerCacheLayer({
-					workerSide,
-					wx,
-					wy,
-					fieldBuffer,
-					gridBuffer,
-					offset,
-				}, layers, layers)
+				const worker = createFieldWorkerCacheLayer(
+					{
+						workerSide,
+						wx,
+						wy,
+						fieldBuffer,
+						gridBuffer,
+						offset,
+					},
+					layers,
+					layers,
+				)
 				workers.push(worker)
 			}
 		}
@@ -155,8 +167,6 @@ export default function SwarmPathfindingPage() {
 			entities.push(entity)
 		}
 
-
-
 		let lastTime = 0
 		let rafId = requestAnimationFrame(function loop(time: number) {
 			rafId = requestAnimationFrame(loop)
@@ -165,7 +175,6 @@ export default function SwarmPathfindingPage() {
 			const dt = Math.min(30, time - lastTime)
 			lastTime = time
 			if (!prev || !ctx) return
-
 
 			if (options.geometry) {
 				entities[0].update(dt)
@@ -184,7 +193,7 @@ export default function SwarmPathfindingPage() {
 					for (let y = 0; y < workersPerRow; y++) {
 						for (let x = 0; x < workersPerRow; x++) {
 							// draw sections (workers)
-							ctx.strokeStyle = 'purple'
+							ctx.strokeStyle = "purple"
 							ctx.lineWidth = 4 * devicePixelRatio
 							ctx.strokeRect(x * workerSide * px, y * workerSide * px, workerSide * px, workerSide * px)
 							ctx.lineWidth = 1
@@ -193,7 +202,7 @@ export default function SwarmPathfindingPage() {
 							const islands = node.islands
 							for (let i = 0; i < node.islands.length; i++) {
 								const island = islands[i]
-								const hue = 360 / node.islands.length * i
+								const hue = (360 / node.islands.length) * i
 								ctx.fillStyle = `oklch(50% 50% ${hue})`
 								for (const tile of island.tiles) {
 									const ty = Math.floor(tile / SIDE)
@@ -211,7 +220,7 @@ export default function SwarmPathfindingPage() {
 						const index = row + x
 						const cost = grid[index]
 						if (cost === maxCost) {
-							ctx.fillStyle = 'white'
+							ctx.fillStyle = "white"
 							ctx.fillRect(x * px + px / 4, y * px + px / 4, px / 2, px / 2)
 						}
 					}
@@ -302,78 +311,97 @@ export default function SwarmPathfindingPage() {
 
 		const eventToPosition = (e: PointerEvent | MouseEvent) => {
 			const { left, top } = canvas.getBoundingClientRect()
-			const x = Math.max(Math.min(Math.floor((e.clientX - left) / base * SIDE), SIDE - 1), 0)
-			const y = Math.max(Math.min(Math.floor((e.clientY - top) / base * SIDE), SIDE - 1), 0)
+			const x = Math.max(Math.min(Math.floor(((e.clientX - left) / base) * SIDE), SIDE - 1), 0)
+			const y = Math.max(Math.min(Math.floor(((e.clientY - top) / base) * SIDE), SIDE - 1), 0)
 			return { x, y }
 		}
 
 		let down: false | 0 | 1 = false
 		let moved = false
-		canvas.addEventListener('pointerdown', (e) => {
-			if (e.button !== 0) return
-			if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return
-			const { x, y } = eventToPosition(e)
-			const value = grid[y * SIDE + x]
-			down = value === 0 ? 1 : 0
-		}, { signal: controller.signal })
+		canvas.addEventListener(
+			"pointerdown",
+			(e) => {
+				if (e.button !== 0) return
+				if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return
+				const { x, y } = eventToPosition(e)
+				const value = grid[y * SIDE + x]
+				down = value === 0 ? 1 : 0
+			},
+			{ signal: controller.signal },
+		)
 
-		canvas.addEventListener('pointermove', (e) => {
-			if (down === false) return
-			moved = true
-			const { x, y } = eventToPosition(e)
-			const index = y * SIDE + x
-			const next = down ? maxCost : 0
-			const prev = grid[index]
-			if (prev !== undefined && prev !== next) {
-				grid[index] = next
-				getWorker(x, y)?.clear()
-				pathFinding.graph()
-			}
-		}, { signal: controller.signal })
-
-		canvas.addEventListener('click', (e) => {
-			if (e.button !== 0) return
-			if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return
-			down = false
-			if (!moved) {
+		canvas.addEventListener(
+			"pointermove",
+			(e) => {
+				if (down === false) return
+				moved = true
 				const { x, y } = eventToPosition(e)
 				const index = y * SIDE + x
+				const next = down ? maxCost : 0
 				const prev = grid[index]
-				const next = prev === 0 ? maxCost : 0
 				if (prev !== undefined && prev !== next) {
 					grid[index] = next
 					getWorker(x, y)?.clear()
 					pathFinding.graph()
 				}
-			}
-			moved = false
-		}, { signal: controller.signal })
+			},
+			{ signal: controller.signal },
+		)
 
+		canvas.addEventListener(
+			"click",
+			(e) => {
+				if (e.button !== 0) return
+				if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return
+				down = false
+				if (!moved) {
+					const { x, y } = eventToPosition(e)
+					const index = y * SIDE + x
+					const prev = grid[index]
+					const next = prev === 0 ? maxCost : 0
+					if (prev !== undefined && prev !== next) {
+						grid[index] = next
+						getWorker(x, y)?.clear()
+						pathFinding.graph()
+					}
+				}
+				moved = false
+			},
+			{ signal: controller.signal },
+		)
 
-		canvas.addEventListener('contextmenu', (e) => {
-			e.preventDefault()
-			down = false
-			moved = false
-			const { x, y } = eventToPosition(e)
-			from.x = x
-			from.y = y
-			// pathFinding(path, from, goal)
-		}, { signal: controller.signal })
+		canvas.addEventListener(
+			"contextmenu",
+			(e) => {
+				e.preventDefault()
+				down = false
+				moved = false
+				const { x, y } = eventToPosition(e)
+				from.x = x
+				from.y = y
+				// pathFinding(path, from, goal)
+			},
+			{ signal: controller.signal },
+		)
 
-		canvas.addEventListener('pointermove', (e) => {
-			const { x, y } = eventToPosition(e)
-			if (x === goal.x && y === goal.y) return
-			if (grid[y * SIDE + x] === maxCost) return
-			goal.x = x
-			goal.y = y
-			// getWorker(x, y)?.query([[goal.x, goal.y]])
-			// pathFinding(path, from, goal)
-		}, { signal: controller.signal })
+		canvas.addEventListener(
+			"pointermove",
+			(e) => {
+				const { x, y } = eventToPosition(e)
+				if (x === goal.x && y === goal.y) return
+				if (grid[y * SIDE + x] === maxCost) return
+				goal.x = x
+				goal.y = y
+				// getWorker(x, y)?.query([[goal.x, goal.y]])
+				// pathFinding(path, from, goal)
+			},
+			{ signal: controller.signal },
+		)
 
 		return () => {
 			cancelAnimationFrame(rafId)
 			controller.abort()
-			workers.forEach(worker => worker.kill())
+			workers.forEach((worker) => worker.kill())
 			pathFinding.kill()
 		}
 	}, [])
@@ -400,38 +428,38 @@ export default function SwarmPathfindingPage() {
 }
 
 function createGraphWorkerCacheLayer(init: {
-	grid: Uint8Array<SharedArrayBuffer>,
-	maxCost: number,
-	SIDE: number,
-	workerSide: number,
-	workersPerRow: number,
+	grid: Uint8Array<SharedArrayBuffer>
+	maxCost: number
+	SIDE: number
+	workerSide: number
+	workersPerRow: number
 }) {
 	const worker = new GraphWorker()
-	const cache = new Map<string, SerializedPath | 'pending' | 'not-found'>()
+	const cache = new Map<string, SerializedPath | "pending" | "not-found">()
 	let latestGraph: SerializedGraph | undefined
 
 	function postGraphWorker<I extends GraphIncoming["type"]>(
 		type: I,
 		data: Extract<GraphIncoming, { type: I }>["data"],
-		transfer?: Transferable[]
+		transfer?: Transferable[],
 	) {
 		worker.postMessage({ type, data }, { transfer })
 	}
 
-	worker.addEventListener('message', (e: MessageEvent<GraphOutgoing>) => {
-		if (e.data.type === 'response') {
+	worker.addEventListener("message", (e: MessageEvent<GraphOutgoing>) => {
+		if (e.data.type === "response") {
 			const { from, goal, path } = e.data.data
 			const key = toKey(from, goal)
 			if (cache.has(key)) {
-				cache.set(key, path || 'not-found')
+				cache.set(key, path || "not-found")
 			}
-		} else if (e.data.type === 'graph') {
+		} else if (e.data.type === "graph") {
 			const { graph } = e.data.data
 			latestGraph = graph
 		}
 	})
 
-	postGraphWorker('init', {
+	postGraphWorker("init", {
 		grid: init.grid.buffer,
 		maxCost: init.maxCost,
 		SIDE: init.SIDE,
@@ -439,7 +467,7 @@ function createGraphWorkerCacheLayer(init: {
 		workersPerRow: init.workersPerRow,
 	})
 
-	function toKey(from: { x: number, y: number }, goal: { x: number, y: number }) {
+	function toKey(from: { x: number; y: number }, goal: { x: number; y: number }) {
 		return `${from.x},${from.y},${goal.x},${goal.y}`
 	}
 
@@ -448,25 +476,25 @@ function createGraphWorkerCacheLayer(init: {
 	}
 
 	function graph() {
-		postGraphWorker('graph', undefined)
+		postGraphWorker("graph", undefined)
 		cache.clear()
 		latestGraph = undefined
 	}
 	graph()
 
-	function query(from: { x: number, y: number }, goal: { x: number, y: number }) {
+	function query(from: { x: number; y: number }, goal: { x: number; y: number }) {
 		const key = toKey(from, goal)
 		const value = cache.get(key)
 		if (value) return value
 
-		cache.set(key, 'pending')
-		postGraphWorker('query', { from, goal })
-		return 'pending'
+		cache.set(key, "pending")
+		postGraphWorker("query", { from, goal })
+		return "pending"
 	}
 
 	function getGraph() {
 		if (latestGraph) return latestGraph
-		postGraphWorker('request-graph', undefined)
+		postGraphWorker("request-graph", undefined)
 	}
 
 	return {
@@ -479,15 +507,15 @@ function createGraphWorkerCacheLayer(init: {
 
 function createFieldWorkerCacheLayer(
 	init: {
-		workerSide: number,
-		wx: number,
-		wy: number,
-		fieldBuffer: SharedArrayBuffer,
-		gridBuffer: SharedArrayBuffer,
-		offset: number,
+		workerSide: number
+		wx: number
+		wy: number
+		fieldBuffer: SharedArrayBuffer
+		gridBuffer: SharedArrayBuffer
+		offset: number
 	},
 	layers: number,
-	maxSize: number
+	maxSize: number,
 ) {
 	type Goal = [x: number, y: number]
 
@@ -500,21 +528,21 @@ function createFieldWorkerCacheLayer(
 	const x2 = init.workerSide * (init.wx + 1) - 1
 	const y1 = init.workerSide * init.wy
 	const y2 = init.workerSide * (init.wy + 1) - 1
-	postFieldWorker(worker, 'init', {
+	postFieldWorker(worker, "init", {
 		field: init.fieldBuffer,
 		grid: init.gridBuffer,
 		side: SIDE,
 		range: [x1, x2, y1, y2],
 		index: init.wy * workersPerRow + init.wx,
 		wx: init.wx,
-		wy: init.wy
+		wy: init.wy,
 	})
 
 	function postFieldWorker<I extends FieldIncoming["type"]>(
 		worker: Worker,
 		type: I,
 		data: Extract<FieldIncoming, { type: I }>["data"],
-		transfer?: Transferable[]
+		transfer?: Transferable[],
 	) {
 		worker.postMessage({ type, data }, { transfer })
 	}
@@ -528,7 +556,7 @@ function createFieldWorkerCacheLayer(
 		keys.length = 0
 		const all = new Uint8Array(init.fieldBuffer, init.offset, layers * maxSize)
 		all.fill(fieldMap[0][0])
-		postFieldWorker(worker, 'clear', undefined)
+		postFieldWorker(worker, "clear", undefined)
 	}
 
 	function query(goals: Goal[]) {
@@ -550,7 +578,7 @@ function createFieldWorkerCacheLayer(
 			const offset = init.offset + index * layers
 			const layer = new Uint8Array(init.fieldBuffer, offset * Uint8Array.BYTES_PER_ELEMENT, layers)
 			layer.fill(fieldMap[0][0])
-			postFieldWorker(worker, 'query', { goals, layer: index })
+			postFieldWorker(worker, "query", { goals, layer: index })
 			return
 		}
 
@@ -559,7 +587,7 @@ function createFieldWorkerCacheLayer(
 			const index = map.size
 			map.set(key, index)
 			keys.push(key)
-			postFieldWorker(worker, 'query', { goals, layer: index })
+			postFieldWorker(worker, "query", { goals, layer: index })
 			return
 		}
 	}
@@ -591,20 +619,24 @@ function createFieldWorkerCacheLayer(
 	}
 }
 
-function makeEntity(x: number, y: number, init: {
-	SIDE: number
-	workerSide: number
-	side: number
-	px: number
-	grid: Uint8Array
-	maxCost: number
-	getWorker: (x: number, y: number) => ReturnType<typeof createFieldWorkerCacheLayer> | undefined,
-	pathFinding: ReturnType<typeof createGraphWorkerCacheLayer>
-	pointerLength: number
-	options: {
-		geometry: boolean
-	}
-}) {
+function makeEntity(
+	x: number,
+	y: number,
+	init: {
+		SIDE: number
+		workerSide: number
+		side: number
+		px: number
+		grid: Uint8Array
+		maxCost: number
+		getWorker: (x: number, y: number) => ReturnType<typeof createFieldWorkerCacheLayer> | undefined
+		pathFinding: ReturnType<typeof createGraphWorkerCacheLayer>
+		pointerLength: number
+		options: {
+			geometry: boolean
+		}
+	},
+) {
 	// in pixels
 	const position = { x: x * init.px + init.px / 2, y: y * init.px + init.px / 2 }
 	// in tiles
@@ -682,19 +714,22 @@ function makeEntity(x: number, y: number, init: {
 		}
 
 		let path = init.pathFinding.query(start, goal)
-		if (path === 'pending') {
+		if (path === "pending") {
 			if (latestPath) {
 				path = latestPath
 			} else {
 				return
 			}
 		}
-		if (path === 'not-found') {
+		if (path === "not-found") {
 			newGoal()
 			return
 		}
 		latestPath = path
-		const currentIslandIndex = path.findIndex(island => island.wx === currentWorker.wx && island.wy === currentWorker.wy && island.tiles.includes(currentTileIndex))
+		const currentIslandIndex = path.findIndex(
+			(island) =>
+				island.wx === currentWorker.wx && island.wy === currentWorker.wy && island.tiles.includes(currentTileIndex),
+		)
 		if (currentIslandIndex === -1) {
 			newGoal()
 			return
@@ -760,21 +795,24 @@ function makeEntity(x: number, y: number, init: {
 
 			// draw path
 			let path = init.pathFinding.query(start, goal)
-			if (path === 'pending' && latestPath) {
+			if (path === "pending" && latestPath) {
 				path = latestPath
 			}
-			if (typeof path !== 'string' && path.length > 1) {
-				ctx.strokeStyle = 'blue'
+			if (typeof path !== "string" && path.length > 1) {
+				ctx.strokeStyle = "blue"
 				ctx.lineWidth = 2 * devicePixelRatio
 				ctx.beginPath()
 				// ctx.lineTo(start.x * px + px / 2, start.y * px + px / 2)
 				for (let i = 0; i < path.length; i++) {
 					const island = path[i]
-					const [sumX, sumY] = island.tiles.reduce<[x: number, y: number]>((acc, tile) => {
-						acc[0] += tile % SIDE
-						acc[1] += Math.floor(tile / SIDE)
-						return acc
-					}, [0, 0])
+					const [sumX, sumY] = island.tiles.reduce<[x: number, y: number]>(
+						(acc, tile) => {
+							acc[0] += tile % SIDE
+							acc[1] += Math.floor(tile / SIDE)
+							return acc
+						},
+						[0, 0],
+					)
 					const avgX = sumX / island.tiles.length
 					const avgY = sumY / island.tiles.length
 					const x = avgX * px
@@ -793,8 +831,8 @@ function makeEntity(x: number, y: number, init: {
 			if (field && worker) {
 				for (let y = worker.wy * workerSide, localY = 0; y < (worker.wy + 1) * workerSide; y++, localY++) {
 					for (let x = worker.wx * workerSide, localX = 0; x < (worker.wx + 1) * workerSide; x++, localX++) {
-						ctx.strokeStyle = 'white'
-						ctx.fillStyle = 'white'
+						ctx.strokeStyle = "white"
+						ctx.fillStyle = "white"
 						const [dx, dy] = ratioFieldMap[field[localY * workerSide + localX]]
 						if (dx === 0 && dy === 0) {
 							ctx.beginPath()
@@ -820,18 +858,18 @@ function makeEntity(x: number, y: number, init: {
 				}
 			}
 
-			ctx.fillStyle = 'blue'
+			ctx.fillStyle = "blue"
 			ctx.beginPath()
 			ctx.arc(start.x * init.px + init.px / 2, start.y * init.px + init.px / 2, init.px / 4, 0, Math.PI * 2)
 			ctx.fill()
 
-			ctx.fillStyle = 'red'
+			ctx.fillStyle = "red"
 			ctx.beginPath()
 			ctx.arc(goal.x * init.px + init.px / 2, goal.y * init.px + init.px / 2, init.px / 4, 0, Math.PI * 2)
 			ctx.fill()
 		}
 
-		ctx.fillStyle = 'green'
+		ctx.fillStyle = "green"
 		ctx.beginPath()
 		ctx.arc(position.x, position.y, init.px / 2, 0, Math.PI * 2)
 		ctx.fill()

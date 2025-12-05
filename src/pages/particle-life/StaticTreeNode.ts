@@ -1,4 +1,3 @@
-
 export class StaticTreeNode {
 	// immutable properties
 	x: number
@@ -10,12 +9,9 @@ export class StaticTreeNode {
 	maxdepth: number
 	depth: number
 	parent: StaticTreeNode | null
-	children: [
-		topLeft: StaticTreeNode,
-		topRight: StaticTreeNode,
-		bottomLeft: StaticTreeNode,
-		bottomRight: StaticTreeNode,
-	] | null = null
+	children:
+		| [topLeft: StaticTreeNode, topRight: StaticTreeNode, bottomLeft: StaticTreeNode, bottomRight: StaticTreeNode]
+		| null = null
 	x_array: Float32Array
 	y_array: Float32Array
 
@@ -32,7 +28,7 @@ export class StaticTreeNode {
 		y_array: Float32Array,
 		maxdepth: number = 4,
 		depth: number = 0,
-		parent: StaticTreeNode | null = null
+		parent: StaticTreeNode | null = null,
 	) {
 		this.x = x
 		this.y = y
@@ -53,7 +49,17 @@ export class StaticTreeNode {
 				new StaticTreeNode(x, y, halfWidth, halfHeight, x_array, y_array, this.maxdepth, depth + 1, this),
 				new StaticTreeNode(x + halfWidth, y, halfWidth, halfHeight, x_array, y_array, this.maxdepth, depth + 1, this),
 				new StaticTreeNode(x, y + halfHeight, halfWidth, halfHeight, x_array, y_array, this.maxdepth, depth + 1, this),
-				new StaticTreeNode(x + halfWidth, y + halfHeight, halfWidth, halfHeight, x_array, y_array, this.maxdepth, depth + 1, this),
+				new StaticTreeNode(
+					x + halfWidth,
+					y + halfHeight,
+					halfWidth,
+					halfHeight,
+					x_array,
+					y_array,
+					this.maxdepth,
+					depth + 1,
+					this,
+				),
 			]
 		}
 	}
@@ -93,8 +99,7 @@ export class StaticTreeNode {
 			for (let i = 0; i < 4; i++) {
 				const child = this.children[i]
 				if (!child.isEmpty) {
-					if (x + radius >= this.x && x - radius <= this.maxX &&
-						y + radius >= this.y && y - radius <= this.maxY) {
+					if (x + radius >= this.x && x - radius <= this.maxX && y + radius >= this.y && y - radius <= this.maxY) {
 						child.query(x, y, radius, result)
 					}
 				}

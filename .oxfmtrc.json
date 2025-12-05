@@ -1,0 +1,13 @@
+{
+	"$schema": "./node_modules/oxfmt/configuration_schema.json",
+	"printWidth": 120,
+	"useTabs": true,
+	"singleQuote": false,
+	"trailingComma": "all",
+	"semi": false,
+	"experimentalSortImports": {},
+	"objectWrap": "preserve",
+	"ignorePatterns": [
+		"src/router.ts"
+	]
+}

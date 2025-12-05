@@ -1,17 +1,19 @@
-import styles from './styles.module.css'
-import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
-import { useEffect, useRef, useState } from "react"
-import { getFormValue } from "#components/getFormValue"
-import { makeFrameCounter } from "#components/makeFrameCounter"
 
-import UpdateWorker from './update.worker?worker'
-import type { Incoming, Outgoing } from './update.worker'
+import { getFormValue } from "#components/getFormValue"
+import { Head } from "#components/Head"
+import { makeFrameCounter } from "#components/makeFrameCounter"
+import { useEffect, useRef, useState } from "react"
+
+import type { Incoming, Outgoing } from "./update.worker"
+
+import styles from "./styles.module.css"
+import UpdateWorker from "./update.worker?worker"
 
 export const meta: RouteMeta = {
-	title: 'Particle Life',
-	image: './screen.png',
-	tags: ['simulation', 'canvas', 'particles'],
+	title: "Particle Life",
+	image: "./screen.png",
+	tags: ["simulation", "canvas", "particles"],
 }
 
 type ColorDef = {
@@ -40,7 +42,9 @@ export default function ParticleLifePage() {
 	const [colors, setColors] = useState(() => Math.min(Math.floor(navigator.hardwareConcurrency / 2), COLORS.length))
 	const [fps, setFps] = useState(0)
 	const [workers] = useState(() => Math.max(1, navigator.hardwareConcurrency - 1))
-	const [formatter] = useState(() => new Intl.NumberFormat(undefined, { maximumFractionDigits: 0, minimumIntegerDigits: 3 }))
+	const [formatter] = useState(
+		() => new Intl.NumberFormat(undefined, { maximumFractionDigits: 0, minimumIntegerDigits: 3 }),
+	)
 	const [initialWeights] = useState(() => {
 		const weights = new Array(COLORS.length * COLORS.length)
 		for (let i = 0; i < weights.length; i++) {
@@ -70,13 +74,13 @@ export default function ParticleLifePage() {
 			attract: {
 				range: 40,
 				strength: 30,
-			}
+			},
 		}
 
 		let current: ReturnType<typeof start> | null = null
 
 		const onInput = () => {
-			const colors = Number(getFormValue<string>(form, 'colors'))
+			const colors = Number(getFormValue<string>(form, "colors"))
 			const result = state.colors || []
 			for (let i = 0; i < colors; i++) {
 				const def = result[i] || { count: 0, attractions: [], index: i, color: COLORS[i % COLORS.length] }
@@ -91,61 +95,73 @@ export default function ParticleLifePage() {
 			result.length = colors
 			state.colors = result
 
-			state.repulse.range = getFormValue<number>(form, 'repulse_range') || 10
-			state.repulse.strength = getFormValue<number>(form, 'repulse_strength') || 30
-			state.attract.range = getFormValue<number>(form, 'attract_range') || 40
-			state.attract.strength = getFormValue<number>(form, 'attract_strength') || 30
+			state.repulse.range = getFormValue<number>(form, "repulse_range") || 10
+			state.repulse.strength = getFormValue<number>(form, "repulse_strength") || 30
+			state.attract.range = getFormValue<number>(form, "attract_range") || 40
+			state.attract.strength = getFormValue<number>(form, "attract_strength") || 30
 
 			current?.update(state)
 		}
 
 		onInput()
 
-		form.addEventListener('input', onInput, { signal: controller.signal })
+		form.addEventListener("input", onInput, { signal: controller.signal })
 
 		const frameCounter = makeFrameCounter(50)
 		const onFrame = (dt: number) => setFps(frameCounter(dt))
 
 		current = start(ctx, state, onFrame)
 
-		const restartButton = form.elements.namedItem('restart') as HTMLButtonElement
-		restartButton.addEventListener('click', () => {
-			current?.stop()
-			onInput()
-			current = start(ctx, state, onFrame)
-		}, { signal: controller.signal })
+		const restartButton = form.elements.namedItem("restart") as HTMLButtonElement
+		restartButton.addEventListener(
+			"click",
+			() => {
+				current?.stop()
+				onInput()
+				current = start(ctx, state, onFrame)
+			},
+			{ signal: controller.signal },
+		)
 
-		const presetIdentityButton = form.elements.namedItem('preset-identity') as HTMLButtonElement
-		presetIdentityButton.addEventListener('click', () => {
-			const colors = state.colors.length
-			for (let i = 0; i < colors; i++) {
-				for (let j = 0; j < colors; j++) {
-					const input = form.elements.namedItem(`attraction_${i}_${j}`) as HTMLInputElement
-					input.value = i === j ? '1' : '0'
-				}
-			}
-			onInput()
-		}, { signal: controller.signal })
-
-		const presetChainButton = form.elements.namedItem('preset-chain') as HTMLButtonElement
-		presetChainButton.addEventListener('click', () => {
-			const colors = state.colors.length
-			for (let i = 0; i < colors; i++) {
-				for (let j = 0; j < colors; j++) {
-					const input = form.elements.namedItem(`attraction_${i}_${j}`) as HTMLInputElement
-					if (j === (i + 1) % colors) {
-						input.value = '0.5'
-					} else if (i === j) {
-						input.value = '1'
-					} else if ((j + 1) % colors === i) {
-						input.value = '-0.5'
-					} else {
-						input.value = '0'
+		const presetIdentityButton = form.elements.namedItem("preset-identity") as HTMLButtonElement
+		presetIdentityButton.addEventListener(
+			"click",
+			() => {
+				const colors = state.colors.length
+				for (let i = 0; i < colors; i++) {
+					for (let j = 0; j < colors; j++) {
+						const input = form.elements.namedItem(`attraction_${i}_${j}`) as HTMLInputElement
+						input.value = i === j ? "1" : "0"
 					}
 				}
-			}
-			onInput()
-		}, { signal: controller.signal })
+				onInput()
+			},
+			{ signal: controller.signal },
+		)
+
+		const presetChainButton = form.elements.namedItem("preset-chain") as HTMLButtonElement
+		presetChainButton.addEventListener(
+			"click",
+			() => {
+				const colors = state.colors.length
+				for (let i = 0; i < colors; i++) {
+					for (let j = 0; j < colors; j++) {
+						const input = form.elements.namedItem(`attraction_${i}_${j}`) as HTMLInputElement
+						if (j === (i + 1) % colors) {
+							input.value = "0.5"
+						} else if (i === j) {
+							input.value = "1"
+						} else if ((j + 1) % colors === i) {
+							input.value = "-0.5"
+						} else {
+							input.value = "0"
+						}
+					}
+				}
+				onInput()
+			},
+			{ signal: controller.signal },
+		)
 
 		const onRandom = () => {
 			const colors = state.colors.length
@@ -158,22 +174,22 @@ export default function ParticleLifePage() {
 			}
 			onInput()
 		}
-		const presetRandomButton = form.elements.namedItem('preset-random') as HTMLButtonElement
-		presetRandomButton.addEventListener('click', onRandom, { signal: controller.signal })
-		const randomizeButton = toolbar.elements.namedItem('randomize') as HTMLButtonElement
-		randomizeButton.addEventListener('click', onRandom, { signal: controller.signal })
+		const presetRandomButton = form.elements.namedItem("preset-random") as HTMLButtonElement
+		presetRandomButton.addEventListener("click", onRandom, { signal: controller.signal })
+		const randomizeButton = toolbar.elements.namedItem("randomize") as HTMLButtonElement
+		randomizeButton.addEventListener("click", onRandom, { signal: controller.signal })
 
 		const onPlayPause = () => {
-			if (playPauseButton.getAttribute('data-state') === 'playing') {
+			if (playPauseButton.getAttribute("data-state") === "playing") {
 				current?.pause()
 			} else {
 				current?.resume()
 			}
 		}
-		const playPauseButton = form.elements.namedItem('play-pause') as HTMLButtonElement
-		playPauseButton.addEventListener('click', onPlayPause, { signal: controller.signal })
-		const toolbarPlayPauseButton = toolbar.elements.namedItem('play-pause') as HTMLButtonElement
-		toolbarPlayPauseButton.addEventListener('click', onPlayPause, { signal: controller.signal })
+		const playPauseButton = form.elements.namedItem("play-pause") as HTMLButtonElement
+		playPauseButton.addEventListener("click", onPlayPause, { signal: controller.signal })
+		const toolbarPlayPauseButton = toolbar.elements.namedItem("play-pause") as HTMLButtonElement
+		toolbarPlayPauseButton.addEventListener("click", onPlayPause, { signal: controller.signal })
 
 		return () => {
 			current?.stop()
@@ -190,22 +206,53 @@ export default function ParticleLifePage() {
 			<div className={styles.head}>
 				<Head />
 				<form className={styles.toolbar} ref={toolbarRef}>
-					<button type="button" onClick={() => setShowControls(c => !c)}>{showControls ? '← hide controls' : '→'}</button>
-					<button type="button" name="randomize" data-hidden={showControls}>🎲</button>
-					<button type="button" name="play-pause" data-state={play ? 'playing' : 'paused'} onClick={() => setPlay(p => !p)} data-hidden={showControls}>{play ? '⏸︎' : '▶︎'}</button>
+					<button type="button" onClick={() => setShowControls((c) => !c)}>
+						{showControls ? "← hide controls" : "→"}
+					</button>
+					<button type="button" name="randomize" data-hidden={showControls}>
+						🎲
+					</button>
+					<button
+						type="button"
+						name="play-pause"
+						data-state={play ? "playing" : "paused"}
+						onClick={() => setPlay((p) => !p)}
+						data-hidden={showControls}
+					>
+						{play ? "⏸︎" : "▶︎"}
+					</button>
 				</form>
 				<form className={styles.controls} ref={formRef} data-hidden={!showControls}>
 					<fieldset>
 						<legend>Particles</legend>
 						<div className={styles.plusMinus}>
-							<button type="button" name="minus" onClick={() => setColors(c => Math.max(c - 1, 1))}>-</button>
-							<button type="button" name="plus" onClick={() => setColors(c => Math.min(c + 1, COLORS.length))}>+</button>
-							<input type="hidden" name="colors" data-type="number" value={colors} ref={(e) => {
-								if (!e) return
-								e.dispatchEvent(new Event('input', { bubbles: true }))
-							}} />
-							<output className={styles.fps}>{formatter.format(fps)} fps on {workers} workers</output>
-							<button type="button" name="play-pause" data-state={play ? 'playing' : 'paused'} onClick={() => setPlay(p => !p)}>{play ? '⏸︎' : '▶︎'}</button>
+							<button type="button" name="minus" onClick={() => setColors((c) => Math.max(c - 1, 1))}>
+								-
+							</button>
+							<button type="button" name="plus" onClick={() => setColors((c) => Math.min(c + 1, COLORS.length))}>
+								+
+							</button>
+							<input
+								type="hidden"
+								name="colors"
+								data-type="number"
+								value={colors}
+								ref={(e) => {
+									if (!e) return
+									e.dispatchEvent(new Event("input", { bubbles: true }))
+								}}
+							/>
+							<output className={styles.fps}>
+								{formatter.format(fps)} fps on {workers} workers
+							</output>
+							<button
+								type="button"
+								name="play-pause"
+								data-state={play ? "playing" : "paused"}
+								onClick={() => setPlay((p) => !p)}
+							>
+								{play ? "⏸︎" : "▶︎"}
+							</button>
 						</div>
 						<table>
 							<colgroup>
@@ -215,16 +262,28 @@ export default function ParticleLifePage() {
 								{Array.from({ length: colors }).map((_, i) => (
 									<tr key={i}>
 										<th scope="row">
-											<span className={styles.color} style={{ '--color': COLORS[i % COLORS.length] } as React.CSSProperties} />
+											<span
+												className={styles.color}
+												style={{ "--color": COLORS[i % COLORS.length] } as React.CSSProperties}
+											/>
 										</th>
 										<td>
-											<input type="number" name={`particles_${i}_count`} defaultValue="2000" min="0" max="2000" step="1" />
+											<input
+												type="number"
+												name={`particles_${i}_count`}
+												defaultValue="2000"
+												min="0"
+												max="2000"
+												step="1"
+											/>
 										</td>
 									</tr>
 								))}
 							</tbody>
 						</table>
-						<button type="button" name="restart">Restart simulation</button>
+						<button type="button" name="restart">
+							Restart simulation
+						</button>
 					</fieldset>
 					<fieldset>
 						<legend>Attraction</legend>
@@ -237,7 +296,10 @@ export default function ParticleLifePage() {
 									<th></th>
 									{Array.from({ length: colors }).map((_, i) => (
 										<th key={i}>
-											<span className={styles.color} style={{ '--color': COLORS[i % COLORS.length] } as React.CSSProperties} />
+											<span
+												className={styles.color}
+												style={{ "--color": COLORS[i % COLORS.length] } as React.CSSProperties}
+											/>
 										</th>
 									))}
 								</tr>
@@ -246,11 +308,21 @@ export default function ParticleLifePage() {
 								{Array.from({ length: colors }).map((_, i) => (
 									<tr key={i}>
 										<th scope="row">
-											<span className={styles.color} style={{ '--color': COLORS[i % COLORS.length] } as React.CSSProperties} />
+											<span
+												className={styles.color}
+												style={{ "--color": COLORS[i % COLORS.length] } as React.CSSProperties}
+											/>
 										</th>
 										{Array.from({ length: colors }).map((_, j) => (
 											<td key={j}>
-												<input type="number" name={`attraction_${i}_${j}`} defaultValue={initialWeights[i * COLORS.length + j]} step="0.1" min="-1" max="1" />
+												<input
+													type="number"
+													name={`attraction_${i}_${j}`}
+													defaultValue={initialWeights[i * COLORS.length + j]}
+													step="0.1"
+													min="-1"
+													max="1"
+												/>
 											</td>
 										))}
 										{/* {Array.from({ length: colors }).map((_, j) => (
@@ -264,9 +336,15 @@ export default function ParticleLifePage() {
 						</table>
 						<div className={styles.presets}>
 							<span>Presets:</span>
-							<button type="button" name="preset-identity">Identity</button>
-							<button type="button" name="preset-chain">Chain</button>
-							<button type="button" name="preset-random">Random</button>
+							<button type="button" name="preset-identity">
+								Identity
+							</button>
+							<button type="button" name="preset-chain">
+								Chain
+							</button>
+							<button type="button" name="preset-random">
+								Random
+							</button>
 						</div>
 					</fieldset>
 					<fieldset>
@@ -303,17 +381,13 @@ export default function ParticleLifePage() {
 					</fieldset>
 				</form>
 			</div>
-			<canvas ref={canvasRef}>
-				Your browser does not support the HTML5 canvas tag.
-			</canvas>
+			<canvas ref={canvasRef}>Your browser does not support the HTML5 canvas tag.</canvas>
 		</div>
 	)
 }
 
-
-
 function start(ctx: CanvasRenderingContext2D, state: State, onFrame: (dt: number) => void) {
-	console.log('start', state)
+	console.log("start", state)
 	const width = ctx.canvas.width / devicePixelRatio
 	const height = ctx.canvas.height / devicePixelRatio
 
@@ -353,13 +427,11 @@ function start(ctx: CanvasRenderingContext2D, state: State, onFrame: (dt: number
 		const worker = new UpdateWorker()
 		workers[i] = worker
 
-		const indexStart = Math.floor(i * total / parallelism)
-		const indexEnd = i === parallelism - 1
-			? total
-			: Math.floor((i + 1) * total / parallelism)
+		const indexStart = Math.floor((i * total) / parallelism)
+		const indexEnd = i === parallelism - 1 ? total : Math.floor(((i + 1) * total) / parallelism)
 
 		worker.postMessage({
-			type: 'buffers',
+			type: "buffers",
 			data: {
 				color: color_buffer,
 				x: x_buffer,
@@ -370,28 +442,31 @@ function start(ctx: CanvasRenderingContext2D, state: State, onFrame: (dt: number
 				range: [indexStart, indexEnd],
 				width,
 				height,
-			}
+			},
 		} satisfies Incoming)
 
 		worker.postMessage({
-			type: 'state',
-			data: state
+			type: "state",
+			data: state,
 		} satisfies Incoming)
 
-		worker.addEventListener('message', (e: MessageEvent<Outgoing>) => {
-			switch (e.data.type) {
-				case "frame":
-					onFrame(e.data.data.dt / 1000)
-					break
-			}
-		}, { signal: controller.signal })
+		worker.addEventListener(
+			"message",
+			(e: MessageEvent<Outgoing>) => {
+				switch (e.data.type) {
+					case "frame":
+						onFrame(e.data.data.dt / 1000)
+						break
+				}
+			},
+			{ signal: controller.signal },
+		)
 	}
 
 	let rafId = requestAnimationFrame(function loop(time) {
 		rafId = requestAnimationFrame(loop)
 		draw()
 	})
-
 
 	return {
 		stop: () => {
@@ -404,22 +479,22 @@ function start(ctx: CanvasRenderingContext2D, state: State, onFrame: (dt: number
 		update: (state: State) => {
 			for (const worker of workers) {
 				worker.postMessage({
-					type: 'state',
-					data: state
+					type: "state",
+					data: state,
 				} satisfies Incoming)
 			}
 		},
 		pause: () => {
 			for (const worker of workers) {
 				worker.postMessage({
-					type: 'pause',
+					type: "pause",
 				} satisfies Incoming)
 			}
 		},
 		resume: () => {
 			for (const worker of workers) {
 				worker.postMessage({
-					type: 'resume',
+					type: "resume",
 				} satisfies Incoming)
 			}
 		},
@@ -437,20 +512,19 @@ function start(ctx: CanvasRenderingContext2D, state: State, onFrame: (dt: number
 	}
 }
 
-
 const COLORS = [
-	'red',
-	'cyan',
-	'yellow',
-	'green',
-	'lavender',
-	'indigo',
-	'violet',
-	'orange',
-	'magenta',
-	'lime',
-	'pink',
-	'teal',
-	'blue',
-	'brown',
+	"red",
+	"cyan",
+	"yellow",
+	"green",
+	"lavender",
+	"indigo",
+	"violet",
+	"orange",
+	"magenta",
+	"lime",
+	"pink",
+	"teal",
+	"blue",
+	"brown",
 ]

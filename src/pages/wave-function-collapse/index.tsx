@@ -1,16 +1,19 @@
-import styles from './styles.module.css'
-import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
-import type { Incoming, Outgoing } from "./worker"
-import Worker from "./worker?worker"
+
+import { Head } from "#components/Head"
+import * as config from "#wave-function-collapse/carcassonne/definition"
+import * as utils from "#wave-function-collapse/utils"
 import { useCallback, useEffect, useRef, useState } from "react"
-import * as utils from '#wave-function-collapse/utils'
-import * as config from '#wave-function-collapse/carcassonne/definition'
+
+import type { Incoming, Outgoing } from "./worker"
+
+import styles from "./styles.module.css"
+import Worker from "./worker?worker"
 
 export const meta: RouteMeta = {
-	title: 'Wave Function Collapse',
-	image: './screen.png',
-	tags: ['procedural', 'random']
+	title: "Wave Function Collapse",
+	image: "./screen.png",
+	tags: ["procedural", "random"],
 }
 
 const tiles = config.definition.map((row, y) => ({
@@ -20,15 +23,28 @@ const tiles = config.definition.map((row, y) => ({
 
 const equivalents = tiles.map((tile) => tiles.filter((other) => other.sides.every((side, i) => side === tile.sides[i])))
 
-
-
-function drawTile(ctx: CanvasRenderingContext2D, w: number, h: number, index: number, rotate: number, x: number, y: number) {
-	if (rotate === 1) { x += 1 }
-	if (rotate === 2) { y += 1; x += 1 }
-	if (rotate === 3) { y += 1 }
+function drawTile(
+	ctx: CanvasRenderingContext2D,
+	w: number,
+	h: number,
+	index: number,
+	rotate: number,
+	x: number,
+	y: number,
+) {
+	if (rotate === 1) {
+		x += 1
+	}
+	if (rotate === 2) {
+		y += 1
+		x += 1
+	}
+	if (rotate === 3) {
+		y += 1
+	}
 	ctx.save()
 	ctx.translate(x * w, y * h)
-	ctx.rotate(rotate * Math.PI / 2)
+	ctx.rotate((rotate * Math.PI) / 2)
 	const setY = (index / config.params.grid.width) | 0
 	const setX = index % config.params.grid.width
 	ctx.drawImage(
@@ -40,7 +56,7 @@ function drawTile(ctx: CanvasRenderingContext2D, w: number, h: number, index: nu
 		0,
 		0,
 		w,
-		h
+		h,
 	)
 	ctx.restore()
 }
@@ -63,13 +79,16 @@ export default function Wave() {
 	const [force, setForce] = useState(() => seed(20))
 
 	const [worker] = useState(() => new Worker())
-	const post = useCallback(function post<I extends Incoming["type"]>(
-		type: I,
-		data: Extract<Incoming, { type: I }>["data"],
-		transfer?: Transferable[]
-	) {
-		worker.postMessage({ type, data }, { transfer })
-	}, [worker])
+	const post = useCallback(
+		function post<I extends Incoming["type"]>(
+			type: I,
+			data: Extract<Incoming, { type: I }>["data"],
+			transfer?: Transferable[],
+		) {
+			worker.postMessage({ type, data }, { transfer })
+		},
+		[worker],
+	)
 
 	useEffect(() => {
 		const canvas = ref.current
@@ -136,28 +155,39 @@ export default function Wave() {
 			}
 		}
 
-		worker.addEventListener('message', onMessage)
+		worker.addEventListener("message", onMessage)
 		post("start", { height, width, tiles, force })
 		return () => {
-			worker.removeEventListener('message', onMessage)
+			worker.removeEventListener("message", onMessage)
 			cancelAnimationFrame(rafId)
 		}
 	}, [force, worker, post])
 
-	useEffect(() => () => {
-		worker.terminate()
-	}, [])
+	useEffect(
+		() => () => {
+			worker.terminate()
+		},
+		[],
+	)
 
 	return (
 		<div className={styles.main}>
 			<div className={styles.head}>
 				<Head />
-				<button type="button" onClick={() => setForce(seed(20))}>Retry with a new seed</button>
+				<button type="button" onClick={() => setForce(seed(20))}>
+					Retry with a new seed
+				</button>
 			</div>
-			{available && <canvas width="1000" height="1000" ref={ref}>
-				Your browser does not support the HTML5 canvas tag.
-			</canvas>}
-			{!available && <p>SharedArrayBuffer is not available, the service worker must have not auto-installed, try reloading the page.</p>}
+			{available && (
+				<canvas width="1000" height="1000" ref={ref}>
+					Your browser does not support the HTML5 canvas tag.
+				</canvas>
+			)}
+			{!available && (
+				<p>
+					SharedArrayBuffer is not available, the service worker must have not auto-installed, try reloading the page.
+				</p>
+			)}
 		</div>
 	)
 }

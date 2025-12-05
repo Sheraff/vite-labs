@@ -1,12 +1,14 @@
 import type { RouteMeta } from "#router"
-import styles from './styles.module.css'
+
 import { Head } from "#components/Head"
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react"
 
+import styles from "./styles.module.css"
+
 export const meta: RouteMeta = {
-	title: '3D Cursor Projection',
-	image: './screen.png',
-	tags: ['perspective', 'css', 'projection']
+	title: "3D Cursor Projection",
+	image: "./screen.png",
+	tags: ["perspective", "css", "projection"],
 }
 
 const SIDE = 13
@@ -24,24 +26,26 @@ export default function CSSCursorTrackingPage() {
 		}
 
 		const controller = new AbortController()
-		window.addEventListener('pointermove', (event) => {
-			const mouse = { left: event.clientX, top: event.clientY }
+		window.addEventListener(
+			"pointermove",
+			(event) => {
+				const mouse = { left: event.clientX, top: event.clientY }
 
-			const { left: x, top: y } = project(
-				coords.nw.getBoundingClientRect(),
-				coords.ne.getBoundingClientRect(),
-				coords.sw.getBoundingClientRect(),
-				coords.se.getBoundingClientRect(),
-				mouse
-			)
+				const { left: x, top: y } = project(
+					coords.nw.getBoundingClientRect(),
+					coords.ne.getBoundingClientRect(),
+					coords.sw.getBoundingClientRect(),
+					coords.se.getBoundingClientRect(),
+					mouse,
+				)
 
-			el.style.setProperty('--mx', Math.min(2, Math.max(-1, x)).toString())
-			el.style.setProperty('--my', Math.min(2, Math.max(-1, y)).toString())
-
-		}, { signal: controller.signal })
+				el.style.setProperty("--mx", Math.min(2, Math.max(-1, x)).toString())
+				el.style.setProperty("--my", Math.min(2, Math.max(-1, y)).toString())
+			},
+			{ signal: controller.signal },
+		)
 		return () => controller.abort()
 	}, [])
-
 
 	const formRef = useRef<HTMLFormElement>(null)
 	useEffect(() => {
@@ -52,19 +56,22 @@ export default function CSSCursorTrackingPage() {
 
 		const controller = new AbortController()
 
-		form.addEventListener('input', () => {
-			const x = form.elements.namedItem('x') as HTMLInputElement
-			const y = form.elements.namedItem('y') as HTMLInputElement
-			const z = form.elements.namedItem('z') as HTMLInputElement
+		form.addEventListener(
+			"input",
+			() => {
+				const x = form.elements.namedItem("x") as HTMLInputElement
+				const y = form.elements.namedItem("y") as HTMLInputElement
+				const z = form.elements.namedItem("z") as HTMLInputElement
 
-			el.style.setProperty('--rx', x.value)
-			el.style.setProperty('--ry', y.value)
-			el.style.setProperty('--rz', z.value)
-		}, { signal: controller.signal })
+				el.style.setProperty("--rx", x.value)
+				el.style.setProperty("--ry", y.value)
+				el.style.setProperty("--rz", z.value)
+			},
+			{ signal: controller.signal },
+		)
 
 		return () => controller.abort()
 	}, [])
-
 
 	return (
 		<div className={styles.main}>
@@ -73,11 +80,11 @@ export default function CSSCursorTrackingPage() {
 			</div>
 
 			<div className={styles.perspective}>
-				<div ref={ref} className={styles.grid} style={{ '--side': SIDE } as React.CSSProperties}>
+				<div ref={ref} className={styles.grid} style={{ "--side": SIDE } as React.CSSProperties}>
 					{Array.from({ length: SIDE }, (_, y) => (
-						<div key={y} className={styles.row} style={{ '--y': y / SIDE - 0.5 / SIDE } as React.CSSProperties}>
+						<div key={y} className={styles.row} style={{ "--y": y / SIDE - 0.5 / SIDE } as React.CSSProperties}>
 							{Array.from({ length: SIDE }, (_, x) => (
-								<div key={x} className={styles.cell} style={{ '--x': x / SIDE + 1 / SIDE } as React.CSSProperties} />
+								<div key={x} className={styles.cell} style={{ "--x": x / SIDE + 1 / SIDE } as React.CSSProperties} />
 							))}
 						</div>
 					))}
@@ -103,21 +110,19 @@ export default function CSSCursorTrackingPage() {
 	)
 }
 
-
-
-type Point2D = { left: number, top: number }
+type Point2D = { left: number; top: number }
 /**
  * Calculate the relative position within the quadrilateral using bilinear interpolation
- * 
+ *
  * @description
  * Converts screen-space `mouse` coordinates to plane-space coordinates.
- * 
+ *
  * We know the screen-space coordinates of the four corners of the plane,
  * - north-west (0,0 in plane-space)
  * - north-east (1,0 in plane-space)
  * - south-west (0,1 in plane-space)
  * - south-east (1,1 in plane-space)
- * 
+ *
  * Return the coordinates of the mouse in plane-space.
  *
  * The progression along an axis is not linear (because of perspective).
@@ -128,9 +133,11 @@ function project(nw: Point2D, ne: Point2D, sw: Point2D, se: Point2D, mouse: Poin
 	// P(u,v) = mouse
 	// P(u,v) = (1-u)(1-v)*nw + u(1-v)*ne + (1-u)v*sw + u*v*se
 
-	let u = 0.5, v = 0.5 // Initial guess
+	let u = 0.5,
+		v = 0.5 // Initial guess
 
-	for (let i = 0; i < 10; i++) { // Newton-Raphson iterations
+	for (let i = 0; i < 10; i++) {
+		// Newton-Raphson iterations
 		// Current interpolated point
 		const pLeft = (1 - u) * (1 - v) * nw.left + u * (1 - v) * ne.left + (1 - u) * v * sw.left + u * v * se.left
 		const pTop = (1 - u) * (1 - v) * nw.top + u * (1 - v) * ne.top + (1 - u) * v * sw.top + u * v * se.top

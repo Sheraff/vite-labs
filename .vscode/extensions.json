@@ -1,5 +1,6 @@
 {
 	"recommendations": [
-		"raczzalan.webgl-glsl-editor"
+		"raczzalan.webgl-glsl-editor",
+		"oxc.oxc-vscode",
 	]
 }

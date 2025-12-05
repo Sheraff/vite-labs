@@ -10,7 +10,7 @@ export function makeStartState(side: number) {
 	}
 }
 
-export function makeEntity(genome: Type, initial: { x: number, y: number, angle: number }) {
+export function makeEntity(genome: Type, initial: { x: number; y: number; angle: number }) {
 	let nodes = 0
 	const graph: Array<{
 		aggregation: (arr: number[]) => number
@@ -62,14 +62,9 @@ export function makeEntity(genome: Type, initial: { x: number, y: number, angle:
 				aggregation: AGGREGATIONS[0],
 				activation: ACTIVATIONS[0],
 			}
-			graph[to].incoming.push([
-				from,
-				weight / MAX,
-			])
+			graph[to].incoming.push([from, weight / MAX])
 			i += 3 // skip from, to, weight
-		}
-
-		else {
+		} else {
 			throw new Error(`Unknown gene type allele: ${allele}`)
 		}
 	}
@@ -86,15 +81,11 @@ export function makeEntity(genome: Type, initial: { x: number, y: number, angle:
 		for (let i = 0; i < graph.length; i++) {
 			const node = graph[i]
 			if (!node) continue
-			current[i] = node.activation(
-				node.aggregation(
-					node.incoming.map(([from, weight]) => memory[from] * weight)
-				)
-			)
+			current[i] = node.activation(node.aggregation(node.incoming.map(([from, weight]) => memory[from] * weight)))
 		}
 		memory.set(current)
 
-		const rotate = (Math.max(0, Math.min(current[7], 10)) - Math.max(0, Math.min(current[6], 10)))
+		const rotate = Math.max(0, Math.min(current[7], 10)) - Math.max(0, Math.min(current[6], 10))
 		state.angle += rotate / 100
 		const speed = Math.min(4, Math.max(0, current[8] / MAX))
 		if (speed > 0) {
@@ -108,7 +99,7 @@ export function makeEntity(genome: Type, initial: { x: number, y: number, angle:
 		ctx.save()
 		ctx.translate(state.x, state.y)
 		ctx.rotate(state.angle)
-		ctx.fillStyle = 'white'
+		ctx.fillStyle = "white"
 		ctx.fillRect(-5, -5, 10, 10)
 		ctx.restore()
 
@@ -116,7 +107,7 @@ export function makeEntity(genome: Type, initial: { x: number, y: number, angle:
 		ctx.save()
 		ctx.translate(state.x, state.y)
 		ctx.rotate(state.angle)
-		ctx.strokeStyle = 'red'
+		ctx.strokeStyle = "red"
 		ctx.lineWidth = 2
 		ctx.beginPath()
 		ctx.moveTo(0, 0)

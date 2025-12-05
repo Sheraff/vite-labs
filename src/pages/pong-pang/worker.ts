@@ -2,7 +2,7 @@
 
 import { setImmediate } from "./setImmediate"
 
-export type Incoming = { type: "canvas", data: { canvas: OffscreenCanvas } }
+export type Incoming = { type: "canvas"; data: { canvas: OffscreenCanvas } }
 self.onmessage = (e: MessageEvent<Incoming>) => handleMessage(e.data)
 
 const BLACK = "#451952"
@@ -21,7 +21,7 @@ function start(ctx: OffscreenCanvasRenderingContext2D) {
 	const size = 24
 	const speed = 300
 
-	const grid = Array.from({ length: size }, (_, y) => Array.from({ length: size }, (_, x) => y > x ? 1 : 0))
+	const grid = Array.from({ length: size }, (_, y) => Array.from({ length: size }, (_, x) => (y > x ? 1 : 0)))
 
 	const w = ctx.canvas.width
 	const h = ctx.canvas.height
@@ -80,7 +80,13 @@ function start(ctx: OffscreenCanvasRenderingContext2D) {
 		}
 		ctx.resetTransform()
 
-		for (const [x, y] of [[0, 0], [0, 1], [0, -1], [1, 0], [-1, 0]]) {
+		for (const [x, y] of [
+			[0, 0],
+			[0, 1],
+			[0, -1],
+			[1, 0],
+			[-1, 0],
+		]) {
 			// draw black
 			ctx.beginPath()
 			ctx.fillStyle = BLACK
@@ -112,7 +118,6 @@ function start(ctx: OffscreenCanvasRenderingContext2D) {
 			// }
 		}
 
-
 		// // draw metrics
 		// ctx.font = "24px sans-serif"
 		// ctx.fillStyle = "red"
@@ -140,7 +145,7 @@ function start(ctx: OffscreenCanvasRenderingContext2D) {
 		lastTime = time
 		metrics.updates++
 
-		const m = speed * delta / 1000
+		const m = (speed * delta) / 1000
 
 		black.x += black.dx * m
 		black.y += black.dy * m
@@ -163,13 +168,13 @@ function start(ctx: OffscreenCanvasRenderingContext2D) {
 						if (!collision) continue
 						collided = true
 						grid[wy][wx] = ball.ignores
-						if (collision === 'x') {
+						if (collision === "x") {
 							ball.dx *= -1
-							const contact = x * cellSize + (ball.dx > 0 ? (cellSize + radius) : (-radius))
+							const contact = x * cellSize + (ball.dx > 0 ? cellSize + radius : -radius)
 							ball.x += Math.abs(ball.x - contact) * ball.dx * 2
 						} else {
 							ball.dy *= -1
-							const contact = y * cellSize + (ball.dy > 0 ? (cellSize + radius) : (-radius))
+							const contact = y * cellSize + (ball.dy > 0 ? cellSize + radius : -radius)
 							ball.y += Math.abs(ball.y - contact) * ball.dy * 2
 						}
 						break collide_resolution
@@ -196,18 +201,17 @@ function computeCollision(
 	ballRadius: number,
 	squareX: number,
 	squareY: number,
-	squareSize: number
+	squareSize: number,
 ) {
 	const x = Math.max(squareX, Math.min(ballX, squareX + squareSize))
-	const y = Math.max(squareY, Math.min(ballY, squareY + squareSize)
-	)
+	const y = Math.max(squareY, Math.min(ballY, squareY + squareSize))
 	const dx = ballX - x
 	const dy = ballY - y
 	const collides = dx * dx + dy * dy <= ballRadius * ballRadius
 	if (!collides) return false
 	if (Math.abs(dx) > Math.abs(dy)) {
-		return 'x'
+		return "x"
 	} else {
-		return 'y'
+		return "y"
 	}
 }

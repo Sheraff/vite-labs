@@ -1,12 +1,13 @@
 import type { RouteMeta } from "#router"
-import styles from './styles.module.css'
+
 import { Head } from "#components/Head"
 import { useEffect, useRef, useState, type CSSProperties } from "react"
 
-export const meta: RouteMeta = {
-	title: 'Polka Fireflies',
-	image: './screen.png'
+import styles from "./styles.module.css"
 
+export const meta: RouteMeta = {
+	title: "Polka Fireflies",
+	image: "./screen.png",
 }
 
 const SIDE = 50
@@ -64,9 +65,12 @@ export default function PolkaFirefliesPage() {
 			cooldown[index] = 1
 			enqueue(() => {
 				values[index] = 0
-				enqueue(() => {
-					cooldown[index] = 0
-				}, Math.random() * 1000 + 100)
+				enqueue(
+					() => {
+						cooldown[index] = 0
+					},
+					Math.random() * 1000 + 100,
+				)
 			}, 700)
 		}
 
@@ -110,13 +114,7 @@ export default function PolkaFirefliesPage() {
 					const h = yellow[2] * intensity + green[2] * (1 - intensity)
 					ctx.fillStyle = `oklch(${l}% ${c} ${h} / ${intensity})`
 					ctx.beginPath()
-					ctx.arc(
-						(x + 0.5) * (size / SIDE),
-						(y + 0.5) * (size / SIDE),
-						radius,
-						0,
-						Math.PI * 2
-					)
+					ctx.arc((x + 0.5) * (size / SIDE), (y + 0.5) * (size / SIDE), radius, 0, Math.PI * 2)
 					ctx.fill()
 				}
 			}

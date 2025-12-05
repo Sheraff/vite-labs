@@ -40,7 +40,7 @@ export class BezierPath {
 			} else {
 				const extraPoints = points.length - 4
 				const completeExtraSegments = Math.floor(extraPoints / 3)
-				validPointCount = 4 + (completeExtraSegments * 3)
+				validPointCount = 4 + completeExtraSegments * 3
 			}
 		}
 
@@ -63,7 +63,7 @@ export class BezierPath {
 				p0: points[i],
 				p1: points[i + 1],
 				p2: points[i + 2],
-				p3: points[i + 3]
+				p3: points[i + 3],
 			})
 		}
 
@@ -82,7 +82,7 @@ export class BezierPath {
 
 		return {
 			x: mt3 * seg.p0.x + 3 * mt2 * t * seg.p1.x + 3 * mt * t2 * seg.p2.x + t3 * seg.p3.x,
-			y: mt3 * seg.p0.y + 3 * mt2 * t * seg.p1.y + 3 * mt * t2 * seg.p2.y + t3 * seg.p3.y
+			y: mt3 * seg.p0.y + 3 * mt2 * t * seg.p1.y + 3 * mt * t2 * seg.p2.y + t3 * seg.p3.y,
 		}
 	}
 
@@ -94,7 +94,7 @@ export class BezierPath {
 
 		return {
 			x: 3 * mt2 * (seg.p1.x - seg.p0.x) + 6 * mt * t * (seg.p2.x - seg.p1.x) + 3 * t2 * (seg.p3.x - seg.p2.x),
-			y: 3 * mt2 * (seg.p1.y - seg.p0.y) + 6 * mt * t * (seg.p2.y - seg.p1.y) + 3 * t2 * (seg.p3.y - seg.p2.y)
+			y: 3 * mt2 * (seg.p1.y - seg.p0.y) + 6 * mt * t * (seg.p2.y - seg.p1.y) + 3 * t2 * (seg.p3.y - seg.p2.y),
 		}
 	}
 
@@ -234,7 +234,7 @@ export class BezierPath {
 				t: entrance.t,
 				speed: Math.max(speed, 2), // Minimum speed
 				forward: entrance.forward,
-				hasReversed: false
+				hasReversed: false,
 			}
 			return true
 		}
@@ -256,8 +256,8 @@ export class BezierPath {
 		const accelerationRate = 0.2 * dt
 
 		const movingTowardMid = this.ballOnPath.forward
-			? currentArcLength < halfLength  // forward and before mid = toward
-			: currentArcLength > halfLength  // backward and after mid = toward
+			? currentArcLength < halfLength // forward and before mid = toward
+			: currentArcLength > halfLength // backward and after mid = toward
 
 		if (movingTowardMid) {
 			// Moving uphill: decelerate
@@ -343,7 +343,7 @@ export class BezierPath {
 				// Offset point by half track width
 				points.push({
 					x: point.x + nx * halfWidth * side,
-					y: point.y + ny * halfWidth * side
+					y: point.y + ny * halfWidth * side,
 				})
 			}
 
@@ -354,10 +354,10 @@ export class BezierPath {
 				ctx.lineTo(points[i].x, points[i].y)
 			}
 
-			ctx.strokeStyle = '#48dbfb'
+			ctx.strokeStyle = "#48dbfb"
 			ctx.lineWidth = 3
-			ctx.lineCap = 'round'
-			ctx.lineJoin = 'round'
+			ctx.lineCap = "round"
+			ctx.lineJoin = "round"
 			ctx.stroke()
 		}
 
@@ -369,18 +369,18 @@ export class BezierPath {
 		// Start entrance
 		ctx.beginPath()
 		ctx.arc(startPoint.x, startPoint.y, entranceSize, 0, Math.PI * 2)
-		ctx.fillStyle = '#00d2d3'
+		ctx.fillStyle = "#00d2d3"
 		ctx.fill()
-		ctx.strokeStyle = '#01a3a4'
+		ctx.strokeStyle = "#01a3a4"
 		ctx.lineWidth = 2
 		ctx.stroke()
 
 		// End entrance
 		ctx.beginPath()
 		ctx.arc(endPoint.x, endPoint.y, entranceSize, 0, Math.PI * 2)
-		ctx.fillStyle = '#00d2d3'
+		ctx.fillStyle = "#00d2d3"
 		ctx.fill()
-		ctx.strokeStyle = '#01a3a4'
+		ctx.strokeStyle = "#01a3a4"
 		ctx.lineWidth = 2
 		ctx.stroke()
 
@@ -393,7 +393,7 @@ export class BezierPath {
 				ctx.beginPath()
 				ctx.moveTo(seg.p0.x, seg.p0.y)
 				ctx.lineTo(seg.p1.x, seg.p1.y)
-				ctx.strokeStyle = '#aaa'
+				ctx.strokeStyle = "#aaa"
 				ctx.lineWidth = 1
 				ctx.stroke()
 
@@ -408,7 +408,7 @@ export class BezierPath {
 				const isEndpoint = i === 0 || i === this.points.length - 1 || i % 3 === 0
 				ctx.beginPath()
 				ctx.arc(p.x, p.y, isEndpoint ? 4 : 3, 0, Math.PI * 2)
-				ctx.fillStyle = isEndpoint ? '#00d2d3' : '#aaa'
+				ctx.fillStyle = isEndpoint ? "#00d2d3" : "#aaa"
 				ctx.fill()
 			})
 
@@ -420,7 +420,7 @@ export class BezierPath {
 			const point = this.bezier(this.ballOnPath.t)
 			ctx.beginPath()
 			ctx.arc(point.x, point.y, 4, 0, Math.PI * 2)
-			ctx.fillStyle = '#ff6b6b'
+			ctx.fillStyle = "#ff6b6b"
 			ctx.fill()
 
 			// Draw direction arrow
@@ -433,9 +433,9 @@ export class BezierPath {
 			ctx.moveTo(point.x, point.y)
 			ctx.lineTo(
 				point.x + (tangent.x / tangentLen) * arrowLen * direction,
-				point.y + (tangent.y / tangentLen) * arrowLen * direction
+				point.y + (tangent.y / tangentLen) * arrowLen * direction,
 			)
-			ctx.strokeStyle = '#ff6b6b'
+			ctx.strokeStyle = "#ff6b6b"
 			ctx.lineWidth = 2
 			ctx.stroke()
 		}

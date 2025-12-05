@@ -1,18 +1,20 @@
 import type { RouteMeta } from "#router"
-import styles from './styles.module.css'
+
 import { Head } from "#components/Head"
 import { useEffect, useRef, useState } from "react"
-import { PinballGame } from "./Pinball"
-import { LevelEditor } from "./LevelEditor"
+
 import type { BoardConfig } from "./types"
 
-export const meta: RouteMeta = {
-	title: 'Pinball',
-	tags: ['game', 'wip']
+import { LevelEditor } from "./LevelEditor"
+import { PinballGame } from "./Pinball"
+import styles from "./styles.module.css"
 
+export const meta: RouteMeta = {
+	title: "Pinball",
+	tags: ["game", "wip"],
 }
 
-const STORAGE_KEY = 'pinball-board-config'
+const STORAGE_KEY = "pinball-board-config"
 
 const WIDTH = 400
 const HEIGHT = 600
@@ -23,7 +25,7 @@ const HEIGHT = 600
 
 export default function PinballPage() {
 	const canvasRef = useRef<HTMLCanvasElement>(null)
-	const [mode, setMode] = useState<'play' | 'edit'>('play')
+	const [mode, setMode] = useState<"play" | "edit">("play")
 	const [boardConfig, setBoardConfig] = useState<BoardConfig | undefined>(() => {
 		const stored = localStorage.getItem(STORAGE_KEY)
 		return stored ? JSON.parse(stored) : undefined
@@ -33,11 +35,11 @@ export default function PinballPage() {
 	const handleSaveConfig = (config: BoardConfig) => {
 		setBoardConfig(config)
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
-		setMode('play')
+		setMode("play")
 	}
 
 	useEffect(() => {
-		if (mode !== 'play') return
+		if (mode !== "play") return
 
 		const canvas = canvasRef.current!
 
@@ -82,22 +84,14 @@ export default function PinballPage() {
 		<div className={styles.main}>
 			<div className={styles.head}>
 				<Head />
-				<button
-					className={styles.modeToggle}
-					onClick={() => setMode(mode === 'play' ? 'edit' : 'play')}
-				>
-					{mode === 'play' ? '✏️ Edit' : '▶️ Play'}
+				<button className={styles.modeToggle} onClick={() => setMode(mode === "play" ? "edit" : "play")}>
+					{mode === "play" ? "✏️ Edit" : "▶️ Play"}
 				</button>
 			</div>
-			{mode === 'play' ? (
+			{mode === "play" ? (
 				<canvas ref={canvasRef} />
 			) : (
-				<LevelEditor
-					width={WIDTH}
-					height={HEIGHT}
-					onSave={handleSaveConfig}
-					initialConfig={boardConfig}
-				/>
+				<LevelEditor width={WIDTH} height={HEIGHT} onSave={handleSaveConfig} initialConfig={boardConfig} />
 			)}
 		</div>
 	)

@@ -3,7 +3,6 @@ export type Cell = {
 	y: number
 }
 
-
 export type HexGrid<T extends Cell = Cell> = {
 	width: number
 	height: number
@@ -11,11 +10,10 @@ export type HexGrid<T extends Cell = Cell> = {
 	[index: number]: T[]
 }
 
-
 export function makeHexGrid<T extends Cell = Cell>(
 	width: number,
 	height: number,
-	init: (x: number, y: number) => T = (x, y) => ({ x, y } as T)
+	init: (x: number, y: number) => T = (x, y) => ({ x, y }) as T,
 ) {
 	const store: T[][] = []
 	const proxiedStore: T[][] = []
@@ -32,7 +30,7 @@ export function makeHexGrid<T extends Cell = Cell>(
 				return Reflect.set(object, Math.floor(key), value, receiver)
 			}
 			return Reflect.set(object, key, value, receiver)
-		}
+		},
 	}
 
 	for (let x = 0; x < width - 0.5; x += 0.5) {
@@ -75,10 +73,10 @@ export function makeHexGrid<T extends Cell = Cell>(
 				return Reflect.set(proxiedStore, key * 2, value, receiver)
 			}
 			return Reflect.set(object, key, value, receiver)
-		}
+		},
 	}) as HexGrid<T>
 }
 
 function isNumberKey(key: string | symbol | number): key is number {
-	return typeof key === 'string' && !isNaN(Number(key))
+	return typeof key === "string" && !isNaN(Number(key))
 }

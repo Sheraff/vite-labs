@@ -1,12 +1,11 @@
-
-export function makeSharedStruct<T extends {
-	[key in keyof T]: [
-		type: Uint8ArrayConstructor | Uint16ArrayConstructor | Uint32ArrayConstructor | Int32ArrayConstructor,
-		length: number
-	]
-}>(
-	fields: T
-) {
+export function makeSharedStruct<
+	T extends {
+		[key in keyof T]: [
+			type: Uint8ArrayConstructor | Uint16ArrayConstructor | Uint32ArrayConstructor | Int32ArrayConstructor,
+			length: number,
+		]
+	},
+>(fields: T) {
 	type StructBuffers = {
 		[key in keyof T]: SharedArrayBuffer
 	}
@@ -38,18 +37,28 @@ export function makeSharedStruct<T extends {
 		return _buffers
 	}
 
-	const dehydrated = new Proxy({}, {
-		get(_, key) { throw new Error(`Call \`hydrate\` or \`init\` before accessing ${String(key)}`) },
-		set(_, key) { throw new Error(`Call \`hydrate\` or \`init\` before accessing ${String(key)}`) },
-	})
+	const dehydrated = new Proxy(
+		{},
+		{
+			get(_, key) {
+				throw new Error(`Call \`hydrate\` or \`init\` before accessing ${String(key)}`)
+			},
+			set(_, key) {
+				throw new Error(`Call \`hydrate\` or \`init\` before accessing ${String(key)}`)
+			},
+		},
+	)
 
-	const struct = Object.assign({
-		hydrate,
-		init,
-		serialize,
-	}, Object.fromEntries(Object.keys(fields).map((key => [key, dehydrated]))) as {
-		[key in keyof T]: InstanceType<T[key][0]>
-	})
+	const struct = Object.assign(
+		{
+			hydrate,
+			init,
+			serialize,
+		},
+		Object.fromEntries(Object.keys(fields).map((key) => [key, dehydrated])) as {
+			[key in keyof T]: InstanceType<T[key][0]>
+		},
+	)
 
 	return struct
 }

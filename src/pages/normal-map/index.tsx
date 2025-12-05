@@ -1,24 +1,23 @@
 import type { RouteMeta } from "#router"
-import styles from './styles.module.css'
+
 import { Head } from "#components/Head"
 import { useEffect, useRef } from "react"
 
-// textures from https://www.cgbookcase.com/textures
-import normal_source from './world/map.jpg'
-import color_source from './world/color.jpg'
-
-import vertex from './vertex.glsl?raw'
-import fragment from './fragment.glsl?raw'
-
+import fragment from "./fragment.glsl?raw"
+import styles from "./styles.module.css"
 import { easings, getImageData } from "./utils"
+import vertex from "./vertex.glsl?raw"
+import color_source from "./world/color.jpg"
+// textures from https://www.cgbookcase.com/textures
+import normal_source from "./world/map.jpg"
 
 const normal_map = await getImageData(normal_source)
 const color_map = await getImageData(color_source)
 
 export const meta: RouteMeta = {
-	title: 'Normal Map',
-	image: './screen.png',
-	tags: ['webgl', 'lighting']
+	title: "Normal Map",
+	image: "./screen.png",
+	tags: ["webgl", "lighting"],
 }
 
 export default function NormalMapPage() {
@@ -27,7 +26,7 @@ export default function NormalMapPage() {
 	useEffect(() => {
 		const canvas = ref.current
 		if (!canvas) return
-		const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true })
+		const gl = canvas.getContext("webgl2", { preserveDrawingBuffer: true })
 		if (!gl) return
 		gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 		gl.clearColor(0, 0, 0, 0)
@@ -81,26 +80,13 @@ export default function NormalMapPage() {
 		gl.activeTexture(gl.TEXTURE1)
 		gl.bindTexture(gl.TEXTURE_2D, normal_texture)
 
-
-
 		let rafId = requestAnimationFrame(function loop() {
 			rafId = requestAnimationFrame(loop)
 
-			const pixels = new Uint8ClampedArray(
-				gl.drawingBufferWidth * gl.drawingBufferHeight * 4,
-			)
-			gl.readPixels(
-				0,
-				0,
-				gl.drawingBufferWidth,
-				gl.drawingBufferHeight,
-				gl.RGBA,
-				gl.UNSIGNED_BYTE,
-				pixels,
-			)
+			const pixels = new Uint8ClampedArray(gl.drawingBufferWidth * gl.drawingBufferHeight * 4)
+			gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
 			const has_something = pixels.some((v) => v !== 0)
 			console.log(has_something)
-
 
 			gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 			gl.uniform2f(resolution_loc, screen.width, screen.height)
@@ -114,7 +100,6 @@ export default function NormalMapPage() {
 
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 		})
-
 
 		return () => {
 			gl.useProgram(null)
@@ -146,11 +131,14 @@ export default function NormalMapPage() {
 					<label htmlFor="easing">Light easing:</label>
 					<select name="easing" id="easing">
 						{easings.map((easing, i) => (
-							<option key={i} value={i}>{easing.name}</option>
+							<option key={i} value={i}>
+								{easing.name}
+							</option>
 						))}
 					</select>
 					<hr />
-					<label htmlFor="color">Color:
+					<label htmlFor="color">
+						Color:
 						<input type="checkbox" name="color" id="color" defaultChecked />
 					</label>
 					<hr />
@@ -164,7 +152,6 @@ export default function NormalMapPage() {
 		</div>
 	)
 }
-
 
 function handleInputs(canvas: HTMLCanvasElement, form: HTMLFormElement) {
 	const screen = {
@@ -183,49 +170,61 @@ function handleInputs(canvas: HTMLCanvasElement, form: HTMLFormElement) {
 
 	const controller = new AbortController()
 
-	window.addEventListener('resize', () => {
-		screen.width = window.innerWidth * window.devicePixelRatio
-		screen.height = window.innerHeight * window.devicePixelRatio
-		canvas.width = screen.width
-		canvas.height = screen.height
-	}, { signal: controller.signal })
+	window.addEventListener(
+		"resize",
+		() => {
+			screen.width = window.innerWidth * window.devicePixelRatio
+			screen.height = window.innerHeight * window.devicePixelRatio
+			canvas.width = screen.width
+			canvas.height = screen.height
+		},
+		{ signal: controller.signal },
+	)
 
-	window.addEventListener('pointermove', (e) => {
-		const event = e.getPredictedEvents().at(0) || e
-		const { left, top, width, height } = canvas.getBoundingClientRect()
+	window.addEventListener(
+		"pointermove",
+		(e) => {
+			const event = e.getPredictedEvents().at(0) || e
+			const { left, top, width, height } = canvas.getBoundingClientRect()
 
-		const x = (event.clientX - left) / width * screen.width
-		const y = (event.clientY - top) / height * screen.height
-		xyz[0] = x
-		xyz[1] = y
-	}, { signal: controller.signal })
+			const x = ((event.clientX - left) / width) * screen.width
+			const y = ((event.clientY - top) / height) * screen.height
+			xyz[0] = x
+			xyz[1] = y
+		},
+		{ signal: controller.signal },
+	)
 
 	const getValue = <T,>(name: string): T | undefined => {
 		if (!(name in form.elements)) return undefined
 		const element = form.elements[name as keyof typeof form.elements]
 		if (element instanceof HTMLSelectElement) return element.value as T
 		if (element instanceof HTMLInputElement) {
-			if (element.type === 'range') {
+			if (element.type === "range") {
 				return element.valueAsNumber as T
 			}
-			if (element.type === 'checkbox') {
+			if (element.type === "checkbox") {
 				return element.checked as T
 			}
 		}
 	}
 
-	form.addEventListener('input', () => {
-		const z = getValue<number>('z')!
-		const falloff = getValue<number>('falloff')!
-		const easing = getValue<string>('easing')!
-		const color = getValue<boolean>('color')!
-		const ambient = getValue<number>('ambient')!
-		xyz[2] = z * 500 / 100
-		inputs.falloff = falloff / 100
-		inputs.easing = parseInt(easing)
-		inputs.color = Number(color)
-		inputs.ambient = ambient / 100
-	}, { signal: controller.signal })
+	form.addEventListener(
+		"input",
+		() => {
+			const z = getValue<number>("z")!
+			const falloff = getValue<number>("falloff")!
+			const easing = getValue<string>("easing")!
+			const color = getValue<boolean>("color")!
+			const ambient = getValue<number>("ambient")!
+			xyz[2] = (z * 500) / 100
+			inputs.falloff = falloff / 100
+			inputs.easing = parseInt(easing)
+			inputs.color = Number(color)
+			inputs.ambient = ambient / 100
+		},
+		{ signal: controller.signal },
+	)
 
 	return {
 		xyz,
@@ -233,17 +232,15 @@ function handleInputs(canvas: HTMLCanvasElement, form: HTMLFormElement) {
 		screen,
 		clear: () => {
 			controller.abort()
-		}
+		},
 	}
 }
-
-
 
 function createShader(gl: WebGLRenderingContext, type: number, source: string) {
 	const shader = gl.createShader(type)
 
 	if (!shader) {
-		throw new Error('Unable to create shader')
+		throw new Error("Unable to create shader")
 	}
 
 	gl.shaderSource(shader, source)
@@ -262,7 +259,7 @@ function createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShader, fra
 	const program = gl.createProgram()
 
 	if (!program) {
-		throw new Error('Unable to create program')
+		throw new Error("Unable to create program")
 	}
 
 	gl.attachShader(program, vertexShader)

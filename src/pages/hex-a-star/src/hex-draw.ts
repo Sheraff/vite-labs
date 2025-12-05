@@ -1,6 +1,6 @@
-import type { HexGrid } from './hex-structures'
+import type { HexGrid } from "./hex-structures"
 
-const HEX_SIDE = 2 * Math.PI / 6
+const HEX_SIDE = (2 * Math.PI) / 6
 
 type Context = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
 

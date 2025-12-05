@@ -1,33 +1,33 @@
 /// <reference lib="webworker" />
 import type { AssignmentExpression, CallExpression, MemberExpression, UpdateExpression } from "acorn"
-import { parse, type Node } from 'acorn'
-import { ancestor as walk } from "acorn-walk"
-import MagicString from 'magic-string'
 
-export type Incoming =
-	| {
-		type: "source",
-		data: {
-			id: string,
-			code: string,
-		}
+import { parse, type Node } from "acorn"
+import { ancestor as walk } from "acorn-walk"
+import MagicString from "magic-string"
+
+export type Incoming = {
+	type: "source"
+	data: {
+		id: string
+		code: string
 	}
+}
 
 export type Outgoing =
 	| {
-		type: "transformed",
-		data: {
-			id: string,
-			code: string,
-		}
-	}
+			type: "transformed"
+			data: {
+				id: string
+				code: string
+			}
+	  }
 	| {
-		type: "error",
-		data: {
-			id: string,
-			error: string,
-		}
-	}
+			type: "error"
+			data: {
+				id: string
+				error: string
+			}
+	  }
 
 {
 	self.onmessage = (e: MessageEvent<Incoming>) => handleMessage(e.data)
@@ -43,7 +43,7 @@ export type Outgoing =
 						data: {
 							id: message.data.id,
 							error: String(err),
-						}
+						},
 					})
 					return
 				}
@@ -52,12 +52,12 @@ export type Outgoing =
 					data: {
 						id: message.data.id,
 						code,
-					}
+					},
 				})
 				break
 			}
 			default:
-				console.error('Unknown message type:', message.type)
+				console.error("Unknown message type:", message.type)
 		}
 	}
 }
@@ -87,15 +87,15 @@ TODO:
 - Reimplement most common methods (e.g., Math.*, String.*, Array.*, Set.*, Map.*) to use yield (and call them w/ yield*)
 */
 function transform(original: string) {
-	const prefix = 'async function* foo(){\n'
-	const suffix = '\n}'
+	const prefix = "async function* foo(){\n"
+	const suffix = "\n}"
 	const src = `${prefix}${original}${suffix}`
 
 	const semis: number[] = []
 
 	const ast = parse(src, {
-		sourceType: 'module',
-		ecmaVersion: 'latest',
+		sourceType: "module",
+		ecmaVersion: "latest",
 		locations: true,
 		ranges: true,
 		onInsertedSemicolon(lastTokEnd) {
@@ -104,7 +104,9 @@ function transform(original: string) {
 	})
 
 	let is_malicious = false
-	const isMalicious = () => { is_malicious = true }
+	const isMalicious = () => {
+		is_malicious = true
+	}
 	walk(ast, {
 		YieldExpression: isMalicious,
 		ImportDeclaration: isMalicious,
@@ -115,27 +117,27 @@ function transform(original: string) {
 		WithStatement: isMalicious,
 		ThisExpression: isMalicious,
 		Identifier(node) {
-			if (node.name === 'arguments') isMalicious()
-			else if (node.name === 'eval') isMalicious()
-			else if (node.name === 'importScripts') isMalicious()
-			else if (node.name === 'window') isMalicious()
-			else if (node.name === 'Function') isMalicious()
+			if (node.name === "arguments") isMalicious()
+			else if (node.name === "eval") isMalicious()
+			else if (node.name === "importScripts") isMalicious()
+			else if (node.name === "window") isMalicious()
+			else if (node.name === "Function") isMalicious()
 		},
 		MemberExpression(node) {
 			// forbid access to 'constructor', '__proto__', 'prototype' properties
-			if (!node.computed && node.property.type === 'Identifier') {
+			if (!node.computed && node.property.type === "Identifier") {
 				const propName = node.property.name
-				if (propName === 'constructor' || propName === '__proto__' || propName === 'prototype') {
+				if (propName === "constructor" || propName === "__proto__" || propName === "prototype") {
 					isMalicious()
 				}
 			}
-			if (node.computed && node.property.type === 'Literal') {
+			if (node.computed && node.property.type === "Literal") {
 				const propName = String(node.property.value)
-				if (propName === 'constructor' || propName === '__proto__' || propName === 'prototype') {
+				if (propName === "constructor" || propName === "__proto__" || propName === "prototype") {
 					isMalicious()
 				}
 			}
-		}
+		},
 	})
 	if (is_malicious) {
 		throw new Error(`Malicious code detected, ${JSON.stringify(is_malicious)}`)
@@ -162,17 +164,17 @@ function transform(original: string) {
 			// don't yield if
 			// - the top parent of the MemberExpression chain is the left side of an AssignmentExpression
 			// - the top parent of the MemberExpression chain is the argument of an UpdateExpression
-			const top = ancestors.findLast(a => a.type !== 'MemberExpression')
+			const top = ancestors.findLast((a) => a.type !== "MemberExpression")
 			if (top) {
-				if (top.type === 'AssignmentExpression' && (top as AssignmentExpression).left === node) {
+				if (top.type === "AssignmentExpression" && (top as AssignmentExpression).left === node) {
 					return
 				}
-				if (top.type === 'UpdateExpression' && (top as UpdateExpression).argument === node) {
+				if (top.type === "UpdateExpression" && (top as UpdateExpression).argument === node) {
 					return
 				}
 			}
 			// if the top parent of the MemberExpression chain is the callee of a CallExpression (e.g. `array.join('')`), we need to bind `this`
-			if (top && top.type === 'CallExpression' && (top as CallExpression).callee === node) {
+			if (top && top.type === "CallExpression" && (top as CallExpression).callee === node) {
 				bindThis.add(node)
 			}
 			queueNode(node)
@@ -183,7 +185,7 @@ function transform(original: string) {
 		},
 		VariableDeclarator: (node) => {
 			if (node.init) queueNode(node.init)
-		}
+		},
 	})
 
 	if (nodesToYield.length === 0) {
@@ -210,26 +212,26 @@ function transform(original: string) {
 	const s = new MagicString(src)
 
 	for (const { node } of nodesToYield) {
-		let before = ''
-		before += '('
-		before += 'yield '
-		before += '{ '
+		let before = ""
+		before += "("
+		before += "yield "
+		before += "{ "
 		before += `loc: { start: { line: ${node.loc!.start.line - prefix.length}, column: ${node.loc!.start.column - prefix.length} }, end: { line: ${node.loc!.end.line - prefix.length}, column: ${node.loc!.end.column - prefix.length} } },`
 		before += `start: ${node.start - prefix.length}, end: ${node.end - prefix.length},`
-		before += 'value: ('
+		before += "value: ("
 		s.appendLeft(node.start, before)
-		let after = ')'
+		let after = ")"
 		if (bindThis.has(node)) {
-			after += '.bind('
+			after += ".bind("
 			after += src.slice((node as MemberExpression).object.start, (node as MemberExpression).object.end)
-			after += ')'
+			after += ")"
 		}
-		after += ' }'
-		after += ')'
+		after += " }"
+		after += ")"
 		s.prependRight(node.end, after)
 		const semi_index = semis.indexOf(node.end)
 		if (semi_index !== -1) {
-			s.appendRight(node.end, ';')
+			s.appendRight(node.end, ";")
 			semis.splice(semi_index, 1)
 		}
 	}

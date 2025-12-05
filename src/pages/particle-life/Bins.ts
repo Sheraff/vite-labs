@@ -1,4 +1,3 @@
-
 export class Bins {
 	width: number
 	height: number
@@ -30,7 +29,6 @@ export class Bins {
 		this.binOffset = new Uint16Array(this.count)
 		this.binCursor = new Uint16Array(this.count)
 		this.bins = new Uint16Array(units)
-
 	}
 
 	clear() {

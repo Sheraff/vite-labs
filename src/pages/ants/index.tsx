@@ -1,14 +1,17 @@
-import styles from './styles.module.css'
-import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
-import type { Incoming, Outgoing } from "./worker"
-import Worker from "./worker?worker"
+
+import { Head } from "#components/Head"
 import { useEffect, useRef, useState } from "react"
 
+import type { Incoming, Outgoing } from "./worker"
+
+import styles from "./styles.module.css"
+import Worker from "./worker?worker"
+
 export const meta: RouteMeta = {
-	title: 'Ants',
-	image: './screen.png',
-	tags: ['simulation', 'performance']
+	title: "Ants",
+	image: "./screen.png",
+	tags: ["simulation", "performance"],
 }
 
 export default function AntsPage() {
@@ -29,7 +32,7 @@ export default function AntsPage() {
 			i: number,
 			type: I,
 			data: Extract<Incoming, { type: I }>["data"],
-			transfer?: Transferable[]
+			transfer?: Transferable[],
 		) {
 			workers[i].postMessage({ type, data }, { transfer })
 		}
@@ -42,7 +45,7 @@ export default function AntsPage() {
 		let done = false
 
 		const channels = 4
-		const image = ctx.createImageData(width, height, { colorSpace: 'srgb' })
+		const image = ctx.createImageData(width, height, { colorSpace: "srgb" })
 		const colors = {
 			ant: [0xcc, 0xcc, 0xcc, 0xff],
 			antAndFood: [0xee, 0x44, 0xee, 0xff],
@@ -69,18 +72,12 @@ export default function AntsPage() {
 			const rangeSize = Math.ceil(previousAntCount / (workers.length + 1))
 			for (let i = 0; i < data.length; i++) {
 				const point = data[i]
-				const isAnt
-					= point & 0b00000001
-				const isFood
-					= point & 0b00000010
-				const isAntAndFood
-					= point & 0b00000100
-				const isAnthill
-					= point & 0b00001000
-				const isPheromoneToFood
-					= (point & 0b11110000) >> 4
-				const isPheromoneToHill
-					= (point & 0b111100000000) >> 8
+				const isAnt = point & 0b00000001
+				const isFood = point & 0b00000010
+				const isAntAndFood = point & 0b00000100
+				const isAnthill = point & 0b00001000
+				const isPheromoneToFood = (point & 0b11110000) >> 4
+				const isPheromoneToHill = (point & 0b111100000000) >> 8
 
 				const index = i * channels
 
@@ -115,7 +112,7 @@ export default function AntsPage() {
 			}
 
 			if (!(i % 100)) {
-				console.log('antcount', antcount, 'foodcount', foodcount, 'untouchedfoodcount', untouchedfoodcount)
+				console.log("antcount", antcount, "foodcount", foodcount, "untouchedfoodcount", untouchedfoodcount)
 			}
 
 			previousAntCount = antcount
@@ -124,7 +121,7 @@ export default function AntsPage() {
 			if (!(i % 100)) {
 				ranges[workers.length] = data.length
 				ranges.length = workers.length + 1
-				console.log('ranges', workers.length, ranges.length, data.length, ranges)
+				console.log("ranges", workers.length, ranges.length, data.length, ranges)
 				for (let i = 0; i < workers.length; i++) {
 					post(i, "range", { from: ranges[i], to: ranges[i + 1] })
 				}
@@ -135,16 +132,16 @@ export default function AntsPage() {
 		function launch(buffer: SharedArrayBuffer) {
 			const parallelism = Math.max(1, navigator.hardwareConcurrency - 1)
 
-			console.log('parallelism', parallelism)
+			console.log("parallelism", parallelism)
 
 			for (let i = 0; i < parallelism; i++) {
-				const from = Math.floor(i * height / parallelism) * width
-				const to = Math.floor((i + 1) * height / parallelism) * width
-				const whose = i === 0 ? 'main' : 'worker'
-				console.log(whose, 'from', from, 'to', to)
+				const from = Math.floor((i * height) / parallelism) * width
+				const to = Math.floor(((i + 1) * height) / parallelism) * width
+				const whose = i === 0 ? "main" : "worker"
+				console.log(whose, "from", from, "to", to)
 				if (!workers[i]) {
 					workers[i] = new Worker()
-					workers[i].addEventListener('message', onMessage)
+					workers[i].addEventListener("message", onMessage)
 				}
 				const worker = new Worker()
 				worker.postMessage({ type: "share", data: { buffer, width, height, vision, from, to } })
@@ -160,7 +157,7 @@ export default function AntsPage() {
 				collected += e.data.data.count
 				console.log("collected", e.data.data.count, "total", collected)
 			} else {
-				console.log('unknown message', e.data)
+				console.log("unknown message", e.data)
 			}
 			// } else if (e.data.type === "done") {
 			// 	done = true
@@ -168,7 +165,7 @@ export default function AntsPage() {
 			// }
 		}
 
-		workers[0].addEventListener('message', onMessage)
+		workers[0].addEventListener("message", onMessage)
 		post(0, "start", {
 			width,
 			height,
@@ -176,7 +173,7 @@ export default function AntsPage() {
 		})
 		return () => {
 			for (const worker of workers) {
-				worker.removeEventListener('message', onMessage)
+				worker.removeEventListener("message", onMessage)
 				worker.terminate()
 			}
 			cancelAnimationFrame(rafId)
@@ -188,10 +185,16 @@ export default function AntsPage() {
 			<div className={styles.head}>
 				<Head />
 			</div>
-			{available && <canvas width="1000" height="1000" ref={ref}>
-				Your browser does not support the HTML5 canvas tag.
-			</canvas>}
-			{!available && <p>SharedArrayBuffer is not available, the service worker must have not auto-installed, try reloading the page.</p>}
+			{available && (
+				<canvas width="1000" height="1000" ref={ref}>
+					Your browser does not support the HTML5 canvas tag.
+				</canvas>
+			)}
+			{!available && (
+				<p>
+					SharedArrayBuffer is not available, the service worker must have not auto-installed, try reloading the page.
+				</p>
+			)}
 		</div>
 	)
 }

@@ -1,12 +1,14 @@
-import { useEffect, useRef } from "react"
-import styles from './styles.module.css'
-import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
 
+import { Head } from "#components/Head"
+import { useEffect, useRef } from "react"
+
+import styles from "./styles.module.css"
+
 export const meta: RouteMeta = {
-	title: 'Hacker Background',
-	image: './screen.png',
-	tags: ['animation', 'ascii']
+	title: "Hacker Background",
+	image: "./screen.png",
+	tags: ["animation", "ascii"],
 }
 
 export default function HackerBackground() {
@@ -15,14 +17,14 @@ export default function HackerBackground() {
 	useEffect(() => {
 		const canvas = canvasRef.current
 		if (!canvas) return
-		const ctx = canvas.getContext('2d')
+		const ctx = canvas.getContext("2d")
 		if (!ctx) return
 		const onResize = () => {
 			canvas.width = window.innerWidth * devicePixelRatio
 			canvas.height = window.innerHeight * devicePixelRatio
 		}
 		onResize()
-		window.addEventListener('resize', onResize)
+		window.addEventListener("resize", onResize)
 		const mouse = { x: -Infinity, y: -Infinity }
 		const reference = {
 			em: parseFloat(getComputedStyle(document.documentElement).fontSize) * devicePixelRatio,
@@ -33,11 +35,11 @@ export default function HackerBackground() {
 			mouse.x = event.clientX * devicePixelRatio
 			mouse.y = event.clientY * devicePixelRatio
 		}
-		window.addEventListener('pointermove', onMouseMove, { passive: true })
+		window.addEventListener("pointermove", onMouseMove, { passive: true })
 		const clear = start(ctx, mouse, reference)
 		return () => {
-			window.removeEventListener('pointermove', onMouseMove)
-			window.removeEventListener('resize', onResize)
+			window.removeEventListener("pointermove", onMouseMove)
+			window.removeEventListener("resize", onResize)
 			clear()
 		}
 	}, [])
@@ -52,20 +54,20 @@ export default function HackerBackground() {
 }
 
 const CHARS = [
-	'·',
-	'-',
-	'=',
-	'+',
-	'*',
-	'#',
-	'%',
+	"·",
+	"-",
+	"=",
+	"+",
+	"*",
+	"#",
+	"%",
 	// '&',
 	// '║',
 	// '■',
-	'█'
+	"█",
 ]
 
-const cubicEaseInOut = (x: number) => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2
+const cubicEaseInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2)
 const sineEaseOut = (x: number) => 1 - Math.cos((x * Math.PI) / 2)
 const circEaseOut = (x: number) => 1 - Math.sqrt(1 - Math.pow(x, 2))
 const quinticEaseIn = (x: number) => x * x * x * x * x
@@ -82,11 +84,7 @@ const getColor = (index: number, alpha: number = 1) => {
 	return `oklch(${light} 0.18 ${hue} / ${alpha})`
 }
 
-function start(
-	ctx: CanvasRenderingContext2D,
-	mouse: { x: number, y: number },
-	reference: { em: number, lh: number }
-) {
+function start(ctx: CanvasRenderingContext2D, mouse: { x: number; y: number }, reference: { em: number; lh: number }) {
 	const columns = Math.floor(ctx.canvas.width / reference.em)
 	const rows = Math.floor(ctx.canvas.height / reference.lh)
 
@@ -107,7 +105,6 @@ function start(
 		ctx.clearRect((col - 0.7) * reference.em, (row - 0.23) * reference.lh, reference.em, reference.lh)
 	}
 
-
 	const drawChar = (row: number, col: number, index: number) => {
 		if (index > 0) {
 			const gradient = ctx.createRadialGradient(
@@ -116,11 +113,11 @@ function start(
 				0,
 				(col - 0.2) * reference.em,
 				(row + 0.3) * reference.lh,
-				reference.em
+				reference.em,
 			)
 			const opacity = lerp(0.4, 0.8, index / (CHARS.length - 1))
 			gradient.addColorStop(0, getColor(index, opacity))
-			gradient.addColorStop(1, 'transparent')
+			gradient.addColorStop(1, "transparent")
 			ctx.fillStyle = gradient
 			ctx.fillRect((col - 0.7) * reference.em, (row - 0.23) * reference.lh, reference.em, reference.lh)
 		}
@@ -203,8 +200,6 @@ function start(
 			drawChar(row, col, nextIndex)
 			grid[row][col] = CHARS[nextIndex]
 		}
-
-
 	})
 	return () => cancelAnimationFrame(rafId)
 }

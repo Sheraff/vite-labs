@@ -1,12 +1,14 @@
 import type { RouteMeta } from "#router"
-import styles from './styles.module.css'
+
 import { Head } from "#components/Head"
 import { useEffect, useRef } from "react"
-import tileset_src from './tileset.png?url'
+
+import styles from "./styles.module.css"
+import tileset_src from "./tileset.png?url"
 
 export const meta: RouteMeta = {
-	title: 'Pacman',
-	tags: ['wip']
+	title: "Pacman",
+	tags: ["wip"],
 }
 
 const TILE_SIZE = 8
@@ -60,16 +62,20 @@ export default function PacmanPage() {
 
 function load(controller: AbortController, ctx: CanvasRenderingContext2D) {
 	fetch(tileset_src, { signal: controller.signal })
-		.then(response => response.blob())
-		.then(blob => createImageBitmap(blob))
-		.then(bitmap => {
+		.then((response) => response.blob())
+		.then((blob) => createImageBitmap(blob))
+		.then((bitmap) => {
 			start(controller, ctx, bitmap)
-			controller.signal.addEventListener("abort", () => {
-				bitmap.close()
-			}, { once: true })
+			controller.signal.addEventListener(
+				"abort",
+				() => {
+					bitmap.close()
+				},
+				{ once: true },
+			)
 		})
-		.catch(err => {
-			if (err.name === 'AbortError') return
+		.catch((err) => {
+			if (err.name === "AbortError") return
 			controller.abort()
 			console.error(err)
 		})
@@ -261,7 +267,6 @@ function start(controller: AbortController, ctx: CanvasRenderingContext2D, bitma
 		drawTile(26 * TILE_SIZE, 7 * TILE_SIZE, red_tiles.collectible_dot)
 		drawTile(27 * TILE_SIZE, 7 * TILE_SIZE, red_tiles.wall_center_left)
 
-
 		// let x = 0
 		// let y = 0
 		// for (const tile in red_tiles) {
@@ -278,26 +283,16 @@ function start(controller: AbortController, ctx: CanvasRenderingContext2D, bitma
 		// }
 	})
 
-	controller.signal.addEventListener("abort", () => {
-		cancelAnimationFrame(rafId)
-	}, { once: true })
+	controller.signal.addEventListener(
+		"abort",
+		() => {
+			cancelAnimationFrame(rafId)
+		},
+		{ once: true },
+	)
 
-	function drawTile(
-		destX: number,
-		destY: number,
-		[x, y, span]: Tile,
-	) {
-		ctx.drawImage(
-			bitmap,
-			x,
-			y,
-			TILE_SIZE * span,
-			TILE_SIZE * span,
-			destX,
-			destY,
-			TILE_SIZE * span,
-			TILE_SIZE * span
-		)
+	function drawTile(destX: number, destY: number, [x, y, span]: Tile) {
+		ctx.drawImage(bitmap, x, y, TILE_SIZE * span, TILE_SIZE * span, destX, destY, TILE_SIZE * span, TILE_SIZE * span)
 	}
 }
 
@@ -430,13 +425,6 @@ const getColorTiles = (color: ColorName) => {
 	const offsetX = offsets[0] * COLOR_TILESET_SIZE[0]
 	const offsetY = offsets[1] * COLOR_TILESET_SIZE[1]
 	return Object.fromEntries(
-		Object.entries(BASE_TILE_SET).map(([name, [x, y, span]]) => [
-			name,
-			[
-				x + offsetX,
-				y + offsetY,
-				span
-			] as Tile
-		])
+		Object.entries(BASE_TILE_SET).map(([name, [x, y, span]]) => [name, [x + offsetX, y + offsetY, span] as Tile]),
 	) as Record<TileName, Tile>
 }

@@ -8,8 +8,8 @@ import {
 	useState,
 	type ElementType,
 	type ReactNode,
-} from 'react'
-import { createPortal } from 'react-dom'
+} from "react"
+import { createPortal } from "react-dom"
 
 const fragments = document.createDocumentFragment()
 const getProps = Symbol()
@@ -20,10 +20,9 @@ export type FragmentPortal = HTMLElement & {
 	[getProps]?: () => any
 	[setProps]?: (props: any) => void
 	[currentProps]?: any
-
 }
 
-export function useFragment(type = 'div') {
+export function useFragment(type = "div") {
 	const [fragment] = useState(() => {
 		const element = document.createElement(type)
 		fragments.appendChild(element)
@@ -40,7 +39,12 @@ export function useFragment(type = 'div') {
 	return fragment
 }
 
-export function Receptacle({ fragment, props, type = 'div', slot }: {
+export function Receptacle({
+	fragment,
+	props,
+	type = "div",
+	slot,
+}: {
 	fragment?: FragmentPortal
 	props: any
 	type?: ElementType
@@ -73,10 +77,7 @@ export function Receptacle({ fragment, props, type = 'div', slot }: {
 	return <Element ref={div} />
 }
 
-export function Portal({ children, fragment }: {
-	children: ReactNode
-	fragment: FragmentPortal
-}) {
+export function Portal({ children, fragment }: { children: ReactNode; fragment: FragmentPortal }) {
 	const [extraProps, setExtraProps] = useState(fragment[getProps]?.() || {})
 	fragment[setProps] = setExtraProps
 	fragment[currentProps] = () => extraProps

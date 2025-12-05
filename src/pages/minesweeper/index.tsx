@@ -1,11 +1,12 @@
-import { useEffect, useState, useSyncExternalStore } from "react"
-import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
 
+import { Head } from "#components/Head"
+import { useEffect, useState, useSyncExternalStore } from "react"
+
 export const meta: RouteMeta = {
-	title: 'Minesweeper',
-	image: './screen.png',
-	tags: ['game']
+	title: "Minesweeper",
+	image: "./screen.png",
+	tags: ["game"],
 }
 
 type State = {
@@ -36,9 +37,15 @@ function setState(state: State) {
 }
 
 function randomInitialState(width: number, height: number, mines: number): State {
-	const board = Array(height).fill(0).map(() => Array(width).fill(0))
-	const visible = Array(height).fill(0).map(() => Array(width).fill(false))
-	const flagged = Array(height).fill(0).map(() => Array(width).fill(false))
+	const board = Array(height)
+		.fill(0)
+		.map(() => Array(width).fill(0))
+	const visible = Array(height)
+		.fill(0)
+		.map(() => Array(width).fill(false))
+	const flagged = Array(height)
+		.fill(0)
+		.map(() => Array(width).fill(false))
 
 	for (let i = 0; i < mines; i++) {
 		let x, y
@@ -66,8 +73,8 @@ const cache = new Map<string, State>()
 export default function MineSweeper() {
 	const state = useSyncExternalStore(
 		(sub) => {
-			window.addEventListener('hashchange', sub)
-			return () => window.removeEventListener('hashchange', sub)
+			window.addEventListener("hashchange", sub)
+			return () => window.removeEventListener("hashchange", sub)
 		},
 		() => {
 			const existing = getState()
@@ -80,9 +87,14 @@ export default function MineSweeper() {
 
 	const revealAdjacentCells = (rowIndex: number, colIndex: number, newVisible: boolean[][]) => {
 		const directions = [
-			[-1, -1], [-1, 0], [-1, 1],
-			[0, -1], [0, 1],
-			[1, -1], [1, 0], [1, 1]
+			[-1, -1],
+			[-1, 0],
+			[-1, 1],
+			[0, -1],
+			[0, 1],
+			[1, -1],
+			[1, 0],
+			[1, 1],
 		]
 
 		const stack = [[rowIndex, colIndex]]
@@ -93,8 +105,10 @@ export default function MineSweeper() {
 				const newRow = row + dx
 				const newCol = col + dy
 				if (
-					newRow >= 0 && newRow < state.board.length &&
-					newCol >= 0 && newCol < state.board[0].length &&
+					newRow >= 0 &&
+					newRow < state.board.length &&
+					newCol >= 0 &&
+					newCol < state.board[0].length &&
 					!newVisible[newRow][newCol]
 				) {
 					newVisible[newRow][newCol] = true
@@ -124,7 +138,7 @@ export default function MineSweeper() {
 
 		// Check if the cell is a mine
 		if (state.board[rowIndex][colIndex] === -1) {
-			const newVisible = state.board.map(row => row.map(() => true))
+			const newVisible = state.board.map((row) => row.map(() => true))
 			setState({ ...state, visible: newVisible, lost: true })
 		} else {
 			if (state.board[rowIndex][colIndex] === 0) {
@@ -136,13 +150,12 @@ export default function MineSweeper() {
 		}
 	}
 
-
 	return (
 		<>
 			<Head />
-			<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+			<div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
 				<Timer startTimer={state.startTimer} stop={state.won || state.lost} />
-				<div style={{ display: 'grid', gridTemplateColumns: `repeat(${state.width}, min-content)` }}>
+				<div style={{ display: "grid", gridTemplateColumns: `repeat(${state.width}, min-content)` }}>
 					{state.board.map((row, rowIndex) =>
 						row.map((cell, colIndex) => (
 							<button
@@ -150,13 +163,13 @@ export default function MineSweeper() {
 								style={{
 									width: 30,
 									height: 30,
-									backgroundColor: state.visible[rowIndex][colIndex] ? '#ddd' : '#bbb',
-									border: '1px solid #999',
-									display: 'flex',
-									alignItems: 'center',
-									justifyContent: 'center',
-									fontWeight: 'bold',
-									color: state.flagged[rowIndex][colIndex] ? 'red' : 'black',
+									backgroundColor: state.visible[rowIndex][colIndex] ? "#ddd" : "#bbb",
+									border: "1px solid #999",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									fontWeight: "bold",
+									color: state.flagged[rowIndex][colIndex] ? "red" : "black",
 								}}
 								onClick={() => {
 									handleCellClick(rowIndex, colIndex)
@@ -170,21 +183,31 @@ export default function MineSweeper() {
 									setState({ ...state, flagged: newFlagged, won })
 								}}
 							>
-								{state.visible[rowIndex][colIndex] ? (cell === -1 ? '💣' : cell || '') : (state.flagged[rowIndex][colIndex] ? '🚩' : '')}
+								{state.visible[rowIndex][colIndex]
+									? cell === -1
+										? "💣"
+										: cell || ""
+									: state.flagged[rowIndex][colIndex]
+										? "🚩"
+										: ""}
 							</button>
-						))
+						)),
 					)}
 				</div>
 				{(state.won || state.lost) && (
-					<form onSubmit={(e) => {
-						e.preventDefault()
-						const formData = new FormData(e.currentTarget)
-						setState(randomInitialState(
-							Number(formData.get('width') ?? state.width),
-							Number(formData.get('height') ?? state.height),
-							Number(formData.get('mines') ?? state.mines),
-						))
-					}}>
+					<form
+						onSubmit={(e) => {
+							e.preventDefault()
+							const formData = new FormData(e.currentTarget)
+							setState(
+								randomInitialState(
+									Number(formData.get("width") ?? state.width),
+									Number(formData.get("height") ?? state.height),
+									Number(formData.get("mines") ?? state.mines),
+								),
+							)
+						}}
+					>
 						{state.won ? <h2>You Win!</h2> : <h2>Game Over</h2>}
 						<p>
 							<label>
@@ -209,15 +232,14 @@ export default function MineSweeper() {
 	)
 }
 
-
 const formatTime = (time: number) => {
 	const hours = Math.floor(time / 3600000)
 	const minutes = Math.floor((time % 3600000) / 60000)
 	const seconds = Math.floor((time % 60000) / 1000)
-	return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+	return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
 }
 
-function Timer({ startTimer, stop }: { startTimer: number, stop: boolean }) {
+function Timer({ startTimer, stop }: { startTimer: number; stop: boolean }) {
 	const [time, setTime] = useState(() => formatTime(Date.now() - startTimer))
 
 	useEffect(() => {
@@ -228,14 +250,20 @@ function Timer({ startTimer, stop }: { startTimer: number, stop: boolean }) {
 		return () => clearInterval(interval)
 	}, [stop])
 
-	return <div style={{
-		fontFamily: 'Courier, monospace',
-		fontSize: '48px',
-		fontWeight: 'bold',
-		letterSpacing: '5px',
-		color: '#f00',
-		padding: '10px',
-		borderRadius: '5px',
-		display: 'inline-block',
-	}}>{time}</div>
+	return (
+		<div
+			style={{
+				fontFamily: "Courier, monospace",
+				fontSize: "48px",
+				fontWeight: "bold",
+				letterSpacing: "5px",
+				color: "#f00",
+				padding: "10px",
+				borderRadius: "5px",
+				display: "inline-block",
+			}}
+		>
+			{time}
+		</div>
+	)
 }

@@ -1,12 +1,14 @@
 import type { RouteMeta } from "#router"
-import styles from './styles.module.css'
+
 import { Head } from "#components/Head"
-import { useEffect, useRef, useState, type CSSProperties } from "react"
 import { StaticTreeNode } from "#particle-life/StaticTreeNode"
+import { useEffect, useRef, useState, type CSSProperties } from "react"
+
+import styles from "./styles.module.css"
 
 export const meta: RouteMeta = {
-	title: 'Fireflies',
-	image: './screen.png'
+	title: "Fireflies",
+	image: "./screen.png",
 }
 
 export default function FirefliesPage() {
@@ -34,21 +36,13 @@ export default function FirefliesPage() {
 		const values = new Float32Array(count)
 		const cooldown = new Uint8Array(count)
 
-		const tree = new StaticTreeNode(
-			0,
-			0,
-			width,
-			height,
-			x,
-			y,
-			8
-		)
+		const tree = new StaticTreeNode(0, 0, width, height, x, y, 8)
 		for (let i = 0; i < count; i++) {
 			x[i] = Math.random() * width
 			y[i] = Math.random() * height
 			angle[i] = Math.random() * Math.PI * 2
 			speed[i] = Math.random() * 0.01 + 0.005
-			values[i] = (Math.random()) * 0.8
+			values[i] = Math.random() * 0.8
 			tree.insert(i)
 		}
 
@@ -93,9 +87,12 @@ export default function FirefliesPage() {
 			cooldown[index] = 1
 			enqueue(() => {
 				values[index] = 0
-				enqueue(() => {
-					cooldown[index] = 0
-				}, Math.random() * 1000 + 500)
+				enqueue(
+					() => {
+						cooldown[index] = 0
+					},
+					Math.random() * 1000 + 500,
+				)
 			}, 1000)
 		}
 
@@ -145,7 +142,6 @@ export default function FirefliesPage() {
 					y[i] = height
 					angle[i] = -angle[i]
 				}
-
 			}
 
 			// update tree
@@ -166,7 +162,7 @@ export default function FirefliesPage() {
 				const off = cooldown[i] > 0 && intensity === 0
 				const radius = flySize * (intensity * 0.5 + 0.5)
 				if (off) {
-					ctx.fillStyle = 'oklch(15.963% 0.04264 135.797)'
+					ctx.fillStyle = "oklch(15.963% 0.04264 135.797)"
 				} else {
 					const eased = easeInCubic(intensity)
 					const yellow = [90.749, 0.14483, 94.754]
@@ -177,13 +173,7 @@ export default function FirefliesPage() {
 					ctx.fillStyle = `oklch(${l}% ${c} ${h} / ${eased * 0.8 + 0.2})`
 				}
 				ctx.beginPath()
-				ctx.arc(
-					x[i],
-					y[i],
-					radius,
-					0,
-					Math.PI * 2
-				)
+				ctx.arc(x[i], y[i], radius, 0, Math.PI * 2)
 				ctx.fill()
 				// if (intensity > 0.8) {
 				// 	ctx.strokeStyle = 'white'

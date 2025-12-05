@@ -1,25 +1,23 @@
-import { HexGrid, makeHexGrid } from './src/hex-structures'
-import { drawMatrix, drawCell, type Cell } from './src/hex-draw'
-import { setStartEnd, addObstacle } from './src/grid-utils'
-import seededRandom, { type PRNG } from './src/seeded-random'
-import aStar from './src/a-star'
-import interrupt from './src/interruptable-async-generator-function'
-
+import aStar from "./src/a-star"
+import { setStartEnd, addObstacle } from "./src/grid-utils"
+import { drawMatrix, drawCell, type Cell } from "./src/hex-draw"
+import { HexGrid, makeHexGrid } from "./src/hex-structures"
+import interrupt from "./src/interruptable-async-generator-function"
+import seededRandom, { type PRNG } from "./src/seeded-random"
 
 /// <reference lib="webworker" />
 
 export type Incoming =
-	| { type: "canvas", data: { canvas: OffscreenCanvas, side: number } }
-	| { type: "seed", data: { seed: string } }
-
+	| { type: "canvas"; data: { canvas: OffscreenCanvas; side: number } }
+	| { type: "seed"; data: { seed: string } }
 
 {
 	self.onmessage = (e: MessageEvent<Incoming>) => handleMessage(e.data)
 
 	let context: OffscreenCanvasRenderingContext2D | null = null
 	let side = 0
-	let clear = () => { }
-	let seed = ''
+	let clear = () => {}
+	let seed = ""
 
 	function handleMessage(event: Incoming) {
 		if (event.type === "canvas") {
@@ -87,12 +85,7 @@ function animatePath(context: OffscreenCanvasRenderingContext2D, matrix: HexGrid
 // const OBSTACLE_SIZE = [3, 20]
 
 function makeGrid(random: PRNG, side: number) {
-	const {
-		GRID_SIZE,
-		DISTANCE,
-		OBSTACLE_COUNT,
-		OBSTACLE_SIZE,
-	} = makeParams(side)
+	const { GRID_SIZE, DISTANCE, OBSTACLE_COUNT, OBSTACLE_SIZE } = makeParams(side)
 	const matrix = makeHexGrid(...GRID_SIZE)
 	const { start, end } = setStartEnd(matrix, random, DISTANCE)
 	for (let i = 0; i < OBSTACLE_COUNT; i++) {
@@ -103,13 +96,10 @@ function makeGrid(random: PRNG, side: number) {
 
 function makeParams(side: number) {
 	const x = Math.round(side / 20)
-	const y = x + Math.round((x + x * Math.cos(2 * Math.PI / 6) - Math.cos(2 * Math.PI / 6)) / 2) - 2
+	const y = x + Math.round((x + x * Math.cos((2 * Math.PI) / 6) - Math.cos((2 * Math.PI) / 6)) / 2) - 2
 	const distance = (x + y) * 0.3
-	const obstacleCount = Math.round(x * y / 60)
-	const obstacleSize = [
-		Math.floor(x * y / 300),
-		Math.ceil(x * y / 20),
-	] as const
+	const obstacleCount = Math.round((x * y) / 60)
+	const obstacleSize = [Math.floor((x * y) / 300), Math.ceil((x * y) / 20)] as const
 	return {
 		GRID_SIZE: [x, y] as const,
 		DISTANCE: distance,
@@ -119,9 +109,9 @@ function makeParams(side: number) {
 }
 
 function wait(ms: number) {
-	return new Promise(resolve => setTimeout(resolve, ms))
+	return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 function nextFrame() {
-	return new Promise(resolve => requestAnimationFrame(resolve))
+	return new Promise((resolve) => requestAnimationFrame(resolve))
 }

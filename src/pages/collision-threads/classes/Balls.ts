@@ -1,7 +1,7 @@
-import { makeSharedStruct } from "./sharedStruct"
 import { COUNT, GRAVITY, DELAY_BETWEEN_BALLS, MAX_BALL_RADIUS, MIN_BALL_RADIUS, COLORS } from "../utils/constants"
 import * as FloatAtomics from "../utils/FloatAtomics"
 import { randomFloat, randomInt } from "../utils/random"
+import { makeSharedStruct } from "./sharedStruct"
 
 export type Balls = ReturnType<typeof makeBalls>
 export type SerializedBalls = ReturnType<Balls["serialize"]>
@@ -54,7 +54,16 @@ export function makeBalls(side: number) {
 	}
 
 	let drawUi = true
-	function draw({ main, ui }: { main: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, ui: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D }, dt: number) {
+	function draw(
+		{
+			main,
+			ui,
+		}: {
+			main: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
+			ui: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
+		},
+		dt: number,
+	) {
 		if (drawUi) {
 			ui.fillStyle = "gray"
 			ui.beginPath()
@@ -62,7 +71,7 @@ export function makeBalls(side: number) {
 			ui.fill()
 
 			ui.fillStyle = "black"
-			const max = side / 1000 * MAX_BALL_RADIUS
+			const max = (side / 1000) * MAX_BALL_RADIUS
 			const x = container.x
 			const y = container.y - container.r + 2 * max
 			ui.beginPath()
@@ -103,8 +112,8 @@ export function makeBalls(side: number) {
 		const i = internal.lastBall
 		internal.lastBall += 1
 		lastBallDelay = DELAY_BETWEEN_BALLS / 1000
-		const min = side / 1000 * MIN_BALL_RADIUS
-		const max = side / 1000 * MAX_BALL_RADIUS
+		const min = (side / 1000) * MIN_BALL_RADIUS
+		const max = (side / 1000) * MAX_BALL_RADIUS
 		const x = side / 2
 		const y = container.y - container.r + 2 * max
 		const prevDx = randomInt(0, 1) ? -Math.round(side / 3) : Math.round(side / 3)
@@ -118,7 +127,7 @@ export function makeBalls(side: number) {
 		Atomics.store(base.color, i, randomInt(0, COLORS.length - 1))
 	}
 
-	const relativeGravity = [GRAVITY[0] * side / 1000, GRAVITY[1] * side / 1000]
+	const relativeGravity = [(GRAVITY[0] * side) / 1000, (GRAVITY[1] * side) / 1000]
 	function applyGravity() {
 		accelerate(relativeGravity[0], relativeGravity[1])
 	}
@@ -199,16 +208,13 @@ export function makeBalls(side: number) {
 		}
 	}
 
-	const balls = Object.assign(
-		base,
-		{
-			side,
-			container,
-			initValues,
-			draw,
-			step,
-			getLastBall: () => internal.lastBall,
-		},
-	)
+	const balls = Object.assign(base, {
+		side,
+		container,
+		initValues,
+		draw,
+		step,
+		getLastBall: () => internal.lastBall,
+	})
 	return balls
 }

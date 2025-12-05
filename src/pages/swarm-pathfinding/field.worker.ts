@@ -4,26 +4,25 @@ import { fieldMap } from "./utils"
 
 export type Incoming =
 	| {
-		type: "init",
-		data: {
-			side: number
-			grid: SharedArrayBuffer
-			field: SharedArrayBuffer
-			range: [x1: number, x2: number, y1: number, y2: number]
-			index: number
-			wx: number
-			wy: number
-		}
-	}
-	| { type: "clear", data: undefined }
+			type: "init"
+			data: {
+				side: number
+				grid: SharedArrayBuffer
+				field: SharedArrayBuffer
+				range: [x1: number, x2: number, y1: number, y2: number]
+				index: number
+				wx: number
+				wy: number
+			}
+	  }
+	| { type: "clear"; data: undefined }
 	| {
-		type: "query",
-		data: {
-			goals: Array<[x: number, y: number]>,
-			layer: number
-		}
-	}
-
+			type: "query"
+			data: {
+				goals: Array<[x: number, y: number]>
+				layer: number
+			}
+	  }
 
 let grid: Uint8Array
 let field: Uint8Array

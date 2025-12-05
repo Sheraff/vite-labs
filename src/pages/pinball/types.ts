@@ -41,7 +41,7 @@ export interface FlipperConfig {
 	id: string
 	x: number
 	y: number
-	side: 'left' | 'right'
+	side: "left" | "right"
 	length: number
 	width: number
 }

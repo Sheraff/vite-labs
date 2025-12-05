@@ -1,13 +1,15 @@
-import { useEffect, useRef } from "react"
-import styles from './styles.module.css'
-import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
+
+import { Head } from "#components/Head"
+import { useEffect, useRef } from "react"
+
+import styles from "./styles.module.css"
 import { TreeNode } from "./TreeNode"
 
 export const meta: RouteMeta = {
-	title: 'Quad Tree Collisions',
-	image: './screen.png',
-	tags: ['data structures', 'performance']
+	title: "Quad Tree Collisions",
+	image: "./screen.png",
+	tags: ["data structures", "performance"],
 }
 
 export default function QuadTreeCollisions() {
@@ -17,7 +19,7 @@ export default function QuadTreeCollisions() {
 	useEffect(() => {
 		const canvas = canvasRef.current
 		if (!canvas) return
-		const ctx = canvas.getContext('2d')
+		const ctx = canvas.getContext("2d")
 		if (!ctx) return
 		const form = formRef.current
 		if (!form) return
@@ -31,21 +33,24 @@ export default function QuadTreeCollisions() {
 			mouse.x = event.clientX * devicePixelRatio
 			mouse.y = event.clientY * devicePixelRatio
 		}
-		window.addEventListener('pointermove', onMouseMove, { passive: true })
+		window.addEventListener("pointermove", onMouseMove, { passive: true })
 
 		const options = {
-			geometry: true
+			geometry: true,
 		}
 		const onForm = () => {
-			options.geometry = 'geometry' in form.elements && form.elements.geometry instanceof HTMLInputElement ? form.elements.geometry.checked : false
+			options.geometry =
+				"geometry" in form.elements && form.elements.geometry instanceof HTMLInputElement
+					? form.elements.geometry.checked
+					: false
 		}
-		form.addEventListener('input', onForm)
+		form.addEventListener("input", onForm)
 		onForm()
 
 		const clear = start(ctx, mouse, options)
 		return () => {
-			window.removeEventListener('pointermove', onMouseMove)
-			form.removeEventListener('input', onForm)
+			window.removeEventListener("pointermove", onMouseMove)
+			form.removeEventListener("input", onForm)
 			clear()
 		}
 	}, [])
@@ -69,26 +74,25 @@ export default function QuadTreeCollisions() {
 	)
 }
 
-function start(
-	ctx: CanvasRenderingContext2D,
-	mouse: { x: number, y: number },
-	options: { geometry: boolean }
-) {
-
+function start(ctx: CanvasRenderingContext2D, mouse: { x: number; y: number }, options: { geometry: boolean }) {
 	const tree = new TreeNode<Ball>(0, 0, ctx.canvas.width, ctx.canvas.height)
 	const bounds = { top: 0, right: ctx.canvas.width, bottom: ctx.canvas.height, left: 0 }
 
-	const balls = Array.from({ length: 10000 }, () => new Ball(
-		Math.random() * ctx.canvas.width,
-		Math.random() * ctx.canvas.height,
-		Math.random() * 3 + 1,
-		`hsl(${Math.random() * 360}, 100%, 50%)`,
-		Math.random() * 70 + 10,
-		Math.random() * Math.PI * 2,
-		bounds
-	))
+	const balls = Array.from(
+		{ length: 10000 },
+		() =>
+			new Ball(
+				Math.random() * ctx.canvas.width,
+				Math.random() * ctx.canvas.height,
+				Math.random() * 3 + 1,
+				`hsl(${Math.random() * 360}, 100%, 50%)`,
+				Math.random() * 70 + 10,
+				Math.random() * Math.PI * 2,
+				bounds,
+			),
+	)
 
-	const maxRadius = Math.max(...balls.map(ball => ball.radius))
+	const maxRadius = Math.max(...balls.map((ball) => ball.radius))
 
 	for (const ball of balls) {
 		tree.insert(ball)
@@ -101,7 +105,7 @@ function start(
 		lastTimestamp = 0
 		run = !document.hidden
 	}
-	window.addEventListener('visibilitychange', onHide)
+	window.addEventListener("visibilitychange", onHide)
 
 	let rafId = requestAnimationFrame(function loop(timestamp) {
 		const init = !lastTimestamp
@@ -132,38 +136,40 @@ function start(
 				drawBall(ctx, ball)
 			}
 		} else {
-			const ballClosestToMouse = balls.reduce((closest, ball) => {
-				const dx = ball.x - mouse.x
-				const dy = ball.y - mouse.y
-				const distance = Math.sqrt(dx * dx + dy * dy)
-				if (distance < closest.distance) {
-					return { ball, distance }
-				}
-				return closest
-			}, { ball: balls[0], distance: Infinity }).ball
+			const ballClosestToMouse = balls.reduce(
+				(closest, ball) => {
+					const dx = ball.x - mouse.x
+					const dy = ball.y - mouse.y
+					const distance = Math.sqrt(dx * dx + dy * dy)
+					if (distance < closest.distance) {
+						return { ball, distance }
+					}
+					return closest
+				},
+				{ ball: balls[0], distance: Infinity },
+			).ball
 
 			drawTree(ctx, tree)
 			for (const ball of balls) {
-				drawBall(ctx, ball, 'white')
+				drawBall(ctx, ball, "white")
 			}
 
 			const neighbors = tree.query(ballClosestToMouse.x, ballClosestToMouse.y, maxRadius * 2)
 			for (const neighbor of neighbors) {
-				drawBall(ctx, neighbor, 'green')
+				drawBall(ctx, neighbor, "green")
 			}
-			drawBall(ctx, ballClosestToMouse, 'red')
+			drawBall(ctx, ballClosestToMouse, "red")
 			ctx.lineWidth = 1
-			ctx.strokeStyle = 'red'
+			ctx.strokeStyle = "red"
 			ctx.beginPath()
 			ctx.arc(ballClosestToMouse.x, ballClosestToMouse.y, maxRadius * 2, 0, Math.PI * 2)
 			ctx.stroke()
 		}
-
 	})
 
 	return () => {
 		cancelAnimationFrame(rafId)
-		window.removeEventListener('visibilitychange', onHide)
+		window.removeEventListener("visibilitychange", onHide)
 	}
 }
 
@@ -174,7 +180,7 @@ class Ball {
 	color: string
 	speed: number
 	direction: number
-	bounds: { top: number, right: number, bottom: number, left: number }
+	bounds: { top: number; right: number; bottom: number; left: number }
 
 	constructor(
 		x: number,
@@ -183,7 +189,7 @@ class Ball {
 		color: string,
 		speed: number,
 		direction: number,
-		bounds: { top: number, right: number, bottom: number, left: number }
+		bounds: { top: number; right: number; bottom: number; left: number },
 	) {
 		this.x = x
 
@@ -225,8 +231,8 @@ class Ball {
 		if (distance >= minDistance) return false
 		const overlap = minDistance - distance
 		const angle = Math.atan2(dy, dx)
-		const overlapX = Math.cos(angle) * overlap / 2
-		const overlapY = Math.sin(angle) * overlap / 2
+		const overlapX = (Math.cos(angle) * overlap) / 2
+		const overlapY = (Math.sin(angle) * overlap) / 2
 		a.x -= overlapX
 		a.y -= overlapY
 		b.x += overlapX
@@ -251,19 +257,12 @@ class Ball {
 			const impulseX = j * normalX
 			const impulseY = j * normalY
 
-			a.direction = Math.atan2(
-				Math.sin(a.direction) * a.speed - impulseY,
-				Math.cos(a.direction) * a.speed - impulseX
-			)
-			b.direction = Math.atan2(
-				Math.sin(b.direction) * b.speed + impulseY,
-				Math.cos(b.direction) * b.speed + impulseX
-			)
+			a.direction = Math.atan2(Math.sin(a.direction) * a.speed - impulseY, Math.cos(a.direction) * a.speed - impulseX)
+			b.direction = Math.atan2(Math.sin(b.direction) * b.speed + impulseY, Math.cos(b.direction) * b.speed + impulseX)
 		}
 		return true
 	}
 }
-
 
 function drawTree(ctx: CanvasRenderingContext2D, tree: TreeNode) {
 	if (tree.children) {
@@ -272,7 +271,7 @@ function drawTree(ctx: CanvasRenderingContext2D, tree: TreeNode) {
 			drawTree(ctx, child)
 		}
 	}
-	ctx.strokeStyle = 'white'
+	ctx.strokeStyle = "white"
 	ctx.lineWidth = 1 / tree.depth
 	ctx.strokeRect(tree.x, tree.y, tree.width, tree.height)
 }

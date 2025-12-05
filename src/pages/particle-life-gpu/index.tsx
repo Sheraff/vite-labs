@@ -1,21 +1,23 @@
-import styles from './styles.module.css'
-import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
-import { use, useEffect, useRef, useState } from "react"
+
 import { getFormValue } from "#components/getFormValue"
+import { Head } from "#components/Head"
 import { makeFrameCounter } from "#components/makeFrameCounter"
-import drawShader from './draw.wgsl?raw'
-import binShader from './bin-fill.wgsl?raw'
-import updateShader from './update.wgsl?raw'
+import { use, useEffect, useRef, useState } from "react"
+
+import binShader from "./bin-fill.wgsl?raw"
+import drawShader from "./draw.wgsl?raw"
+import styles from "./styles.module.css"
+import updateShader from "./update.wgsl?raw"
 
 // const particleCount = 200_000
 const particleCount = 100_000
 // const particleCount = 20_000
 
 export const meta: RouteMeta = {
-	title: 'Particle Life GPU',
-	tags: ['simulation', 'webgpu', 'particles'],
-	image: './screen.png'
+	title: "Particle Life GPU",
+	tags: ["simulation", "webgpu", "particles"],
+	image: "./screen.png",
 }
 
 export default function ParticleLifeGPUPage() {
@@ -41,7 +43,7 @@ export default function ParticleLifeGPUPage() {
 			onFrame: (dt) => setFps(Math.round(frameCounter(dt / 1000))),
 			controls: {
 				randomize: randomizeButton,
-			}
+			},
 		})
 
 		return () => {
@@ -49,17 +51,23 @@ export default function ParticleLifeGPUPage() {
 		}
 	}, [supported])
 
-	const [numberFormat] = useState(() => new Intl.NumberFormat('en-US'))
+	const [numberFormat] = useState(() => new Intl.NumberFormat("en-US"))
 
 	return (
 		<div className={styles.main}>
 			<div className={styles.head}>
 				<Head />
 				{!supported && <pre>Your browser does not support WebGPU.</pre>}
-				{supported && <>
-					<pre>{numberFormat.format(particleCount)} particles, {fps} fps</pre>
-					<button ref={randomizeRef} type="button" name="randomize">🎲</button>
-				</>}
+				{supported && (
+					<>
+						<pre>
+							{numberFormat.format(particleCount)} particles, {fps} fps
+						</pre>
+						<button ref={randomizeRef} type="button" name="randomize">
+							🎲
+						</button>
+					</>
+				)}
 			</div>
 			<canvas ref={canvasRef} />
 		</div>
@@ -72,35 +80,36 @@ async function start({
 	onFrame,
 	controls,
 }: {
-	controller: AbortController,
-	canvas: HTMLCanvasElement,
-	onFrame: (dt: number) => void,
+	controller: AbortController
+	canvas: HTMLCanvasElement
+	onFrame: (dt: number) => void
 	controls: {
-		randomize: HTMLButtonElement,
-	},
+		randomize: HTMLButtonElement
+	}
 }) {
-
 	const onAbort = (cb: () => void) => {
 		if (controller.signal.aborted) return
-		controller.signal.addEventListener('abort', cb, { once: true })
+		controller.signal.addEventListener("abort", cb, { once: true })
 	}
 
-	const adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' })
-	if (!adapter) throw new Error('No GPU adapter found')
+	const adapter = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" })
+	if (!adapter) throw new Error("No GPU adapter found")
 	if (controller.signal.aborted) return
 
 	const device = await adapter.requestDevice()
-	if (!device) throw new Error('No GPU device found')
+	if (!device) throw new Error("No GPU device found")
 	if (controller.signal.aborted) return
 	onAbort(() => device.destroy())
-	device.lost.then((info) => info.reason !== 'destroyed' && controller.abort())
+	device.lost.then((info) => info.reason !== "destroyed" && controller.abort())
 	if (canvas.width > device.limits.maxTextureDimension2D || canvas.height > device.limits.maxTextureDimension2D)
-		throw new Error(`Canvas size exceeds device limits: ${canvas.width}x${canvas.height} > ${device.limits.maxTextureDimension2D}`)
+		throw new Error(
+			`Canvas size exceeds device limits: ${canvas.width}x${canvas.height} > ${device.limits.maxTextureDimension2D}`,
+		)
 
-	const ctx = canvas.getContext('webgpu')!
-	if (!ctx) throw new Error('No WebGPU context found')
+	const ctx = canvas.getContext("webgpu")!
+	if (!ctx) throw new Error("No WebGPU context found")
 	const format = navigator.gpu.getPreferredCanvasFormat()
-	ctx.configure({ device, format, alphaMode: 'opaque' })
+	ctx.configure({ device, format, alphaMode: "opaque" })
 	onAbort(() => ctx.unconfigure())
 
 	const width = ctx.canvas.width
@@ -121,7 +130,7 @@ async function start({
 	const numberOfColors = 8
 
 	const particlePositionBuffer = device.createBuffer({
-		label: 'particle position storage buffer',
+		label: "particle position storage buffer",
 		size: particleCount * 2 * Float32Array.BYTES_PER_ELEMENT,
 		usage: GPUBufferUsage.STORAGE,
 		mappedAtCreation: true,
@@ -136,7 +145,7 @@ async function start({
 		onAbort(() => particlePositionBuffer.destroy())
 	}
 	const particleColorBuffer = device.createBuffer({
-		label: 'particle color storage buffer',
+		label: "particle color storage buffer",
 		size: particleCount * 1 * Uint32Array.BYTES_PER_ELEMENT,
 		usage: GPUBufferUsage.STORAGE,
 		mappedAtCreation: true,
@@ -150,7 +159,7 @@ async function start({
 		onAbort(() => particleColorBuffer.destroy())
 	}
 	const particleVelocityBuffer = device.createBuffer({
-		label: 'particle velocity storage buffer',
+		label: "particle velocity storage buffer",
 		size: particleCount * 2 * Float32Array.BYTES_PER_ELEMENT,
 		usage: GPUBufferUsage.STORAGE,
 		mappedAtCreation: true,
@@ -164,7 +173,9 @@ async function start({
 		particleVelocityBuffer.unmap()
 		onAbort(() => particleVelocityBuffer.destroy())
 	}
-	function makeInteractionMatrix(buffer = new ArrayBuffer(numberOfColors * numberOfColors * Float32Array.BYTES_PER_ELEMENT)) {
+	function makeInteractionMatrix(
+		buffer = new ArrayBuffer(numberOfColors * numberOfColors * Float32Array.BYTES_PER_ELEMENT),
+	) {
 		const staticStorageArray = new Float32Array(buffer)
 		for (let i = 0; i < numberOfColors; i++) {
 			for (let j = 0; j < numberOfColors; j++) {
@@ -176,7 +187,7 @@ async function start({
 		return buffer
 	}
 	const particleInteractionsBuffer = device.createBuffer({
-		label: 'particle interactions storage buffer',
+		label: "particle interactions storage buffer",
 		size: numberOfColors * numberOfColors * Float32Array.BYTES_PER_ELEMENT,
 		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
 		mappedAtCreation: true,
@@ -189,35 +200,35 @@ async function start({
 	}
 
 	const binSizeBuffer = device.createBuffer({
-		label: 'bin size storage buffer',
+		label: "bin size storage buffer",
 		size: binCount * Uint32Array.BYTES_PER_ELEMENT,
 		usage: GPUBufferUsage.STORAGE,
 	})
 	onAbort(() => binSizeBuffer.destroy())
 
 	const binOffsetBuffer = device.createBuffer({
-		label: 'bin offset storage buffer',
+		label: "bin offset storage buffer",
 		size: binCount * Uint32Array.BYTES_PER_ELEMENT,
 		usage: GPUBufferUsage.STORAGE,
 	})
 	onAbort(() => binOffsetBuffer.destroy())
 
 	const binCursorBuffer = device.createBuffer({
-		label: 'bin cursor storage buffer',
+		label: "bin cursor storage buffer",
 		size: binCount * Uint32Array.BYTES_PER_ELEMENT,
 		usage: GPUBufferUsage.STORAGE,
 	})
 	onAbort(() => binCursorBuffer.destroy())
 
 	const binContentsBuffer = device.createBuffer({
-		label: 'bin contents storage buffer',
+		label: "bin contents storage buffer",
 		size: particleCount * Uint32Array.BYTES_PER_ELEMENT,
 		usage: GPUBufferUsage.STORAGE,
 	})
 	onAbort(() => binContentsBuffer.destroy())
 
 	const binConfigBuffer = device.createBuffer({
-		label: 'config uniform buffer',
+		label: "config uniform buffer",
 		size: 5 * 4,
 		usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		mappedAtCreation: true,
@@ -236,50 +247,48 @@ async function start({
 	}
 
 	const binConfigBindGroupLayout = device.createBindGroupLayout({
-		label: 'config bind group layout',
+		label: "config bind group layout",
 		entries: [
 			{
 				binding: 0,
 				visibility: GPUShaderStage.VERTEX | GPUShaderStage.COMPUTE,
-				buffer: { type: 'uniform' },
+				buffer: { type: "uniform" },
 			},
 		],
 	})
 	const binConfigBindGroup = device.createBindGroup({
-		label: 'config bind group',
+		label: "config bind group",
 		layout: binConfigBindGroupLayout,
-		entries: [
-			{ binding: 0, resource: { buffer: binConfigBuffer } },
-		],
+		entries: [{ binding: 0, resource: { buffer: binConfigBuffer } }],
 	})
 
 	const binBindGroupLayout = device.createBindGroupLayout({
-		label: 'bin bind group layout',
+		label: "bin bind group layout",
 		entries: [
 			{
 				binding: 0,
 				visibility: GPUShaderStage.COMPUTE,
-				buffer: { type: 'storage' },
+				buffer: { type: "storage" },
 			},
 			{
 				binding: 1,
 				visibility: GPUShaderStage.COMPUTE,
-				buffer: { type: 'storage' },
+				buffer: { type: "storage" },
 			},
 			{
 				binding: 2,
 				visibility: GPUShaderStage.COMPUTE,
-				buffer: { type: 'storage' },
+				buffer: { type: "storage" },
 			},
 			{
 				binding: 3,
 				visibility: GPUShaderStage.COMPUTE,
-				buffer: { type: 'storage' },
-			}
+				buffer: { type: "storage" },
+			},
 		],
 	})
 	const binBindGroup = device.createBindGroup({
-		label: 'bin bind group',
+		label: "bin bind group",
 		layout: binBindGroupLayout,
 		entries: [
 			{ binding: 0, resource: { buffer: binSizeBuffer } },
@@ -290,72 +299,66 @@ async function start({
 	})
 
 	const particlePositionBindGroupLayout = device.createBindGroupLayout({
-		label: 'particle position bind group layout',
+		label: "particle position bind group layout",
 		entries: [
 			{
 				binding: 0,
 				visibility: GPUShaderStage.COMPUTE,
-				buffer: { type: 'read-only-storage' },
+				buffer: { type: "read-only-storage" },
 			},
 		],
 	})
 	const particlePositionBindGroup = device.createBindGroup({
-		label: 'particle position bind group',
+		label: "particle position bind group",
 		layout: particlePositionBindGroupLayout,
-		entries: [
-			{ binding: 0, resource: { buffer: particlePositionBuffer } },
-		],
+		entries: [{ binding: 0, resource: { buffer: particlePositionBuffer } }],
 	})
 
 	const binPipelineLayout = device.createPipelineLayout({
-		label: 'bin fill pipeline layout',
-		bindGroupLayouts: [
-			binConfigBindGroupLayout,
-			binBindGroupLayout,
-			particlePositionBindGroupLayout,
-		],
+		label: "bin fill pipeline layout",
+		bindGroupLayouts: [binConfigBindGroupLayout, binBindGroupLayout, particlePositionBindGroupLayout],
 	})
 
 	const binComputeModule = device.createShaderModule({
-		label: 'bin fill compute module',
+		label: "bin fill compute module",
 		code: binShader,
 	})
 
 	const binClearPipeline = device.createComputePipeline({
-		label: 'bin clear compute pipeline',
+		label: "bin clear compute pipeline",
 		layout: binPipelineLayout,
 		compute: {
 			module: binComputeModule,
-			entryPoint: 'clear',
+			entryPoint: "clear",
 		},
 	})
 	const binSizePipeline = device.createComputePipeline({
-		label: 'bin size compute pipeline',
+		label: "bin size compute pipeline",
 		layout: binPipelineLayout,
 		compute: {
 			module: binComputeModule,
-			entryPoint: 'size',
+			entryPoint: "size",
 		},
 	})
 	const binPreparePipeline = device.createComputePipeline({
-		label: 'bin prepare compute pipeline',
+		label: "bin prepare compute pipeline",
 		layout: binPipelineLayout,
 		compute: {
 			module: binComputeModule,
-			entryPoint: 'prepare',
+			entryPoint: "prepare",
 		},
 	})
 	const binFillPipeline = device.createComputePipeline({
-		label: 'bin fill compute pipeline',
+		label: "bin fill compute pipeline",
 		layout: binPipelineLayout,
 		compute: {
 			module: binComputeModule,
-			entryPoint: 'fill',
+			entryPoint: "fill",
 		},
 	})
 
-	const binEncoderDescriptor: GPUObjectDescriptorBase = { label: 'bin encoder' }
-	const binPassDescriptor: GPUComputePassDescriptor = { label: 'bin compute pass' }
+	const binEncoderDescriptor: GPUObjectDescriptorBase = { label: "bin encoder" }
+	const binPassDescriptor: GPUComputePassDescriptor = { label: "bin compute pass" }
 	function computeBins() {
 		const encoder = device.createCommandEncoder(binEncoderDescriptor)
 		const pass = encoder.beginComputePass(binPassDescriptor)
@@ -381,52 +384,50 @@ async function start({
 	}
 
 	const updateTimeBuffer = device.createBuffer({
-		label: 'update time uniform buffer',
+		label: "update time uniform buffer",
 		size: 4,
 		usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 	})
 	onAbort(() => updateTimeBuffer.destroy())
 	const updateTimeBindGroupLayout = device.createBindGroupLayout({
-		label: 'update time bind group layout',
+		label: "update time bind group layout",
 		entries: [
 			{
 				binding: 0,
 				visibility: GPUShaderStage.COMPUTE,
-				buffer: { type: 'uniform' },
+				buffer: { type: "uniform" },
 			},
 		],
 	})
 
 	const updateTimeBindGroup = device.createBindGroup({
-		label: 'update time bind group',
+		label: "update time bind group",
 		layout: updateTimeBindGroupLayout,
-		entries: [
-			{ binding: 0, resource: { buffer: updateTimeBuffer } },
-		],
+		entries: [{ binding: 0, resource: { buffer: updateTimeBuffer } }],
 	})
 
 	const updateParticlesBindGroupLayout = device.createBindGroupLayout({
-		label: 'update particles bind group layout',
+		label: "update particles bind group layout",
 		entries: [
 			{
 				binding: 0,
 				visibility: GPUShaderStage.COMPUTE,
-				buffer: { type: 'storage' },
+				buffer: { type: "storage" },
 			},
 			{
 				binding: 1,
 				visibility: GPUShaderStage.COMPUTE,
-				buffer: { type: 'storage' },
+				buffer: { type: "storage" },
 			},
 			{
 				binding: 2,
 				visibility: GPUShaderStage.COMPUTE,
-				buffer: { type: 'read-only-storage' },
+				buffer: { type: "read-only-storage" },
 			},
 		],
 	})
 	const updateParticlesBindGroup = device.createBindGroup({
-		label: 'update particles bind group',
+		label: "update particles bind group",
 		layout: updateParticlesBindGroupLayout,
 		entries: [
 			{ binding: 0, resource: { buffer: particlePositionBuffer } },
@@ -436,7 +437,7 @@ async function start({
 	})
 
 	const updateConfigBuffer = device.createBuffer({
-		label: 'update config uniform buffer',
+		label: "update config uniform buffer",
 		size: 11 * 4,
 		usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		mappedAtCreation: true,
@@ -462,53 +463,52 @@ async function start({
 		onAbort(() => updateConfigBuffer.destroy())
 	}
 	const updateConfigBindGroupLayout = device.createBindGroupLayout({
-		label: 'update config bind group layout',
+		label: "update config bind group layout",
 		entries: [
 			{
 				binding: 0,
 				visibility: GPUShaderStage.COMPUTE,
-				buffer: { type: 'uniform' },
+				buffer: { type: "uniform" },
 			},
 			{
 				binding: 1,
 				visibility: GPUShaderStage.COMPUTE,
-				buffer: { type: 'read-only-storage' },
-			}
+				buffer: { type: "read-only-storage" },
+			},
 		],
 	})
 	const updateConfigBindGroup = device.createBindGroup({
-		label: 'update config bind group',
+		label: "update config bind group",
 		layout: updateConfigBindGroupLayout,
 		entries: [
 			{ binding: 0, resource: { buffer: updateConfigBuffer } },
-			{ binding: 1, resource: { buffer: particleInteractionsBuffer } }
+			{ binding: 1, resource: { buffer: particleInteractionsBuffer } },
 		],
 	})
 
-
 	const updateBinsBindGroupLayout = device.createBindGroupLayout({
-		label: 'update bins bind group layout',
+		label: "update bins bind group layout",
 		entries: [
 			{
 				binding: 0,
 				visibility: GPUShaderStage.COMPUTE,
-				buffer: { type: 'read-only-storage' },
+				buffer: { type: "read-only-storage" },
 			},
 			{
 				binding: 1,
 				visibility: GPUShaderStage.COMPUTE,
-				buffer: { type: 'read-only-storage' },
+				buffer: { type: "read-only-storage" },
 			},
 			{
 				binding: 2,
 				visibility: GPUShaderStage.COMPUTE,
-				buffer: { type: 'read-only-storage' },
+				buffer: { type: "read-only-storage" },
 			},
 		],
 	})
 
 	const updateBinsBindGroup = device.createBindGroup({
-		label: 'update bins bind group',
+		label: "update bins bind group",
 		layout: updateBinsBindGroupLayout,
 		entries: [
 			{ binding: 0, resource: { buffer: binSizeBuffer } },
@@ -518,7 +518,7 @@ async function start({
 	})
 
 	const updatePipelineLayout = device.createPipelineLayout({
-		label: 'update pipeline layout',
+		label: "update pipeline layout",
 		bindGroupLayouts: [
 			updateTimeBindGroupLayout,
 			updateParticlesBindGroupLayout,
@@ -527,19 +527,19 @@ async function start({
 		],
 	})
 
-	const updateComputeModule = device.createShaderModule({ code: updateShader, label: 'update shader module' })
+	const updateComputeModule = device.createShaderModule({ code: updateShader, label: "update shader module" })
 
 	const updatePipeline = device.createComputePipeline({
-		label: 'update compute pipeline',
+		label: "update compute pipeline",
 		layout: updatePipelineLayout,
 		compute: {
 			module: updateComputeModule,
-			entryPoint: 'update',
+			entryPoint: "update",
 		},
 	})
 
-	const updateEncoderDescriptor: GPUObjectDescriptorBase = { label: 'update encoder' }
-	const updatePassDescriptor: GPUComputePassDescriptor = { label: 'update compute pass' }
+	const updateEncoderDescriptor: GPUObjectDescriptorBase = { label: "update encoder" }
+	const updatePassDescriptor: GPUComputePassDescriptor = { label: "update compute pass" }
 	function updateParticles(dt: number) {
 		const encoder = device.createCommandEncoder(updateEncoderDescriptor)
 		const pass = encoder.beginComputePass(updatePassDescriptor)
@@ -558,21 +558,19 @@ async function start({
 		device.queue.submit([commandBuffer])
 	}
 
-
-
-	const drawModule = device.createShaderModule({ code: drawShader, label: 'draw shader module' })
+	const drawModule = device.createShaderModule({ code: drawShader, label: "draw shader module" })
 	const drawConfigBindGroupLayout = device.createBindGroupLayout({
-		label: 'draw config bind group layout',
+		label: "draw config bind group layout",
 		entries: [
 			{
 				binding: 0,
 				visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-				buffer: { type: 'uniform' },
+				buffer: { type: "uniform" },
 			},
 		],
 	})
 	const drawConfigBuffer = device.createBuffer({
-		label: 'draw config uniform buffer',
+		label: "draw config uniform buffer",
 		size: 2 * 4,
 		usage: GPUBufferUsage.UNIFORM,
 		mappedAtCreation: true,
@@ -586,29 +584,27 @@ async function start({
 		onAbort(() => drawConfigBuffer.destroy())
 	}
 	const drawConfigBindGroup = device.createBindGroup({
-		label: 'draw config bind group',
+		label: "draw config bind group",
 		layout: drawConfigBindGroupLayout,
-		entries: [
-			{ binding: 0, resource: { buffer: drawConfigBuffer } },
-		],
+		entries: [{ binding: 0, resource: { buffer: drawConfigBuffer } }],
 	})
 	const drawParticlesBindGroupLayout = device.createBindGroupLayout({
-		label: 'draw particles bind group layout',
+		label: "draw particles bind group layout",
 		entries: [
 			{
 				binding: 0,
 				visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-				buffer: { type: 'read-only-storage' },
+				buffer: { type: "read-only-storage" },
 			},
 			{
 				binding: 1,
 				visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-				buffer: { type: 'read-only-storage' },
+				buffer: { type: "read-only-storage" },
 			},
 		],
 	})
 	const drawParticlesBindGroup = device.createBindGroup({
-		label: 'draw particles bind group',
+		label: "draw particles bind group",
 		layout: drawParticlesBindGroupLayout,
 		entries: [
 			{ binding: 0, resource: { buffer: particlePositionBuffer } },
@@ -616,55 +612,54 @@ async function start({
 		],
 	})
 	const drawPipelineLayout = device.createPipelineLayout({
-		label: 'draw pipeline layout',
-		bindGroupLayouts: [
-			drawConfigBindGroupLayout,
-			drawParticlesBindGroupLayout,
-		],
+		label: "draw pipeline layout",
+		bindGroupLayouts: [drawConfigBindGroupLayout, drawParticlesBindGroupLayout],
 	})
 	const drawPipeline = device.createRenderPipeline({
-		label: 'draw pipeline',
+		label: "draw pipeline",
 		layout: drawPipelineLayout,
 		vertex: {
 			module: drawModule,
-			entryPoint: 'vs',
+			entryPoint: "vs",
 			buffers: [],
 		},
 		fragment: {
 			module: drawModule,
-			entryPoint: 'fs',
-			targets: [{
-				format,
-				blend: {
-					color: {
-						srcFactor: 'src-alpha',
-						dstFactor: 'one-minus-src-alpha',
-						operation: 'add'
+			entryPoint: "fs",
+			targets: [
+				{
+					format,
+					blend: {
+						color: {
+							srcFactor: "src-alpha",
+							dstFactor: "one-minus-src-alpha",
+							operation: "add",
+						},
+						alpha: {
+							srcFactor: "one",
+							dstFactor: "one-minus-src-alpha",
+							operation: "add",
+						},
 					},
-					alpha: {
-						srcFactor: 'one',
-						dstFactor: 'one-minus-src-alpha',
-						operation: 'add'
-					}
-				}
-			}],
+				},
+			],
 		},
 		// primitive: {
 		// 	topology: 'point-list',
 		// },
 	})
 	const renderPassDescriptor = {
-		label: 'draw render pass descriptor',
+		label: "draw render pass descriptor",
 		colorAttachments: [
 			{
 				view: null! as GPUTextureView,
 				clearValue: [0.06, 0.06, 0.08, 1],
-				loadOp: 'clear',
-				storeOp: 'store',
+				loadOp: "clear",
+				storeOp: "store",
 			},
 		],
 	} satisfies GPURenderPassDescriptor
-	const drawEncoderDescriptor: GPUObjectDescriptorBase = { label: 'draw encoder' }
+	const drawEncoderDescriptor: GPUObjectDescriptorBase = { label: "draw encoder" }
 
 	function drawParticles() {
 		renderPassDescriptor.colorAttachments[0].view = ctx.getCurrentTexture().createView()
@@ -680,7 +675,7 @@ async function start({
 	}
 
 	let frameCount = 0
-	let playing = document.visibilityState === 'visible'
+	let playing = document.visibilityState === "visible"
 	let lastTime = performance.now()
 	let rafId = requestAnimationFrame(function frame(time) {
 		if (controller.signal.aborted) return
@@ -698,19 +693,27 @@ async function start({
 		updateParticles(scaledDt / 1000)
 		drawParticles()
 	})
-	controller.signal.addEventListener('abort', () => cancelAnimationFrame(rafId), { once: true })
+	controller.signal.addEventListener("abort", () => cancelAnimationFrame(rafId), { once: true })
 
-	window.addEventListener('visibilitychange', () => {
-		if (document.visibilityState === 'visible') {
-			playing = true
-			lastTime = performance.now()
-		} else {
-			playing = false
-		}
-	}, { signal: controller.signal })
+	window.addEventListener(
+		"visibilitychange",
+		() => {
+			if (document.visibilityState === "visible") {
+				playing = true
+				lastTime = performance.now()
+			} else {
+				playing = false
+			}
+		},
+		{ signal: controller.signal },
+	)
 
-	controls.randomize.addEventListener('click', () => {
-		const buffer = makeInteractionMatrix()
-		device.queue.writeBuffer(particleInteractionsBuffer, 0, buffer)
-	}, { signal: controller.signal })
+	controls.randomize.addEventListener(
+		"click",
+		() => {
+			const buffer = makeInteractionMatrix()
+			device.queue.writeBuffer(particleInteractionsBuffer, 0, buffer)
+		},
+		{ signal: controller.signal },
+	)
 }

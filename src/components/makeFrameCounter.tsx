@@ -1,4 +1,3 @@
-
 /**
  * A simple frame counter that returns the average FPS over the last `over` frames.
  * @param over - The number of frames to average over.
@@ -18,7 +17,7 @@ export function makeFrameCounter(over: number = 30) {
 		if (pointer === 0) full = true
 		const avg = full
 			? frames.reduce((a, b) => a + b, 0) / over
-			: frames.reduce((a, b, i) => i < pointer ? a + b : a, 0) / pointer
+			: frames.reduce((a, b, i) => (i < pointer ? a + b : a), 0) / pointer
 		const fps = 1 / avg
 		return fps
 	}

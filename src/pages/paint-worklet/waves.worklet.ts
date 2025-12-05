@@ -7,9 +7,12 @@ type PaintSize = {
 
 declare global {
 	interface WorkerGlobalScope {
-		registerPaint: (name: string, Class: {
-			new(): object
-		}) => void
+		registerPaint: (
+			name: string,
+			Class: {
+				new (): object
+			},
+		) => void
 	}
 }
 
@@ -46,13 +49,13 @@ export default self.registerPaint(
 		paint(context: CanvasRenderingContext2D, geom: PaintSize, props: StylePropertyMapReadOnly) {
 			// console.log("painting", context, geom, props, args)
 
-			const time = props.get('--time') as CSSUnitValue
-			const t = (time?.value ?? 0) / 100 * 2 * Math.PI
+			const time = props.get("--time") as CSSUnitValue
+			const t = ((time?.value ?? 0) / 100) * 2 * Math.PI
 
-			const color = props.get('--color') as CSSStyleValue
-			context.fillStyle = color?.toString() ?? 'currentColor'
+			const color = props.get("--color") as CSSStyleValue
+			context.fillStyle = color?.toString() ?? "currentColor"
 
-			const alpha = props.get('--alpha') as CSSUnitValue
+			const alpha = props.get("--alpha") as CSSUnitValue
 			context.globalAlpha = alpha?.value ?? 1
 
 			// context.translate(-this.space / 2, -this.space / 2)
@@ -70,7 +73,7 @@ export default self.registerPaint(
 					const rx = dx / dt
 					const ry = dy / dt
 					const p = Math.sin(-t + distance / (1 + this.move))
-					const wave = p * this.move * (0.2 + 0.8 * distance / max)
+					const wave = p * this.move * (0.2 + (0.8 * distance) / max)
 					context.beginPath()
 					context.arc(
 						(x + wave * rx) * this.space,
@@ -82,8 +85,6 @@ export default self.registerPaint(
 					context.fill()
 				}
 			}
-
 		}
-
 	},
 )

@@ -4,39 +4,38 @@ import { Bins } from "#particle-life/Bins"
 
 export type Incoming =
 	| {
-		type: "state",
-		data: {
-			repulse: { range: number; strength: number }
-			attract: { range: number; strength: number }
-			colors: Array<{
-				color: string
-				attractions: Array<number>
-			}>
-		}
-	}
+			type: "state"
+			data: {
+				repulse: { range: number; strength: number }
+				attract: { range: number; strength: number }
+				colors: Array<{
+					color: string
+					attractions: Array<number>
+				}>
+			}
+	  }
 	| {
-		type: "buffers",
-		data: {
-			x: SharedArrayBuffer
-			y: SharedArrayBuffer
-			vx: SharedArrayBuffer
-			vy: SharedArrayBuffer
-			color: SharedArrayBuffer
-			total: number
-			range: [number, number]
-			width: number
-			height: number
-		}
-	}
+			type: "buffers"
+			data: {
+				x: SharedArrayBuffer
+				y: SharedArrayBuffer
+				vx: SharedArrayBuffer
+				vy: SharedArrayBuffer
+				color: SharedArrayBuffer
+				total: number
+				range: [number, number]
+				width: number
+				height: number
+			}
+	  }
 	| {
-		type: "pause"
-	}
+			type: "pause"
+	  }
 	| {
-		type: "resume"
-	}
+			type: "resume"
+	  }
 
-export type Outgoing =
-	| { type: "frame", data: { dt: number } }
+export type Outgoing = { type: "frame"; data: { dt: number } }
 
 let x: Float32Array
 let y: Float32Array
@@ -115,12 +114,10 @@ let playing = true
 	}
 }
 
-
 function start() {
-	console.log('starting worker for ', indexStart, 'to', indexEnd, '(', indexEnd - indexStart, 'particles )')
+	console.log("starting worker for ", indexStart, "to", indexEnd, "(", indexEnd - indexStart, "particles )")
 	bins = new Bins(width, height, 50, total)
-	console.log('bins created', bins.count, 'width:', bins.width, 'height:', bins.height)
-
+	console.log("bins created", bins.count, "width:", bins.width, "height:", bins.height)
 
 	let lastTime = 0
 	let frameCount = 0
@@ -162,8 +159,7 @@ function update(dt: number, frameCount: number) {
 	const halfHeight = height * 0.5
 
 	// rebuild spatial map
-	if (frameCount % 10 === 0)
-		bins.fill(x, y)
+	if (frameCount % 10 === 0) bins.fill(x, y)
 
 	for (let i = indexStart; i < indexEnd; i++) {
 		let px = x[i]
@@ -187,7 +183,7 @@ function update(dt: number, frameCount: number) {
 			if (dx > halfWidth) dx -= width
 			else if (dx < -halfWidth) dx += width
 
-			// Handle wrapping for y-axis  
+			// Handle wrapping for y-axis
 			if (dy > halfHeight) dy -= height
 			else if (dy < -halfHeight) dy += height
 
@@ -211,7 +207,7 @@ function update(dt: number, frameCount: number) {
 			} else if (dist < repulse) {
 				// Repulse
 				const power = (repulse - dist) * inv_repulse // TODO use some easing to repulse more strongly when closer
-				const distRatio = power * repulseStrengthDt / (Math.abs(dx) + Math.abs(dy))
+				const distRatio = (power * repulseStrengthDt) / (Math.abs(dx) + Math.abs(dy))
 				pvx -= dx * distRatio
 				pvy -= dy * distRatio
 			} else {
@@ -220,7 +216,7 @@ function update(dt: number, frameCount: number) {
 				const attraction = colorDef.attractions[ncolor]
 				if (attraction === 0) return
 				const power = attraction * Math.abs((dist - repulse) * inv_max_minus_repulse * 2 - 1)
-				const distRatio = power * attractStrengthDt / (Math.abs(dx) + Math.abs(dy))
+				const distRatio = (power * attractStrengthDt) / (Math.abs(dx) + Math.abs(dy))
 				pvx += dx * distRatio
 				pvy += dy * distRatio
 			}

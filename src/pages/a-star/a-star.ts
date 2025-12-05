@@ -1,5 +1,6 @@
 export type Cell = {
-	x: number, y: number
+	x: number
+	y: number
 	isObstacle?: boolean
 	isPath?: boolean
 	isStart?: boolean
@@ -9,18 +10,11 @@ export type Cell = {
 export type Matrix = Cell[][]
 
 export default function aStarAlgorithm(matrix: Matrix, start: Cell, goal: Cell) {
-	return aStar(
-		matrix,
-		start,
-		goal,
-		(cell) => heuristic(cell, goal),
-		distance,
-	)
+	return aStar(matrix, start, goal, (cell) => heuristic(cell, goal), distance)
 }
 
 function heuristic(a: Cell, b: Cell): number {
-	if (a.isObstacle || b.isObstacle)
-		return Infinity
+	if (a.isObstacle || b.isObstacle) return Infinity
 	return Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
 }
 
@@ -55,7 +49,7 @@ function aStar(matrix: Matrix, start: Cell, goal: Cell, h: (cell: Cell) => numbe
 
 	while (openSet.size > 0) {
 		if (++counter > 5000) {
-			console.warn('too many iterations')
+			console.warn("too many iterations")
 			return false
 		}
 
@@ -68,17 +62,15 @@ function aStar(matrix: Matrix, start: Cell, goal: Cell, h: (cell: Cell) => numbe
 		// console.groupEnd()
 
 		// This operation can occur in O(1) time if openSet is a min-heap or a priority queue
-		const current = openSet.has(lowestFScore) ? lowestFScore : Array.from(openSet).reduce<Cell | null>((min, cell) => {
-			if (!min || !fScore.has(min) || !fScore.get(cell))
-				return cell
-			return fScore.get(min)! < fScore.get(cell)!
-				? min
-				: cell
-		}, null)!
+		const current = openSet.has(lowestFScore)
+			? lowestFScore
+			: Array.from(openSet).reduce<Cell | null>((min, cell) => {
+					if (!min || !fScore.has(min) || !fScore.get(cell)) return cell
+					return fScore.get(min)! < fScore.get(cell)! ? min : cell
+				}, null)!
 		lowestFScore = current
 
-		if (current === goal)
-			return reconstructPath(cameFrom, current)
+		if (current === goal) return reconstructPath(cameFrom, current)
 
 		openSet.delete(current)
 
@@ -91,16 +83,14 @@ function aStar(matrix: Matrix, start: Cell, goal: Cell, h: (cell: Cell) => numbe
 		]) {
 			const x = current.x + dx
 			const y = current.y + dy
-			if (x < 0 || x >= matrix.length || y < 0 || y >= matrix.length)
-				continue
+			if (x < 0 || x >= matrix.length || y < 0 || y >= matrix.length) continue
 
 			const neighbor = matrix[y][x]
 
 			// tentative_gScore is the distance from start to the neighbor through current
 			const tentativeGScore = gScore.get(current)! + d(current, neighbor)
 
-			if (!gScore.has(neighbor))
-				gScore.set(neighbor, Infinity)
+			if (!gScore.has(neighbor)) gScore.set(neighbor, Infinity)
 
 			// This path to neighbor is better than any previous one. Record it!
 			if (tentativeGScore < gScore.get(neighbor)!) {
@@ -110,17 +100,15 @@ function aStar(matrix: Matrix, start: Cell, goal: Cell, h: (cell: Cell) => numbe
 				const newFScore = gScore.get(neighbor)! + h(neighbor)
 				fScore.set(neighbor, newFScore)
 
-				if (newFScore < fScore.get(lowestFScore)!)
-					lowestFScore = neighbor
+				if (newFScore < fScore.get(lowestFScore)!) lowestFScore = neighbor
 
-				if (!openSet.has(neighbor) && newFScore < Infinity)
-					openSet.add(neighbor)
+				if (!openSet.has(neighbor) && newFScore < Infinity) openSet.add(neighbor)
 			}
 		}
 	}
 
 	// Open set is empty but goal was never reached
-	console.warn('Open set is empty but goal was never reached')
+	console.warn("Open set is empty but goal was never reached")
 	return false
 }
 

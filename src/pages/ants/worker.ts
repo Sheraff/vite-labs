@@ -32,19 +32,24 @@ const range = {
 }
 
 export type Incoming =
-	| { type: "start", data: { height: number, width: number, count: number } }
-	| { type: "share", data: { buffer: SharedArrayBuffer, width: number, height: number, vision: number, from: number, to: number } }
-	| { type: "range", data: { from: number, to: number } }
+	| { type: "start"; data: { height: number; width: number; count: number } }
+	| {
+			type: "share"
+			data: { buffer: SharedArrayBuffer; width: number; height: number; vision: number; from: number; to: number }
+	  }
+	| { type: "range"; data: { from: number; to: number } }
 
 export type Outgoing =
-	| { type: "started", data: { buffer: SharedArrayBuffer } }
-	| { type: "collected", data: { count: number } }
+	| { type: "started"; data: { buffer: SharedArrayBuffer } }
+	| { type: "collected"; data: { count: number } }
 
-console.log('ant worker started')
+console.log("ant worker started")
 
 self.onmessage = (e: MessageEvent<Incoming>) => handleMessage(e.data)
 
-function postMessage(message: Outgoing) { self.postMessage(message) }
+function postMessage(message: Outgoing) {
+	self.postMessage(message)
+}
 
 function handleMessage(event: Incoming) {
 	if (event.type === "start") {
@@ -56,7 +61,7 @@ function handleMessage(event: Incoming) {
 		const foodPosition = [width / 3, height / 3]
 		const foodRadius = Math.min(width, height) / 10
 
-		const anthillPosition = [width * 2 / 3, height * 2 / 3]
+		const anthillPosition = [(width * 2) / 3, (height * 2) / 3]
 		// const anthillPosition = [width / 7, height / 7]
 		// const anthillPosition = [width / 2, height / 2]
 		const anthillRadius = Math.min(width, height) / 10
@@ -70,15 +75,13 @@ function handleMessage(event: Incoming) {
 					const dx = x - foodPosition[0]
 					const dy = y - foodPosition[1]
 					const distance = Math.sqrt(dx * dx + dy * dy)
-					if (distance < foodRadius)
-						array[i] |= masks.food
+					if (distance < foodRadius) array[i] |= masks.food
 				}
 				{
 					const dx = x - anthillPosition[0]
 					const dy = y - anthillPosition[1]
 					const distance = Math.sqrt(dx * dx + dy * dy)
-					if (distance < anthillRadius)
-						array[i] |= masks.anthill
+					if (distance < anthillRadius) array[i] |= masks.anthill
 				}
 			}
 		}
@@ -106,7 +109,7 @@ function handleMessage(event: Incoming) {
 		const { buffer, width, height, vision, from, to } = event.data
 		const array = new TypedArray(buffer)
 		const onCollected = (count: number) => {
-			console.log('onCollected', count)
+			console.log("onCollected", count)
 			postMessage({ type: "collected", data: { count } })
 		}
 		range.from = from
@@ -137,13 +140,17 @@ async function start({
 	width: number
 	height: number
 	vision: number
-	range: { from: number, to: number }
+	range: { from: number; to: number }
 	onCollected: (count: number) => void
 }) {
 	let lastPheromoneToHillTick = performance.now()
 	let lastPheromoneToFoodTick = performance.now()
-	const pheromoneToHillTickInterval = Math.round(pheromoneToHillDuration / (masks.pheromoneToFood >> offsets.pheromoneToFood))
-	const pheromoneToFoodTickInterval = Math.round(pheromoneToFoodDuration / (masks.pheromoneToHill >> offsets.pheromoneToHill))
+	const pheromoneToHillTickInterval = Math.round(
+		pheromoneToHillDuration / (masks.pheromoneToFood >> offsets.pheromoneToFood),
+	)
+	const pheromoneToFoodTickInterval = Math.round(
+		pheromoneToFoodDuration / (masks.pheromoneToHill >> offsets.pheromoneToHill),
+	)
 	let foodCount
 	let collectedCount
 	do {
@@ -152,96 +159,88 @@ async function start({
 		const now = performance.now()
 		const isPheromoneToHillTick = now - lastPheromoneToHillTick > pheromoneToHillTickInterval
 		const isPheromoneToFoodTick = now - lastPheromoneToFoodTick > pheromoneToFoodTickInterval
-		const frame = new Promise(resolve => requestAnimationFrame(resolve))
+		const frame = new Promise((resolve) => requestAnimationFrame(resolve))
 		if (isPheromoneToHillTick) lastPheromoneToHillTick = now
 		if (isPheromoneToFoodTick) lastPheromoneToFoodTick = now
 		for (let i = range.from; i < range.to; i++) {
 			const y = Math.floor(i / width)
 			const x = i % width
-				let value = array[i]
+			let value = array[i]
 
 			// pheromone expiration
 			if (isPheromoneToFoodTick) {
-				value = pheromoneTickDown(
-					value,
-					masks.pheromoneToFood,
-					offsets.pheromoneToFood
-				)
+				value = pheromoneTickDown(value, masks.pheromoneToFood, offsets.pheromoneToFood)
 			}
 			if (isPheromoneToHillTick) {
-				value = pheromoneTickDown(
+				value = pheromoneTickDown(value, masks.pheromoneToHill, offsets.pheromoneToHill)
+			}
+
+			let isAnt = value & masks.ant
+			let isFood = value & masks.food
+			let isAntAndFood = value & masks.antAndFood
+			const isAnthill = value & masks.anthill
+
+			if (isAnt && isFood && !isAntAndFood) {
+				value |= masks.antAndFood
+				value &= ~masks.ant
+				value &= ~masks.food
+				isAnt = 0
+				isFood = 0
+				isAntAndFood = 1
+			}
+
+			if (isFood) foodCount++
+			if (isAntAndFood) foodCount++
+
+			// leave pheromone
+			if (isAnt && !isFood) {
+				value |= masks.pheromoneToHill
+			}
+			if (isAntAndFood && !isAnthill) {
+				value |= masks.pheromoneToFood
+			}
+
+			// collect food
+			if (isAntAndFood && isAnthill && !isAnt) {
+				value &= ~masks.antAndFood
+				value |= masks.ant
+				foodCount--
+				collectedCount++
+			}
+
+			// move
+			if (isAnt) {
+				value = moveToGoal(
+					array,
+					width,
+					height,
+					vision,
+					x,
+					y,
 					value,
+					masks.ant,
+					masks.food,
+					masks.pheromoneToFood,
+					offsets.pheromoneToFood,
+				)
+			}
+			if (isAntAndFood) {
+				value = moveToGoal(
+					array,
+					width,
+					height,
+					vision,
+					x,
+					y,
+					value,
+					masks.antAndFood,
+					masks.anthill,
 					masks.pheromoneToHill,
-					offsets.pheromoneToHill
+					offsets.pheromoneToHill,
 				)
 			}
 
-				let isAnt = value & masks.ant
-				let isFood = value & masks.food
-				let isAntAndFood = value & masks.antAndFood
-				const isAnthill = value & masks.anthill
-
-				if (isAnt && isFood && !isAntAndFood) {
-					value |= masks.antAndFood
-					value &= ~masks.ant
-					value &= ~masks.food
-					isAnt = 0
-					isFood = 0
-					isAntAndFood = 1
-				}
-
-				if (isFood) foodCount++
-				if (isAntAndFood) foodCount++
-
-				// leave pheromone
-				if (isAnt && !isFood) {
-					value |= masks.pheromoneToHill
-				}
-				if (isAntAndFood && !isAnthill) {
-					value |= masks.pheromoneToFood
-				}
-
-				// collect food
-				if (isAntAndFood && isAnthill && !isAnt) {
-					value &= ~masks.antAndFood
-					value |= masks.ant
-					foodCount--
-					collectedCount++
-				}
-
-				// move
-				if (isAnt) {
-					value = moveToGoal(
-						array,
-						width,
-						height,
-						vision,
-						x,
-						y,
-						value,
-						masks.ant,
-						masks.food,
-						masks.pheromoneToFood,
-						offsets.pheromoneToFood
-					)
-				}
-				if (isAntAndFood) {
-					value = moveToGoal(
-						array,
-						width,
-						height,
-						vision,
-						x,
-						y,
-						value,
-						masks.antAndFood,
-						masks.anthill,
-						masks.pheromoneToHill,
-						offsets.pheromoneToHill
-					)
-				}
-
-				array[i] = value
+			array[i] = value
 		}
 		await frame
 		if (collectedCount) onCollected(collectedCount)
@@ -249,11 +248,7 @@ async function start({
 	// } while (foodCount)
 }
 
-function pheromoneTickDown(
-	value: number,
-	pheromone: number,
-	pheromoneOffset: number,
-): number {
+function pheromoneTickDown(value: number, pheromone: number, pheromoneOffset: number): number {
 	const isPheromone = value & pheromone
 	if (isPheromone) {
 		let expiration = value >> pheromoneOffset
@@ -309,8 +304,8 @@ function moveToGoal(
 	move: {
 		if (count) {
 			const divider = Math.abs(sumX) + Math.abs(sumY)
-			const dx = Math.round(sumX / divider * 2)
-			const dy = Math.round(sumY / divider * 2)
+			const dx = Math.round((sumX / divider) * 2)
+			const dy = Math.round((sumY / divider) * 2)
 			if (dx || dy) {
 				const nx = Math.min(Math.max(0, x + dx), width - 1)
 				const ny = Math.min(Math.max(0, y + dy), height - 1)
@@ -323,8 +318,8 @@ function moveToGoal(
 				}
 			}
 		}
-		const dx = (Math.floor(Math.random() * 7) - 3)
-		const dy = (Math.floor(Math.random() * 7) - 3)
+		const dx = Math.floor(Math.random() * 7) - 3
+		const dy = Math.floor(Math.random() * 7) - 3
 		const nx = Math.min(Math.max(0, x + dx), width - 1)
 		const ny = Math.min(Math.max(0, y + dy), height - 1)
 		const j = ny * width + nx

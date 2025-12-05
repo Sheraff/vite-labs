@@ -1,5 +1,4 @@
-
-export class TreeNode<T extends { x: number, y: number } = { x: number, y: number }> {
+export class TreeNode<T extends { x: number; y: number } = { x: number; y: number }> {
 	// immutable properties
 	x: number
 	y: number
@@ -10,12 +9,8 @@ export class TreeNode<T extends { x: number, y: number } = { x: number, y: numbe
 	maxdepth: number
 	depth: number
 	parent: TreeNode<T> | null
-	children: [
-		topLeft: TreeNode<T>,
-		topRight: TreeNode<T>,
-		bottomLeft: TreeNode<T>,
-		bottomRight: TreeNode<T>,
-	] | null = null
+	children: [topLeft: TreeNode<T>, topRight: TreeNode<T>, bottomLeft: TreeNode<T>, bottomRight: TreeNode<T>] | null =
+		null
 
 	// mutable properties
 	objects: Set<T> = new Set()
@@ -28,7 +23,7 @@ export class TreeNode<T extends { x: number, y: number } = { x: number, y: numbe
 		height: number,
 		maxdepth: number = 6,
 		depth: number = 0,
-		parent: TreeNode<T> | null = null
+		parent: TreeNode<T> | null = null,
 	) {
 		this.x = x
 		this.y = y
@@ -81,8 +76,7 @@ export class TreeNode<T extends { x: number, y: number } = { x: number, y: numbe
 	}
 
 	query(x: number, y: number, radius: number, result: Set<T> = new Set()): Set<T> {
-		if (x + radius < this.x || x - radius > this.maxX ||
-			y + radius < this.y || y - radius > this.maxY) {
+		if (x + radius < this.x || x - radius > this.maxX || y + radius < this.y || y - radius > this.maxY) {
 			return result
 		}
 		if (this.children) {
@@ -91,7 +85,7 @@ export class TreeNode<T extends { x: number, y: number } = { x: number, y: numbe
 			}
 			return result
 		} else {
-			this.objects.forEach(obj => result.add(obj))
+			this.objects.forEach((obj) => result.add(obj))
 			return this.objects
 		}
 	}

@@ -1,14 +1,30 @@
-import styles from './styles.module.css'
-import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
+
+import { Head } from "#components/Head"
 import { Fragment, useEffect, useMemo, useRef, useState } from "react"
 import { flushSync } from "react-dom"
-import { BOX_1, BOX_2, BOX_3, BOX_4, FRUIT, GOAL, LEVELS, SNAKE_1, SNAKE_2, SNAKE_3, SPIKE, TELEPORT, WALL } from "./levels"
+
+import {
+	BOX_1,
+	BOX_2,
+	BOX_3,
+	BOX_4,
+	FRUIT,
+	GOAL,
+	LEVELS,
+	SNAKE_1,
+	SNAKE_2,
+	SNAKE_3,
+	SPIKE,
+	TELEPORT,
+	WALL,
+} from "./levels"
+import styles from "./styles.module.css"
 
 export const meta: RouteMeta = {
-	title: 'Snakebird',
-	image: './screen.png',
-	tags: ['game']
+	title: "Snakebird",
+	image: "./screen.png",
+	tags: ["game"],
 }
 
 export default function Snakebird() {
@@ -16,7 +32,7 @@ export default function Snakebird() {
 
 	const isMultiSnakeLevel = useMemo(() => {
 		for (const line of LEVELS[levelNum]) {
-			if (line.includes('A') || line.includes('a')) {
+			if (line.includes("A") || line.includes("a")) {
 				return true
 			}
 		}
@@ -38,17 +54,17 @@ export default function Snakebird() {
 				<fieldset>
 					<legend>Level</legend>
 					Level {levelNum} / {LEVELS.length - 1}
-					<button type="button" onClick={() => setLevelNum((n) => (n - 1 + LEVELS.length) % LEVELS.length)}>Previous</button>
-					<button type="button" onClick={() => setLevelNum((n) => (n + 1) % LEVELS.length)}>Next</button>
+					<button type="button" onClick={() => setLevelNum((n) => (n - 1 + LEVELS.length) % LEVELS.length)}>
+						Previous
+					</button>
+					<button type="button" onClick={() => setLevelNum((n) => (n + 1) % LEVELS.length)}>
+						Next
+					</button>
 				</fieldset>
 			</div>
 
 			<div className={styles.content}>
-				<PlayLevel
-					key={levelNum}
-					levelNum={levelNum}
-					onSuccess={() => setLevelNum((n) => (n + 1) % LEVELS.length)}
-				/>
+				<PlayLevel key={levelNum} levelNum={levelNum} onSuccess={() => setLevelNum((n) => (n + 1) % LEVELS.length)} />
 			</div>
 		</div>
 	)
@@ -95,7 +111,8 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 		let fallenBoxes: number[] = []
 		let isTeleportActive = true
 
-		const isAvailableFruit = (x: number, y: number) => level[y]?.[x] === FRUIT && !collectedFruits.some(([fx, fy]) => fx === x && fy === y)
+		const isAvailableFruit = (x: number, y: number) =>
+			level[y]?.[x] === FRUIT && !collectedFruits.some(([fx, fy]) => fx === x && fy === y)
 		// const isOutOfBounds = (x: number, y: number) => x < 0 || x >= width || y < 0 || y >= height
 		const isOutOfBounds = (x: number, y: number) => y >= height
 		const isSelfCollision = (i: number, x: number, y: number) => positions[i].some(([px, py]) => px === x && py === y)
@@ -303,7 +320,7 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 			setControlling(0)
 			setSnakesInGoal([])
 			setFallenBoxes([])
-			resetKey(r => r + 1)
+			resetKey((r) => r + 1)
 		}
 
 		let animating = false
@@ -321,14 +338,14 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 					const part = winner[i + 1]
 					const next = [...Array(i + 1).fill(part), ...winner.slice(i + 1)]
 					positions[controlling] = next
-					const p = new Promise(r => {
+					const p = new Promise((r) => {
 						const controller = new AbortController()
 						const onMoveEnd = () => {
 							controller.abort()
 							r(null)
 						}
-						snake.addEventListener('transitionend', onMoveEnd, { signal: controller.signal })
-						snake.addEventListener('transitioncancel', onMoveEnd, { signal: controller.signal })
+						snake.addEventListener("transitionend", onMoveEnd, { signal: controller.signal })
+						snake.addEventListener("transitioncancel", onMoveEnd, { signal: controller.signal })
 					})
 					setPositions(positions)
 					await p
@@ -356,9 +373,13 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 			if (!isTeleportActive) {
 				// check if both teleport pads are free again
 				for (const t of teleports) {
-					const occupiedBox = boxes.some((box, i) => !fallenBoxes.includes(i) && box.positions.some(([px, py]) => px === t[0] && py === t[1]))
+					const occupiedBox = boxes.some(
+						(box, i) => !fallenBoxes.includes(i) && box.positions.some(([px, py]) => px === t[0] && py === t[1]),
+					)
 					if (occupiedBox) return
-					const occupiedSnake = positions.some((snake, i) => !snakesInGoal.includes(i) && snake.some(([px, py]) => px === t[0] && py === t[1]))
+					const occupiedSnake = positions.some(
+						(snake, i) => !snakesInGoal.includes(i) && snake.some(([px, py]) => px === t[0] && py === t[1]),
+					)
 					if (occupiedSnake) return
 				}
 				isTeleportActive = true
@@ -389,8 +410,19 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 						if (isInWalls(destX, destY)) return
 						if (isAvailableFruit(destX, destY)) return
 						if (isOutOfBounds(destX, destY)) return
-						if (boxes.some((box, i) => !fallenBoxes.includes(i) && box.positions.some(([px, py]) => px === destX && py === destY))) return
-						if (positions.some((other, l) => l !== i && !snakesInGoal.includes(l) && other.some(([px, py]) => px === destX && py === destY))) return
+						if (
+							boxes.some(
+								(box, i) => !fallenBoxes.includes(i) && box.positions.some(([px, py]) => px === destX && py === destY),
+							)
+						)
+							return
+						if (
+							positions.some(
+								(other, l) =>
+									l !== i && !snakesInGoal.includes(l) && other.some(([px, py]) => px === destX && py === destY),
+							)
+						)
+							return
 					}
 					// perform teleport
 					moving = true
@@ -424,8 +456,21 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 						if (isInWalls(destX, destY)) return
 						if (isAvailableFruit(destX, destY)) return
 						if (isOutOfBounds(destX, destY)) return
-						if (boxes.some((otherBox, l) => l !== i && !fallenBoxes.includes(l) && otherBox.positions.some(([px, py]) => px === destX && py === destY))) return
-						if (positions.some((snake, l) => !snakesInGoal.includes(l) && snake.some(([px, py]) => px === destX && py === destY))) return
+						if (
+							boxes.some(
+								(otherBox, l) =>
+									l !== i &&
+									!fallenBoxes.includes(l) &&
+									otherBox.positions.some(([px, py]) => px === destX && py === destY),
+							)
+						)
+							return
+						if (
+							positions.some(
+								(snake, l) => !snakesInGoal.includes(l) && snake.some(([px, py]) => px === destX && py === destY),
+							)
+						)
+							return
 					}
 					// perform teleport
 					moving = true
@@ -433,7 +478,10 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 					boxes = [...boxes]
 					boxes[i] = { ...boxes[i] }
 					boxes[i].positions = result
-					boxes[i].offsets = [boxes[i].offsets[0] + (to[0] - from[0]), boxes[i].offsets[1] + (to[1] - from[1])] as [number, number]
+					boxes[i].offsets = [boxes[i].offsets[0] + (to[0] - from[0]), boxes[i].offsets[1] + (to[1] - from[1])] as [
+						number,
+						number,
+					]
 					setBoxes(boxes)
 					return true
 				}
@@ -577,37 +625,45 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 			checkGround()
 			processNextAction()
 		}
-		snake.addEventListener('transitionstart', () => {
-			if (animating) return
-			tcount++
-		}, { signal: controller.signal })
-		snake.addEventListener('transitioncancel', onMoveEnd, { signal: controller.signal })
-		snake.addEventListener('transitionend', onMoveEnd, { signal: controller.signal })
+		snake.addEventListener(
+			"transitionstart",
+			() => {
+				if (animating) return
+				tcount++
+			},
+			{ signal: controller.signal },
+		)
+		snake.addEventListener("transitioncancel", onMoveEnd, { signal: controller.signal })
+		snake.addEventListener("transitionend", onMoveEnd, { signal: controller.signal })
 
-		window.addEventListener('keydown', (e) => {
-			const key = e.key.toLowerCase()
-			if (key in map) {
-				e.preventDefault()
-				const action = map[key as keyof typeof map]
-				nextAction = action
-				if (moving) return
-				processNextAction()
-			}
-			if (key === 'escape' || key === ' ') {
-				e.preventDefault()
-				reset()
-			}
-			if (key === 'tab' || key === 'enter') {
-				e.preventDefault()
-				nextAction = null
-				nextSnake()
-			}
-			if (key === 'backspace') {
-				e.preventDefault()
-				if (moving) return
-				deserialize()
-			}
-		}, { signal: controller.signal })
+		window.addEventListener(
+			"keydown",
+			(e) => {
+				const key = e.key.toLowerCase()
+				if (key in map) {
+					e.preventDefault()
+					const action = map[key as keyof typeof map]
+					nextAction = action
+					if (moving) return
+					processNextAction()
+				}
+				if (key === "escape" || key === " ") {
+					e.preventDefault()
+					reset()
+				}
+				if (key === "tab" || key === "enter") {
+					e.preventDefault()
+					nextAction = null
+					nextSnake()
+				}
+				if (key === "backspace") {
+					e.preventDefault()
+					if (moving) return
+					deserialize()
+				}
+			},
+			{ signal: controller.signal },
+		)
 
 		return () => controller.abort()
 	}, [key, level])
@@ -665,16 +721,12 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 						/>
 					</>
 				)}
-				{fruits.map(([x, y]) => !collectedFruits.some(([fx, fy]) => fx === x && fy === y) && (
-					<circle
-						key={`${x}-${y}`}
-						cx={x + 0.5}
-						cy={y + 0.5}
-						r="0.5"
-						fill="gold"
-						className={styles.collect}
-					/>
-				))}
+				{fruits.map(
+					([x, y]) =>
+						!collectedFruits.some(([fx, fy]) => fx === x && fy === y) && (
+							<circle key={`${x}-${y}`} cx={x + 0.5} cy={y + 0.5} r="0.5" fill="gold" className={styles.collect} />
+						),
+				)}
 				<circle
 					cx={goal[0] + 0.5}
 					cy={goal[1] + 0.5}
@@ -684,19 +736,23 @@ function PlayLevel({ levelNum, onSuccess }: { levelNum: number; onSuccess: () =>
 				/>
 			</svg>
 			<svg key={key} className={styles.snake} viewBox={`0 0 ${width} ${height}`} ref={snakeRef}>
-				{boxesState.map((box, i) => !fallenBoxes.includes(i) && initialParsedBoxes.draw[i].map((draw, index) => (
-					<path
-						key={`${i}-${index}`}
-						d={draw(box.offsets[0], box.offsets[1])}
-						fill={["tan", "peru", "burlywood", "lightgray"][i % 4]}
-					/>
-				)))}
+				{boxesState.map(
+					(box, i) =>
+						!fallenBoxes.includes(i) &&
+						initialParsedBoxes.draw[i].map((draw, index) => (
+							<path
+								key={`${i}-${index}`}
+								d={draw(box.offsets[0], box.offsets[1])}
+								fill={["tan", "peru", "burlywood", "lightgray"][i % 4]}
+							/>
+						)),
+				)}
 				{positionState.map((snake, index) => {
 					if (snakesInGoal.includes(index)) return null
 					return (
 						<Fragment key={index}>
 							<path
-								d={`M ${snake.map(([x, y]) => `${x + 0.5} ${y + 0.5}`).join(' ')}`}
+								d={`M ${snake.map(([x, y]) => `${x + 0.5} ${y + 0.5}`).join(" ")}`}
 								stroke={index === 0 ? "green" : index === 1 ? "blue" : "salmon"}
 								strokeWidth="0.9"
 								fill="none"
@@ -769,7 +825,7 @@ function processTeleports(level: string[]) {
 			if (char === TELEPORT) {
 				if (!a) a = [x, y] as const
 				else if (!b) b = [x, y] as const
-				else throw new Error('More than two teleporters found')
+				else throw new Error("More than two teleporters found")
 			}
 		}
 	}
@@ -779,21 +835,16 @@ function processTeleports(level: string[]) {
 	if (!a && !b) {
 		return null
 	}
-	throw new Error('Only one teleporter found')
+	throw new Error("Only one teleporter found")
 }
 
 function processInitialPositions(level: string[]) {
-	const ref = [
-		SNAKE_1,
-		SNAKE_2,
-		SNAKE_3,
-	]
+	const ref = [SNAKE_1, SNAKE_2, SNAKE_3]
 	const height = level.length
 	const width = level[0].length
 
 	const snakes = [] as Array<Array<readonly [number, number]>>
 	for (const ids of ref) {
-
 		// find numbers in level
 		const found = [] as [number, number][]
 		for (let y = 0; y < height; y++) {
@@ -832,15 +883,11 @@ function processInitialBoxes(level: string[]) {
 		const positions: Array<readonly [x: number, y: number]> = []
 		for (const zone of zones) {
 			for (const index of zone) {
-				positions.push([
-					index % width,
-					Math.floor(index / width)
-				])
+				positions.push([index % width, Math.floor(index / width)])
 			}
 		}
 
 		// links
-
 
 		boxes.push({
 			positions,
@@ -933,7 +980,8 @@ function getZoneDrawFunction(zone: Set<number>, width: number) {
 		dirloop: for (; i < 4; i++) {
 			if ((i + 2) % 4 === dir) continue // don't go backwards
 			switch (i) {
-				case 0: { // right
+				case 0: {
+					// right
 					const hasCellAbove = zone.has((y - 1) * width + x)
 					const hasCellBelow = zone.has(y * width + x)
 					if (hasCellAbove !== hasCellBelow) {
@@ -943,7 +991,8 @@ function getZoneDrawFunction(zone: Set<number>, width: number) {
 					}
 					break
 				}
-				case 1: { // down
+				case 1: {
+					// down
 					const hasCellRight = zone.has(y * width + x)
 					const hasCellLeft = zone.has(y * width + (x - 1))
 					if (hasCellRight !== hasCellLeft) {
@@ -953,7 +1002,8 @@ function getZoneDrawFunction(zone: Set<number>, width: number) {
 					}
 					break
 				}
-				case 2: { // left
+				case 2: {
+					// left
 					const hasCellBelow = zone.has(y * width + (x - 1))
 					const hasCellAbove = zone.has((y - 1) * width + (x - 1))
 					if (hasCellBelow !== hasCellAbove) {
@@ -963,7 +1013,8 @@ function getZoneDrawFunction(zone: Set<number>, width: number) {
 					}
 					break
 				}
-				case 3: { // up
+				case 3: {
+					// up
 					const hasCellLeft = zone.has((y - 1) * width + (x - 1))
 					const hasCellRight = zone.has((y - 1) * width + x)
 					if (hasCellLeft !== hasCellRight) {
@@ -976,12 +1027,12 @@ function getZoneDrawFunction(zone: Set<number>, width: number) {
 			}
 		}
 		dir = i
-		if (++iterations > 1000) throw new Error('Infinite loop detected while processing ground')
+		if (++iterations > 1000) throw new Error("Infinite loop detected while processing ground")
 	} while (x !== startX || y !== startY || dir === 0)
 
-	path += ' Z'
+	path += " Z"
 
-	return new Function('x', 'y', `return \`${path}\``) as (x: number, y: number) => string
+	return new Function("x", "y", `return \`${path}\``) as (x: number, y: number) => string
 }
 
 function findSet(sets: Set<Set<number>>, value: number) {

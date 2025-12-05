@@ -1,6 +1,5 @@
-
-import { server } from "./entities"
 import { SUB_STEPS, TARGET_UPS } from "../utils/constants"
+import { server } from "./entities"
 
 let paused: boolean
 

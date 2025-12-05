@@ -1,5 +1,6 @@
-import { INNATE_NODES, INPUT_NODES, MAX, OUTPUT_NODES, type Type } from "./constants"
 import { useEffect, useRef } from "react"
+
+import { INNATE_NODES, INPUT_NODES, MAX, OUTPUT_NODES, type Type } from "./constants"
 
 type Connection = {
 	from: number
@@ -10,7 +11,7 @@ type Connection = {
 
 type Node = {
 	index: number
-	aggregation: number,
+	aggregation: number
 	activation: number
 	incoming: Set<Connection>
 	outgoing: Set<Connection>
@@ -29,7 +30,7 @@ export function prepareViz(genome: Type, ctx: CanvasRenderingContext2D) {
 		const isInput = i < INPUT_NODES.length
 		const isOutput = i >= INPUT_NODES.length && i < INNATE_NODES
 		const depth = isInput ? 0 : isOutput ? Infinity : NaN
-		const name = isInput ? INPUT_NODES[i] : isOutput ? OUTPUT_NODES[i - INPUT_NODES.length] : ''
+		const name = isInput ? INPUT_NODES[i] : isOutput ? OUTPUT_NODES[i - INPUT_NODES.length] : ""
 		nodes.set(i, {
 			index: i,
 			aggregation: 0,
@@ -46,7 +47,8 @@ export function prepareViz(genome: Type, ctx: CanvasRenderingContext2D) {
 
 	for (let i = 0; i < genome.length; i++) {
 		const type = genome[i]
-		if (type === 0) { // node gene
+		if (type === 0) {
+			// node gene
 			const index = genome[i + 1]
 			const aggregation = genome[i + 2]
 			const activation = genome[i + 3]
@@ -59,11 +61,12 @@ export function prepareViz(genome: Type, ctx: CanvasRenderingContext2D) {
 				isInput: false,
 				isOutput: false,
 				depth: NaN,
-				name: '',
+				name: "",
 				deadend: false,
 			})
 			i += 3 // skip index, aggregation, activation
-		} else if (type === 1) { // connection gene
+		} else if (type === 1) {
+			// connection gene
 			i += 3 // skip from, to, weight
 		} else {
 			throw new Error(`Unknown gene type allele: ${type}`)
@@ -71,7 +74,8 @@ export function prepareViz(genome: Type, ctx: CanvasRenderingContext2D) {
 	}
 	for (let i = 0; i < genome.length; i++) {
 		const type = genome[i]
-		if (type === 1) { // connection gene
+		if (type === 1) {
+			// connection gene
 			const from = genome[i + 1]
 			const to = genome[i + 2]
 			const weight = genome[i + 3]
@@ -89,7 +93,8 @@ export function prepareViz(genome: Type, ctx: CanvasRenderingContext2D) {
 				connections.add(connection)
 			}
 			i += 3 // skip from, to, weight
-		} else if (type === 0) { // node gene
+		} else if (type === 0) {
+			// node gene
 			i += 3 // skip index, aggregation, activation
 		} else {
 			throw new Error(`Unknown gene type allele: ${type}`)
@@ -115,19 +120,23 @@ export function prepareViz(genome: Type, ctx: CanvasRenderingContext2D) {
 			changed = false
 			for (const node of nodes.values()) {
 				if (node.deadend) continue
-				const noOutgoingUtility = !node.isOutput && Array.from(node.outgoing).every(conn => {
-					const to = nodes.get(conn.to)
-					return to?.deadend || to === node
-				})
+				const noOutgoingUtility =
+					!node.isOutput &&
+					Array.from(node.outgoing).every((conn) => {
+						const to = nodes.get(conn.to)
+						return to?.deadend || to === node
+					})
 				if (noOutgoingUtility) {
 					node.deadend = true
 					changed = true
 					continue
 				}
-				const noIncomingUtility = !node.isInput && Array.from(node.incoming).every(conn => {
-					const from = nodes.get(conn.from)
-					return from?.deadend || from === node
-				})
+				const noIncomingUtility =
+					!node.isInput &&
+					Array.from(node.incoming).every((conn) => {
+						const from = nodes.get(conn.from)
+						return from?.deadend || from === node
+					})
 				if (noIncomingUtility) {
 					node.deadend = true
 					changed = true
@@ -168,7 +177,13 @@ export function prepareViz(genome: Type, ctx: CanvasRenderingContext2D) {
 				dfs(node, 1)
 			}
 		}
-		const maxDepth = Math.max(...Array.from(nodes.values()).map(node => node.depth).filter(d => !isNaN(d)).filter(d => d !== Infinity)) + 1
+		const maxDepth =
+			Math.max(
+				...Array.from(nodes.values())
+					.map((node) => node.depth)
+					.filter((d) => !isNaN(d))
+					.filter((d) => d !== Infinity),
+			) + 1
 		for (let i = INPUT_NODES.length; i < INNATE_NODES; i++) {
 			const node = nodes.get(i)
 			if (!node) continue
@@ -178,7 +193,7 @@ export function prepareViz(genome: Type, ctx: CanvasRenderingContext2D) {
 		let compacted = false
 		while (!compacted) {
 			compacted = true
-			const layers = new Set(Array.from(nodes.values()).map(node => node.depth))
+			const layers = new Set(Array.from(nodes.values()).map((node) => node.depth))
 			layers.delete(NaN)
 			for (let i = 0; i < layers.size; i++) {
 				if (layers.has(i)) continue
@@ -203,15 +218,14 @@ export function prepareViz(genome: Type, ctx: CanvasRenderingContext2D) {
 	}
 	perLayer.delete(NaN)
 
-
 	ctx.font = `${16 * devicePixelRatio}px sans-serif`
-	const leftOffset = Math.max(...INPUT_NODES.map(t => ctx.measureText(t).width)) + 20
-	const rightOffset = Math.max(...OUTPUT_NODES.map(t => ctx.measureText(t).width)) + 20
+	const leftOffset = Math.max(...INPUT_NODES.map((t) => ctx.measureText(t).width)) + 20
+	const rightOffset = Math.max(...OUTPUT_NODES.map((t) => ctx.measureText(t).width)) + 20
 	const topOffset = 20
 	const bottomOffset = 20
 	const layerCount = perLayer.size
-	const layerWidth = (ctx.canvas.width - leftOffset - rightOffset) / (layerCount)
-	const maxLayerSize = Math.max(...Array.from(perLayer.values()).map(layer => layer.length))
+	const layerWidth = (ctx.canvas.width - leftOffset - rightOffset) / layerCount
+	const maxLayerSize = Math.max(...Array.from(perLayer.values()).map((layer) => layer.length))
 	const layerHeight = (ctx.canvas.height - topOffset - bottomOffset) / (maxLayerSize - 1)
 	const nodeSize = 10
 
@@ -240,16 +254,10 @@ export function prepareViz(genome: Type, ctx: CanvasRenderingContext2D) {
 			const index = node.index
 			const acc = accumulators.get(index)!
 			const memo = memory[index]
-			const raw = (memo === undefined || isNaN(memo))
-				? 0
-				: memo === Infinity || memo === -Infinity
-					? 100
-					: Math.abs(memo)
+			const raw = memo === undefined || isNaN(memo) ? 0 : memo === Infinity || memo === -Infinity ? 100 : Math.abs(memo)
 			const min = (acc[0] = Math.min(acc[0], raw))
 			const max = (acc[1] = Math.max(acc[1], raw))
-			const value = max === min
-				? max === 0 ? 0 : 0.5
-				: (raw - min) / (max - min)
+			const value = max === min ? (max === 0 ? 0 : 0.5) : (raw - min) / (max - min)
 			ctx.fillStyle = getNodeColor(node)
 			const size = nodeSize * (0.5 + value * 1.5)
 			ctx.beginPath()
@@ -259,12 +267,12 @@ export function prepareViz(genome: Type, ctx: CanvasRenderingContext2D) {
 			ctx.fill()
 
 			if (node.isInput) {
-				ctx.fillStyle = 'white'
-				ctx.textBaseline = 'middle'
+				ctx.fillStyle = "white"
+				ctx.textBaseline = "middle"
 				ctx.fillText(node.name, 0, y)
 			} else if (node.isOutput) {
-				ctx.fillStyle = 'white'
-				ctx.textBaseline = 'middle'
+				ctx.fillStyle = "white"
+				ctx.textBaseline = "middle"
 				ctx.fillText(node.name, x + nodeSize + 20, y)
 			}
 		}
@@ -276,7 +284,7 @@ export function prepareViz(genome: Type, ctx: CanvasRenderingContext2D) {
 			const toNode = nodes.get(conn.to)
 			if (!fromNode || !toNode) continue
 			const isDeadEnd = fromNode.deadend || toNode.deadend
-			ctx.strokeStyle = isDeadEnd ? 'hsl(0, 0%, 50%)' : 'white'
+			ctx.strokeStyle = isDeadEnd ? "hsl(0, 0%, 50%)" : "white"
 			ctx.lineWidth = 0.5 + conn.normalized * 3
 			if (fromNode === toNode) {
 				ctx.setLineDash([5, 5])
@@ -298,14 +306,7 @@ export function prepareViz(genome: Type, ctx: CanvasRenderingContext2D) {
 			ctx.beginPath()
 			ctx.moveTo(fromX + nodeSize, fromY)
 			const dx = layerWidth
-			ctx.bezierCurveTo(
-				fromX + nodeSize + dx / 3,
-				fromY,
-				toX - nodeSize - dx / 3,
-				toY,
-				toX - nodeSize,
-				toY,
-			)
+			ctx.bezierCurveTo(fromX + nodeSize + dx / 3, fromY, toX - nodeSize - dx / 3, toY, toX - nodeSize, toY)
 			ctx.stroke()
 		}
 	}
@@ -317,6 +318,6 @@ export function prepareViz(genome: Type, ctx: CanvasRenderingContext2D) {
 	}
 
 	return {
-		draw
+		draw,
 	}
 }

@@ -1,17 +1,18 @@
 import type { RouteMeta } from "#router"
-import styles from './styles.module.css'
+
 import { Head } from "#components/Head"
 import { Fragment, useEffect, useState } from "react"
 
+import styles from "./styles.module.css"
 
 export const meta: RouteMeta = {
-	title: 'Intl Tuesday',
-	image: './screen.png',
-	tags: ['Intl', 'locales']
+	title: "Intl Tuesday",
+	image: "./screen.png",
+	tags: ["Intl", "locales"],
 }
 
 export default function IntlTuesdayPage() {
-	const [translations, setTranslations] = useState<{ locale: string, name: string }[]>([])
+	const [translations, setTranslations] = useState<{ locale: string; name: string }[]>([])
 
 	useEffect(() => {
 		const delay = 50 // ms
@@ -19,19 +20,19 @@ export default function IntlTuesdayPage() {
 
 		const locales = new Set<string>()
 		const date = new Date()
-		date.setDate(date.getDate() + (day + 7 - date.getDay()) % 7)
-		const format = { weekday: 'long' } as const
+		date.setDate(date.getDate() + ((day + 7 - date.getDay()) % 7))
+		const format = { weekday: "long" } as const
 
 		async function push(candidate: string) {
 			const [locale] = Intl.getCanonicalLocales(Intl.DateTimeFormat.supportedLocalesOf(candidate))
 			if (!locale || locales.has(locale)) return
 			locales.add(locale)
-			await new Promise(r => setTimeout(r, delay))
+			await new Promise((r) => setTimeout(r, delay))
 			const name = new Intl.DateTimeFormat(locale, format).format(date)
-			setTranslations(t => [...t, { locale, name }])
+			setTranslations((t) => [...t, { locale, name }])
 		}
 
-		void async function () {
+		void (async function () {
 			const letters = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i))
 			for (const a of letters) {
 				for (const b of letters) {
@@ -41,19 +42,19 @@ export default function IntlTuesdayPage() {
 					}
 				}
 			}
-		}()
+		})()
 	}, [])
 
 	return (
 		<div className={styles.main}>
 			<div className={styles.head}>
 				<Head />
-				<output htmlFor="content">{translations.length.toString().padStart(2, '0')} locales</output>
+				<output htmlFor="content">{translations.length.toString().padStart(2, "0")} locales</output>
 			</div>
 			<div className={styles.content} id="content">
 				{translations.map((t, i) => (
 					<Fragment key={t.locale}>
-						{i > 0 ? ' ' : null}
+						{i > 0 ? " " : null}
 						<span lang={t.locale}>{t.name}</span>
 					</Fragment>
 				))}
@@ -61,4 +62,3 @@ export default function IntlTuesdayPage() {
 		</div>
 	)
 }
-

@@ -1,17 +1,14 @@
+import { ROUTES, type Routes } from "#router"
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState, type ComponentPropsWithoutRef, type ReactNode } from "react"
-import { ROUTES, type Routes } from "#router"
 import { flushSync } from "react-dom"
-
 
 type NavigationEvent = {
 	canIntercept: boolean
 	destination: {
 		url: string
 	}
-	intercept: (options: {
-		handler: () => void
-	}) => void
+	intercept: (options: { handler: () => void }) => void
 }
 
 declare global {
@@ -55,7 +52,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
 			event.intercept({
 				handler() {
 					document.startViewTransition(() => flushSync(() => setRoute(key)))
-				}
+				},
 			})
 		}
 		try {
@@ -64,20 +61,16 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
 				window.navigation.removeEventListener("navigate", onNavigate)
 			}
 		} catch {
-			console.log('Navigation API not supported, defaulting to MPA behavior.')
+			console.log("Navigation API not supported, defaulting to MPA behavior.")
 		}
 	}, [])
-	return (
-		<NavigationContext.Provider value={route}>
-			{children}
-		</NavigationContext.Provider>
-	)
+	return <NavigationContext.Provider value={route}>{children}</NavigationContext.Provider>
 }
 
 export function useNavigation() {
 	return useContext(NavigationContext)
 }
 
-export function Link({ href, ...props }: Omit<ComponentPropsWithoutRef<"a">, "href"> & { href: `/${Routes}` | '/' }) {
+export function Link({ href, ...props }: Omit<ComponentPropsWithoutRef<"a">, "href"> & { href: `/${Routes}` | "/" }) {
 	return <a {...props} href={import.meta.env.BASE_URL + href.slice(1)} />
 }

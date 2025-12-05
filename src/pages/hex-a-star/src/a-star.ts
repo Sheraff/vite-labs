@@ -10,36 +10,30 @@ type Matrix = {
 	}
 }
 
-
 export default function (matrix: Matrix, start: Cell, goal: Cell) {
-	return aStar(
-		matrix,
-		start,
-		goal,
-		(cell) => heuristic(cell, goal),
-		distance,
-	)
+	return aStar(matrix, start, goal, (cell) => heuristic(cell, goal), distance)
 }
 
 function heuristic(a: Cell, b: Cell) {
-	if (a.isObstacle || b.isObstacle)
-		return Infinity
+	if (a.isObstacle || b.isObstacle) return Infinity
 	return Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
 }
 
-const VERTICAL_DISTANCE = 2 * Math.sin(2 * Math.PI / 6) // 1.73205081
-const DIAGONAL_DISTANCE = Math.sqrt((Math.sin(2 * Math.PI / 6)) ** 2 + (1.5 + Math.cos(2 * Math.PI / 6)) ** 2) // 2.17944947
+const VERTICAL_DISTANCE = 2 * Math.sin((2 * Math.PI) / 6) // 1.73205081
+const DIAGONAL_DISTANCE = Math.sqrt(Math.sin((2 * Math.PI) / 6) ** 2 + (1.5 + Math.cos((2 * Math.PI) / 6)) ** 2) // 2.17944947
 
 function distance(a: Cell, b: Cell, previous?: Cell) {
 	const deltaY = Math.abs(a.y - b.y)
-	if (deltaY === 1)
-		return VERTICAL_DISTANCE
+	if (deltaY === 1) return VERTICAL_DISTANCE
 	if (deltaY === 0.5) {
-		if (previous && previous.y === b.y) // favor 'straight' movement
+		if (previous && previous.y === b.y)
+			// favor 'straight' movement
 			return (DIAGONAL_DISTANCE + VERTICAL_DISTANCE) / 2
 		return DIAGONAL_DISTANCE
 	}
-	throw new Error(`Invalid neighbors, not adjacent dX=${Math.abs(a.x - b.x)} dY=${deltaY} (a: {x: ${a.x}, y: ${a.y}}, b: {x: ${b.x}, y: ${b.y}})`)
+	throw new Error(
+		`Invalid neighbors, not adjacent dX=${Math.abs(a.x - b.x)} dY=${deltaY} (a: {x: ${a.x}, y: ${a.y}}, b: {x: ${b.x}, y: ${b.y}})`,
+	)
 }
 
 // A* finds a path from start to goal.
@@ -50,7 +44,7 @@ function aStar(
 	start: Cell,
 	goal: Cell,
 	h: (cell: Cell) => number,
-	d: (a: Cell, b: Cell, previous?: Cell) => number
+	d: (a: Cell, b: Cell, previous?: Cell) => number,
 ) {
 	// The set of discovered nodes that may need to be (re-)expanded.
 	// Initially, only the start node is known.
@@ -74,23 +68,22 @@ function aStar(
 	let counter = 0
 
 	while (openSet.size > 0) {
-		if (++counter > 20_000) { // 5000
-			console.warn('too many iterations')
+		if (++counter > 20_000) {
+			// 5000
+			console.warn("too many iterations")
 			return null
 		}
 
 		// This operation can occur in O(1) time if openSet is a min-heap or a priority queue
-		const current = openSet.has(lowestFScore) ? lowestFScore : Array.from(openSet).reduce<Cell | null>((min, cell) => {
-			if (!fScore.has(min))
-				return cell
-			return fScore.get(min) < fScore.get(cell)
-				? min
-				: cell
-		}, null)!
+		const current = openSet.has(lowestFScore)
+			? lowestFScore
+			: Array.from(openSet).reduce<Cell | null>((min, cell) => {
+					if (!fScore.has(min)) return cell
+					return fScore.get(min) < fScore.get(cell) ? min : cell
+				}, null)!
 		lowestFScore = current
 
-		if (current === goal)
-			return reconstructPath(cameFrom, current)
+		if (current === goal) return reconstructPath(cameFrom, current)
 
 		openSet.delete(current)
 
@@ -105,16 +98,14 @@ function aStar(
 		]) {
 			const x = current.x + dx
 			const y = current.y + dy
-			if (!matrix[x]?.[y])
-				continue
+			if (!matrix[x]?.[y]) continue
 
 			const neighbor = matrix[x][y]
 
 			// tentative_gScore is the distance from start to the neighbor through current
 			const tentativeGScore = gScore.get(current) + d(current, neighbor, cameFrom.get(current))
 
-			if (!gScore.has(neighbor))
-				gScore.set(neighbor, Infinity)
+			if (!gScore.has(neighbor)) gScore.set(neighbor, Infinity)
 
 			// This path to neighbor is better than any previous one. Record it!
 			if (tentativeGScore < gScore.get(neighbor)) {
@@ -124,17 +115,15 @@ function aStar(
 				const newFScore = gScore.get(neighbor) + h(neighbor)
 				fScore.set(neighbor, newFScore)
 
-				if (newFScore < fScore.get(lowestFScore))
-					lowestFScore = neighbor
+				if (newFScore < fScore.get(lowestFScore)) lowestFScore = neighbor
 
-				if (!openSet.has(neighbor) && newFScore < Infinity)
-					openSet.add(neighbor)
+				if (!openSet.has(neighbor) && newFScore < Infinity) openSet.add(neighbor)
 			}
 		}
 	}
 
 	// Open set is empty but goal was never reached
-	console.warn('Open set is empty but goal was never reached')
+	console.warn("Open set is empty but goal was never reached")
 	return null
 }
 

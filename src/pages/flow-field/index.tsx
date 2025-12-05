@@ -1,12 +1,14 @@
 import type { RouteMeta } from "#router"
-import styles from './styles.module.css'
+
 import { Head } from "#components/Head"
 import { useEffect, useRef } from "react"
 
+import styles from "./styles.module.css"
+
 export const meta: RouteMeta = {
-	title: 'Flow Field',
-	image: './screen.png',
-	tags: ['pathfinding', 'performance']
+	title: "Flow Field",
+	image: "./screen.png",
+	tags: ["pathfinding", "performance"],
 }
 
 const SIDE = 30
@@ -25,7 +27,7 @@ export default function FlowFieldPage() {
 		if (!canvas) return
 		canvas.width = side
 		canvas.height = side
-		const ctx = canvas.getContext('2d')
+		const ctx = canvas.getContext("2d")
 		if (!ctx) return
 
 		const GridType = Uint8Array
@@ -54,7 +56,7 @@ export default function FlowFieldPage() {
 			if (!prev) return
 
 			ctx.clearRect(0, 0, side, side)
-			const colorMaxInt = Math.min(maxIntegration, SIDE * SIDE / 2)
+			const colorMaxInt = Math.min(maxIntegration, (SIDE * SIDE) / 2)
 
 			for (let y = 0; y < SIDE; y++) {
 				const row = y * SIDE
@@ -64,15 +66,15 @@ export default function FlowFieldPage() {
 
 					// draw background (cell cost)
 					const cost = grid[index]
-					const int = integration[index] / colorMaxInt * 360
+					const int = (integration[index] / colorMaxInt) * 360
 					// ctx.fillStyle = `hsl(${int}, 50%, ${cost / maxCost * 100}%)`
-					ctx.fillStyle = `hsl(${int}, 50%, ${cost / maxCost * 50 + 50}%)`
+					ctx.fillStyle = `hsl(${int}, 50%, ${(cost / maxCost) * 50 + 50}%)`
 					// ctx.fillStyle = `oklch(${cost / maxCost * 50 + 50}% 50% ${int})`
 					ctx.fillRect(x * px, y * px, px, px)
 
 					// draw direction (flow field)
-					ctx.strokeStyle = 'black'
-					ctx.fillStyle = 'black'
+					ctx.strokeStyle = "black"
+					ctx.fillStyle = "black"
 					const [dx, dy] = readField(x, y)
 					if (dx === 0 && dy === 0) {
 						ctx.beginPath()
@@ -99,12 +101,12 @@ export default function FlowFieldPage() {
 					}
 
 					// draw walls (grid)
-					ctx.strokeStyle = 'white'
+					ctx.strokeStyle = "white"
 					ctx.strokeRect(x * px, y * px, px, px)
 
 					// draw goal
 					if (x === goal.x && y === goal.y) {
-						ctx.fillStyle = 'red'
+						ctx.fillStyle = "red"
 						ctx.beginPath()
 						ctx.arc(x * px + px / 2, y * px + px / 2, px / 4, 0, Math.PI * 2)
 						ctx.fill()
@@ -153,7 +155,7 @@ export default function FlowFieldPage() {
 				}
 			}
 			const after = performance.now()
-			console.log('computeField', after - before)
+			console.log("computeField", after - before)
 		}
 
 		function computeIntegration() {
@@ -221,7 +223,7 @@ export default function FlowFieldPage() {
 				}
 			}
 			const after = performance.now()
-			console.log('computeIntegration', after - before)
+			console.log("computeIntegration", after - before)
 			computeField()
 			// const summary = integration.reduce<Record<number, number>>((acc, cur) => {
 			// 	if (acc[cur] === undefined) acc[cur] = 0
@@ -236,57 +238,68 @@ export default function FlowFieldPage() {
 
 		const eventToPosition = (e: PointerEvent | MouseEvent) => {
 			const { left, top } = canvas.getBoundingClientRect()
-			const x = Math.floor((e.clientX - left) / base * SIDE)
-			const y = Math.floor((e.clientY - top) / base * SIDE)
+			const x = Math.floor(((e.clientX - left) / base) * SIDE)
+			const y = Math.floor(((e.clientY - top) / base) * SIDE)
 			return { x, y }
 		}
 
 		let down: false | 0 | 1 = false
 		let moved = false
-		canvas.addEventListener('pointerdown', (e) => {
-			if (e.button !== 0) return
-			if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return
-			const { x, y } = eventToPosition(e)
-			const value = grid[y * SIDE + x]
-			down = value === 0 ? 1 : 0
-		}, { signal: controller.signal })
-
-		canvas.addEventListener('pointermove', (event) => {
-			if (down === false) return
-			moved = true
-			let changed = false
-			for (const e of event.getCoalescedEvents()) {
+		canvas.addEventListener(
+			"pointerdown",
+			(e) => {
+				if (e.button !== 0) return
+				if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return
 				const { x, y } = eventToPosition(e)
-				const index = y * SIDE + x
-				const next = down ? maxCost : 0
-				const prev = grid[index]
-				if (prev !== undefined && prev !== next) {
-					grid[index] = next
-					changed = true
+				const value = grid[y * SIDE + x]
+				down = value === 0 ? 1 : 0
+			},
+			{ signal: controller.signal },
+		)
+
+		canvas.addEventListener(
+			"pointermove",
+			(event) => {
+				if (down === false) return
+				moved = true
+				let changed = false
+				for (const e of event.getCoalescedEvents()) {
+					const { x, y } = eventToPosition(e)
+					const index = y * SIDE + x
+					const next = down ? maxCost : 0
+					const prev = grid[index]
+					if (prev !== undefined && prev !== next) {
+						grid[index] = next
+						changed = true
+					}
 				}
-			}
-			if (changed) {
-				computeIntegration()
-			}
-		}, { signal: controller.signal })
-
-		canvas.addEventListener('click', (e) => {
-			if (e.button !== 0) return
-			if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return
-			down = false
-			if (!moved) {
-				const { x, y } = eventToPosition(e)
-				const index = y * SIDE + x
-				const prev = grid[index]
-				const next = prev === 0 ? maxCost : 0
-				if (prev !== undefined && prev !== next) {
-					grid[index] = next
+				if (changed) {
 					computeIntegration()
 				}
-			}
-			moved = false
-		}, { signal: controller.signal })
+			},
+			{ signal: controller.signal },
+		)
 
+		canvas.addEventListener(
+			"click",
+			(e) => {
+				if (e.button !== 0) return
+				if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return
+				down = false
+				if (!moved) {
+					const { x, y } = eventToPosition(e)
+					const index = y * SIDE + x
+					const prev = grid[index]
+					const next = prev === 0 ? maxCost : 0
+					if (prev !== undefined && prev !== next) {
+						grid[index] = next
+						computeIntegration()
+					}
+				}
+				moved = false
+			},
+			{ signal: controller.signal },
+		)
 
 		// canvas.addEventListener('contextmenu', (e) => {
 		// 	e.preventDefault()
@@ -299,14 +312,18 @@ export default function FlowFieldPage() {
 		// 	computeIntegration()
 		// }, { signal: controller.signal })
 
-		canvas.addEventListener('pointermove', (e) => {
-			const { x, y } = eventToPosition(e)
-			if (x === goal.x && y === goal.y) return
-			if (grid[y * SIDE + x] === maxCost) return
-			goal.x = x
-			goal.y = y
-			computeIntegration()
-		}, { signal: controller.signal })
+		canvas.addEventListener(
+			"pointermove",
+			(e) => {
+				const { x, y } = eventToPosition(e)
+				if (x === goal.x && y === goal.y) return
+				if (grid[y * SIDE + x] === maxCost) return
+				goal.x = x
+				goal.y = y
+				computeIntegration()
+			},
+			{ signal: controller.signal },
+		)
 
 		return () => {
 			cancelAnimationFrame(rafId)
@@ -327,20 +344,20 @@ export default function FlowFieldPage() {
 }
 
 const fieldMap: Record<number, Record<number, number>> = {
-	'-1': {
-		'-1': 0,
-		'0': 1,
-		'1': 2,
+	"-1": {
+		"-1": 0,
+		"0": 1,
+		"1": 2,
 	},
 	0: {
-		'-1': 3,
-		'0': 4,
-		'1': 5,
+		"-1": 3,
+		"0": 4,
+		"1": 5,
 	},
 	1: {
-		'-1': 6,
-		'0': 7,
-		'1': 8,
+		"-1": 6,
+		"0": 7,
+		"1": 8,
 	},
 }
 

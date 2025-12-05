@@ -11,13 +11,11 @@ export class Rail {
 		this.start = { x: startX, y: startY }
 		this.end = { x: endX, y: endY }
 		this.radius = radius
-		this.length = Math.sqrt(
-			Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2)
-		)
+		this.length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2))
 		this.angle = Math.atan2(endY - startY, endX - startX)
 		this.normal = {
 			x: -Math.sin(this.angle),
-			y: Math.cos(this.angle)
+			y: Math.cos(this.angle),
 		}
 	}
 
@@ -25,13 +23,13 @@ export class Rail {
 		// Vector from rail start to ball
 		const toBall = {
 			x: ball.x - this.start.x,
-			y: ball.y - this.start.y
+			y: ball.y - this.start.y,
 		}
 
 		// Project ball onto rail direction
 		const railDir = {
 			x: Math.cos(this.angle),
-			y: Math.sin(this.angle)
+			y: Math.sin(this.angle),
 		}
 
 		const projection = toBall.x * railDir.x + toBall.y * railDir.y
@@ -42,14 +40,11 @@ export class Rail {
 		// Find closest point on rail
 		const closestPoint = {
 			x: this.start.x + clampedProjection * railDir.x,
-			y: this.start.y + clampedProjection * railDir.y
+			y: this.start.y + clampedProjection * railDir.y,
 		}
 
 		// Distance from ball to closest point
-		const distance = Math.sqrt(
-			Math.pow(ball.x - closestPoint.x, 2) +
-			Math.pow(ball.y - closestPoint.y, 2)
-		)
+		const distance = Math.sqrt(Math.pow(ball.x - closestPoint.x, 2) + Math.pow(ball.y - closestPoint.y, 2))
 
 		if (distance < ball.radius + this.radius) {
 			return {
@@ -58,8 +53,8 @@ export class Rail {
 				distance,
 				normal: {
 					x: (ball.x - closestPoint.x) / distance,
-					y: (ball.y - closestPoint.y) / distance
-				}
+					y: (ball.y - closestPoint.y) / distance,
+				},
 			} as const
 		}
 
@@ -86,16 +81,16 @@ export class Rail {
 		ctx.beginPath()
 		ctx.moveTo(this.start.x, this.start.y)
 		ctx.lineTo(this.end.x, this.end.y)
-		ctx.strokeStyle = '#ddd'
+		ctx.strokeStyle = "#ddd"
 		ctx.lineWidth = this.radius * 2
-		ctx.lineCap = 'round'
+		ctx.lineCap = "round"
 		ctx.stroke()
 
 		// Add highlight
 		ctx.beginPath()
 		ctx.moveTo(this.start.x, this.start.y)
 		ctx.lineTo(this.end.x, this.end.y)
-		ctx.strokeStyle = '#fff'
+		ctx.strokeStyle = "#fff"
 		ctx.lineWidth = this.radius
 		ctx.stroke()
 	}

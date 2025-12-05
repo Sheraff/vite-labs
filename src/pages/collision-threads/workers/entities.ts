@@ -4,9 +4,14 @@ type Entities = {
 	balls: Balls
 }
 
-let entities = new Proxy({}, {
-	get: (_, key) => { throw new Error(`Call \`init\` before accessing entity "${String(key)}"`) }
-}) as Entities
+let entities = new Proxy(
+	{},
+	{
+		get: (_, key) => {
+			throw new Error(`Call \`init\` before accessing entity "${String(key)}"`)
+		},
+	},
+) as Entities
 
 export type EntitiesMessage = { balls: SerializedBalls }
 
@@ -20,7 +25,7 @@ export const server = {
 	serialize: (): EntitiesMessage => {
 		return { balls: entities.balls.serialize() }
 	},
-	get: () => entities
+	get: () => entities,
 }
 
 export const client = {
@@ -31,5 +36,5 @@ export const client = {
 	hydrate: (bufferStructure: EntitiesMessage) => {
 		entities.balls.hydrate(bufferStructure.balls)
 	},
-	get: () => entities
+	get: () => entities,
 }

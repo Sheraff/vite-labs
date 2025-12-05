@@ -1,18 +1,20 @@
-import styles from './styles.module.css'
-import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
+
+import { Head } from "#components/Head"
 import { useEffect, useRef } from "react"
 
+import styles from "./styles.module.css"
+
 export const meta: RouteMeta = {
-	title: 'Deterministic Plinko',
-	image: './screen.png',
-	tags: ['game', 'physics', 'simulation']
+	title: "Deterministic Plinko",
+	image: "./screen.png",
+	tags: ["game", "physics", "simulation"],
 }
 
 /**
  * a plinko game without any randomness / chance / variability,
  * so that the outcome is known before the ball is dropped.
- * 
+ *
  * We color the ball before dropping it based on where we
  * know it will land.
  */
@@ -36,16 +38,14 @@ export default function DeterministicPlinkoPage() {
 			<div className={styles.head}>
 				<Head />
 			</div>
-			<canvas ref={ref}>
-				Your browser does not support the HTML5 canvas tag.
-			</canvas>
+			<canvas ref={ref}>Your browser does not support the HTML5 canvas tag.</canvas>
 		</div>
 	)
 }
 
 type Ball = {
-	color: string,
-	startTime: number,
+	color: string
+	startTime: number
 	positions: number[]
 }
 
@@ -73,20 +73,20 @@ function start(ctx: CanvasRenderingContext2D) {
 					yield { x, y }
 				}
 			}
-		}
+		},
 	})
 
 	const last_y = obstacles.at(-1)!.y
 	const buckets = Array.from({
 		*[Symbol.iterator]() {
 			yield 0
-			const first_of_last_row = obstacles.findIndex(o => o.y === last_y)
+			const first_of_last_row = obstacles.findIndex((o) => o.y === last_y)
 			let start = obstacles[first_of_last_row + 1]!.x
 			if (start < OBSTACLE_SPACING.x + BALL_RADIUS) start = obstacles[first_of_last_row + 2]!.x
 			for (let x = start; x <= width - OBSTACLE_RADIUS * 2; x += OBSTACLE_SPACING.x * 2) {
 				yield x
 			}
-		}
+		},
 	}).map((x, i, { length }) => {
 		const hue = Math.round((i / length) * 360)
 		return { x, hue }
@@ -124,7 +124,7 @@ function start(ctx: CanvasRenderingContext2D) {
 		}
 
 		// draw obstacles
-		ctx.fillStyle = '#222222'
+		ctx.fillStyle = "#222222"
 		for (const obstacle of obstacles) {
 			ctx.beginPath()
 			ctx.arc(obstacle.x, obstacle.y, OBSTACLE_RADIUS, 0, Math.PI * 2)
@@ -156,33 +156,59 @@ function start(ctx: CanvasRenderingContext2D) {
 	})
 
 	const controller = new AbortController()
-	window.addEventListener('pointermove', (e) => {
-		const rect = ctx.canvas.getBoundingClientRect()
-		mouse.x = (e.clientX - rect.left) * (ctx.canvas.width / rect.width)
-		mouse.y = (e.clientY - rect.top) * (ctx.canvas.height / rect.height)
-		const positions = simulateBall(mouse.x, mouse.y, BALL_RADIUS, obstacles, OBSTACLE_RADIUS, height, width, STATIC_TIMESTEP)
-		const last_x = positions.at(-2)!
-		const hue = xToBucket(last_x, buckets).hue
-		mouse.hue = hue
-		if (e.buttons === 1) {
+	window.addEventListener(
+		"pointermove",
+		(e) => {
+			const rect = ctx.canvas.getBoundingClientRect()
+			mouse.x = (e.clientX - rect.left) * (ctx.canvas.width / rect.width)
+			mouse.y = (e.clientY - rect.top) * (ctx.canvas.height / rect.height)
+			const positions = simulateBall(
+				mouse.x,
+				mouse.y,
+				BALL_RADIUS,
+				obstacles,
+				OBSTACLE_RADIUS,
+				height,
+				width,
+				STATIC_TIMESTEP,
+			)
+			const last_x = positions.at(-2)!
+			const hue = xToBucket(last_x, buckets).hue
+			mouse.hue = hue
+			if (e.buttons === 1) {
+				balls.push({
+					color: `hsl(${hue}, 100%, 30%)`,
+					startTime: lastTime,
+					positions,
+				})
+			}
+		},
+		{ signal: controller.signal },
+	)
+
+	window.addEventListener(
+		"pointerdown",
+		(e) => {
+			const positions = simulateBall(
+				mouse.x,
+				mouse.y,
+				BALL_RADIUS,
+				obstacles,
+				OBSTACLE_RADIUS,
+				height,
+				width,
+				STATIC_TIMESTEP,
+			)
+			const last_x = positions.at(-2)!
+			const hue = xToBucket(last_x, buckets).hue
 			balls.push({
 				color: `hsl(${hue}, 100%, 30%)`,
 				startTime: lastTime,
 				positions,
 			})
-		}
-	}, { signal: controller.signal })
-
-	window.addEventListener('pointerdown', (e) => {
-		const positions = simulateBall(mouse.x, mouse.y, BALL_RADIUS, obstacles, OBSTACLE_RADIUS, height, width, STATIC_TIMESTEP)
-		const last_x = positions.at(-2)!
-		const hue = xToBucket(last_x, buckets).hue
-		balls.push({
-			color: `hsl(${hue}, 100%, 30%)`,
-			startTime: lastTime,
-			positions,
-		})
-	}, { signal: controller.signal })
+		},
+		{ signal: controller.signal },
+	)
 
 	return () => {
 		cancelAnimationFrame(rafId)
@@ -202,7 +228,16 @@ function xToBucket<Bucket extends { x: number }>(x: number, buckets: Bucket[]): 
 	return buckets[buckets.length - 1]!
 }
 
-function simulateBall(x: number, y: number, r: number, obstacles: { x: number; y: number }[], obstacleRadius: number, height: number, width: number, dt: number) {
+function simulateBall(
+	x: number,
+	y: number,
+	r: number,
+	obstacles: { x: number; y: number }[],
+	obstacleRadius: number,
+	height: number,
+	width: number,
+	dt: number,
+) {
 	const positions: number[] = []
 	positions.push(x, y)
 
@@ -242,8 +277,8 @@ function simulateBall(x: number, y: number, r: number, obstacles: { x: number; y
 			const overlap = minDistance - distance
 			const angle = Math.atan2(dy, dx)
 			const bumper_energy = 1.5
-			vx -= Math.cos(angle) * overlap / dt * bumper_energy
-			vy -= Math.sin(angle) * overlap / dt * bumper_energy
+			vx -= ((Math.cos(angle) * overlap) / dt) * bumper_energy
+			vy -= ((Math.sin(angle) * overlap) / dt) * bumper_energy
 		}
 
 		positions.push(x, y)

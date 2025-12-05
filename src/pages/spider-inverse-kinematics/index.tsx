@@ -1,15 +1,17 @@
-import { useEffect, useRef } from "react"
-import { Head } from "#components/Head"
-import styles from './styles.module.css'
 import type { RouteMeta } from "#router"
+
+import { Head } from "#components/Head"
+import { useEffect, useRef } from "react"
+
+import styles from "./styles.module.css"
 
 const SPIDER_WIDTH = 60
 const SPIDER_LEG_LERP_DURATION = 400
 
 export const meta: RouteMeta = {
-	title: 'Spider Inverse Kinematics',
-	image: './screen.png',
-	tags: ['animation', 'procedural']
+	title: "Spider Inverse Kinematics",
+	image: "./screen.png",
+	tags: ["animation", "procedural"],
 }
 
 export default function SpiderIK() {
@@ -18,10 +20,10 @@ export default function SpiderIK() {
 
 	useEffect(() => {
 		if (!canvas.current || !form.current) return
-		const ctx = canvas.current.getContext('2d')
+		const ctx = canvas.current.getContext("2d")
 		canvas.current.width = window.innerWidth
 		canvas.current.height = window.innerHeight
-		if (!ctx) throw new Error('No context found')
+		if (!ctx) throw new Error("No context found")
 		const clear = start(ctx, form.current)
 		return () => clear()
 	}, [])
@@ -50,8 +52,7 @@ export default function SpiderIK() {
 						lower joint
 					</label>
 					<label>
-						<input type="range" name="ground" min="0" max="4" defaultValue="2" />
-						# of feet on the ground
+						<input type="range" name="ground" min="0" max="4" defaultValue="2" /># of feet on the ground
 					</label>
 					<label>
 						<input type="range" name="yOff" min="0" max="30" defaultValue="6" />
@@ -71,13 +72,13 @@ type Spider = {
 }
 
 type Leg = {
-	x: number,
-	y: number,
-	direction: 1 | -1,
+	x: number
+	y: number
+	direction: 1 | -1
 	lerp: null | {
-		start: number,
-		from: number,
-		to: number,
+		start: number
+		from: number
+		to: number
 	}
 }
 
@@ -87,12 +88,12 @@ type MousePos = {
 }
 
 type UiFormData = {
-	geometry: boolean,
-	elevation: number,
-	upper: number,
-	lower: number,
-	ground: number,
-	yOff: number,
+	geometry: boolean
+	elevation: number
+	upper: number
+	lower: number
+	ground: number
+	yOff: number
 }
 
 function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement) {
@@ -129,23 +130,22 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement) {
 	}
 }
 
-
 function ui(form: HTMLFormElement, formData: UiFormData) {
 	const onInput = () => {
 		Object.assign(formData, getFormData(form))
 	}
-	form.addEventListener('input', onInput)
-	return () => form.removeEventListener('input', onInput)
+	form.addEventListener("input", onInput)
+	return () => form.removeEventListener("input", onInput)
 }
 
 function getFormData(form: HTMLFormElement): UiFormData {
 	const elements = form.elements as HTMLFormControlsCollection & {
-		geometry: HTMLInputElement,
-		elevation: HTMLInputElement,
-		upper: HTMLInputElement,
-		lower: HTMLInputElement,
-		ground: HTMLInputElement,
-		yOff: HTMLInputElement,
+		geometry: HTMLInputElement
+		elevation: HTMLInputElement
+		upper: HTMLInputElement
+		lower: HTMLInputElement
+		ground: HTMLInputElement
+		yOff: HTMLInputElement
 	}
 	return {
 		geometry: elements.geometry.checked,
@@ -162,8 +162,8 @@ function update(ctx: CanvasRenderingContext2D, mousePos: MousePos, spider: Spide
 		mousePos.x = event.clientX
 		mousePos.y = event.clientY
 	}
-	window.addEventListener('pointermove', onPointerMove)
-	return () => window.removeEventListener('pointermove', onPointerMove)
+	window.addEventListener("pointermove", onPointerMove)
+	return () => window.removeEventListener("pointermove", onPointerMove)
 }
 
 function draw(ctx: CanvasRenderingContext2D, mousePos: MousePos, formData: UiFormData, spider: Spider) {
@@ -172,7 +172,7 @@ function draw(ctx: CanvasRenderingContext2D, mousePos: MousePos, formData: UiFor
 		rafId = requestAnimationFrame(loop)
 		const delta = lastTime ? time - lastTime : 0
 		lastTime = time
-		const speed = (mousePos.x - spider.x) * delta / 1000
+		const speed = ((mousePos.x - spider.x) * delta) / 1000
 		spider.x += speed
 		spider.y = ctx.canvas.height - formData.elevation - Math.sin(time / 400) * 3 + Math.sin(spider.x / 30) * 4
 		updateSpiderLegs(ctx, mousePos, spider, formData, time, speed)
@@ -189,7 +189,14 @@ function getLegShoulderX(spider: Spider, i: number) {
 	return x
 }
 
-function updateSpiderLegs(ctx: CanvasRenderingContext2D, mousePos: MousePos, spider: Spider, formData: UiFormData, time: number, speed: number) {
+function updateSpiderLegs(
+	ctx: CanvasRenderingContext2D,
+	mousePos: MousePos,
+	spider: Spider,
+	formData: UiFormData,
+	time: number,
+	speed: number,
+) {
 	const currentDirection = mousePos.x > spider.x ? 1 : -1
 	const maxDistance = formData.lower + formData.upper
 	const speedWeight = formData.ground === 1 ? 1.9 : 0.675 // magic numbers
@@ -210,8 +217,7 @@ function updateSpiderLegs(ctx: CanvasRenderingContext2D, mousePos: MousePos, spi
 
 		const direction = leg.direction
 		const currentLerpsOnSide = spider.legs.reduce((sum, leg) => {
-			if (direction === leg.direction && leg.lerp)
-				sum += 1
+			if (direction === leg.direction && leg.lerp) sum += 1
 			return sum
 		}, 0)
 		if (currentLerpsOnSide >= formData.ground) {
@@ -228,7 +234,7 @@ function updateSpiderLegs(ctx: CanvasRenderingContext2D, mousePos: MousePos, spi
 			leg.lerp = {
 				start: time,
 				from: leg.x,
-				to: shoulderX + leg.direction * repositionBy
+				to: shoulderX + leg.direction * repositionBy,
 			}
 			return
 		}
@@ -239,7 +245,7 @@ function updateSpiderLegs(ctx: CanvasRenderingContext2D, mousePos: MousePos, spi
 			leg.lerp = {
 				start: time,
 				from: leg.x,
-				to: shoulderX + leg.direction * repositionBy
+				to: shoulderX + leg.direction * repositionBy,
 			}
 			return
 		}
@@ -247,16 +253,16 @@ function updateSpiderLegs(ctx: CanvasRenderingContext2D, mousePos: MousePos, spi
 }
 
 function drawSpider(ctx: CanvasRenderingContext2D, spider: Spider, formData: UiFormData) {
-	ctx.fillStyle = '#000'
+	ctx.fillStyle = "#000"
 	ctx.save()
 	ctx.translate(spider.x, spider.y)
 	ctx.beginPath()
 	ctx.arc(0, 0, SPIDER_WIDTH / 2, 0, Math.PI * 2)
 	ctx.fill()
 	ctx.restore()
-	ctx.lineJoin = 'round'
+	ctx.lineJoin = "round"
 	spider.legs.forEach((leg, i) => {
-		ctx.strokeStyle = '#000'
+		ctx.strokeStyle = "#000"
 		ctx.lineWidth = 2
 		const shoulderX = getLegShoulderX(spider, i)
 		const shoulderY = spider.y
@@ -269,7 +275,7 @@ function drawSpider(ctx: CanvasRenderingContext2D, spider: Spider, formData: UiF
 			legY,
 			formData.upper,
 			formData.lower,
-			leg.direction
+			leg.direction,
 		)
 		ctx.beginPath()
 		ctx.moveTo(shoulderX, shoulderY)
@@ -279,12 +285,12 @@ function drawSpider(ctx: CanvasRenderingContext2D, spider: Spider, formData: UiF
 
 		if (formData.geometry) {
 			ctx.lineWidth = 1
-			ctx.strokeStyle = leg.direction === 1 ? '#0907' : '#9007'
+			ctx.strokeStyle = leg.direction === 1 ? "#0907" : "#9007"
 			ctx.beginPath()
 			ctx.arc(shoulderX, shoulderY, formData.upper, 0, Math.PI * 2)
 			ctx.stroke()
 
-			ctx.strokeStyle = leg.direction === 1 ? '#0f07' : '#f007'
+			ctx.strokeStyle = leg.direction === 1 ? "#0f07" : "#f007"
 			ctx.beginPath()
 			ctx.arc(legX, legY, formData.lower, 0, Math.PI * 2)
 			ctx.stroke()
@@ -298,7 +304,7 @@ function drawSpider(ctx: CanvasRenderingContext2D, spider: Spider, formData: UiF
  * @param t [0 - 1]
  * @param easing ([0-1]) -> [0-1]
  */
-function lerp(from: number, to: number, t: number, easing: (t: number) => number = a => a) {
+function lerp(from: number, to: number, t: number, easing: (t: number) => number = (a) => a) {
 	return from + (to - from) * Math.min(1, easing(t))
 }
 
@@ -313,16 +319,15 @@ function inverseKinematicsWithTwoJoints(
 	endY: number,
 	upperJointLength: number,
 	lowerJointLength: number,
-	direction: 1 | -1
+	direction: 1 | -1,
 ): [number, number] {
 	const d = Math.hypot(endY - startY, endX - startX)
 
 	const startToHalfChord = (d ** 2 - lowerJointLength ** 2 + upperJointLength ** 2) / (2 * d)
 	const angleFromStartToElbow = Math.acos(startToHalfChord / upperJointLength)
-	const baseAngle = ((startX >= endX) === (direction === 1))
-		? Math.acos((endY - startY) / d)
-		: -Math.acos((endY - startY) / d)
-	const angle = - baseAngle + angleFromStartToElbow + Math.PI / 2
+	const baseAngle =
+		startX >= endX === (direction === 1) ? Math.acos((endY - startY) / d) : -Math.acos((endY - startY) / d)
+	const angle = -baseAngle + angleFromStartToElbow + Math.PI / 2
 	const elbowX = startX - upperJointLength * Math.cos(angle) * direction
 	const elbowY = startY + upperJointLength * Math.sin(angle)
 	return [elbowX, elbowY]

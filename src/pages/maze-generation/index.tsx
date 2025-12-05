@@ -1,14 +1,16 @@
-import styles from './styles.module.css'
-import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
-import { useCallback, useEffect, useRef, useState } from "react"
+
 import { getFormValue } from "#components/getFormValue"
+import { Head } from "#components/Head"
 import { shuffleArray } from "#components/shuffleArray"
+import { useCallback, useEffect, useRef, useState } from "react"
+
+import styles from "./styles.module.css"
 
 export const meta: RouteMeta = {
-	title: 'Maze Generation',
-	image: './screen.png',
-	tags: ['algorithm', 'procedural']
+	title: "Maze Generation",
+	image: "./screen.png",
+	tags: ["algorithm", "procedural"],
 }
 
 /**
@@ -18,7 +20,7 @@ export default function MazeGenerationPage() {
 	const canvasRef = useRef<HTMLCanvasElement>(null)
 	const formRef = useRef<HTMLFormElement>(null)
 	const [_selected, setSelected] = useHashParam()
-	const selected = _selected && _selected in ALGORITHMS ? _selected : 'depth-first-stack'
+	const selected = _selected && _selected in ALGORITHMS ? _selected : "depth-first-stack"
 
 	useEffect(() => {
 		const canvas = canvasRef.current
@@ -34,25 +36,25 @@ export default function MazeGenerationPage() {
 		const controller = new AbortController()
 
 		const state = {
-			algorithm: 'depth-first-stack',
+			algorithm: "depth-first-stack",
 			animate: true,
 		}
 
 		let stop: (() => void) | void
 
 		const onInput = () => {
-			state.algorithm = getFormValue<string>(form, 'algorithm')!
-			state.animate = getFormValue<boolean>(form, 'animate')!
+			state.algorithm = getFormValue<string>(form, "algorithm")!
+			state.animate = getFormValue<boolean>(form, "animate")!
 			stop?.()
 			stop = start(ctx, state)
 		}
 
 		onInput()
 
-		form.addEventListener('input', onInput, { signal: controller.signal })
+		form.addEventListener("input", onInput, { signal: controller.signal })
 
-		const rerunButton = (form.elements.namedItem('rerun') as HTMLButtonElement)
-		rerunButton.addEventListener('click', () => {
+		const rerunButton = form.elements.namedItem("rerun") as HTMLButtonElement
+		rerunButton.addEventListener("click", () => {
 			stop?.()
 			stop = start(ctx, state)
 		})
@@ -71,28 +73,23 @@ export default function MazeGenerationPage() {
 			<form className={styles.controls} ref={formRef}>
 				<fieldset>
 					<legend>Controls</legend>
-					<select
-						name="algorithm"
-						id="algorithm"
-						value={selected}
-						onChange={e => setSelected(e.target.value)}
-					>
+					<select name="algorithm" id="algorithm" value={selected} onChange={(e) => setSelected(e.target.value)}>
 						{Object.entries(ALGORITHMS).map(([key, { name }]) => (
 							<option key={key} value={key}>
 								{name}
 							</option>
 						))}
 					</select>
-					<button type="button" id="rerun">Re-run</button>
+					<button type="button" id="rerun">
+						Re-run
+					</button>
 					<div>
 						<input type="checkbox" name="animate" id="animate" defaultChecked />
 						<label htmlFor="animate">Animate</label>
 					</div>
 				</fieldset>
 			</form>
-			<canvas ref={canvasRef}>
-				Your browser does not support the HTML5 canvas tag.
-			</canvas>
+			<canvas ref={canvasRef}>Your browser does not support the HTML5 canvas tag.</canvas>
 		</div>
 	)
 }
@@ -102,14 +99,13 @@ type Method = (
 	cols: number,
 	rows: number,
 	getIndex: (x: number, y: number) => number,
-	fromIndex: (index: number) => { x: number, y: number }
+	fromIndex: (index: number) => { x: number; y: number },
 ) => Generator<void, void, void>
-
 
 const CELL_SIZE = 16
 const WALL_THICKNESS = 2
 
-function start(ctx: CanvasRenderingContext2D, state: { algorithm: string, animate: boolean }) {
+function start(ctx: CanvasRenderingContext2D, state: { algorithm: string; animate: boolean }) {
 	const width = ctx.canvas.width / devicePixelRatio
 	const height = ctx.canvas.height / devicePixelRatio
 
@@ -121,14 +117,16 @@ function start(ctx: CanvasRenderingContext2D, state: { algorithm: string, animat
 	const getIndex = (x: number, y: number) => y * COLS + x
 	const fromIndex = (index: number) => ({
 		x: index % COLS,
-		y: Math.floor(index / COLS)
+		y: Math.floor(index / COLS),
 	})
 
 	const method = ALGORITHMS[state.algorithm].method
 	const gen = method(maze, COLS, ROWS, getIndex, fromIndex)
 
 	if (!state.animate) {
-		for (const _ of gen) { /**/ }
+		for (const _ of gen) {
+			/**/
+		}
 		drawMaze(ctx, maze, COLS, ROWS)
 		return
 	}
@@ -169,7 +167,7 @@ function initWalls(maze: Uint8Array, cols: number, rows: number, getIndex: (x: n
 
 function drawMaze(ctx: CanvasRenderingContext2D, maze: Uint8Array, cols: number, rows: number) {
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-	ctx.fillStyle = '#540862ff'
+	ctx.fillStyle = "#540862ff"
 	const half = WALL_THICKNESS / 2
 
 	// // full north wall
@@ -196,13 +194,15 @@ function drawMaze(ctx: CanvasRenderingContext2D, maze: Uint8Array, cols: number,
 			const south = cell & 0b0100
 			const west = cell & 0b1000
 
-			if (north) { // north wall
+			if (north) {
+				// north wall
 				const x_start = x - (west ? half : 0)
 				const x_end = x + CELL_SIZE + (east ? half : 0)
 				const y_start = y - half
 				ctx.fillRect(x_start, y_start, x_end - x_start, WALL_THICKNESS)
 			}
-			if (west) { // west wall
+			if (west) {
+				// west wall
 				const y_start = y - (north ? half : 0)
 				const y_end = y + CELL_SIZE + (south ? half : 0)
 				const x_start = x - half
@@ -334,33 +334,37 @@ const iterativeRandomizedKruskal: Method = function* (maze, cols, rows, getIndex
 					}
 				}
 			}
-		}
+		},
 	})
 	shuffleArray(walls)
 	for (const wallId of walls) {
 		const [a, b] = getCellsFromId(wallId)
-		const indexA = sets.findIndex(s => s.has(a))
+		const indexA = sets.findIndex((s) => s.has(a))
 		const setA = sets[indexA]
 		if (setA.has(b)) continue
 
 		// join cell sets
-		const indexB = sets.findIndex(s => s.has(b))
+		const indexB = sets.findIndex((s) => s.has(b))
 		const setB = sets[indexB]
 		const newSet = setA.union(setB)
 		sets[indexA] = newSet
 		sets.splice(indexB, 1)
 
 		// remove wall
-		if (b === a - cols) { // north
+		if (b === a - cols) {
+			// north
 			maze[a] &= ~0b0001 // remove north wall
 			maze[b] &= ~0b0100 // remove south wall
-		} else if (b === a + 1) { // east
+		} else if (b === a + 1) {
+			// east
 			maze[a] &= ~0b0010 // remove east wall
 			maze[b] &= ~0b1000 // remove west wall
-		} else if (b === a + cols) { // south
+		} else if (b === a + cols) {
+			// south
 			maze[a] &= ~0b0100 // remove south wall
 			maze[b] &= ~0b0001 // remove north wall
-		} else if (b === a - 1) { // west
+		} else if (b === a - 1) {
+			// west
 			maze[a] &= ~0b1000 // remove west wall
 			maze[b] &= ~0b0010 // remove east wall
 		}
@@ -387,10 +391,10 @@ const iterativeRandomizedPrim: Method = function* (maze, cols, rows, getIndex, f
 	const walls: number[] = []
 	const addWalls = (cellIndex: number) => {
 		const { x, y } = fromIndex(cellIndex)
-		const north = y > 0 && (maze[cellIndex] & 0b0001)
-		const east = x < cols - 1 && (maze[cellIndex] & 0b0010)
-		const south = y < rows - 1 && (maze[cellIndex] & 0b0100)
-		const west = x > 0 && (maze[cellIndex] & 0b1000)
+		const north = y > 0 && maze[cellIndex] & 0b0001
+		const east = x < cols - 1 && maze[cellIndex] & 0b0010
+		const south = y < rows - 1 && maze[cellIndex] & 0b0100
+		const west = x > 0 && maze[cellIndex] & 0b1000
 
 		if (north) {
 			const neighborIndex = getIndex(x, y - 1)
@@ -440,16 +444,20 @@ const iterativeRandomizedPrim: Method = function* (maze, cols, rows, getIndex, f
 			if (!aVisited) visited.add(a)
 			if (!bVisited) visited.add(b)
 
-			if (b === a - cols) { // north
+			if (b === a - cols) {
+				// north
 				maze[a] &= ~0b0001 // remove north wall
 				maze[b] &= ~0b0100 // remove south wall
-			} else if (b === a + 1) { // east
+			} else if (b === a + 1) {
+				// east
 				maze[a] &= ~0b0010 // remove east wall
 				maze[b] &= ~0b1000 // remove west wall
-			} else if (b === a + cols) { // south
+			} else if (b === a + cols) {
+				// south
 				maze[a] &= ~0b0100 // remove south wall
 				maze[b] &= ~0b0001 // remove north wall
-			} else if (b === a - 1) { // west
+			} else if (b === a - 1) {
+				// west
 				maze[a] &= ~0b1000 // remove west wall
 				maze[b] &= ~0b0010 // remove east wall
 			}
@@ -478,7 +486,7 @@ const wilson: Method = function* (maze, cols, rows, getIndex, fromIndex) {
 	const unvisited = new Set({
 		*[Symbol.iterator]() {
 			for (let i = 0; i < max; i++) yield i
-		}
+		},
 	})
 	const initial = randomInt(max)
 	unvisited.delete(initial)
@@ -487,7 +495,6 @@ const wilson: Method = function* (maze, cols, rows, getIndex, fromIndex) {
 		const walk: number[] = []
 		let current = randomItemFromSet(unvisited)!
 		walk.push(current)
-
 
 		while (true) {
 			const { x, y } = fromIndex(current)
@@ -502,7 +509,7 @@ const wilson: Method = function* (maze, cols, rows, getIndex, fromIndex) {
 			if (y < rows - 1) candidates.push(bottom_index)
 			if (x >= 1) candidates.push(left_index)
 
-			if (!candidates.length) throw new Error('Should not happen')
+			if (!candidates.length) throw new Error("Should not happen")
 
 			const selected = candidates[randomInt(candidates.length)]
 
@@ -526,16 +533,20 @@ const wilson: Method = function* (maze, cols, rows, getIndex, fromIndex) {
 			unvisited.delete(a)
 			const { x, y } = fromIndex(a)
 
-			if (b === getIndex(x, y - 1)) { // north
+			if (b === getIndex(x, y - 1)) {
+				// north
 				maze[a] &= ~0b0001 // remove north wall
 				maze[b] &= ~0b0100 // remove south wall
-			} else if (b === getIndex(x + 1, y)) { // east
+			} else if (b === getIndex(x + 1, y)) {
+				// east
 				maze[a] &= ~0b0010 // remove east wall
 				maze[b] &= ~0b1000 // remove west wall
-			} else if (b === getIndex(x, y + 1)) { // south
+			} else if (b === getIndex(x, y + 1)) {
+				// south
 				maze[a] &= ~0b0100 // remove south wall
 				maze[b] &= ~0b0001 // remove north wall
-			} else if (b === getIndex(x - 1, y)) { // west
+			} else if (b === getIndex(x - 1, y)) {
+				// west
 				maze[a] &= ~0b1000 // remove west wall
 				maze[b] &= ~0b0010 // remove east wall
 			}
@@ -574,7 +585,7 @@ const aldousBroder: Method = function* (maze, cols, rows, getIndex, fromIndex) {
 		if (y < rows - 1) candidates.push(bottom_index)
 		if (x >= 1) candidates.push(left_index)
 
-		if (!candidates.length) throw new Error('Should not happen')
+		if (!candidates.length) throw new Error("Should not happen")
 
 		const selected = candidates[randomInt(candidates.length)]
 
@@ -618,9 +629,7 @@ const recursiveDivision: Method = function* (maze, cols, rows, getIndex, fromInd
 		maze[getIndex(cols - 1, i)] |= 0b0010 // east wall
 	}
 
-	const chambers: Array<[x1: number, y1: number, x2: number, y2: number]> = [
-		[0, 0, cols - 1, rows - 1]
-	]
+	const chambers: Array<[x1: number, y1: number, x2: number, y2: number]> = [[0, 0, cols - 1, rows - 1]]
 
 	while (chambers.length) {
 		const [x1, y1, x2, y2] = chambers.pop()!
@@ -630,9 +639,7 @@ const recursiveDivision: Method = function* (maze, cols, rows, getIndex, fromInd
 
 		if (chamberWidth < 2 || chamberHeight < 2) continue
 
-		const horizontal = chamberWidth === chamberHeight
-			? Math.random() < 0.5
-			: chamberWidth < chamberHeight
+		const horizontal = chamberWidth === chamberHeight ? Math.random() < 0.5 : chamberWidth < chamberHeight
 
 		if (horizontal) {
 			// horizontal wall
@@ -664,7 +671,6 @@ const recursiveDivision: Method = function* (maze, cols, rows, getIndex, fromInd
 		yield
 	}
 }
-
 
 /**
  * - Start with a 1x1 "maze" (a single walled-up cell).
@@ -761,7 +767,7 @@ const rectangularFractalTessellation: Method = function* (maze, cols, rows, getI
 					power++
 				}
 				power--
-				const unfilled = (cols * rows) - (i * j * (2 ** power) * (2 ** power))
+				const unfilled = cols * rows - i * j * 2 ** power * 2 ** power
 				if (unfilled < bestScore) {
 					bestScore = unfilled
 					best = [i, j]
@@ -836,15 +842,18 @@ const rectangularFractalTessellation: Method = function* (maze, cols, rows, getI
 	}
 }
 
-const ALGORITHMS: Record<string, { method: Method, name: string }> = {
-	'depth-first-stack': { method: depthFirstStackMaze, name: 'Depth-First Search' },
-	'iterative-randomized-kruskal': { method: iterativeRandomizedKruskal, name: 'Iterative Randomized Kruskal\'s' },
-	'iterative-randomized-prim': { method: iterativeRandomizedPrim, name: 'Iterative Randomized Prim\'s' },
-	'wilson': { method: wilson, name: 'Wilson\'s Random Walk' },
-	'aldous-broder': { method: aldousBroder, name: 'Aldous-Broder' },
-	'recursive-division': { method: recursiveDivision, name: 'Recursive Division' },
-	'fractal-tessellation': { method: fractalTessellation, name: 'Fractal Tessellation (square only)' },
-	'rectangular-fractal-tessellation': { method: rectangularFractalTessellation, name: 'Rectangular Fractal Tessellation' },
+const ALGORITHMS: Record<string, { method: Method; name: string }> = {
+	"depth-first-stack": { method: depthFirstStackMaze, name: "Depth-First Search" },
+	"iterative-randomized-kruskal": { method: iterativeRandomizedKruskal, name: "Iterative Randomized Kruskal's" },
+	"iterative-randomized-prim": { method: iterativeRandomizedPrim, name: "Iterative Randomized Prim's" },
+	wilson: { method: wilson, name: "Wilson's Random Walk" },
+	"aldous-broder": { method: aldousBroder, name: "Aldous-Broder" },
+	"recursive-division": { method: recursiveDivision, name: "Recursive Division" },
+	"fractal-tessellation": { method: fractalTessellation, name: "Fractal Tessellation (square only)" },
+	"rectangular-fractal-tessellation": {
+		method: rectangularFractalTessellation,
+		name: "Rectangular Fractal Tessellation",
+	},
 }
 
 function getHash(): string | null {
@@ -865,9 +874,9 @@ function useHashParam() {
 	const setHash = useCallback((newParam: string | null) => {
 		if (newParam) {
 			setParam(newParam)
-			window.history.replaceState(null, '', `#${newParam}`)
+			window.history.replaceState(null, "", `#${newParam}`)
 		} else {
-			window.history.replaceState(null, '', window.location.pathname)
+			window.history.replaceState(null, "", window.location.pathname)
 		}
 	}, [])
 

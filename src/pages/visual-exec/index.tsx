@@ -1,16 +1,18 @@
-import styles from './styles.module.css'
-import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
-import { useEffect, useRef, useState } from "react"
-import { getFormValue } from "#components/getFormValue"
 
-import TransformWorker from './transform.worker?worker'
-import IframeSource from './iframe.html?raw'
-import type { Incoming, Outgoing } from './transform.worker'
+import { getFormValue } from "#components/getFormValue"
+import { Head } from "#components/Head"
+import { useEffect, useRef, useState } from "react"
+
+import type { Incoming, Outgoing } from "./transform.worker"
+
+import IframeSource from "./iframe.html?raw"
+import styles from "./styles.module.css"
+import TransformWorker from "./transform.worker?worker"
 
 export const meta: RouteMeta = {
-	title: 'Visual Exec',
-	image: './screen.png'
+	title: "Visual Exec",
+	image: "./screen.png",
 }
 
 // const initialCode = `
@@ -102,7 +104,7 @@ return arr
 // }
 
 // const instance = new Example();
-// let result = instance.process(({ computed }) => computed > 0 ? 
+// let result = instance.process(({ computed }) => computed > 0 ?
 // 	\`Value: \${computed}\` : null) ?? 'fallback';
 
 // function runGenerator() {
@@ -146,11 +148,7 @@ export default function VisualExecPage() {
 			<form ref={formRef} className={styles.form}>
 				<button>Run</button>
 				<div className={styles.textarea} ref={container}>
-					<textarea
-						name="code"
-						value={value}
-						onChange={e => setValue(e.target.value)}
-					/>
+					<textarea name="code" value={value} onChange={(e) => setValue(e.target.value)} />
 					<div ref={highlighterRef} className={styles.content}>
 						{value}
 					</div>
@@ -170,7 +168,7 @@ function start(form: HTMLFormElement, highlighter: HTMLElement, parent: HTMLElem
 		return new Promise<string>((resolve, reject) => {
 			const onMessage = (e: MessageEvent<Outgoing>) => {
 				if (e.data.data.id !== id) return
-				transformWorker.removeEventListener('message', onMessage)
+				transformWorker.removeEventListener("message", onMessage)
 				switch (e.data.type) {
 					case "transformed":
 						resolve(e.data.data.code)
@@ -179,28 +177,32 @@ function start(form: HTMLFormElement, highlighter: HTMLElement, parent: HTMLElem
 						reject(new Error(e.data.data.error))
 						break
 					default:
-						reject(new Error('Unknown message type: ' + (e.data as any).type))
+						reject(new Error("Unknown message type: " + (e.data as any).type))
 				}
 			}
-			transformWorker.addEventListener('message', onMessage, { signal: controller.signal })
+			transformWorker.addEventListener("message", onMessage, { signal: controller.signal })
 			transformWorker.postMessage({
 				type: "source",
 				data: {
 					id,
 					code: source,
-				}
+				},
 			} satisfies Incoming)
 		})
 	}
 
 	let clean: () => void
-	form.addEventListener('submit', async (e) => {
-		e.preventDefault()
-		clean?.()
-		const source = getFormValue<string>(form, 'code') || ''
-		const transformed = await getTransformedCode(source)
-		clean = handleSource(transformed, highlighter, parent)
-	}, { signal: controller.signal })
+	form.addEventListener(
+		"submit",
+		async (e) => {
+			e.preventDefault()
+			clean?.()
+			const source = getFormValue<string>(form, "code") || ""
+			const transformed = await getTransformedCode(source)
+			clean = handleSource(transformed, highlighter, parent)
+		},
+		{ signal: controller.signal },
+	)
 
 	return () => {
 		controller.abort()
@@ -211,12 +213,12 @@ function start(form: HTMLFormElement, highlighter: HTMLElement, parent: HTMLElem
 
 function handleSource(src: string, highlighter: HTMLElement, parent: HTMLElement) {
 	// const highlights_id = CSS.escape(Math.random().toString(16).slice(2))
-	const highlights_id = 'foo'
+	const highlights_id = "foo"
 
 	const iframe = createIframeRealm(src, (data) => {
 		switch (data.type) {
 			case "yield": {
-				console.log('yield', data.data)
+				console.log("yield", data.data)
 				const range = new Range()
 				const textNode = highlighter.firstChild!
 				range.setStart(textNode, data.data.start)
@@ -225,34 +227,33 @@ function handleSource(src: string, highlighter: HTMLElement, parent: HTMLElement
 				CSS.highlights.set(highlights_id, new Highlight(range))
 				const parentRect = parent.getBoundingClientRect()
 				const rect = range.getBoundingClientRect()
-				const el = document.createElement('span')
+				const el = document.createElement("span")
 				el.classList.add(styles.value)
 				const top = rect.height + rect.top - parentRect.top + parent.scrollTop - el.offsetHeight
 				const left = rect.width / 2 + rect.left - parentRect.left + parent.scrollLeft
 				const minWidth = rect.width
-				el.style.setProperty('--top', `${top}px`)
-				el.style.setProperty('--left', `${left}px`)
-				el.style.setProperty('--min-width', `${minWidth}px`)
+				el.style.setProperty("--top", `${top}px`)
+				el.style.setProperty("--left", `${left}px`)
+				el.style.setProperty("--min-width", `${minWidth}px`)
 
 				el.textContent = data.data.value
 				parent.appendChild(el)
-				el.addEventListener('animationend', () => el.remove(), { once: true })
+				el.addEventListener("animationend", () => el.remove(), { once: true })
 				break
 			}
 			case "done":
-				console.log('done', data.data)
+				console.log("done", data.data)
 				iframe.destroy()
 				break
 			case "error":
-				console.error('error', data.data)
+				console.error("error", data.data)
 				iframe.destroy()
 				break
 			case "log":
-				console.log('log', data.data)
+				console.log("log", data.data)
 				break
 		}
 	})
-
 
 	return () => {
 		iframe.destroy()
@@ -260,19 +261,17 @@ function handleSource(src: string, highlighter: HTMLElement, parent: HTMLElement
 	}
 }
 
-
 function createIframeRealm(src: string, onMessage: (e: IframeMessage) => void) {
 	const id = Math.random().toString(16).slice(2)
 
-	const iframe = document.createElement('iframe')
-	iframe.sandbox.add('allow-scripts')
+	const iframe = document.createElement("iframe")
+	iframe.sandbox.add("allow-scripts")
 	iframe.className = styles.iframe
 
-	const html = IframeSource
-		.replaceAll('/*-- ORIGIN --*/', window.location.origin)
-		.replaceAll('/*-- ID --*/', id)
-		.replace('/*-- SOURCE --*/', src)
-	iframe.src = 'data:text/html,' + encodeURIComponent(html)
+	const html = IframeSource.replaceAll("/*-- ORIGIN --*/", window.location.origin)
+		.replaceAll("/*-- ID --*/", id)
+		.replace("/*-- SOURCE --*/", src)
+	iframe.src = "data:text/html," + encodeURIComponent(html)
 	document.body.appendChild(iframe)
 
 	let pinged = true
@@ -282,14 +281,18 @@ function createIframeRealm(src: string, onMessage: (e: IframeMessage) => void) {
 	}, 500)
 
 	const controller = new AbortController()
-	window.addEventListener('message', (e: MessageEvent<IframeMessage>) => {
-		if (e.data.data.id !== id) return
-		if (e.data.type === 'ping') return pinged = true
-		onMessage(e.data)
-	}, { signal: controller.signal })
+	window.addEventListener(
+		"message",
+		(e: MessageEvent<IframeMessage>) => {
+			if (e.data.data.id !== id) return
+			if (e.data.type === "ping") return (pinged = true)
+			onMessage(e.data)
+		},
+		{ signal: controller.signal },
+	)
 
 	const destroy = () => {
-		console.log('destroy', id)
+		console.log("destroy", id)
 		iframe.remove()
 		controller.abort()
 		clearInterval(iid)
@@ -298,50 +301,50 @@ function createIframeRealm(src: string, onMessage: (e: IframeMessage) => void) {
 	return {
 		destroy,
 		postMessage: (message: Incoming) => {
-			iframe.contentWindow?.postMessage(message, '*')
-		}
+			iframe.contentWindow?.postMessage(message, "*")
+		},
 	}
 }
 
 export type IframeMessage =
 	| {
-		type: "yield",
-		data: {
-			id: string
-			value: string
-			loc: {
-				start: { line: number, column: number }
-				end: { line: number, column: number }
-			},
-			start: number
-			end: number
-		}
-	}
+			type: "yield"
+			data: {
+				id: string
+				value: string
+				loc: {
+					start: { line: number; column: number }
+					end: { line: number; column: number }
+				}
+				start: number
+				end: number
+			}
+	  }
 	| {
-		type: "log",
-		data: {
-			id: string
-			value: string
-			level: 'log' | 'error' | 'warn'
-		}
-	}
+			type: "log"
+			data: {
+				id: string
+				value: string
+				level: "log" | "error" | "warn"
+			}
+	  }
 	| {
-		type: "done",
-		data: {
-			id: string
-			result: any
-		}
-	}
+			type: "done"
+			data: {
+				id: string
+				result: any
+			}
+	  }
 	| {
-		type: "error",
-		data: {
-			id: string
-			error: any
-		}
-	}
+			type: "error"
+			data: {
+				id: string
+				error: any
+			}
+	  }
 	| {
-		type: "ping",
-		data: {
-			id: string
-		}
-	}
+			type: "ping"
+			data: {
+				id: string
+			}
+	  }

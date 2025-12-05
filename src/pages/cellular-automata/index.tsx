@@ -1,28 +1,29 @@
+import type { Transform } from "#cellular-automata/types"
 import type { RouteMeta } from "#router"
-import styles from './styles.module.css'
+
 import { Head } from "#components/Head"
 import { useEffect, useRef, useState } from "react"
-import { transforms as conway } from './conway'
-import type { Transform } from "#cellular-automata/types"
+
+import { transforms as conway } from "./conway"
+import styles from "./styles.module.css"
 
 export const meta: RouteMeta = {
-	title: 'Cellular Automata',
-	tags: ['wip']
+	title: "Cellular Automata",
+	tags: ["wip"],
 }
 
 const GRID_SIZE = 200
 const INITIAL_SPEED = 5
 
-
 export default function CellularAutomataPage() {
 	const ref = useRef<HTMLCanvasElement | null>(null)
 	const formRef = useRef<HTMLFormElement | null>(null)
-	const [fps, setFps] = useState('')
+	const [fps, setFps] = useState("")
 
 	useEffect(() => {
 		const canvas = ref.current
 		if (!canvas) return
-		const ctx = canvas.getContext('2d')
+		const ctx = canvas.getContext("2d")
 		if (!ctx) return
 		const form = formRef.current
 		if (!form) return
@@ -62,18 +63,10 @@ export default function CellularAutomataPage() {
 	)
 }
 
-
-
 const sand: Transform[] = [
 	[
-		[
-			[1],
-			[0]
-		],
-		[
-			[0],
-			[1]
-		]
+		[[1], [0]],
+		[[0], [1]],
 	],
 	[
 		[
@@ -83,7 +76,7 @@ const sand: Transform[] = [
 		[
 			[-1, 0, -1],
 			[-1, -1, 1],
-		]
+		],
 	],
 	[
 		[
@@ -93,7 +86,7 @@ const sand: Transform[] = [
 		[
 			[-1, 0, -1],
 			[1, -1, -1],
-		]
+		],
 	],
 	[
 		[
@@ -103,7 +96,7 @@ const sand: Transform[] = [
 		[
 			[-1, 0, -1],
 			[-1, -1, 1],
-		]
+		],
 	],
 	[
 		[
@@ -113,7 +106,7 @@ const sand: Transform[] = [
 		[
 			[-1, 0, -1],
 			[1, -1, -1],
-		]
+		],
 	],
 	[
 		[
@@ -123,7 +116,7 @@ const sand: Transform[] = [
 		[
 			[-1, 0, -1],
 			[1, -1, -1],
-		]
+		],
 	],
 	[
 		[
@@ -135,7 +128,7 @@ const sand: Transform[] = [
 			[-1, 0, -1],
 			[-1, 1, -1],
 			[-1, -1, 1],
-		]
+		],
 	],
 ]
 
@@ -181,25 +174,50 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 		}
 	}
 
-	const sortedTransforms = Object.fromEntries(Object.entries(Object.groupBy(transforms, (t) => t[0][0][0])).map(([key, transforms]) => {
-		const compiled = transforms!.map(t => {
-			const [before, after] = t!
-			const f = new Function('x', 'y', 'i', 'current', 'next', 'touched', `
+	const sortedTransforms = Object.fromEntries(
+		Object.entries(Object.groupBy(transforms, (t) => t[0][0][0])).map(([key, transforms]) => {
+			const compiled = transforms!.map((t) => {
+				const [before, after] = t!
+				const f = new Function(
+					"x",
+					"y",
+					"i",
+					"current",
+					"next",
+					"touched",
+					`
 				if (y + ${before.length} > ${gridSize}) return;
 				if (x + ${before[0].length} > ${gridSize}) return;
-				if (${before.flatMap((row, by) => row.map((value, bx) => `
-					current[i${by * gridSize + bx === 0 ? '' : `+ ${by * gridSize + bx}`}] !== ${value}
-				`)).join(' || ')}) return;
-				${after.flatMap((row, by) => row.map((value, bx) => value === -1 ? '' : `{
-					const index = i${by * gridSize + bx === 0 ? '' : `+ ${by * gridSize + bx}`};
+				if (${before
+					.flatMap((row, by) =>
+						row.map(
+							(value, bx) => `
+					current[i${by * gridSize + bx === 0 ? "" : `+ ${by * gridSize + bx}`}] !== ${value}
+				`,
+						),
+					)
+					.join(" || ")}) return;
+				${after
+					.flatMap((row, by) =>
+						row.map((value, bx) =>
+							value === -1
+								? ""
+								: `{
+					const index = i${by * gridSize + bx === 0 ? "" : `+ ${by * gridSize + bx}`};
 					next[index] = ${value};
 					touched[index] = 1;
-				}`)).filter(Boolean).join(' ')}
-			`.replaceAll(/\s+/g, ' ')) as (x: number, y: number, i: number, current: Int16Array, next: Int16Array, touched: Uint8Array) => void
-			return f
-		})
-		return [key, compiled]
-	}))
+				}`,
+						),
+					)
+					.filter(Boolean)
+					.join(" ")}
+			`.replaceAll(/\s+/g, " "),
+				) as (x: number, y: number, i: number, current: Int16Array, next: Int16Array, touched: Uint8Array) => void
+				return f
+			})
+			return [key, compiled]
+		}),
+	)
 
 	const touched = new Uint8Array(gridSize * gridSize)
 	const side = ctx.canvas.height
@@ -215,7 +233,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 
 		ctx.clearRect(0, 0, side, side)
 		touched.fill(0)
-		ctx.fillStyle = 'white'
+		ctx.fillStyle = "white"
 
 		for (let y = 0; y < gridSize; y++) {
 			for (let x = 0; x < gridSize; x++) {
@@ -249,7 +267,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 		}
 
 		if (state.mouse.x !== -1) {
-			ctx.strokeStyle = 'red'
+			ctx.strokeStyle = "red"
 			ctx.lineWidth = 2
 			ctx.strokeRect(state.mouse.x * pxSize, state.mouse.y * pxSize, pxSize, pxSize)
 		}
@@ -266,45 +284,57 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 	const controller = new AbortController()
 	const state = {
 		mouse: { x: -1, y: -1, down: false, color: 0 },
-		playback: { speed: INITIAL_SPEED, isPlaying: false }
+		playback: { speed: INITIAL_SPEED, isPlaying: false },
 	}
-	ctx.canvas.addEventListener('mousedown', (e) => {
-		state.mouse.down = true
-		const { x, y } = eventToPosition(e)
-		state.mouse.x = x
-		state.mouse.y = y
-		state.mouse.color = current[getIndex(x, y)] === 1 ? 0 : 1
-		if (state.mouse.down) {
-			const index = getIndex(x, y)
-			current[index] = state.mouse.color
-		}
-	}, { signal: controller.signal })
-	window.addEventListener('mouseup', () => {
-		state.mouse.down = false
-	}, { signal: controller.signal })
-	window.addEventListener('mousemove', (e) => {
-		const { x, y } = eventToPosition(e)
-		state.mouse.x = x
-		state.mouse.y = y
-		if (state.mouse.down) {
-			const index = getIndex(x, y)
-			current[index] = state.mouse.color
-		}
-	}, { signal: controller.signal })
+	ctx.canvas.addEventListener(
+		"mousedown",
+		(e) => {
+			state.mouse.down = true
+			const { x, y } = eventToPosition(e)
+			state.mouse.x = x
+			state.mouse.y = y
+			state.mouse.color = current[getIndex(x, y)] === 1 ? 0 : 1
+			if (state.mouse.down) {
+				const index = getIndex(x, y)
+				current[index] = state.mouse.color
+			}
+		},
+		{ signal: controller.signal },
+	)
+	window.addEventListener(
+		"mouseup",
+		() => {
+			state.mouse.down = false
+		},
+		{ signal: controller.signal },
+	)
+	window.addEventListener(
+		"mousemove",
+		(e) => {
+			const { x, y } = eventToPosition(e)
+			state.mouse.x = x
+			state.mouse.y = y
+			if (state.mouse.down) {
+				const index = getIndex(x, y)
+				current[index] = state.mouse.color
+			}
+		},
+		{ signal: controller.signal },
+	)
 
 	const eventToPosition = (e: PointerEvent | MouseEvent) => {
 		const { left, top, width, height } = ctx.canvas.getBoundingClientRect()
-		const x = Math.floor((e.clientX - left) / width * gridSize)
-		const y = Math.floor((e.clientY - top) / height * gridSize)
+		const x = Math.floor(((e.clientX - left) / width) * gridSize)
+		const y = Math.floor(((e.clientY - top) / height) * gridSize)
 		return { x, y }
 	}
 
 	const onInput = () => {
-		state.playback.isPlaying = getValue<boolean>(form, 'play')!
-		state.playback.speed = getValue<number>(form, 'speed')!
+		state.playback.isPlaying = getValue<boolean>(form, "play")!
+		state.playback.speed = getValue<number>(form, "speed")!
 	}
 	onInput()
-	form.addEventListener('input', onInput, { signal: controller.signal })
+	form.addEventListener("input", onInput, { signal: controller.signal })
 
 	return () => {
 		cancelAnimationFrame(rafId)
@@ -331,21 +361,21 @@ function makeFrameCounter(over: number = 30) {
 		if (pointer === 0) full = true
 		const avg = full
 			? frames.reduce((a, b) => a + b, 0) / over
-			: frames.reduce((a, b, i) => i < pointer ? a + b : a, 0) / pointer
+			: frames.reduce((a, b, i) => (i < pointer ? a + b : a), 0) / pointer
 		const fps = 1 / avg
 		return fps
 	}
 }
 
-function getValue<T,>(form: HTMLFormElement, name: string): T | undefined {
+function getValue<T>(form: HTMLFormElement, name: string): T | undefined {
 	if (!(name in form.elements)) return undefined
 	const element = form.elements[name as keyof typeof form.elements]
 	if (element instanceof HTMLSelectElement) return element.value as T
 	if (element instanceof HTMLInputElement) {
-		if (element.type === 'range') {
+		if (element.type === "range") {
 			return element.valueAsNumber as T
 		}
-		if (element.type === 'checkbox') {
+		if (element.type === "checkbox") {
 			return element.checked as T
 		}
 	}

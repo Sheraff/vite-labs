@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-import * as utils from './utils'
+import * as utils from "./utils"
 
 export type Tile = {
 	name: number
@@ -8,12 +8,14 @@ export type Tile = {
 	rotate: number
 }
 
-export type Incoming =
-	| { type: "start", data: { height: number, width: number, tiles: Pick<Tile, 'name' | 'sides'>[], force?: Array<[x: number, y: number]> } }
+export type Incoming = {
+	type: "start"
+	data: { height: number; width: number; tiles: Pick<Tile, "name" | "sides">[]; force?: Array<[x: number, y: number]> }
+}
 
 export type Outgoing =
-	| { type: "started", data: { buffer: SharedArrayBuffer, map: Pick<Tile, 'name' | 'rotate'>[] } }
-	| { type: "done", data: { solved: boolean, choices: number[] } }
+	| { type: "started"; data: { buffer: SharedArrayBuffer; map: Pick<Tile, "name" | "rotate">[] } }
+	| { type: "done"; data: { solved: boolean; choices: number[] } }
 
 self.onmessage = (e: MessageEvent<Incoming>) => handleMessage(e.data)
 
@@ -22,7 +24,7 @@ function postMessage(message: Outgoing) {
 }
 
 function handleMessage(event: Incoming) {
-	console.log('handleMessage', event)
+	console.log("handleMessage", event)
 	if (event.type === "start") {
 		const tiles: Tile[] = []
 		for (const tile of event.data.tiles) {
@@ -38,7 +40,7 @@ function handleMessage(event: Incoming) {
 			tiles.push({
 				name: tile.name,
 				sides: tile.sides,
-				rotate: 0
+				rotate: 0,
 			})
 		}
 		// if (event.data.force) for (const forced of event.data.force) {
@@ -54,13 +56,13 @@ function handleMessage(event: Incoming) {
 				tiles.push({
 					name: tile.name,
 					sides: rotated,
-					rotate: r
+					rotate: r,
 				})
 			}
 		}
 		const { width, height } = event.data
 		const map = tiles.map((tile) => ({ name: tile.name, rotate: tile.rotate }))
-		const buffer = new SharedArrayBuffer(Math.ceil(width * height * tiles.length / 8))
+		const buffer = new SharedArrayBuffer(Math.ceil((width * height * tiles.length) / 8))
 		new Uint8Array(buffer).fill(0xffffff)
 
 		postMessage({ type: "started", data: { buffer, map } })
@@ -71,7 +73,7 @@ function handleMessage(event: Incoming) {
 			tiles,
 			buffer,
 			onDone,
-			force: event.data.force?.map(([x, y]) => [x, y, Math.floor(Math.random() * tiles.length)])
+			force: event.data.force?.map(([x, y]) => [x, y, Math.floor(Math.random() * tiles.length)]),
 		})
 	}
 }
@@ -120,7 +122,13 @@ async function start({
 
 	const get: (x: number, y: number, t: number) => 0 | 1 = utils.get.bind(null, width, height, tiles.length, view)
 
-	const set: (x: number, y: number, t: number, value: boolean) => void = utils.set.bind(null, width, height, tiles.length, view)
+	const set: (x: number, y: number, t: number, value: boolean) => void = utils.set.bind(
+		null,
+		width,
+		height,
+		tiles.length,
+		view,
+	)
 
 	function lowestEntropy() {
 		let min = Infinity
@@ -143,7 +151,12 @@ async function start({
 
 	function propagate(x: number, y: number) {
 		const stack = [[x, y]]
-		const directions = [[0, -1, 2], [1, 0, 3], [0, 1, 0], [-1, 0, 1]]
+		const directions = [
+			[0, -1, 2],
+			[1, 0, 3],
+			[0, 1, 0],
+			[-1, 0, 1],
+		]
 		do {
 			const [x, y] = stack.pop()!
 			const here = tiles.reduce<number[]>((acc, _, t) => (get(x, y, t) && acc.push(t), acc), [])
@@ -228,7 +241,9 @@ async function start({
 				choices.push(i)
 				choiceIndex++
 				t = possible[i]
-			} else if (choices.every((c, i) => i < choiceIndex || (i === choiceIndex && c > 0) || (i > choiceIndex && c === 0))) {
+			} else if (
+				choices.every((c, i) => i < choiceIndex || (i === choiceIndex && c > 0) || (i > choiceIndex && c === 0))
+			) {
 				const i = choices[choiceIndex] - 1
 				choices[choiceIndex] = i
 				choices.length = choiceIndex + 1
@@ -247,11 +262,11 @@ async function start({
 			lowest = lowestEntropy()
 			// await new Promise((resolve) => setTimeout(resolve, 20))
 		} while (lowest !== -1)
-		console.log('loops', loops)
+		console.log("loops", loops)
 		solved = isSolved()
 	} while (!solved && choices.some((c) => c > 0))
 
-	console.log('choices', choices.join(' '))
+	console.log("choices", choices.join(" "))
 	onDone(solved, choices)
 }
 
@@ -260,7 +275,6 @@ async function start({
 // const facts = []
 
 // const index = (x: number, y: number) => y * WIDTH + x
-
 
 // // evaluate entropy
 // const board = structuredClone(initial_board)

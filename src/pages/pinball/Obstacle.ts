@@ -27,9 +27,9 @@ export class Bumper {
 
 		ctx.beginPath()
 		ctx.arc(0, 0, this.radius, 0, Math.PI * 2)
-		ctx.fillStyle = this.hitAnimation > 0 ? '#ff9ff3' : '#ff6b6b'
+		ctx.fillStyle = this.hitAnimation > 0 ? "#ff9ff3" : "#ff6b6b"
 		ctx.fill()
-		ctx.strokeStyle = '#ff4757'
+		ctx.strokeStyle = "#ff4757"
 		ctx.lineWidth = 2
 		ctx.stroke()
 
@@ -52,18 +52,19 @@ export class Bumper {
 
 		if (distance < ball.radius + this.radius) {
 			const angle = Math.atan2(dy, dx)
-			
+
 			// Move ball out of obstacle
 			const overlap = ball.radius + this.radius - distance
 			ball.x += Math.cos(angle) * overlap
 			ball.y += Math.sin(angle) * overlap
-			
+
 			// Only apply bounce if ball is moving towards bumper
 			const nx = Math.cos(angle)
 			const ny = Math.sin(angle)
 			const vDotN = ball.vx * nx + ball.vy * ny
-			
-			if (vDotN < 0) { // Moving towards bumper
+
+			if (vDotN < 0) {
+				// Moving towards bumper
 				// Collision response
 				ball.vx = nx * 8
 				ball.vy = ny * 8
@@ -88,13 +89,13 @@ export class TriangularBumper {
 	hitEdge: number = -1 // Track which edge was hit for animation
 
 	constructor(
-		v1: { x: number; y: number }, 
-		v2: { x: number; y: number }, 
-		v3: { x: number; y: number }, 
+		v1: { x: number; y: number },
+		v2: { x: number; y: number },
+		v3: { x: number; y: number },
 		points: number,
 		edge1Bouncy: boolean = true,
 		edge2Bouncy: boolean = true,
-		edge3Bouncy: boolean = true
+		edge3Bouncy: boolean = true,
 	) {
 		this.vertices = [v1, v2, v3]
 		this.points = points
@@ -123,7 +124,7 @@ export class TriangularBumper {
 		ctx.lineTo(this.vertices[1].x, this.vertices[1].y)
 		ctx.lineTo(this.vertices[2].x, this.vertices[2].y)
 		ctx.closePath()
-		ctx.fillStyle = this.hitAnimation > 0 ? '#ffd93d' : '#f6b93b'
+		ctx.fillStyle = this.hitAnimation > 0 ? "#ffd93d" : "#f6b93b"
 		ctx.fill()
 
 		// Draw each edge with different style based on type
@@ -131,18 +132,18 @@ export class TriangularBumper {
 			const v1 = this.vertices[i]
 			const v2 = this.vertices[(i + 1) % 3]
 			const isBouncy = this.edgeBouncy[i]
-			
+
 			ctx.beginPath()
 			ctx.moveTo(v1.x, v1.y)
 			ctx.lineTo(v2.x, v2.y)
-			
+
 			if (isBouncy) {
 				// Bouncy edge - bright orange
-				ctx.strokeStyle = this.hitAnimation > 0 && this.hitEdge === i ? '#ffd93d' : '#e55039'
+				ctx.strokeStyle = this.hitAnimation > 0 && this.hitEdge === i ? "#ffd93d" : "#e55039"
 				ctx.lineWidth = 3
 			} else {
 				// Static edge - gray/white like walls
-				ctx.strokeStyle = '#ddd'
+				ctx.strokeStyle = "#ddd"
 				ctx.lineWidth = 3
 			}
 			ctx.stroke()
@@ -164,30 +165,30 @@ export class TriangularBumper {
 		const maxX = Math.max(this.vertices[0].x, this.vertices[1].x, this.vertices[2].x) + ball.radius
 		const minY = Math.min(this.vertices[0].y, this.vertices[1].y, this.vertices[2].y) - ball.radius
 		const maxY = Math.max(this.vertices[0].y, this.vertices[1].y, this.vertices[2].y) + ball.radius
-		
+
 		if (ball.x < minX || ball.x > maxX || ball.y < minY || ball.y > maxY) {
 			return 0 // No collision possible
 		}
-		
+
 		// Use ray casting to check if ball center is inside triangle
 		// Cast a horizontal ray from ball position to the right
 		let intersections = 0
 		for (let i = 0; i < 3; i++) {
 			const v1 = this.vertices[i]
 			const v2 = this.vertices[(i + 1) % 3]
-			
+
 			// Check if ray intersects this edge
 			// Edge goes from v1 to v2
-			if ((v1.y > ball.y) !== (v2.y > ball.y)) {
+			if (v1.y > ball.y !== v2.y > ball.y) {
 				// Edge crosses the horizontal line at ball.y
-				const intersectX = v1.x + (ball.y - v1.y) * (v2.x - v1.x) / (v2.y - v1.y)
+				const intersectX = v1.x + ((ball.y - v1.y) * (v2.x - v1.x)) / (v2.y - v1.y)
 				if (ball.x < intersectX) {
 					intersections++
 				}
 			}
 		}
-		
-		const isInside = (intersections % 2) === 1
+
+		const isInside = intersections % 2 === 1
 
 		// Check each edge of the triangle
 		let closestPoint = { x: ball.x, y: ball.y }
@@ -197,7 +198,7 @@ export class TriangularBumper {
 		// Check both current and previous ball position for swept collision
 		const prevBallX = ball.x - ball.vx
 		const prevBallY = ball.y - ball.vy
-		
+
 		for (let i = 0; i < 3; i++) {
 			const v1 = this.vertices[i]
 			const v2 = this.vertices[(i + 1) % 3]
@@ -206,7 +207,7 @@ export class TriangularBumper {
 			const edgeX = v2.x - v1.x
 			const edgeY = v2.y - v1.y
 			const edgeLenSq = edgeX * edgeX + edgeY * edgeY
-			
+
 			// Check current position
 			const ballX = ball.x - v1.x
 			const ballY = ball.y - v1.y
@@ -217,7 +218,7 @@ export class TriangularBumper {
 			const distX = ball.x - pointX
 			const distY = ball.y - pointY
 			const dist = Math.sqrt(distX * distX + distY * distY)
-			
+
 			// Check previous position
 			const prevBallXrel = prevBallX - v1.x
 			const prevBallYrel = prevBallY - v1.y
@@ -228,7 +229,7 @@ export class TriangularBumper {
 			const prevDistX = prevBallX - prevPointX
 			const prevDistY = prevBallY - prevPointY
 			const prevDist = Math.sqrt(prevDistX * prevDistX + prevDistY * prevDistY)
-			
+
 			// Use whichever is closer
 			const useDist = Math.min(dist, prevDist)
 
@@ -242,7 +243,7 @@ export class TriangularBumper {
 		// If ball is inside triangle, push it out forcefully
 		if (isInside) {
 			if (closestEdge < 0) return 0
-			
+
 			const dx = ball.x - closestPoint.x
 			const dy = ball.y - closestPoint.y
 			const dist = Math.sqrt(dx * dx + dy * dy)
@@ -271,26 +272,26 @@ export class TriangularBumper {
 			// Place ball exactly ball.radius distance away from the closest point on edge
 			ball.x = closestPoint.x + nx * (ball.radius + 2)
 			ball.y = closestPoint.y + ny * (ball.radius + 2)
-			
+
 			// Add velocity to push ball away from the triangle to help it escape
 			const escapeSpeed = 2
 			ball.vx += nx * escapeSpeed
 			ball.vy += ny * escapeSpeed
-			
+
 			// Don't apply bounce when forcing ball out from inside
 			return 0
 		}
-		
+
 		// Ball is outside but close enough to collide
 		if (minDist < ball.radius) {
 			if (closestEdge < 0) return 0
-			
+
 			const dx = ball.x - closestPoint.x
 			const dy = ball.y - closestPoint.y
 			const dist = Math.sqrt(dx * dx + dy * dy)
-			
+
 			if (dist === 0) return 0
-			
+
 			const nx = dx / dist
 			const ny = dy / dist
 
@@ -300,11 +301,12 @@ export class TriangularBumper {
 			ball.y += ny * pushDist
 
 			const isBouncy = this.edgeBouncy[closestEdge]
-			
+
 			// Only apply bounce if ball is moving towards the surface (not away from it)
 			const vDotN = ball.vx * nx + ball.vy * ny
-			
-			if (vDotN < 0) { // Ball is moving towards surface
+
+			if (vDotN < 0) {
+				// Ball is moving towards surface
 				if (isBouncy) {
 					// Bouncy edge - strong reflection with boost
 					ball.vx -= 2 * vDotN * nx * 1.3

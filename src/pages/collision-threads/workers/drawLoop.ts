@@ -1,7 +1,7 @@
 import { client } from "./entities"
 
 type Context = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
-type Contexts = { ui: Context, main: Context }
+type Contexts = { ui: Context; main: Context }
 
 let side: number
 let processUps: number
@@ -44,9 +44,13 @@ export function loop({ main, ui }: Contexts) {
 					fpsArray = fpsArray.slice(Math.max(0, fpsArray.length - 100))
 				}
 			}
-			main.fillStyle = 'white'
-			main.font = '25px monospace'
-			main.fillText(`step: ${processUps}ups - draw: ${drawFps}fps - count: ${entities.balls.getLastBall()}`, 20, side - 20)
+			main.fillStyle = "white"
+			main.font = "25px monospace"
+			main.fillText(
+				`step: ${processUps}ups - draw: ${drawFps}fps - count: ${entities.balls.getLastBall()}`,
+				20,
+				side - 20,
+			)
 
 			// next
 			frame()

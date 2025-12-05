@@ -1,16 +1,17 @@
-import styles from './styles.module.css'
-import { Head } from "#components/Head"
 import type { RouteMeta } from "#router"
+
+import { Head } from "#components/Head"
 import { makeFrameCounter } from "#components/makeFrameCounter"
 import { useEffect, useRef, useState } from "react"
 
-import vertex from './vertex.glsl?raw'
-import fragment from './fragment.glsl?raw'
+import fragment from "./fragment.glsl?raw"
+import styles from "./styles.module.css"
+import vertex from "./vertex.glsl?raw"
 
 export const meta: RouteMeta = {
-	title: 'Ants on shader',
-	tags: ['simulation', 'performance', 'webgl', 'shader'],
-	image: './screen.png'
+	title: "Ants on shader",
+	tags: ["simulation", "performance", "webgl", "shader"],
+	image: "./screen.png",
 }
 
 export default function AntsShaderPage() {
@@ -28,7 +29,7 @@ export default function AntsShaderPage() {
 		const ctx = canvas.getContext("2d")
 		if (!ctx) return
 
-		const gl = document.createElement('canvas').getContext('webgl2', { preserveDrawingBuffer: true })
+		const gl = document.createElement("canvas").getContext("webgl2", { preserveDrawingBuffer: true })
 		if (!gl) return
 		gl.canvas.width = side
 		gl.canvas.height = side
@@ -51,9 +52,9 @@ export default function AntsShaderPage() {
 		gl.vertexAttribPointer(position_loc, 2, gl.FLOAT, false, 0, 0)
 
 		/** data in/out of webGL */
-		const frame = new ImageData(side, side, { colorSpace: 'srgb' })
+		const frame = new ImageData(side, side, { colorSpace: "srgb" })
 		/** visualisation for 2D canvas */
-		const image = new ImageData(side, side, { colorSpace: 'srgb' })
+		const image = new ImageData(side, side, { colorSpace: "srgb" })
 
 		init(frame.data, side, side, 200_000)
 
@@ -110,16 +111,7 @@ export default function AntsShaderPage() {
 				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 
 				// read new from from shader into array
-				gl.readPixels(
-					0,
-					0,
-					gl.drawingBufferWidth,
-					gl.drawingBufferHeight,
-					gl.RGBA,
-					gl.UNSIGNED_BYTE,
-					frame.data,
-				)
-
+				gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, frame.data)
 			}
 
 			let antcount = 0
@@ -127,18 +119,12 @@ export default function AntsShaderPage() {
 			// compute image from new frame
 			for (let i = 0; i < frame.data.length; i += 4) {
 				const point = frame.data[i]
-				const isAnt
-					= point & 0b00000001
-				const isFood
-					= point & 0b00000010
-				const isAntAndFood
-					= point & 0b00000100
-				const isAnthill
-					= point & 0b00001000
-				const isPheromoneToFood
-					= frame.data[i + 1]
-				const isPheromoneToHill
-					= frame.data[i + 2]
+				const isAnt = point & 0b00000001
+				const isFood = point & 0b00000010
+				const isAntAndFood = point & 0b00000100
+				const isAnthill = point & 0b00001000
+				const isPheromoneToFood = frame.data[i + 1]
+				const isPheromoneToHill = frame.data[i + 2]
 
 				if (isAnt) antcount++
 				if (isAntAndFood) antcount++
@@ -216,12 +202,11 @@ export default function AntsShaderPage() {
 	)
 }
 
-
 function createShader(gl: WebGLRenderingContext, type: number, source: string) {
 	const shader = gl.createShader(type)
 
 	if (!shader) {
-		throw new Error('Unable to create shader')
+		throw new Error("Unable to create shader")
 	}
 
 	gl.shaderSource(shader, source)
@@ -240,7 +225,7 @@ function createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShader, fra
 	const program = gl.createProgram()
 
 	if (!program) {
-		throw new Error('Unable to create program')
+		throw new Error("Unable to create program")
 	}
 
 	gl.attachShader(program, vertexShader)
@@ -268,7 +253,7 @@ const colors = {
 }
 
 function init(array: Uint8ClampedArray, width: number, height: number, count: number) {
-	const foodPosition = [width * 2 / 3, height * 2 / 3]
+	const foodPosition = [(width * 2) / 3, (height * 2) / 3]
 	const foodRadius = Math.min(width, height) / 10
 
 	const anthillPosition = [width / 3, height / 3]
@@ -283,15 +268,13 @@ function init(array: Uint8ClampedArray, width: number, height: number, count: nu
 				const dx = x - foodPosition[0]
 				const dy = y - foodPosition[1]
 				const distance = Math.sqrt(dx * dx + dy * dy)
-				if (distance < foodRadius)
-					array[i] |= 0b10 // food
+				if (distance < foodRadius) array[i] |= 0b10 // food
 			}
 			{
 				const dx = x - anthillPosition[0]
 				const dy = y - anthillPosition[1]
 				const distance = Math.sqrt(dx * dx + dy * dy)
-				if (distance < anthillRadius)
-					array[i] |= 0b1000 // anthill
+				if (distance < anthillRadius) array[i] |= 0b1000 // anthill
 			}
 		}
 	}

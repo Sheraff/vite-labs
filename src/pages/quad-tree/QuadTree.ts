@@ -1,9 +1,6 @@
-
-
-type Entity = { x: number, y: number }
+type Entity = { x: number; y: number }
 
 export class QuadTree<T extends Entity = Entity> {
-
 	static MAX_OBJECTS = 4
 	static MAX_DEPTH = Infinity
 
@@ -20,7 +17,7 @@ export class QuadTree<T extends Entity = Entity> {
 		public height: number,
 		public parent: QuadTree<T> | undefined = undefined,
 		public depth: number = 0,
-		objectQuadrantMap: WeakMap<T & Entity, QuadTree<T>> = new WeakMap()
+		objectQuadrantMap: WeakMap<T & Entity, QuadTree<T>> = new WeakMap(),
 	) {
 		this.x = x
 		this.y = y
@@ -42,7 +39,7 @@ export class QuadTree<T extends Entity = Entity> {
 			new QuadTree(x, y + subHeight, subWidth, subHeight, this, this.depth + 1, this.#objectQuadrantMap),
 			new QuadTree(x + subWidth, y + subHeight, subWidth, subHeight, this, this.depth + 1, this.#objectQuadrantMap),
 		]
-		this.objects.forEach(obj => this.insert(obj))
+		this.objects.forEach((obj) => this.insert(obj))
 		this.objects.clear()
 	}
 
@@ -87,7 +84,7 @@ export class QuadTree<T extends Entity = Entity> {
 		}
 		if (this.nodes) {
 			this.collectChildrenObjects()
-			this.objects.forEach(obj => this.#objectQuadrantMap.set(obj, this))
+			this.objects.forEach((obj) => this.#objectQuadrantMap.set(obj, this))
 			this.nodes = null
 		}
 	}
@@ -98,18 +95,15 @@ export class QuadTree<T extends Entity = Entity> {
 
 	collectChildrenObjects(set = this.objects) {
 		if (set !== this.objects) {
-			this.objects.forEach(obj => set.add(obj))
+			this.objects.forEach((obj) => set.add(obj))
 		}
-		this.nodes?.forEach(node => {
+		this.nodes?.forEach((node) => {
 			node.collectChildrenObjects(set)
 		})
 	}
 
 	isWithinBounds(obj: Entity) {
-		return obj.x >= this.x
-			&& obj.x <= this.x + this.width
-			&& obj.y >= this.y
-			&& obj.y <= this.y + this.height
+		return obj.x >= this.x && obj.x <= this.x + this.width && obj.y >= this.y && obj.y <= this.y + this.height
 	}
 
 	filter(callback: (node: QuadTree<T>) => boolean, objects: T[] = []) {
@@ -117,12 +111,11 @@ export class QuadTree<T extends Entity = Entity> {
 			objects.push(...this.objects)
 			return objects
 		}
-		this.nodes.forEach(node => {
+		this.nodes.forEach((node) => {
 			if (callback(node)) {
 				node.filter(callback, objects)
 			}
 		})
 		return objects
 	}
-
 }

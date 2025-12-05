@@ -1,17 +1,19 @@
 import type { RouteMeta } from "#router"
-import styles from './styles.module.css'
+
 import { Head } from "#components/Head"
+import { makeFrameCounter } from "#components/makeFrameCounter"
 import { useEffect, useRef, useState } from "react"
 
-import vertex from './vertex.glsl?raw'
-import fragment from './fragment.glsl?raw'
-import { makeFrameCounter } from "#components/makeFrameCounter"
+import fragment from "./fragment.glsl?raw"
+import styles from "./styles.module.css"
+import vertex from "./vertex.glsl?raw"
 
 export const meta: RouteMeta = {
-	title: 'Spring fluid',
-	description: 'A fluid simulation based on a spring-mass system, on the GPU. Click and drag to introduce disturbances. Warning: flashing lights.',
-	image: './screen.png',
-	tags: ['webgl', 'fluid', 'shader', 'physics'],
+	title: "Spring fluid",
+	description:
+		"A fluid simulation based on a spring-mass system, on the GPU. Click and drag to introduce disturbances. Warning: flashing lights.",
+	image: "./screen.png",
+	tags: ["webgl", "fluid", "shader", "physics"],
 }
 
 export default function SpringFluidPage() {
@@ -49,22 +51,42 @@ export default function SpringFluidPage() {
 				<form className={styles.form} ref={form_ref}>
 					<fieldset name="controls">
 						<legend>Controls</legend>
-						<button type="button" name="springs">reset simulation</button>
+						<button type="button" name="springs">
+							reset simulation
+						</button>
 						<input type="range" name="k" id="k" defaultValue={k_default} min="0" max={k_map.length - 1} step="1" />
 						<label htmlFor="k">spring constant (k)</label>
 						<hr />
-						<input type="range" name="damping" id="damping" defaultValue={damping_default} min="0" max={damping_map.length - 1} step="1" />
+						<input
+							type="range"
+							name="damping"
+							id="damping"
+							defaultValue={damping_default}
+							min="0"
+							max={damping_map.length - 1}
+							step="1"
+						/>
 						<label htmlFor="damping">damping</label>
 						<hr />
 						<input type="range" name="speed" id="speed" defaultValue="4" min="1" max="16" step="1" />
 						<label htmlFor="speed">simulation speed</label>
 						<hr />
-						<input type="range" name="clamp" id="clamp" defaultValue={clamp_default} min="0" max={clamp_map.length - 1} step="1" />
+						<input
+							type="range"
+							name="clamp"
+							id="clamp"
+							defaultValue={clamp_default}
+							min="0"
+							max={clamp_map.length - 1}
+							step="1"
+						/>
 						<label htmlFor="clamp">clamp</label>
 						<hr />
 						<input type="range" name="turbulence" id="turbulence" defaultValue="0" min="0" max="4" step="0.1" />
 						<label htmlFor="turbulence">turbulence</label>
-						<button type="reset" name="controls">reset controls</button>
+						<button type="reset" name="controls">
+							reset controls
+						</button>
 					</fieldset>
 					<fieldset name="brushes">
 						<legend>Brushes</legend>
@@ -87,10 +109,7 @@ export default function SpringFluidPage() {
 				</form>
 			</div>
 
-
-			<canvas ref={canvas_ref}>
-				Your browser does not support the HTML5 canvas tag.
-			</canvas>
+			<canvas ref={canvas_ref}>Your browser does not support the HTML5 canvas tag.</canvas>
 		</div>
 	)
 }
@@ -99,7 +118,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 	const height = ctx.canvas.height
 	const width = ctx.canvas.width
 
-	const gl = document.createElement('canvas').getContext('webgl2', { preserveDrawingBuffer: true })!
+	const gl = document.createElement("canvas").getContext("webgl2", { preserveDrawingBuffer: true })!
 
 	gl.canvas.width = width
 	gl.canvas.height = height
@@ -122,11 +141,11 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 	gl.vertexAttribPointer(position_loc, 2, gl.FLOAT, false, 0, 0)
 
 	/** data in/out of webGL */
-	const frame = new ImageData(width, height, { colorSpace: 'srgb' })
+	const frame = new ImageData(width, height, { colorSpace: "srgb" })
 	/** obstacles */
-	const obstacles = new ImageData(width, height, { colorSpace: 'srgb' })
+	const obstacles = new ImageData(width, height, { colorSpace: "srgb" })
 	/** visualisation for 2D canvas */
-	const image = new ImageData(width, height, { colorSpace: 'srgb' })
+	const image = new ImageData(width, height, { colorSpace: "srgb" })
 	/** mouse effects */
 	const mouse_data = new Int8Array(width * height * 4)
 
@@ -165,7 +184,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 
 	const mouse = {
 		data: mouse_data,
-		frame: false
+		frame: false,
 	}
 
 	const controls = {
@@ -175,7 +194,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 		speed: 0,
 		clamp: 0,
 		turbulence: 0,
-		brush: '',
+		brush: "",
 		floaters: false,
 	}
 
@@ -204,15 +223,14 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 		gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, obstacles)
 
 		for (let i = 0; i < controls.speed; i++) {
-
 			const seed = Math.random() * 100 - 50
 
 			if (mouse.frame) {
 				for (let i = 0; i < mouse.data.length; i += 4) {
-					if (controls.brush === 'velocity') {
+					if (controls.brush === "velocity") {
 						frame.data[i] += mouse.data[i]
 						frame.data[i + 1] += mouse.data[i + 1]
-					} else if (controls.brush === 'displacement') {
+					} else if (controls.brush === "displacement") {
 						frame.data[i + 2] += mouse.data[i]
 						frame.data[i + 3] += mouse.data[i + 1]
 					}
@@ -239,15 +257,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 
 			// read new from from shader into array
-			gl.readPixels(
-				0,
-				0,
-				gl.drawingBufferWidth,
-				gl.drawingBufferHeight,
-				gl.RGBA,
-				gl.UNSIGNED_BYTE,
-				frame.data,
-			)
+			gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, frame.data)
 		}
 
 		for (let i = 0; i < frame.data.length; i += 4) {
@@ -303,7 +313,7 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 					floater[1] *= -1
 				}
 
-				ctx.fillStyle = '#ccc'
+				ctx.fillStyle = "#ccc"
 				ctx.fillRect(floater[2], floater[3], 1, 1)
 			}
 		}
@@ -312,72 +322,80 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 	const controller = new AbortController()
 
 	let rect = ctx.canvas.getBoundingClientRect()
-	window.addEventListener('resize', () => {
-		rect = ctx.canvas.getBoundingClientRect()
-	}, { signal: controller.signal })
+	window.addEventListener(
+		"resize",
+		() => {
+			rect = ctx.canvas.getBoundingClientRect()
+		},
+		{ signal: controller.signal },
+	)
 
-	window.addEventListener('pointermove', (event) => {
-		if (mouse.frame) return
-		mouse.frame = true
-		const e = event
-		const isDown = e.buttons > 0
+	window.addEventListener(
+		"pointermove",
+		(event) => {
+			if (mouse.frame) return
+			mouse.frame = true
+			const e = event
+			const isDown = e.buttons > 0
 
-		if (!isDown) return
+			if (!isDown) return
 
-		for (const e of event.getCoalescedEvents()) {
-			const x = Math.floor(((e.clientX - rect.left) / rect.width) * width)
-			const y = Math.floor(((e.clientY - rect.top) / rect.height) * height)
-			if (controls.brush === 'obstacle') {
-				const radius = 10
-				for (let j = -radius; j <= radius; j++) {
-					const jy = y + j
-					if (jy < 0 || jy >= height) continue
-					for (let i = -radius; i <= radius; i++) {
-						const ix = x + i
-						if (ix < 0 || ix >= width) continue
-						const d = Math.sqrt(i * i + j * j)
-						if (d > radius) continue
-						const index = (jy * width + ix) * 4
-						obstacles.data[index] = 255
-						obstacles.data[index + 1] = 255
-						obstacles.data[index + 2] = 255
-						obstacles.data[index + 3] = 255
+			for (const e of event.getCoalescedEvents()) {
+				const x = Math.floor(((e.clientX - rect.left) / rect.width) * width)
+				const y = Math.floor(((e.clientY - rect.top) / rect.height) * height)
+				if (controls.brush === "obstacle") {
+					const radius = 10
+					for (let j = -radius; j <= radius; j++) {
+						const jy = y + j
+						if (jy < 0 || jy >= height) continue
+						for (let i = -radius; i <= radius; i++) {
+							const ix = x + i
+							if (ix < 0 || ix >= width) continue
+							const d = Math.sqrt(i * i + j * j)
+							if (d > radius) continue
+							const index = (jy * width + ix) * 4
+							obstacles.data[index] = 255
+							obstacles.data[index + 1] = 255
+							obstacles.data[index + 2] = 255
+							obstacles.data[index + 3] = 255
+						}
 					}
-				}
-			} else {
-				const dx = e.movementX
-				const dy = e.movementY
-				const radius = 30
-				const max = Math.sqrt(2 * radius * radius)
-				const mult = 2 // [0 - 128]
-				for (let j = -radius; j <= radius; j++) {
-					const jy = y + j
-					if (jy < 0 || jy >= height) continue
-					for (let i = -radius; i <= radius; i++) {
-						const ix = x + i
-						if (ix < 0 || ix >= width) continue
-						const d = Math.sqrt(i * i + j * j)
-						if (d > radius) continue
-						const index = (jy * width + ix) * 4
-						const pow = 1 - (d / max)
-						mouse.data[index] = dx * pow * mult
-						mouse.data[index + 1] = dy * pow * mult
+				} else {
+					const dx = e.movementX
+					const dy = e.movementY
+					const radius = 30
+					const max = Math.sqrt(2 * radius * radius)
+					const mult = 2 // [0 - 128]
+					for (let j = -radius; j <= radius; j++) {
+						const jy = y + j
+						if (jy < 0 || jy >= height) continue
+						for (let i = -radius; i <= radius; i++) {
+							const ix = x + i
+							if (ix < 0 || ix >= width) continue
+							const d = Math.sqrt(i * i + j * j)
+							if (d > radius) continue
+							const index = (jy * width + ix) * 4
+							const pow = 1 - d / max
+							mouse.data[index] = dx * pow * mult
+							mouse.data[index + 1] = dy * pow * mult
+						}
 					}
 				}
 			}
-		}
-	}, { signal: controller.signal })
+		},
+		{ signal: controller.signal },
+	)
 
 	const onInput = () => {
-		controls.k = k_map[getValue<number>(form, 'k')!]
-		controls.damping = damping_map[getValue<number>(form, 'damping')!]
-		controls.speed = getValue<number>(form, 'speed')!
-		controls.clamp = clamp_map[getValue<number>(form, 'clamp')!]
-		controls.turbulence = getValue<number>(form, 'turbulence')!
-		controls.brush = getValue<string>(form, 'brush')!
-		controls.floaters = getValue<boolean>(form, 'enable_floaters')!
+		controls.k = k_map[getValue<number>(form, "k")!]
+		controls.damping = damping_map[getValue<number>(form, "damping")!]
+		controls.speed = getValue<number>(form, "speed")!
+		controls.clamp = clamp_map[getValue<number>(form, "clamp")!]
+		controls.turbulence = getValue<number>(form, "turbulence")!
+		controls.brush = getValue<string>(form, "brush")!
+		controls.floaters = getValue<boolean>(form, "enable_floaters")!
 
-		const num_floaters = getValue<number>(form, 'num_floaters')!
+		const num_floaters = getValue<number>(form, "num_floaters")!
 		if (floaters.length > num_floaters) {
 			floaters.splice(num_floaters, floaters.length - num_floaters)
 		} else if (floaters.length < num_floaters) {
@@ -387,11 +405,11 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 		}
 	}
 	onInput()
-	form.addEventListener('input', onInput, { signal: controller.signal })
-	form.addEventListener('reset', setTimeout.bind(null, onInput, 0), { signal: controller.signal })
+	form.addEventListener("input", onInput, { signal: controller.signal })
+	form.addEventListener("reset", setTimeout.bind(null, onInput, 0), { signal: controller.signal })
 
-	const resetButton = (form.elements.namedItem('springs') as HTMLButtonElement)
-	resetButton.addEventListener('click', () => controls.reset = true, { signal: controller.signal })
+	const resetButton = form.elements.namedItem("springs") as HTMLButtonElement
+	resetButton.addEventListener("click", () => (controls.reset = true), { signal: controller.signal })
 
 	return () => {
 		controller.abort()
@@ -406,56 +424,25 @@ function start(ctx: CanvasRenderingContext2D, form: HTMLFormElement, onFrame: (d
 	}
 }
 
-const k_map = [
-	0,
-	0.01,
-	0.1,
-	1,
-	10,
-	25,
-	50,
-	80,
-	100,
-	150,
-	200,
-]
+const k_map = [0, 0.01, 0.1, 1, 10, 25, 50, 80, 100, 150, 200]
 const k_default = k_map.indexOf(50)
 
-const damping_map = [
-	1,
-	0.99999,
-	0.9999,
-	0.999,
-	0.99,
-	0.98,
-	0.95,
-	0.9,
-]
+const damping_map = [1, 0.99999, 0.9999, 0.999, 0.99, 0.98, 0.95, 0.9]
 const damping_default = damping_map.indexOf(0.9999)
 
-const clamp_map = [
-	0,
-	0.001,
-	0.003,
-	0.01,
-	0.05,
-	0.075,
-	0.1,
-	0.25,
-	1,
-]
+const clamp_map = [0, 0.001, 0.003, 0.01, 0.05, 0.075, 0.1, 0.25, 1]
 const clamp_default = clamp_map.indexOf(0.003)
 
-function getValue<T,>(form: HTMLFormElement, name: string): T | undefined {
+function getValue<T>(form: HTMLFormElement, name: string): T | undefined {
 	if (!(name in form.elements)) return undefined
 	const element = form.elements[name as keyof typeof form.elements]
 	if (element instanceof RadioNodeList) return element.value as T
 	if (element instanceof HTMLSelectElement) return element.value as T
 	if (element instanceof HTMLInputElement) {
-		if (element.type === 'range') {
+		if (element.type === "range") {
 			return element.valueAsNumber as T
 		}
-		if (element.type === 'checkbox') {
+		if (element.type === "checkbox") {
 			return element.checked as T
 		}
 	}
@@ -465,7 +452,7 @@ function createShader(gl: WebGLRenderingContext, type: number, source: string) {
 	const shader = gl.createShader(type)
 
 	if (!shader) {
-		throw new Error('Unable to create shader')
+		throw new Error("Unable to create shader")
 	}
 
 	gl.shaderSource(shader, source)
@@ -484,7 +471,7 @@ function createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShader, fra
 	const program = gl.createProgram()
 
 	if (!program) {
-		throw new Error('Unable to create program')
+		throw new Error("Unable to create program")
 	}
 
 	gl.attachShader(program, vertexShader)
@@ -523,7 +510,7 @@ function init(array: Uint8ClampedArray, obstacles: Uint8ClampedArray, width: num
 // h = b + 0.428 * a * a / b         // max error ≈ 1.04 %
 function fastHypot(x: number, y: number) {
 	if (x > y) {
-		return (x + 0.337 * y)
+		return x + 0.337 * y
 	}
-	return (y + 0.337 * x)
+	return y + 0.337 * x
 }

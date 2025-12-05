@@ -1,10 +1,10 @@
 /**
- * 
+ *
  * Implementation of median angle function
  * A More Efficient Way Of Obtaining A Unique Median Estimate For Circular Data
  * 2003 / B. Sango Otieno & Christine M. Anderson-Cook
  * from the annexes in https://digitalcommons.wayne.edu/cgi/viewcontent.cgi?referer=&httpsredir=1&article=1738&context=jmasm
- * 
+ *
  */
 
 /**
@@ -17,9 +17,7 @@ export default function circularMedian(array: number[]) {
 	const numties: number[] = []
 
 	// Checks if sample size is odd or even
-	const posmed = array.length % 2 === 0
-		? checkeven(array)
-		: checkodd(array)
+	const posmed = array.length % 2 === 0 ? checkeven(array) : checkodd(array)
 
 	for (let i = 0; i < posmed.length; i++) {
 		let positive = 0
@@ -39,17 +37,13 @@ export default function circularMedian(array: number[]) {
 
 	// Checks for ties
 	const cm = posmed.filter((x, i) => difsin[i] === 0 || Math.abs(difsin[i]) > numties[i])
-	return cm.length
-		? averageAngle(cm)
-		: Infinity
+	return cm.length ? averageAngle(cm) : Infinity
 }
 
 function averageAngle(array: number[]) {
 	const y = array.reduce((sum, current) => sum + Math.sin(current))
 	const x = array.reduce((sum, current) => sum + Math.cos(current))
-	return x === 0 && y === 0
-		? Infinity
-		: Math.atan2(y, x)
+	return x === 0 && y === 0 ? Infinity : Math.atan2(y, x)
 	// If both x and y are zero, then no circular mean exists, so assign it a large number
 }
 
@@ -67,12 +61,10 @@ function checkeven(array: number[]) {
 			const cos = Math.cos(value)
 			if (cos > 0) positive++
 		}
-		check[i] = positive < max
-			? Infinity
-			: posmed[i]
+		check[i] = positive < max ? Infinity : posmed[i]
 	}
 
-	return check.filter(x => x !== Infinity)
+	return check.filter((x) => x !== Infinity)
 }
 
 function checkodd(array: number[]) {
@@ -89,12 +81,10 @@ function checkodd(array: number[]) {
 			const cos = Math.cos(value)
 			if (cos > 0) positive++
 		}
-		check[i] = positive > max
-			? Infinity
-			: posmed[i]
+		check[i] = positive > max ? Infinity : posmed[i]
 	}
 
-	return check.filter(x => x !== Infinity)
+	return check.filter((x) => x !== Infinity)
 }
 
 function posmedf(array: number[]) {
@@ -106,5 +96,5 @@ function posmedf(array: number[]) {
 		posmed[i] = averageAngle([array[i], sx2[i]])
 	}
 	// Computes circular mean of two adjacent observations
-	return posmed.filter(x => x !== Infinity)
+	return posmed.filter((x) => x !== Infinity)
 }
