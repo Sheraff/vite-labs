@@ -136,7 +136,10 @@ function start({
 		"click",
 		() => {
 			const base = CHAIN[handId]
-			const x = Math.max(containerX + base.r, Math.min(containerX + CONTAINER_WIDTH - base.r, mouseX))
+			const cursor = mouseX + Math.random() - 0.5 // slight randomness to avoid stacking
+			const min = containerX + base.r
+			const max = containerX + CONTAINER_WIDTH - base.r
+			const x = Math.max(min, Math.min(max, cursor))
 			entities.push({
 				id: handId,
 				r: base.r,
