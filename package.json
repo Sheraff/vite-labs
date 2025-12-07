@@ -6,7 +6,6 @@
   "scripts": {
     "predev": "echo \"node:$(node -v) pnpm:v$(pnpm -v)\\n\"",
     "prebuild": "echo \"node:$(node -v) pnpm:v$(pnpm -v)\\n\"",
-    "postinstall": "vite build",
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint . --report-unused-disable-directives --max-warnings 0",
