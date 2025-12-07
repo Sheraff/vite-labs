@@ -181,14 +181,12 @@ export function fileRouter(): Plugin[] {
 		}
 		const content = template(routes)
 
-		if (latestContent === content) return routes
+		if (latestContent === content) return
 		latestContent = content
 
 		await writeFile("./src/router.ts", content)
 
 		logger.info(`${event || "scan"} ${count} routes in ${Date.now() - start} ms`, { timestamp: true })
-
-		return routes
 	}
 
 	let dist = ""
@@ -207,7 +205,7 @@ export function fileRouter(): Plugin[] {
 			},
 			async buildStart() {
 				ctx = this
-				routes = await generate(this)
+				await generate(this)
 			},
 		},
 		{
