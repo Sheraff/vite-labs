@@ -1,4 +1,5 @@
-import { Link, useNavigation } from "#file-router/Navigation"
+import { Link } from "#file-router/Navigation"
+import { useNavigation } from "#file-router/NavigationContext"
 import { ROUTES, type RouteMeta } from "#router"
 
 import styles from "./Head.module.css"

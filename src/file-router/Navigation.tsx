@@ -1,6 +1,8 @@
 import { ROUTES, type Routes } from "#router"
-import { createContext, useContext, useEffect, useState, type ComponentPropsWithoutRef, type ReactNode } from "react"
+import { useEffect, useState, type ComponentPropsWithoutRef, type ReactNode } from "react"
 import { flushSync } from "react-dom"
+
+import { NavigationContext } from "./NavigationContext"
 
 type NavigationEvent = {
 	canIntercept: boolean
@@ -38,8 +40,6 @@ function parseUrl(href: string) {
 	return null
 }
 
-const NavigationContext = createContext<Routes | null>(null)
-
 export function NavigationProvider({ children }: { children: ReactNode }) {
 	const [route, setRoute] = useState<Routes | null>(() => parseUrl(window.location.href))
 	useEffect(() => {
@@ -64,10 +64,6 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
 		}
 	}, [])
 	return <NavigationContext.Provider value={route}>{children}</NavigationContext.Provider>
-}
-
-export function useNavigation() {
-	return useContext(NavigationContext)
 }
 
 export function Link({ href, ...props }: Omit<ComponentPropsWithoutRef<"a">, "href"> & { href: `/${Routes}` | "/" }) {

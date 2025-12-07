@@ -1,5 +1,6 @@
 import { Head } from "#components/Head"
-import { Link, useNavigation } from "#file-router/Navigation"
+import { Link } from "#file-router/Navigation"
+import { useNavigation } from "#file-router/NavigationContext"
 import { ROUTES, type Routes } from "#router"
 import { Component, Suspense, useMemo, type ReactNode } from "react"
 
