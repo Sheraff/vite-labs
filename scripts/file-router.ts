@@ -167,8 +167,8 @@ export function fileRouter(): Plugin[] {
 				routes.push(route)
 			} else if (event === "change") {
 				if (existingIndex < 0) throw new Error(`route for changed file not found: ${key}`)
-				const route = await Promise.all([key, getMeta(key, file, ctx), getGitMeta(file)])
-				routes[existingIndex] = route
+				const meta = await getMeta(key, file, ctx)
+				routes[existingIndex][1] = meta
 			}
 		} else {
 			const routePromises: Promise<Route>[] = []
