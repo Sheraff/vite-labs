@@ -163,12 +163,12 @@ export function fileRouter(): Plugin[] {
 				routes.splice(existingIndex, 1)
 			} else if (event === "add") {
 				if (existingIndex >= 0) throw new Error(`route for added file already exists: ${key}`)
-				const [meta, git] = await Promise.all([getMeta(key, file, ctx), getGitMeta(file)])
-				routes.push([key, meta, git])
+				const route = await Promise.all([key, getMeta(key, file, ctx), getGitMeta(file)])
+				routes.push(route)
 			} else if (event === "change") {
 				if (existingIndex < 0) throw new Error(`route for changed file not found: ${key}`)
-				const [meta, git] = await Promise.all([getMeta(key, file, ctx), getGitMeta(file)])
-				routes[existingIndex] = [key, meta, git]
+				const route = await Promise.all([key, getMeta(key, file, ctx), getGitMeta(file)])
+				routes[existingIndex] = route
 			}
 		} else {
 			const routePromises: Promise<Route>[] = []
