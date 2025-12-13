@@ -136,8 +136,8 @@ function Dialog({
 				const observer = new IntersectionObserver(([entry]) => !entry.isIntersecting && e.close(), {
 					rootMargin: "-1px",
 				})
-				const area = e.querySelector<HTMLDivElement>("[data-dialog-area]")!
-				const content = area.querySelector<HTMLDivElement>("[data-dialog-content]")!
+				const area = e.firstElementChild as HTMLDivElement
+				const content = area.firstElementChild as HTMLDivElement
 				observer.observe(content)
 				const controller = new AbortController()
 				e.addEventListener(
@@ -147,7 +147,7 @@ function Dialog({
 							requestAnimationFrame(() => {
 								e.scrollTop = area.offsetTop
 								e.scrollLeft = area.offsetLeft
-								e.querySelector<HTMLDivElement>("[data-dialog-content]")!.scrollTop = 0
+								content.scrollTop = 0
 							})
 					},
 					{ signal: controller.signal },
