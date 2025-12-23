@@ -7,7 +7,8 @@ import styles from "./styles.module.css"
 
 export const meta: RouteMeta = {
 	title: "Imperative Geometry",
-	tags: ["canvas", "wip"],
+	tags: ["canvas"],
+	image: './screen.png'
 }
 
 export default function ImperativeGeometryPage() {
@@ -17,36 +18,133 @@ export default function ImperativeGeometryPage() {
 				<Head />
 			</div>
 			<div className={styles.content}>
-				<One />
+				<Two />
+				<Three />
+				<Four />
 			</div>
 		</div>
 	)
 }
 
-function One() {
+function Two() {
 	const canvas = useRef<HTMLCanvasElement | null>(null)
 	useEffect(
 		() =>
 			new Drawing(canvas.current!)
-				.moveTo(150, 150)
-				.lineTo(300, 150)
-				// .arc(50, 0, Math.PI)
-				.arc(50, -Math.PI, 0)
-				.lineTo(300, 350)
-				.arc(50, 0, Math.PI)
-				.lineTo(150, 350)
-				.arc(50, -Math.PI, 0)
-				.moveTo(150, 150)
-				.lineTo(150, 500)
+				.moveTo(0, 0)
+				.lineTo(0, 450)
+				.moveTo(-20, 30)
+				.lineTo(0, 0)
+				.lineTo(20, 30)
+				.moveTo(-20, 420)
+				.lineTo(0, 450)
+				.lineTo(20, 420)
+				.moveTo(-20, 60)
+				.lineTo(20, 60)
+				.moveTo(-20, 70)
+				.lineTo(20, 70)
+				.moveTo(0, 90)
+				.arc(20, -Math.PI / 2, (3 * Math.PI) / 2)
+				.moveTo(-30, 170)
+				.equilateral(60)
+				.moveTo(0, 147)
+				.arc(40, -Math.PI / 2, (3 * Math.PI) / 2)
+				.moveTo(0, 240)
+				.arc(20, -Math.PI / 2, (3 * Math.PI) / 2)
+				.moveTo(-40, 310)
+				.arc(80, (-2 * Math.PI) / 3, -Math.PI / 3)
+				.moveTo(-40, 330)
+				.arc(80, (-2 * Math.PI) / 3, -Math.PI / 3)
+				.moveTo(-30, 350)
+				.lineTo(30, 380)
+				.moveTo(-30, 380)
+				.lineTo(30, 350)
 				.play(),
 		[],
 	)
 	return <canvas ref={canvas} />
 }
 
+function Three() {
+	const canvas = useRef<HTMLCanvasElement | null>(null)
+	useEffect(
+		() =>
+			new Drawing(canvas.current!)
+				// big triangle
+				.moveTo(0, 0)
+				.equilateral(200)
+				// small triangle
+				.moveTo(40, -20)
+				.equilateral(120)
+				// big diamond
+				.moveTo(100, -20)
+				.lineTo(130, 0)
+				.lineTo(100, 53)
+				.lineTo(70, 0)
+				.lineTo(100, -20)
+				// small diamond
+				.lineTo(115, 0)
+				.lineTo(100, 53)
+				.lineTo(85, 0)
+				.lineTo(100, -20)
+				// bottom triangle
+				.moveTo(85, 120)
+				.equilateral(30)
+				.moveTo(100, 120)
+				.lineTo(100, 400)
+				.moveTo(85, 180)
+				.lineTo(115, 180)
+				.moveTo(85, 190)
+				.lineTo(115, 190)
+				// dashed circle
+				.moveTo(100, 230)
+				.arc(20, -Math.PI / 2, (3 * Math.PI) / 2)
+				.moveTo(100, 210)
+				.arc(40, -Math.PI / 2 + (Math.PI / 8) * 0, -Math.PI / 2 + (Math.PI / 8) * 1)
+				.arcMoveTo(40, -Math.PI / 2 + (Math.PI / 8) * 1, -Math.PI / 2 + (Math.PI / 8) * 2)
+				.arc(40, -Math.PI / 2 + (Math.PI / 8) * 2, -Math.PI / 2 + (Math.PI / 8) * 3)
+				.arcMoveTo(40, -Math.PI / 2 + (Math.PI / 8) * 3, -Math.PI / 2 + (Math.PI / 8) * 4)
+				.arc(40, -Math.PI / 2 + (Math.PI / 8) * 4, -Math.PI / 2 + (Math.PI / 8) * 5)
+				.arcMoveTo(40, -Math.PI / 2 + (Math.PI / 8) * 5, -Math.PI / 2 + (Math.PI / 8) * 6)
+				.arc(40, -Math.PI / 2 + (Math.PI / 8) * 6, -Math.PI / 2 + (Math.PI / 8) * 7)
+				.arcMoveTo(40, -Math.PI / 2 + (Math.PI / 8) * 7, -Math.PI / 2 + (Math.PI / 8) * 8)
+				.arc(40, -Math.PI / 2 + (Math.PI / 8) * 8, -Math.PI / 2 + (Math.PI / 8) * 9)
+				.arcMoveTo(40, -Math.PI / 2 + (Math.PI / 8) * 9, -Math.PI / 2 + (Math.PI / 8) * 10)
+				.arc(40, -Math.PI / 2 + (Math.PI / 8) * 10, -Math.PI / 2 + (Math.PI / 8) * 11)
+				.arcMoveTo(40, -Math.PI / 2 + (Math.PI / 8) * 11, -Math.PI / 2 + (Math.PI / 8) * 12)
+				.arc(40, -Math.PI / 2 + (Math.PI / 8) * 12, -Math.PI / 2 + (Math.PI / 8) * 13)
+				.arcMoveTo(40, -Math.PI / 2 + (Math.PI / 8) * 13, -Math.PI / 2 + (Math.PI / 8) * 14)
+				.arc(40, -Math.PI / 2 + (Math.PI / 8) * 14, -Math.PI / 2 + (Math.PI / 8) * 15)
+				.moveTo(115, 400)
+				.equilateral(30, (-2 * Math.PI) / 3, true)
+				.play(),
+		[],
+	)
+	return <canvas ref={canvas} />
+}
+
+function Four() {
+	const canvas = useRef<HTMLCanvasElement | null>(null)
+	useEffect(() => {
+		const d = new Drawing(canvas.current!).moveTo(0, 0)
+
+		const partial = Math.E
+		for (let i = 0; i < 193; i++) {
+			if (i % 2 === 0) {
+				d.arc(200, (i * Math.PI) / partial, ((i + 1) * Math.PI) / partial)
+			} else {
+				d.arc(200, (i * Math.PI) / partial + Math.PI, ((i + 1) * Math.PI) / partial + Math.PI)
+			}
+		}
+
+		return d.play(1000)
+	}, [])
+	return <canvas ref={canvas} />
+}
+
 class Drawing {
 	ctx
-	speed // pixels per second
+	speed = 200 // pixels per second
 	padding = 20
 
 	#plan: Array<(() => Generator<undefined, void, number>) | (() => void)> = []
@@ -56,8 +154,7 @@ class Drawing {
 	#scale = 1
 	#offset = { x: 0, y: 0 }
 
-	constructor(canvas: HTMLCanvasElement, speed: number = 100) {
-		this.speed = speed
+	constructor(canvas: HTMLCanvasElement) {
 		const ctx = canvas.getContext("2d")
 		if (!ctx) throw new Error("Failed to get 2D context")
 		this.ctx = ctx
@@ -205,44 +302,80 @@ class Drawing {
 		})
 	}
 
+	arcMoveTo(radius: number, startAngle: number, endAngle: number): this {
+		const x = this.#position.x
+		const y = this.#position.y
+
+		// Calculate center of the arc
+		const cx = x - radius * Math.cos(startAngle)
+		const cy = y - radius * Math.sin(startAngle)
+
+		// Calculate end position
+		const endX = cx + radius * Math.cos(endAngle)
+		const endY = cy + radius * Math.sin(endAngle)
+
+		this.#position.x = endX
+		this.#position.y = endY
+		this.#plan.push(() => this.#moveTo(endX, endY))
+		return this
+	}
+
+	equilateral(sideLength: number, rotate: number = 0, counterClockwise: boolean = false): this {
+		const angleIncrement = ((2 * Math.PI) / 3) * (counterClockwise ? -1 : 1)
+		for (let i = 0; i < 3; i++) {
+			const angle = rotate + i * angleIncrement
+			const x = this.#position.x + sideLength * Math.cos(angle)
+			const y = this.#position.y + sideLength * Math.sin(angle)
+			this.lineTo(x, y)
+		}
+		return this
+	}
+
 	*#play(): Generator<undefined, void, number> {
 		for (const step of this.#plan) {
 			const gen = step()
 			if (gen) yield* gen
 		}
 	}
-	play(): () => void {
+	play(speed = 200): () => void {
 		const controller = new AbortController()
-		
+
 		// Calculate scale and offset for object-fit: contain
 		const boundsWidth = this.#bounds.maxX - this.#bounds.minX
 		const boundsHeight = this.#bounds.maxY - this.#bounds.minY
 		const canvasWidth = this.ctx.canvas.width / devicePixelRatio - this.padding * 2
 		const canvasHeight = this.ctx.canvas.height / devicePixelRatio - this.padding * 2
-		
+
 		this.#scale = Math.min(canvasWidth / boundsWidth, canvasHeight / boundsHeight)
-		
+
 		const scaledWidth = boundsWidth * this.#scale
 		const scaledHeight = boundsHeight * this.#scale
 		this.#offset.x = this.padding + (canvasWidth - scaledWidth) / 2
 		this.#offset.y = this.padding + (canvasHeight - scaledHeight) / 2
-		
+
 		this.#position.x = 0
 		this.#position.y = 0
 		const generator = this.#play()
 
-		let lastTime = performance.now()
-		const frame = (time: number) => {
-			if (controller.signal.aborted) return
-			const delta = time - lastTime
-			lastTime = time
-			if (delta === time) return
-			this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height)
-			for (const redraw of this.#history) redraw()
-			generator.next(delta / 1000)
+		if (speed > 0 && speed !== Infinity) {
+			this.speed = speed
+			let lastTime = performance.now()
+			const frame = (time: number) => {
+				if (controller.signal.aborted) return
+				const delta = time - lastTime
+				lastTime = time
+				if (delta === time) return
+				this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height)
+				for (const redraw of this.#history) redraw()
+				generator.next(delta / 1000)
+				requestAnimationFrame(frame)
+			}
 			requestAnimationFrame(frame)
+		} else {
+			while (!generator.next(Infinity).done) {
+				/* empty */
+			}
 		}
-		requestAnimationFrame(frame)
 		return () => controller.abort()
 	}
 }
