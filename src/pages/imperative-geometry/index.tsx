@@ -28,11 +28,18 @@ function One() {
 	useEffect(
 		() =>
 			new Drawing(canvas.current!)
-				.line(150, 150, 300, 150)
-				.circle(300, 250, 50)
-				.line(300, 350, 150, 350)
-				.circle(150, 250, 50)
-				.triangle(225, 250, 100, -Math.PI / 2)
+				.moveTo(150, 150)
+				.lineTo(300, 150)
+				.arc(50, -Math.PI, 0)
+				.lineTo(300, 350)
+				.arc(50, 0, Math.PI)
+				.lineTo(150, 350)
+				.arc(50, Math.PI, 0)
+				// .line(150, 150, 300, 150)
+				// .circle(300, 250, 50)
+				// .line(300, 350, 150, 350)
+				// .circle(150, 250, 50)
+				// .triangle(225, 250, 100, -Math.PI / 2)
 				.play(),
 		[],
 	)
@@ -44,9 +51,10 @@ class Drawing {
 	speed // pixels per second
 	padding = 20
 
-	#plan: Array<() => Generator<undefined, void, number>> = []
+	#plan: Array<(() => Generator<undefined, void, number>) | (() => void)> = []
 	#history: Array<() => void> = []
 	#bounds = {minX: Infinity, minY: Infinity, maxX: 0, maxY: 0}
+	#position = {x: 0, y: 0}
 
 	constructor(canvas: HTMLCanvasElement, speed: number = 100) {
 		this.speed = speed
@@ -60,6 +68,120 @@ class Drawing {
 		ctx.strokeStyle = "white"
 	}
 
+	moveTo(x: number, y: number): this {
+		this.#position.x = x
+		this.#position.y = y
+		this.#plan.push(() => this.#moveTo(x, y))
+		return this
+	}
+	#moveTo(x: number, y: number) {
+		this.#position.x = x
+		this.#position.y = y
+	}
+
+	lineTo(x: number, y: number): this {
+		this.#bounds.minX = Math.min(this.#bounds.minX, this.#position.x, x)
+		this.#bounds.minY = Math.min(this.#bounds.minY, this.#position.y, y)
+		this.#bounds.maxX = Math.max(this.#bounds.maxX, this.#position.x, x)
+		this.#bounds.maxY = Math.max(this.#bounds.maxY, this.#position.y, y)
+		this.#plan.push(() => this.#lineTo(x, y))
+		this.#position.x = x
+		this.#position.y = y
+		return this
+	}
+	*#lineTo(x: number, y: number): Generator<undefined, void, number> {
+		const state = { t: 0 }
+		const x1 = this.#position.x
+		const y1 = this.#position.y
+		const dist = Math.hypot(x - x1, y - y1)
+		const totalTime = dist / this.speed
+		while (state.t < totalTime) {
+			const dt = yield
+			state.t += dt
+			const t = Math.min(state.t / totalTime, 1)
+			const cx = x1 + (x - x1) * t
+			const cy = y1 + (y - y1) * t
+			this.ctx.beginPath()
+			this.ctx.moveTo(x1, y1)
+			this.ctx.lineTo(cx, cy)
+			this.ctx.stroke()
+		}
+		this.#position.x = x
+		this.#position.y = y
+		this.#history.push(() => {
+			this.ctx.beginPath()
+			this.ctx.moveTo(x1, y1)
+			this.ctx.lineTo(x, y)
+			this.ctx.stroke()
+		})
+	}
+
+	arc(radius: number, startAngle: number, endAngle: number): this {
+		const x = this.#position.x
+		const y = this.#position.y
+		this.#bounds.minX = Math.min(
+			this.#bounds.minX,
+			x - radius * 2,
+			x + radius * 2,
+		)
+		this.#bounds.minY = Math.min(
+			this.#bounds.minY,
+			y - radius * 2,
+			y + radius * 2,
+		)
+		this.#bounds.maxX = Math.max(
+			this.#bounds.maxX,
+			x + radius * 2,
+			x - radius * 2,
+		)
+		this.#bounds.maxY = Math.max(
+			this.#bounds.maxY,
+			y + radius * 2,
+			y - radius * 2,
+		)
+		this.#plan.push(() => this.#arc(radius, startAngle, endAngle))
+		this.#position.x = x + radius * Math.cos(endAngle)
+		this.#position.y = y + radius * Math.sin(endAngle)
+		return this
+	}
+	*#arc(
+		radius: number,
+		startAngle: number,
+		endAngle: number,
+	): Generator<undefined, void, number> {
+		const state = { t: 0 }
+		const x = this.#position.x - radius * Math.cos(startAngle)
+		const y = this.#position.y - radius * Math.sin(startAngle)
+		const angleDiff = endAngle - startAngle
+		const arcLength = Math.abs(angleDiff) * radius
+		const totalTime = arcLength / this.speed
+		const direction = angleDiff < 0
+		while (state.t < totalTime) {
+			const dt = yield
+			state.t += dt
+			const t = Math.min(state.t / totalTime, 1)
+			const angle = startAngle + angleDiff * t
+			this.ctx.beginPath()
+			this.ctx.moveTo(this.#position.x, this.#position.y)
+			this.ctx.arc(x, y, radius, startAngle, angle, direction)
+			this.ctx.stroke()
+		}
+		this.#position.x = x + radius * Math.cos(endAngle)
+		this.#position.y = y + radius * Math.sin(endAngle)
+		this.#history.push(() => {
+			this.ctx.beginPath()
+			this.ctx.arc(x, y, radius, startAngle, endAngle, direction)
+			this.ctx.stroke()
+		})
+	}
+		
+	
+	
+	
+	
+	
+	
+	
 	line(x1: number, y1: number, x2: number, y2: number): this {
 		this.#bounds.minX = Math.min(this.#bounds.minX, x1, x2)
 		this.#bounds.minY = Math.min(this.#bounds.minY, y1, y2)
@@ -151,7 +273,8 @@ class Drawing {
 
 	*#play(): Generator<undefined, void, number> {
 		for (const step of this.#plan) {
-			yield* step()
+			const gen = step()
+			if (gen) yield* gen
 		}
 	}
 	play(): () => void {
