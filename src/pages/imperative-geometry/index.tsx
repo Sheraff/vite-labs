@@ -238,15 +238,6 @@ class Drawing {
 			lastTime = time
 			if (delta === time) return
 			this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height)
-			// this.ctx.beginPath()
-			// this.ctx.rect(
-			// 	this.#bounds.minX - this.padding,
-			// 	this.#bounds.minY - this.padding,
-			// 	this.#bounds.maxX - this.#bounds.minX + this.padding * 2,
-			// 	this.#bounds.maxY - this.#bounds.minY + this.padding * 2,
-			// )
-			// this.ctx.stroke()
-			// this.ctx.clip()
 			for (const redraw of this.#history) redraw()
 			generator.next(delta / 1000)
 			requestAnimationFrame(frame)
