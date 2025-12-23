@@ -36,6 +36,8 @@ function One() {
 				.arc(50, 0, Math.PI)
 				.lineTo(150, 350)
 				.arc(50, -Math.PI, 0)
+				.moveTo(150, 150)
+				.lineTo(150, 500)
 				.play(),
 		[],
 	)
@@ -51,6 +53,8 @@ class Drawing {
 	#history: Array<() => void> = []
 	#bounds = { minX: Infinity, minY: Infinity, maxX: 0, maxY: 0 }
 	#position = { x: 0, y: 0 }
+	#scale = 1
+	#offset = { x: 0, y: 0 }
 
 	constructor(canvas: HTMLCanvasElement, speed: number = 100) {
 		this.speed = speed
@@ -64,6 +68,13 @@ class Drawing {
 		ctx.strokeStyle = "white"
 	}
 
+	#transform(x: number, y: number): { x: number; y: number } {
+		return {
+			x: (x - this.#bounds.minX) * this.#scale + this.#offset.x,
+			y: (y - this.#bounds.minY) * this.#scale + this.#offset.y,
+		}
+	}
+
 	moveTo(x: number, y: number): this {
 		this.#position.x = x
 		this.#position.y = y
@@ -71,8 +82,9 @@ class Drawing {
 		return this
 	}
 	#moveTo(x: number, y: number) {
-		this.#position.x = x
-		this.#position.y = y
+		const transformed = this.#transform(x, y)
+		this.#position.x = transformed.x
+		this.#position.y = transformed.y
 	}
 
 	lineTo(x: number, y: number): this {
@@ -89,25 +101,26 @@ class Drawing {
 		const state = { t: 0 }
 		const x1 = this.#position.x
 		const y1 = this.#position.y
-		const dist = Math.hypot(x - x1, y - y1)
+		const transformed = this.#transform(x, y)
+		const dist = Math.hypot(transformed.x - x1, transformed.y - y1)
 		const totalTime = dist / this.speed
 		while (state.t < totalTime) {
 			const dt = yield
 			state.t += dt
 			const t = Math.min(state.t / totalTime, 1)
-			const cx = x1 + (x - x1) * t
-			const cy = y1 + (y - y1) * t
+			const cx = x1 + (transformed.x - x1) * t
+			const cy = y1 + (transformed.y - y1) * t
 			this.ctx.beginPath()
 			this.ctx.moveTo(x1, y1)
 			this.ctx.lineTo(cx, cy)
 			this.ctx.stroke()
 		}
-		this.#position.x = x
-		this.#position.y = y
+		this.#position.x = transformed.x
+		this.#position.y = transformed.y
 		this.#history.push(() => {
 			this.ctx.beginPath()
 			this.ctx.moveTo(x1, y1)
-			this.ctx.lineTo(x, y)
+			this.ctx.lineTo(transformed.x, transformed.y)
 			this.ctx.stroke()
 		})
 	}
@@ -166,10 +179,11 @@ class Drawing {
 	}
 	*#arc(radius: number, startAngle: number, endAngle: number): Generator<undefined, void, number> {
 		const state = { t: 0 }
-		const x = this.#position.x - radius * Math.cos(startAngle)
-		const y = this.#position.y - radius * Math.sin(startAngle)
+		const scaledRadius = radius * this.#scale
+		const centerX = this.#position.x - scaledRadius * Math.cos(startAngle)
+		const centerY = this.#position.y - scaledRadius * Math.sin(startAngle)
 		const angleDiff = endAngle - startAngle
-		const arcLength = Math.abs(angleDiff) * radius
+		const arcLength = Math.abs(angleDiff) * scaledRadius
 		const totalTime = arcLength / this.speed
 		const direction = angleDiff < 0
 		while (state.t < totalTime) {
@@ -179,14 +193,14 @@ class Drawing {
 			const angle = startAngle + angleDiff * t
 			this.ctx.beginPath()
 			this.ctx.moveTo(this.#position.x, this.#position.y)
-			this.ctx.arc(x, y, radius, startAngle, angle, direction)
+			this.ctx.arc(centerX, centerY, scaledRadius, startAngle, angle, direction)
 			this.ctx.stroke()
 		}
-		this.#position.x = x + radius * Math.cos(endAngle)
-		this.#position.y = y + radius * Math.sin(endAngle)
+		this.#position.x = centerX + scaledRadius * Math.cos(endAngle)
+		this.#position.y = centerY + scaledRadius * Math.sin(endAngle)
 		this.#history.push(() => {
 			this.ctx.beginPath()
-			this.ctx.arc(x, y, radius, startAngle, endAngle, direction)
+			this.ctx.arc(centerX, centerY, scaledRadius, startAngle, endAngle, direction)
 			this.ctx.stroke()
 		})
 	}
@@ -199,6 +213,22 @@ class Drawing {
 	}
 	play(): () => void {
 		const controller = new AbortController()
+		
+		// Calculate scale and offset for object-fit: contain
+		const boundsWidth = this.#bounds.maxX - this.#bounds.minX
+		const boundsHeight = this.#bounds.maxY - this.#bounds.minY
+		const canvasWidth = this.ctx.canvas.width / devicePixelRatio - this.padding * 2
+		const canvasHeight = this.ctx.canvas.height / devicePixelRatio - this.padding * 2
+		
+		this.#scale = Math.min(canvasWidth / boundsWidth, canvasHeight / boundsHeight)
+		
+		const scaledWidth = boundsWidth * this.#scale
+		const scaledHeight = boundsHeight * this.#scale
+		this.#offset.x = this.padding + (canvasWidth - scaledWidth) / 2
+		this.#offset.y = this.padding + (canvasHeight - scaledHeight) / 2
+		
+		this.#position.x = 0
+		this.#position.y = 0
 		const generator = this.#play()
 
 		let lastTime = performance.now()
@@ -208,15 +238,15 @@ class Drawing {
 			lastTime = time
 			if (delta === time) return
 			this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height)
-			this.ctx.beginPath()
-			this.ctx.rect(
-				this.#bounds.minX - this.padding,
-				this.#bounds.minY - this.padding,
-				this.#bounds.maxX - this.#bounds.minX + this.padding * 2,
-				this.#bounds.maxY - this.#bounds.minY + this.padding * 2,
-			)
-			this.ctx.stroke()
-			this.ctx.clip()
+			// this.ctx.beginPath()
+			// this.ctx.rect(
+			// 	this.#bounds.minX - this.padding,
+			// 	this.#bounds.minY - this.padding,
+			// 	this.#bounds.maxX - this.#bounds.minX + this.padding * 2,
+			// 	this.#bounds.maxY - this.#bounds.minY + this.padding * 2,
+			// )
+			// this.ctx.stroke()
+			// this.ctx.clip()
 			for (const redraw of this.#history) redraw()
 			generator.next(delta / 1000)
 			requestAnimationFrame(frame)
