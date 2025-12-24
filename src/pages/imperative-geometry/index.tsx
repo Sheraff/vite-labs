@@ -26,9 +26,77 @@ export default function ImperativeGeometryPage() {
 				<Five />
 				<Six />
 				<Seven />
+				<Eight />
 			</div>
 		</div>
 	)
+}
+
+function Eight() {
+	const canvas = useRef<HTMLCanvasElement | null>(null)
+	useEffect(() => {
+		const d = new Drawing(canvas.current!).moveTo(0, 0)
+		d.lineTo(0, -800)
+			.lineTo(-20, -820)
+			.lineTo(0, -840)
+			.lineTo(-20, -860)
+			.lineTo(0, -880)
+			.lineTo(-20, -900)
+			.lineTo(0, -920)
+
+		d.moveTo(20, -60)
+		.lineTo(20, -140)
+		.lineTo(60, -200)
+		.lineTo(60, -220)
+		.equilateral(40, -2 * pi / 3)
+		.moveTo(40, -270)
+		.lineTo(80, -270)
+
+		d.moveTo(-20, -200)
+		.lineTo(-20, -280)
+		.lineTo(-60, -320)
+		.lineTo(-60, -340)
+		.arc(20, pi / 2, -pi / 2)
+		.arcAt(10, -60, -360)
+
+		d.moveTo(20, -340)
+		.lineTo(20, -420)
+		.lineTo(60, -460)
+		.lineTo(60, -540)
+		.arc(5, pi/2, 5*pi/2)
+		.lineTo(40, -520)
+		.lineTo(40, -500)
+		.arc(5, -pi/2, 3*pi/2)
+		.moveTo(60, -540)
+		.lineTo(80, -520)
+		.lineTo(80, -500)
+		.arc(5, -pi/2, 3*pi/2)
+
+		d.moveTo(-20, -480)
+		.lineTo(-20, -560)
+		.lineTo(-60, -600)
+		.lineTo(-60, -690)
+		.arcAt(60, -60, -590, -22*pi/32, -10*pi/32)
+		.arcAt(60, -60, -610, -22*pi/32, -10*pi/32)
+		.arcAt(60, -60, -630, -22*pi/32, -10*pi/32)
+
+		d.moveTo(20, -620)
+		.lineTo(20, -700)
+		.lineTo(60, -740)
+		.lineTo(60, -760)
+		.moveTo(40, -780)
+		.lineTo(60, -760)
+		.lineTo(80, -780)
+		.moveTo(60, -780)
+		.lineTo(80, -800)
+		.lineTo(60, -820)
+		.lineTo(40, -800)
+		.lineTo(60, -780)
+		
+
+		return d.play()
+	}, [])
+	return <canvas ref={canvas} />
 }
 
 function Seven() {
