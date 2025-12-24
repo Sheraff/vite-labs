@@ -27,9 +27,57 @@ export default function ImperativeGeometryPage() {
 				<Six />
 				<Seven />
 				<Eight />
+				<Nine />
 			</div>
 		</div>
 	)
+}
+
+function Nine() {
+	const canvas = useRef<HTMLCanvasElement | null>(null)
+	useEffect(() => {
+		const d = new Drawing(canvas.current!).moveTo(0, 0)
+		
+		.arc(100, -5*pi/8, -3*pi/8)
+		.arc(100, 5*pi/8, 3*pi/8)
+		.arcAt(20, 38, 0, pi + pi/11, -pi/11)
+		.arcAt(20, 115, 0, -pi - pi/11, pi/11)
+		.arcAt(8, 38, 0, pi + pi/2.7, -pi/2.7)
+		.moveTo(107, 7).lineTo(115, -5).lineTo(123, 7)
+
+		// d.lineTo(115, 20).lineTo(107, 7)
+		
+		// d.moveTo(0, -10).arc(100, -5*pi/8, -3*pi/8)
+		// d.moveTo(0, -15).lineTo(76, -15)
+		// d.moveTo(0, 10).arcMoveTo(100, -5*pi/8, -3*pi/8).arc(100, 5*pi/8, 3*pi/8)
+		// d.moveTo(76, 20).lineTo(153, 20)
+
+		// d.moveTo(76 / 20 * 0, -0).lineTo(76 / 20 * 0, -0 - 10)
+		// d.moveTo(76 / 20 * 1, -1.5).lineTo(76 / 20 * 1, -1.5 - 10)
+		// d.moveTo(76 / 20 * 2, -3).lineTo(76 / 20 * 2, -3 - 10)
+		// d.moveTo(76 / 20 * 3, -4).lineTo(76 / 20 * 3, -4 - 10)
+		// d.moveTo(76 / 20 * 4, -5).lineTo(76 / 20 * 4, -5 - 10)
+		// d.moveTo(76 / 20 * 5, -6).lineTo(76 / 20 * 5, -6 - 10)
+		// d.moveTo(76 / 20 * 6, -6.5).lineTo(76 / 20 * 6, -6.5 - 10)
+		// d.moveTo(76 / 20 * 7, -6.75).lineTo(76 / 20 * 7, -6.75 - 10)
+		// d.moveTo(76 / 20 * 8, -7).lineTo(76 / 20 * 8, -7 - 10)
+		// d.moveTo(76 / 20 * 9, -7.25).lineTo(76 / 20 * 9, -7.25 - 10)
+		// d.moveTo(76 / 20 * 10, -7.5).lineTo(76 / 20 * 10, -7.5 - 10)
+		// d.moveTo(76 / 20 * 11, -7.25).lineTo(76 / 20 * 11, -7.25 - 10)
+		// d.moveTo(76 / 20 * 12, -7).lineTo(76 / 20 * 12, -7 - 10)
+		// d.moveTo(76 / 20 * 13, -6.75).lineTo(76 / 20 * 13, -6.75 - 10)
+		// d.moveTo(76 / 20 * 14, -6.5).lineTo(76 / 20 * 14, -6.5 - 10)
+		// d.moveTo(76 / 20 * 15, -6).lineTo(76 / 20 * 15, -6 - 10)
+		// d.moveTo(76 / 20 * 16, -5).lineTo(76 / 20 * 16, -5 - 10)
+		// d.moveTo(76 / 20 * 17, -4).lineTo(76 / 20 * 17, -4 - 10)
+		// d.moveTo(76 / 20 * 18, -3).lineTo(76 / 20 * 18, -3 - 10)
+		// d.moveTo(76 / 20 * 19, -1.5).lineTo(76 / 20 * 19, -1.5 - 10)
+		// d.moveTo(76 / 20 * 20, -0).lineTo(76 / 20 * 20, -0 - 10)
+
+
+		return d.play()
+	}, [])
+	return <canvas ref={canvas} />
 }
 
 function Eight() {
