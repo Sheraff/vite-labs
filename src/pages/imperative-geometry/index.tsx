@@ -8,8 +8,10 @@ import styles from "./styles.module.css"
 export const meta: RouteMeta = {
 	title: "Imperative Geometry",
 	tags: ["canvas"],
-	image: './screen.png'
+	image: "./screen.png",
 }
+
+const pi = Math.PI
 
 export default function ImperativeGeometryPage() {
 	return (
@@ -20,10 +22,68 @@ export default function ImperativeGeometryPage() {
 			<div className={styles.content}>
 				<Two />
 				<Three />
-				<Four />
+				{/* <Four /> */}
+				<Five />
+				<Six />
+				<Seven />
 			</div>
 		</div>
 	)
+}
+
+function Seven() {
+	const canvas = useRef<HTMLCanvasElement | null>(null)
+	useEffect(
+		() =>{
+			const d = new Drawing(canvas.current!)
+				.moveTo(0, 0)
+				// .arcAt(120)
+				// .moveTo(0, -100).lineTo(0, 0)
+				// .moveTo(0, 100).lineTo(0, 0)
+
+			
+			const from = -pi/2
+			const dist = pi/2
+			const intervals = 6
+			for (let i = 0; i < intervals + (dist < 2*pi ? 1 : 0); i++) {
+				d
+					.moveTo(0, -70)
+					.arcMoveTo(70, from, from + (dist / intervals) * i)
+					.lineTo(0, 0)
+					
+				d
+					.moveTo(0, -70)
+					.arcMoveTo(70, from, from + (dist / intervals) * i)
+				if (i%2 === 0)
+					d.arcAt(3, undefined, undefined, from + (dist / intervals) * i - pi/2, from + (dist / intervals) * i + pi/2)
+				else d.arcAt(3)
+
+				d
+					.moveTo(0, 70)
+					.arcMoveTo(70, -from, -from + (dist / intervals) * i)
+					.lineTo(0, 0)
+
+				d
+					.moveTo(0, 70)
+					.arcMoveTo(70, -from, -from + (dist / intervals) * i)
+				if (i%2 === 1)
+					d.arcAt(3, undefined, undefined, -from + (dist / intervals) * i - pi/2, -from + (dist / intervals) * i + pi/2)
+				else d.arcAt(3)
+			}
+
+			d
+			// .arcAt(20, 50, 50)
+			.arcAt(12, 50, 50)
+			// .arcAt(5, 50, 50)
+			.moveTo(50, 50)
+			.lineTo(-50, -50)
+			.equilateral(20, pi/12)
+
+			return d.play(0)
+			},
+		[],
+	)
+	return <canvas ref={canvas} />
 }
 
 function Two() {
@@ -44,17 +104,17 @@ function Two() {
 				.moveTo(-20, 70)
 				.lineTo(20, 70)
 				.moveTo(0, 90)
-				.arc(20, -Math.PI / 2, (3 * Math.PI) / 2)
+				.arc(20, -pi / 2, (3 * pi) / 2)
 				.moveTo(-30, 170)
 				.equilateral(60)
 				.moveTo(0, 147)
-				.arc(40, -Math.PI / 2, (3 * Math.PI) / 2)
+				.arc(40, -pi / 2, (3 * pi) / 2)
 				.moveTo(0, 240)
-				.arc(20, -Math.PI / 2, (3 * Math.PI) / 2)
+				.arc(20, -pi / 2, (3 * pi) / 2)
 				.moveTo(-40, 310)
-				.arc(80, (-2 * Math.PI) / 3, -Math.PI / 3)
+				.arc(80, (-2 * pi) / 3, -pi / 3)
 				.moveTo(-40, 330)
-				.arc(80, (-2 * Math.PI) / 3, -Math.PI / 3)
+				.arc(80, (-2 * pi) / 3, -pi / 3)
 				.moveTo(-30, 350)
 				.lineTo(30, 380)
 				.moveTo(-30, 380)
@@ -98,25 +158,25 @@ function Three() {
 				.lineTo(115, 190)
 				// dashed circle
 				.moveTo(100, 230)
-				.arc(20, -Math.PI / 2, (3 * Math.PI) / 2)
+				.arc(20, -pi / 2, (3 * pi) / 2)
 				.moveTo(100, 210)
-				.arc(40, -Math.PI / 2 + (Math.PI / 8) * 0, -Math.PI / 2 + (Math.PI / 8) * 1)
-				.arcMoveTo(40, -Math.PI / 2 + (Math.PI / 8) * 1, -Math.PI / 2 + (Math.PI / 8) * 2)
-				.arc(40, -Math.PI / 2 + (Math.PI / 8) * 2, -Math.PI / 2 + (Math.PI / 8) * 3)
-				.arcMoveTo(40, -Math.PI / 2 + (Math.PI / 8) * 3, -Math.PI / 2 + (Math.PI / 8) * 4)
-				.arc(40, -Math.PI / 2 + (Math.PI / 8) * 4, -Math.PI / 2 + (Math.PI / 8) * 5)
-				.arcMoveTo(40, -Math.PI / 2 + (Math.PI / 8) * 5, -Math.PI / 2 + (Math.PI / 8) * 6)
-				.arc(40, -Math.PI / 2 + (Math.PI / 8) * 6, -Math.PI / 2 + (Math.PI / 8) * 7)
-				.arcMoveTo(40, -Math.PI / 2 + (Math.PI / 8) * 7, -Math.PI / 2 + (Math.PI / 8) * 8)
-				.arc(40, -Math.PI / 2 + (Math.PI / 8) * 8, -Math.PI / 2 + (Math.PI / 8) * 9)
-				.arcMoveTo(40, -Math.PI / 2 + (Math.PI / 8) * 9, -Math.PI / 2 + (Math.PI / 8) * 10)
-				.arc(40, -Math.PI / 2 + (Math.PI / 8) * 10, -Math.PI / 2 + (Math.PI / 8) * 11)
-				.arcMoveTo(40, -Math.PI / 2 + (Math.PI / 8) * 11, -Math.PI / 2 + (Math.PI / 8) * 12)
-				.arc(40, -Math.PI / 2 + (Math.PI / 8) * 12, -Math.PI / 2 + (Math.PI / 8) * 13)
-				.arcMoveTo(40, -Math.PI / 2 + (Math.PI / 8) * 13, -Math.PI / 2 + (Math.PI / 8) * 14)
-				.arc(40, -Math.PI / 2 + (Math.PI / 8) * 14, -Math.PI / 2 + (Math.PI / 8) * 15)
+				.arc(40, -pi / 2 + (pi / 8) * 0, -pi / 2 + (pi / 8) * 1)
+				.arcMoveTo(40, -pi / 2 + (pi / 8) * 1, -pi / 2 + (pi / 8) * 2)
+				.arc(40, -pi / 2 + (pi / 8) * 2, -pi / 2 + (pi / 8) * 3)
+				.arcMoveTo(40, -pi / 2 + (pi / 8) * 3, -pi / 2 + (pi / 8) * 4)
+				.arc(40, -pi / 2 + (pi / 8) * 4, -pi / 2 + (pi / 8) * 5)
+				.arcMoveTo(40, -pi / 2 + (pi / 8) * 5, -pi / 2 + (pi / 8) * 6)
+				.arc(40, -pi / 2 + (pi / 8) * 6, -pi / 2 + (pi / 8) * 7)
+				.arcMoveTo(40, -pi / 2 + (pi / 8) * 7, -pi / 2 + (pi / 8) * 8)
+				.arc(40, -pi / 2 + (pi / 8) * 8, -pi / 2 + (pi / 8) * 9)
+				.arcMoveTo(40, -pi / 2 + (pi / 8) * 9, -pi / 2 + (pi / 8) * 10)
+				.arc(40, -pi / 2 + (pi / 8) * 10, -pi / 2 + (pi / 8) * 11)
+				.arcMoveTo(40, -pi / 2 + (pi / 8) * 11, -pi / 2 + (pi / 8) * 12)
+				.arc(40, -pi / 2 + (pi / 8) * 12, -pi / 2 + (pi / 8) * 13)
+				.arcMoveTo(40, -pi / 2 + (pi / 8) * 13, -pi / 2 + (pi / 8) * 14)
+				.arc(40, -pi / 2 + (pi / 8) * 14, -pi / 2 + (pi / 8) * 15)
 				.moveTo(115, 400)
-				.equilateral(30, (-2 * Math.PI) / 3, true)
+				.equilateral(30, (-2 * pi) / 3, true)
 				.play(),
 		[],
 	)
@@ -131,14 +191,105 @@ function Four() {
 		const partial = Math.E
 		for (let i = 0; i < 193; i++) {
 			if (i % 2 === 0) {
-				d.arc(200, (i * Math.PI) / partial, ((i + 1) * Math.PI) / partial)
+				d.arc(200, (i * pi) / partial, ((i + 1) * pi) / partial)
 			} else {
-				d.arc(200, (i * Math.PI) / partial + Math.PI, ((i + 1) * Math.PI) / partial + Math.PI)
+				d.arc(200, (i * pi) / partial + pi, ((i + 1) * pi) / partial + pi)
 			}
 		}
 
 		return d.play(1000)
 	}, [])
+	return <canvas ref={canvas} />
+}
+
+function Five() {
+	const canvas = useRef<HTMLCanvasElement | null>(null)
+	useEffect(
+		() =>
+			new Drawing(canvas.current!)
+				.moveTo(0, 0)
+				.equilateral(300, pi / 3)
+				.arc(150, -pi / 2, (3 * pi) / 2)
+				.arcAt(20)
+				.moveTo(-150, 150)
+				.lineTo(-150, 400)
+				.arcAt(20)
+				.moveTo(150, 150)
+				.lineTo(150, 400)
+				.arcAt(20)
+				.moveTo(-150, 150)
+				.lineTo(150, 260)
+				.lineTo(-100, 40)
+				.arcAt(20)
+				.arcAt(200, 0, 150, -pi / 2, 0)
+				.arcAt(30, -150, 400, (3 * pi) / 2, 0)
+				.arcAt(30, 150, 400, -pi / 2, pi)
+				.play(),
+		[],
+	)
+	return <canvas ref={canvas} />
+}
+
+function Six() {
+	const canvas = useRef<HTMLCanvasElement | null>(null)
+	useEffect(
+		() =>{
+			const d = new Drawing(canvas.current!)
+				// .moveTo(-200, 0)
+				// .lineTo(200, 0)
+				// .moveTo(-10, 0)
+				// .lineTo(0, 0)
+				// .arcAt(60)
+
+			{
+				const trim = pi / 7
+				d.arcAt(150, 0, 0, trim - pi, -trim)
+			}
+			{
+				const trim = pi / 3.8
+				d.arcAt(200, 0, 82, trim - pi, -trim)
+			}
+			{
+				const trim = pi / 2.75
+				d.arcAt(50, 0, -92, 3*pi/2 - trim, trim - pi/2)
+			}
+			{
+				const trim = pi / 5.7
+				d.arcAt(30, 0, -92, 3*pi/2 - trim, trim - pi/2)
+			}
+
+			d
+				.moveTo(20, -170)
+				.equilateral(30, -0.8)
+				.moveTo(-40, -191)
+				.equilateral(30, 0.8)
+				.moveTo(80, -150)
+				.equilateral(30, -0.45)
+				.moveTo(-105, -165)
+				.equilateral(30, 0.45)
+
+			d.moveTo(0, -90)
+				.equilateral(200, pi/3)
+
+			const y = -90 + 200 * Math.sin(pi / 3)
+
+			d.arcAt(20, -100, y)
+			d.arcAt(20, 100, y)
+			
+			d.arcAt(40, 0, y, pi/2)
+				.lineTo(0, 200)
+				.arc(20, -pi/2, -pi/2 + 2*pi)
+				.moveTo(0, 240)
+				.lineTo(0, 390)
+
+			d.moveTo(30, 330).lineTo(-30, 340)
+			d.moveTo(30, 350).lineTo(-30, 360)
+			d.moveTo(30, 370).lineTo(-30, 380)
+
+			return d.play()
+			},
+		[],
+	)
 	return <canvas ref={canvas} />
 }
 
@@ -222,6 +373,21 @@ class Drawing {
 		})
 	}
 
+	arcAt(
+		radius: number,
+		centerX: number = this.#position.x,
+		centerY: number = this.#position.y,
+		startAngle: number = 0,
+		endAngle: number = startAngle + 2 * pi,
+	): this {
+		// start position
+		const x = centerX + radius * Math.cos(startAngle)
+		const y = centerY + radius * Math.sin(startAngle)
+		this.moveTo(x, y)
+		this.arc(radius, startAngle, endAngle)
+		return this
+	}
+
 	arc(radius: number, startAngle: number, endAngle: number): this {
 		const x = this.#position.x
 		const y = this.#position.y
@@ -235,7 +401,7 @@ class Drawing {
 		const endY = cy + radius * Math.sin(endAngle)
 
 		// Normalize angles to [0, 2π]
-		const normalizeAngle = (angle: number) => (angle + 2 * Math.PI) % (2 * Math.PI)
+		const normalizeAngle = (angle: number) => (angle + 2 * pi) % (2 * pi)
 
 		const normStart = normalizeAngle(startAngle)
 		const normEnd = normalizeAngle(endAngle)
@@ -260,9 +426,9 @@ class Drawing {
 
 		// Check cardinal directions
 		if (crossesAngle(0)) maxX = Math.max(maxX, cx + radius) // Right (0)
-		if (crossesAngle(Math.PI / 2)) maxY = Math.max(maxY, cy + radius) // Bottom (π/2)
-		if (crossesAngle(Math.PI)) minX = Math.min(minX, cx - radius) // Left (π)
-		if (crossesAngle((3 * Math.PI) / 2)) minY = Math.min(minY, cy - radius) // Top (3π/2)
+		if (crossesAngle(pi / 2)) maxY = Math.max(maxY, cy + radius) // Bottom (π/2)
+		if (crossesAngle(pi)) minX = Math.min(minX, cx - radius) // Left (π)
+		if (crossesAngle((3 * pi) / 2)) minY = Math.min(minY, cy - radius) // Top (3π/2)
 
 		this.#bounds.minX = Math.min(this.#bounds.minX, minX)
 		this.#bounds.minY = Math.min(this.#bounds.minY, minY)
@@ -321,7 +487,7 @@ class Drawing {
 	}
 
 	equilateral(sideLength: number, rotate: number = 0, counterClockwise: boolean = false): this {
-		const angleIncrement = ((2 * Math.PI) / 3) * (counterClockwise ? -1 : 1)
+		const angleIncrement = ((2 * pi) / 3) * (counterClockwise ? -1 : 1)
 		for (let i = 0; i < 3; i++) {
 			const angle = rotate + i * angleIncrement
 			const x = this.#position.x + sideLength * Math.cos(angle)
