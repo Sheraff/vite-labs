@@ -33,56 +33,51 @@ export default function ImperativeGeometryPage() {
 
 function Seven() {
 	const canvas = useRef<HTMLCanvasElement | null>(null)
-	useEffect(
-		() =>{
-			const d = new Drawing(canvas.current!)
-				.moveTo(0, 0)
-				// .arcAt(120)
-				// .moveTo(0, -100).lineTo(0, 0)
-				// .moveTo(0, 100).lineTo(0, 0)
+	useEffect(() => {
+		const d = new Drawing(canvas.current!).moveTo(0, 0)
+		// .arcAt(120)
+		// .moveTo(0, -100).lineTo(0, 0)
+		// .moveTo(0, 100).lineTo(0, 0)
 
-			
-			const from = -pi/2
-			const dist = pi/2
-			const intervals = 6
-			for (let i = 0; i < intervals + (dist < 2*pi ? 1 : 0); i++) {
-				d
-					.moveTo(0, -70)
-					.arcMoveTo(70, from, from + (dist / intervals) * i)
-					.lineTo(0, 0)
-					
-				d
-					.moveTo(0, -70)
-					.arcMoveTo(70, from, from + (dist / intervals) * i)
-				if (i%2 === 0)
-					d.arcAt(3, undefined, undefined, from + (dist / intervals) * i - pi/2, from + (dist / intervals) * i + pi/2)
-				else d.arcAt(3)
+		const from = -pi / 2
+		const dist = pi / 2
+		const intervals = 6
+		for (let i = 0; i < intervals + (dist < 2 * pi ? 1 : 0); i++) {
+			d.moveTo(0, -70)
+				.arcMoveTo(70, from, from + (dist / intervals) * i)
+				.lineTo(0, 0)
 
-				d
-					.moveTo(0, 70)
-					.arcMoveTo(70, -from, -from + (dist / intervals) * i)
-					.lineTo(0, 0)
+			d.moveTo(0, -70).arcMoveTo(70, from, from + (dist / intervals) * i)
+			if (i % 2 === 0)
+				d.arcAt(3, undefined, undefined, from + (dist / intervals) * i - pi / 2, from + (dist / intervals) * i + pi / 2)
+			else d.arcAt(3)
 
-				d
-					.moveTo(0, 70)
-					.arcMoveTo(70, -from, -from + (dist / intervals) * i)
-				if (i%2 === 1)
-					d.arcAt(3, undefined, undefined, -from + (dist / intervals) * i - pi/2, -from + (dist / intervals) * i + pi/2)
-				else d.arcAt(3)
-			}
+			d.moveTo(0, 70)
+				.arcMoveTo(70, -from, -from + (dist / intervals) * i)
+				.lineTo(0, 0)
 
-			d
+			d.moveTo(0, 70).arcMoveTo(70, -from, -from + (dist / intervals) * i)
+			if (i % 2 === 1)
+				d.arcAt(
+					3,
+					undefined,
+					undefined,
+					-from + (dist / intervals) * i - pi / 2,
+					-from + (dist / intervals) * i + pi / 2,
+				)
+			else d.arcAt(3)
+		}
+
+		d
 			// .arcAt(20, 50, 50)
 			.arcAt(12, 50, 50)
 			// .arcAt(5, 50, 50)
 			.moveTo(50, 50)
 			.lineTo(-50, -50)
-			.equilateral(20, pi/12)
+			.equilateral(20, pi / 12)
 
-			return d.play()
-			},
-		[],
-	)
+		return d.play()
+	}, [])
 	return <canvas ref={canvas} />
 }
 
@@ -232,64 +227,59 @@ function Five() {
 
 function Six() {
 	const canvas = useRef<HTMLCanvasElement | null>(null)
-	useEffect(
-		() =>{
-			const d = new Drawing(canvas.current!)
-				// .moveTo(-200, 0)
-				// .lineTo(200, 0)
-				// .moveTo(-10, 0)
-				// .lineTo(0, 0)
-				// .arcAt(60)
+	useEffect(() => {
+		const d = new Drawing(canvas.current!)
+		// .moveTo(-200, 0)
+		// .lineTo(200, 0)
+		// .moveTo(-10, 0)
+		// .lineTo(0, 0)
+		// .arcAt(60)
 
-			{
-				const trim = pi / 7
-				d.arcAt(150, 0, 0, trim - pi, -trim)
-			}
-			{
-				const trim = pi / 3.8
-				d.arcAt(200, 0, 82, trim - pi, -trim)
-			}
-			{
-				const trim = pi / 2.75
-				d.arcAt(50, 0, -92, 3*pi/2 - trim, trim - pi/2)
-			}
-			{
-				const trim = pi / 5.7
-				d.arcAt(30, 0, -92, 3*pi/2 - trim, trim - pi/2)
-			}
+		{
+			const trim = pi / 7
+			d.arcAt(150, 0, 0, trim - pi, -trim)
+		}
+		{
+			const trim = pi / 3.8
+			d.arcAt(200, 0, 82, trim - pi, -trim)
+		}
+		{
+			const trim = pi / 2.75
+			d.arcAt(50, 0, -92, (3 * pi) / 2 - trim, trim - pi / 2)
+		}
+		{
+			const trim = pi / 5.7
+			d.arcAt(30, 0, -92, (3 * pi) / 2 - trim, trim - pi / 2)
+		}
 
-			d
-				.moveTo(20, -170)
-				.equilateral(30, -0.8)
-				.moveTo(-40, -191)
-				.equilateral(30, 0.8)
-				.moveTo(80, -150)
-				.equilateral(30, -0.45)
-				.moveTo(-105, -165)
-				.equilateral(30, 0.45)
+		d.moveTo(20, -170)
+			.equilateral(30, -0.8)
+			.moveTo(-40, -191)
+			.equilateral(30, 0.8)
+			.moveTo(80, -150)
+			.equilateral(30, -0.45)
+			.moveTo(-105, -165)
+			.equilateral(30, 0.45)
 
-			d.moveTo(0, -90)
-				.equilateral(200, pi/3)
+		d.moveTo(0, -90).equilateral(200, pi / 3)
 
-			const y = -90 + 200 * Math.sin(pi / 3)
+		const y = -90 + 200 * Math.sin(pi / 3)
 
-			d.arcAt(20, -100, y)
-			d.arcAt(20, 100, y)
-			
-			d.arcAt(40, 0, y, pi/2)
-				.lineTo(0, 200)
-				.arc(20, -pi/2, -pi/2 + 2*pi)
-				.moveTo(0, 240)
-				.lineTo(0, 390)
+		d.arcAt(20, -100, y)
+		d.arcAt(20, 100, y)
 
-			d.moveTo(30, 330).lineTo(-30, 340)
-			d.moveTo(30, 350).lineTo(-30, 360)
-			d.moveTo(30, 370).lineTo(-30, 380)
+		d.arcAt(40, 0, y, pi / 2)
+			.lineTo(0, 200)
+			.arc(20, -pi / 2, -pi / 2 + 2 * pi)
+			.moveTo(0, 240)
+			.lineTo(0, 390)
 
-			return d.play()
-			},
-		[],
-	)
+		d.moveTo(30, 330).lineTo(-30, 340)
+		d.moveTo(30, 350).lineTo(-30, 360)
+		d.moveTo(30, 370).lineTo(-30, 380)
+
+		return d.play()
+	}, [])
 	return <canvas ref={canvas} />
 }
 
@@ -384,7 +374,7 @@ class Drawing {
 		const x = centerX + radius * Math.cos(startAngle)
 		const y = centerY + radius * Math.sin(startAngle)
 		this.moveTo(x, y)
-		this.arc(radius, startAngle, endAngle)
+		this.#arcWithCenter(radius, centerX, centerY, startAngle, endAngle)
 		return this
 	}
 
@@ -396,25 +386,55 @@ class Drawing {
 		const cx = x - radius * Math.cos(startAngle)
 		const cy = y - radius * Math.sin(startAngle)
 
+		return this.#arcWithCenter(radius, cx, cy, startAngle, endAngle)
+	}
+
+	#arcWithCenter(radius: number, cx: number, cy: number, startAngle: number, endAngle: number): this {
+		const x = this.#position.x
+		const y = this.#position.y
+
 		// Calculate end position
 		const endX = cx + radius * Math.cos(endAngle)
 		const endY = cy + radius * Math.sin(endAngle)
 
-		// Normalize angles to [0, 2π]
-		const normalizeAngle = (angle: number) => (angle + 2 * pi) % (2 * pi)
+		// Determine the angular sweep and direction
+		const angleDiff = endAngle - startAngle
+		const isCounterClockwise = angleDiff < 0
+		const absAngleDiff = Math.abs(angleDiff)
 
-		const normStart = normalizeAngle(startAngle)
-		const normEnd = normalizeAngle(endAngle)
-		const isCounterClockwise = endAngle - startAngle < 0
+		// Check if arc crosses a specific angle
+		const crossesAngle = (targetAngle: number) => {
+			// Normalize all angles to handle wrapping
+			const normalizeAngle = (angle: number) => {
+				const normalized = angle % (2 * pi)
+				return normalized < 0 ? normalized + 2 * pi : normalized
+			}
 
-		// Check if arc crosses cardinal directions (0, π/2, π, 3π/2)
-		const crossesAngle = (angle: number) => {
+			const normStart = normalizeAngle(startAngle)
+			const normEnd = normalizeAngle(endAngle)
+			const normTarget = normalizeAngle(targetAngle)
+
+			// If we're doing a full circle or more, we cross everything
+			if (absAngleDiff >= 2 * pi) return true
+
 			if (isCounterClockwise) {
-				return normStart >= angle && normEnd <= angle
+				// Counter-clockwise: going from start backwards to end
+				if (normStart < normEnd) {
+					// Wraps around 0: e.g., from 5π/4 to π/4 going backwards
+					return normTarget >= normEnd && normTarget <= normStart
+				} else {
+					// Doesn't wrap: e.g., from π/4 to -π/4 (same as 7π/4)
+					return normTarget <= normStart && normTarget >= normEnd
+				}
 			} else {
-				return (
-					(normStart <= angle && normEnd >= angle) || (normStart > normEnd && (normStart <= angle || normEnd >= angle))
-				)
+				// Clockwise: going from start forwards to end
+				if (normStart > normEnd) {
+					// Wraps around 0: e.g., from 5π/4 to π/4
+					return normTarget >= normStart || normTarget <= normEnd
+				} else {
+					// Doesn't wrap: e.g., from π/4 to 3π/4
+					return normTarget >= normStart && normTarget <= normEnd
+				}
 			}
 		}
 
@@ -435,16 +455,23 @@ class Drawing {
 		this.#bounds.maxX = Math.max(this.#bounds.maxX, maxX)
 		this.#bounds.maxY = Math.max(this.#bounds.maxY, maxY)
 
-		this.#plan.push(() => this.#arc(radius, startAngle, endAngle))
+		this.#plan.push(() => this.#arc(radius, cx, cy, startAngle, endAngle))
 		this.#position.x = endX
 		this.#position.y = endY
 		return this
 	}
-	*#arc(radius: number, startAngle: number, endAngle: number): Generator<undefined, void, number> {
+	*#arc(
+		radius: number,
+		cx: number,
+		cy: number,
+		startAngle: number,
+		endAngle: number,
+	): Generator<undefined, void, number> {
 		const state = { t: 0 }
 		const scaledRadius = radius * this.#scale
-		const centerX = this.#position.x - scaledRadius * Math.cos(startAngle)
-		const centerY = this.#position.y - scaledRadius * Math.sin(startAngle)
+		const transformedCenter = this.#transform(cx, cy)
+		const centerX = transformedCenter.x
+		const centerY = transformedCenter.y
 		const angleDiff = endAngle - startAngle
 		const arcLength = Math.abs(angleDiff) * scaledRadius
 		const totalTime = arcLength / this.speed
