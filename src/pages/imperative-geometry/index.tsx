@@ -79,7 +79,7 @@ function Seven() {
 			.lineTo(-50, -50)
 			.equilateral(20, pi/12)
 
-			return d.play(0)
+			return d.play()
 			},
 		[],
 	)
@@ -503,7 +503,7 @@ class Drawing {
 			if (gen) yield* gen
 		}
 	}
-	play(speed = 200): () => void {
+	play(speed = 300): () => void {
 		const controller = new AbortController()
 
 		// Calculate scale and offset for object-fit: contain
