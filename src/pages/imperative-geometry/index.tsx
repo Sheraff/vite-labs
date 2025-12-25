@@ -36,17 +36,20 @@ export default function ImperativeGeometryPage() {
 function Nine() {
 	const canvas = useRef<HTMLCanvasElement | null>(null)
 	useEffect(() => {
-		const d = new Drawing(canvas.current!).moveTo(0, 0)
-		
-		.arc(100, -5*pi/8, -3*pi/8)
-		.arc(100, 5*pi/8, 3*pi/8)
-		.arcAt(20, 38, 0, pi + pi/11, -pi/11)
-		.arcAt(20, 115, 0, -pi - pi/11, pi/11)
-		.arcAt(8, 38, 0, pi + pi/2.7, -pi/2.7)
-		.moveTo(107, 7).lineTo(115, -5).lineTo(123, 7)
+		const d = new Drawing(canvas.current!)
+			.moveTo(0, 0)
+
+			.arc(100, (-5 * pi) / 8, (-3 * pi) / 8)
+			.arc(100, (5 * pi) / 8, (3 * pi) / 8)
+			.arcAt(20, 38, 0, pi + pi / 11, -pi / 11)
+			.arcAt(20, 115, 0, -pi - pi / 11, pi / 11)
+			.arcAt(8, 38, 0, pi + pi / 2.7, -pi / 2.7)
+			.moveTo(107, 7)
+			.lineTo(115, -5)
+			.lineTo(123, 7)
 
 		// d.lineTo(115, 20).lineTo(107, 7)
-		
+
 		// d.moveTo(0, -10).arc(100, -5*pi/8, -3*pi/8)
 		// d.moveTo(0, -15).lineTo(76, -15)
 		// d.moveTo(0, 10).arcMoveTo(100, -5*pi/8, -3*pi/8).arc(100, 5*pi/8, 3*pi/8)
@@ -74,7 +77,6 @@ function Nine() {
 		// d.moveTo(76 / 20 * 19, -1.5).lineTo(76 / 20 * 19, -1.5 - 10)
 		// d.moveTo(76 / 20 * 20, -0).lineTo(76 / 20 * 20, -0 - 10)
 
-
 		return d.play()
 	}, [])
 	return <canvas ref={canvas} />
@@ -93,54 +95,53 @@ function Eight() {
 			.lineTo(0, -920)
 
 		d.moveTo(20, -60)
-		.lineTo(20, -140)
-		.lineTo(60, -200)
-		.lineTo(60, -220)
-		.equilateral(40, -2 * pi / 3)
-		.moveTo(40, -270)
-		.lineTo(80, -270)
+			.lineTo(20, -140)
+			.lineTo(60, -200)
+			.lineTo(60, -220)
+			.equilateral(40, (-2 * pi) / 3)
+			.moveTo(40, -270)
+			.lineTo(80, -270)
 
 		d.moveTo(-20, -200)
-		.lineTo(-20, -280)
-		.lineTo(-60, -320)
-		.lineTo(-60, -340)
-		.arc(20, pi / 2, -pi / 2)
-		.arcAt(10, -60, -360)
+			.lineTo(-20, -280)
+			.lineTo(-60, -320)
+			.lineTo(-60, -340)
+			.arc(20, pi / 2, -pi / 2)
+			.arcAt(10, -60, -360)
 
 		d.moveTo(20, -340)
-		.lineTo(20, -420)
-		.lineTo(60, -460)
-		.lineTo(60, -540)
-		.arc(5, pi/2, 5*pi/2)
-		.lineTo(40, -520)
-		.lineTo(40, -500)
-		.arc(5, -pi/2, 3*pi/2)
-		.moveTo(60, -540)
-		.lineTo(80, -520)
-		.lineTo(80, -500)
-		.arc(5, -pi/2, 3*pi/2)
+			.lineTo(20, -420)
+			.lineTo(60, -460)
+			.lineTo(60, -540)
+			.arc(5, pi / 2, (5 * pi) / 2)
+			.lineTo(40, -520)
+			.lineTo(40, -500)
+			.arc(5, -pi / 2, (3 * pi) / 2)
+			.moveTo(60, -540)
+			.lineTo(80, -520)
+			.lineTo(80, -500)
+			.arc(5, -pi / 2, (3 * pi) / 2)
 
 		d.moveTo(-20, -480)
-		.lineTo(-20, -560)
-		.lineTo(-60, -600)
-		.lineTo(-60, -690)
-		.arcAt(60, -60, -590, -22*pi/32, -10*pi/32)
-		.arcAt(60, -60, -610, -22*pi/32, -10*pi/32)
-		.arcAt(60, -60, -630, -22*pi/32, -10*pi/32)
+			.lineTo(-20, -560)
+			.lineTo(-60, -600)
+			.lineTo(-60, -690)
+			.arcAt(60, -60, -590, (-22 * pi) / 32, (-10 * pi) / 32)
+			.arcAt(60, -60, -610, (-22 * pi) / 32, (-10 * pi) / 32)
+			.arcAt(60, -60, -630, (-22 * pi) / 32, (-10 * pi) / 32)
 
 		d.moveTo(20, -620)
-		.lineTo(20, -700)
-		.lineTo(60, -740)
-		.lineTo(60, -760)
-		.moveTo(40, -780)
-		.lineTo(60, -760)
-		.lineTo(80, -780)
-		.moveTo(60, -780)
-		.lineTo(80, -800)
-		.lineTo(60, -820)
-		.lineTo(40, -800)
-		.lineTo(60, -780)
-		
+			.lineTo(20, -700)
+			.lineTo(60, -740)
+			.lineTo(60, -760)
+			.moveTo(40, -780)
+			.lineTo(60, -760)
+			.lineTo(80, -780)
+			.moveTo(60, -780)
+			.lineTo(80, -800)
+			.lineTo(60, -820)
+			.lineTo(40, -800)
+			.lineTo(60, -780)
 
 		return d.play()
 	}, [])
@@ -429,7 +430,7 @@ class Drawing {
 		}
 	}
 
-	moveTo(x: number, y: number): this {
+	moveTo(x: number = this.#position.x, y: number = this.#position.y): this {
 		this.#position.x = x
 		this.#position.y = y
 		this.#plan.push(() => this.#moveTo(x, y))
@@ -441,7 +442,7 @@ class Drawing {
 		this.#position.y = transformed.y
 	}
 
-	lineTo(x: number, y: number): this {
+	lineTo(x: number = this.#position.x, y: number = this.#position.y): this {
 		this.#bounds.minX = Math.min(this.#bounds.minX, this.#position.x, x)
 		this.#bounds.minY = Math.min(this.#bounds.minY, this.#position.y, y)
 		this.#bounds.maxX = Math.max(this.#bounds.maxX, this.#position.x, x)
@@ -494,7 +495,7 @@ class Drawing {
 		return this
 	}
 
-	arc(radius: number, startAngle: number, endAngle: number): this {
+	arc(radius: number, startAngle: number = 0, endAngle: number = startAngle + 2 * pi): this {
 		const x = this.#position.x
 		const y = this.#position.y
 
@@ -611,7 +612,7 @@ class Drawing {
 		})
 	}
 
-	arcMoveTo(radius: number, startAngle: number, endAngle: number): this {
+	arcMoveTo(radius: number, startAngle: number = 0, endAngle: number = startAngle + 2 * pi): this {
 		const x = this.#position.x
 		const y = this.#position.y
 
