@@ -20,15 +20,17 @@ export default function ImperativeGeometryPage() {
 				<Head />
 			</div>
 			<div className={styles.content}>
+				{/* <Fourteen /> */}
 				<Two />
 				<Three />
 				{/* <Four /> */}
 				<Five />
 				<Six />
-				<Seven />
+				<Thirteen />
 				<Eight />
 				<Nine />
 				<Ten />
+				<Seven />
 				<Twelve />
 				<Eleven />
 			</div>
@@ -36,6 +38,106 @@ export default function ImperativeGeometryPage() {
 	)
 }
 
+// function Fourteen() {
+// 	const canvas = useRef<HTMLCanvasElement | null>(null)
+// 	useEffect(() => {
+// 		const d = new Drawing(canvas.current!)
+			
+// 		d.arcAt(40, 0, 40, -pi/7, 3*pi/2)
+// 			.lineTo(160, 0)
+
+// 		d.moveTo(80, 20).lineTo(180, 20)
+// 		d.moveTo(90, 40).lineTo(190, 40)
+
+
+// 		return d.play()
+// 	}, [])
+// 	return <canvas ref={canvas} />
+// }
+
+/** fifth element tablet */
+function Thirteen() {
+	const canvas = useRef<HTMLCanvasElement | null>(null)
+	useEffect(() => {
+		const d = new Drawing(canvas.current!).moveTo(0, 0)
+
+		d.arcAt(40)
+		d.moveTo(0, 0)
+
+		d.angularLine(80, -pi / 3)
+			.angularMove(18, -pi / 3)
+			.angularLine(4, -pi / 3)
+			.angularMove(18, -pi / 3)
+			.angularLine(80, -pi / 3)
+			.angularMove(18, -pi / 3)
+			.angularLine(4, -pi / 3)
+			.angularMove(18, -pi / 3)
+			.angularLine(80, -pi / 3)
+
+		d.arcAt(40)
+		d.moveTo(160)
+
+		d.angularLine(80, pi / 3)
+			.angularMove(18, pi / 3)
+			.angularLine(4, pi / 3)
+			.angularMove(18, pi / 3)
+			.angularLine(80, pi / 3)
+			.angularMove(18, pi / 3)
+			.angularLine(4, pi / 3)
+			.angularMove(18, pi / 3)
+			.angularLine(80, pi / 3)
+
+		d.arcAt(40)
+		d.moveTo(320)
+
+		d.angularLine(80, pi)
+			.angularMove(18, pi)
+			.angularLine(4, pi)
+			.angularMove(18, pi)
+			.angularLine(80, pi)
+			.angularMove(18, pi)
+			.angularLine(4, pi)
+			.angularMove(18, pi)
+			.angularLine(80, pi)
+
+		d.angularLine(70, -pi/6)
+			.angularMove(18, -pi/6)
+			.angularLine(4, -pi/6)
+			.angularMove(18, -pi/6)
+			.angularLine(30, -pi/6)
+			.arc(10, -pi/6)
+			.equilateral(20, -pi/3)
+			.angularLine(180, -pi/6)
+
+		d.moveTo(0,0).angularMove(320, -pi/3)
+
+		d.angularLine(70, pi/2)
+			.angularMove(18, pi/2)
+			.angularLine(4, pi/2)
+			.angularMove(18, pi/2)
+			.angularLine(30, pi/2)
+			.arc(10, pi/2)
+			.equilateral(20, pi/3)
+			.angularLine(180, pi/2)
+
+		d.moveTo(0,0).angularMove(320, 0)
+
+		d.angularLine(70, 7*pi/6)
+		.angularMove(18, 7*pi/6)
+			.angularLine(4, 7*pi/6)
+			.angularMove(18, 7*pi/6)
+			.angularLine(30, 7*pi/6)
+			.arc(10, 7*pi/6)
+			.equilateral(20, pi)
+			.angularLine(180, 7*pi/6)
+
+
+		return d.play()
+	}, [])
+	return <canvas ref={canvas} />
+}
+
+/** iridology bullshit symbols: southwind */
 function Twelve() {
 	const canvas = useRef<HTMLCanvasElement | null>(null)
 	useEffect(() => {
@@ -53,6 +155,7 @@ function Twelve() {
 	return <canvas ref={canvas} />
 }
 
+/** iridology bullshit symbols: bamboo */
 function Eleven() {
 	const canvas = useRef<HTMLCanvasElement | null>(null)
 	useEffect(() => {
@@ -71,6 +174,7 @@ function Eleven() {
 	return <canvas ref={canvas} />
 }
 
+/** iridology bullshit symbols: dune */
 function Ten() {
 	const canvas = useRef<HTMLCanvasElement | null>(null)
 	useEffect(() => {
@@ -503,6 +607,11 @@ class Drawing {
 		}
 	}
 
+	angularMove(length: number, angle: number): this {
+		const x = this.#position.x + length * Math.cos(angle)
+		const y = this.#position.y + length * Math.sin(angle)
+		return this.moveTo(x, y)
+	}
 	moveTo(x: number = this.#position.x, y: number = this.#position.y): this {
 		this.#position.x = x
 		this.#position.y = y
@@ -515,6 +624,11 @@ class Drawing {
 		this.#position.y = transformed.y
 	}
 
+	angularLine(length: number, angle: number): this {
+		const x = this.#position.x + length * Math.cos(angle)
+		const y = this.#position.y + length * Math.sin(angle)
+		return this.lineTo(x, y)
+	}
 	lineTo(x: number = this.#position.x, y: number = this.#position.y): this {
 		this.#bounds.minX = Math.min(this.#bounds.minX, this.#position.x, x)
 		this.#bounds.minY = Math.min(this.#bounds.minY, this.#position.y, y)
