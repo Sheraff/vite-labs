@@ -28,9 +28,82 @@ export default function ImperativeGeometryPage() {
 				<Seven />
 				<Eight />
 				<Nine />
+				<Ten />
+				<Twelve />
+				<Eleven />
 			</div>
 		</div>
 	)
+}
+
+function Twelve() {
+	const canvas = useRef<HTMLCanvasElement | null>(null)
+	useEffect(() => {
+		const d = new Drawing(canvas.current!)
+			
+		d.arcAt(40, 0, 40, -pi/7, 3*pi/2)
+			.lineTo(160, 0)
+
+		d.moveTo(80, 20).lineTo(180, 20)
+		d.moveTo(90, 40).lineTo(190, 40)
+
+
+		return d.play()
+	}, [])
+	return <canvas ref={canvas} />
+}
+
+function Eleven() {
+	const canvas = useRef<HTMLCanvasElement | null>(null)
+	useEffect(() => {
+		const d = new Drawing(canvas.current!)
+			
+		d.moveTo(0, 0).lineTo(0, 80)
+		d.moveTo(20, -20).lineTo(20, 50).moveTo(20, 60).lineTo(20, 90)
+		d.moveTo(40, 0).lineTo(40, 80)
+
+		d.arcAt(40, 20, 80, pi+pi/9, 3*pi/2)
+		d.arc(40, pi/2, pi/9)
+
+
+		return d.play()
+	}, [])
+	return <canvas ref={canvas} />
+}
+
+function Ten() {
+	const canvas = useRef<HTMLCanvasElement | null>(null)
+	useEffect(() => {
+		const d = new Drawing(canvas.current!)
+			
+		d.moveTo(0, 0).lineTo(0, 60)
+		d.moveTo(20, 0).lineTo(20, 60)
+		d.moveTo(40, 0).lineTo(40, 60)
+
+		d.moveTo(60, 0).lineTo(60, 60).arc(20, 0, pi/2)
+		
+		
+		.lineTo(0, 80)
+		.arc(20, -pi/2, -pi)
+		.lineTo(-20, 160)
+		
+		d.moveTo(0, 100).lineTo(0, 160)
+		d.moveTo(20, 100).lineTo(20, 160)
+		d.moveTo(40, 100).lineTo(40, 160)
+
+
+		// d.moveTo(10, 20).lineTo(-10, 30)
+		// d.moveTo(50, 40).lineTo(30, 50)
+		// d.moveTo(50, 45).lineTo(30, 55)
+
+		// d.moveTo(30, 110).lineTo(10, 120)
+		// d.moveTo(30, 115).lineTo(10, 125)
+		// d.moveTo(30, 120).lineTo(10, 130)
+
+
+		return d.play()
+	}, [])
+	return <canvas ref={canvas} />
 }
 
 function Nine() {
