@@ -750,7 +750,8 @@ class Drawing {
 				if (delta === time) return
 				this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height)
 				for (const redraw of this.#history) redraw()
-				generator.next(delta / 1000)
+				const result = generator.next(delta / 1000)
+				if (result.done) return
 				requestAnimationFrame(frame)
 			}
 			requestAnimationFrame(frame)
