@@ -20,7 +20,6 @@ export default function ImperativeGeometryPage() {
 				<Head />
 			</div>
 			<div className={styles.content}>
-				{/* <Fourteen /> */}
 				<Two />
 				<Three />
 				{/* <Four /> */}
@@ -29,6 +28,7 @@ export default function ImperativeGeometryPage() {
 				<Thirteen />
 				<Eight />
 				<Nine />
+				<Fourteen />
 				<Ten />
 				<Seven />
 				<Twelve />
@@ -38,22 +38,44 @@ export default function ImperativeGeometryPage() {
 	)
 }
 
-// function Fourteen() {
-// 	const canvas = useRef<HTMLCanvasElement | null>(null)
-// 	useEffect(() => {
-// 		const d = new Drawing(canvas.current!)
+function Fourteen() {
+	const canvas = useRef<HTMLCanvasElement | null>(null)
+	useEffect(() => {
+		const d = new Drawing(canvas.current!).moveTo(0, 0)
 			
-// 		d.arcAt(40, 0, 40, -pi/7, 3*pi/2)
-// 			.lineTo(160, 0)
+		d.lineTo(20, 0)
+			.angularLine(80, -pi/3)
+			.angularLine(80, pi/3)
+			.lineTo(120, 0)
 
-// 		d.moveTo(80, 20).lineTo(180, 20)
-// 		d.moveTo(90, 40).lineTo(190, 40)
+		d.moveTo(60, -100)
+			.lineTo(60, 0)
+
+		d.moveTo(20, 0).angularMove(80, -pi/3).arcAt(5)
+
+		d.arcAt(15, 60, -10, -3*pi/2 + pi/3.8, pi/2 - pi/3.8)
+
+		d.moveTo(60, 35).equilateral(30, 4*pi/3)
+
+		d.moveTo(40, 20).lineTo(0, 20)
+			.angularLine(120, pi/3)
+			.angularLine(120, -pi/3)
+			.angularLine(40, pi)
+
+		d.moveTo(0,20).angularMove(120, pi/3).angularMove(10, pi).equilateral(20)
+
+		d.moveTo(0, 60).angularLine(120, pi/3).angularLine(120, -pi/3)
+
+		d.moveTo(0, 60).angularMove(120, pi/3).angularLine(80, pi/2)
+
+		d.arcAt(25, 60, 170, -pi/4, 5*pi/4)
+		d.arcAt(5, 60, 220)
 
 
-// 		return d.play()
-// 	}, [])
-// 	return <canvas ref={canvas} />
-// }
+		return d.play()
+	}, [])
+	return <canvas ref={canvas} />
+}
 
 /** fifth element tablet */
 function Thirteen() {
