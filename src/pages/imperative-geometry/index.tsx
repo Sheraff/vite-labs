@@ -604,6 +604,9 @@ class Drawing {
 	speed = 200 // pixels per second
 	padding = 20
 
+	#controller = new AbortController()
+	#playing = 0
+
 	#plan: Array<(() => Generator<undefined, void, number>) | (() => void)> = []
 	#history: Array<() => void> = []
 	#bounds = { minX: Infinity, minY: Infinity, maxX: 0, maxY: 0 }
@@ -620,6 +623,10 @@ class Drawing {
 		ctx.scale(devicePixelRatio, devicePixelRatio)
 		ctx.lineWidth = 2
 		ctx.strokeStyle = "white"
+
+		canvas.addEventListener("click", () => {
+			this.play()
+		}, { signal: this.#controller.signal })
 	}
 
 	#transform(x: number, y: number): { x: number; y: number } {
@@ -857,7 +864,7 @@ class Drawing {
 		}
 	}
 	play(speed = 300): () => void {
-		const controller = new AbortController()
+		const playing = ++this.#playing
 
 		// Calculate scale and offset for object-fit: contain
 		const boundsWidth = this.#bounds.maxX - this.#bounds.minX
@@ -874,13 +881,14 @@ class Drawing {
 
 		this.#position.x = 0
 		this.#position.y = 0
+		this.#history = []
 		const generator = this.#play()
 
 		if (speed > 0 && speed !== Infinity) {
 			this.speed = speed
 			let lastTime = performance.now()
 			const frame = (time: number) => {
-				if (controller.signal.aborted) return
+				if (this.#controller.signal.aborted) return
 				const delta = time - lastTime
 				lastTime = time
 				if (delta === time) return
@@ -888,6 +896,8 @@ class Drawing {
 				for (const redraw of this.#history) redraw()
 				const result = generator.next(delta / 1000)
 				if (result.done) return
+				if (this.#controller.signal.aborted) return
+				if (playing !== this.#playing) return
 				requestAnimationFrame(frame)
 			}
 			requestAnimationFrame(frame)
@@ -896,6 +906,6 @@ class Drawing {
 				/* empty */
 			}
 		}
-		return () => controller.abort()
+		return () => this.#controller.abort()
 	}
 }
