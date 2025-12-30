@@ -4,6 +4,9 @@ import { Head } from "#components/Head"
 import { use, useEffect, useRef, useState } from "react"
 
 import styles from "./styles.module.css"
+import { ACTIVATIONS, AGGREGATIONS, FOOD_COUNT, INNATE_NODES, ITERATIONS, MAX, MAX_GENES, MAX_NODES, POPULATION, STORE_PER_GENERATION, WORLD_SIZE } from "./constants"
+import simulateShader from './simulate.wgsl?raw'
+import breedShader from './breed.wgsl?raw'
 
 export const meta: RouteMeta = {
 	title: "N.E.A.T. GPU",
@@ -29,7 +32,7 @@ export const meta: RouteMeta = {
  *
  * VOID GENE: 0 - 0 - 0 - 0
  * NODE GENE: 1 - index - aggregation - activation
- * CONN GENE: 2 - from - to - weight - 0 (empty padding)
+ * CONN GENE: 2 - from - to - weight
  *
  * Example genome:
  * [
@@ -127,10 +130,6 @@ export default function ParticleLifeGPUPage() {
 	)
 }
 
-const STORE_PER_GENERATION = 10
-const WORLD_SIZE = 300
-const COUNT_BITS_OF_FOOD = 50
-
 /**
  * - initialize random genomes
  * - setup webgpu for
@@ -167,11 +166,20 @@ async function start(options: {
 }) {
 	const store = [] as Float32Array[]
 
-	const gpuControls = await setupGPU(options.controller)
+	const gpuControls = await setupGPU(options.controller, (generation, genomes) => {
+		// Store top genomes
+		store.push(...genomes)
+		options.onGeneration(generation + 1)
+		
+		// Auto-start visualization of first generation
+		if (generation === 0) {
+			vizControls.selectGeneration(1)
+		}
+	})
 	const vizControls = setupViz(options.controller, options.ctx, options.vizCtx, store, options.onSimulation)
 
 	{
-		const initial = initialGenomes(1000, 5, 20)
+		const initial = initialGenomes(POPULATION, 10, 20)
 		for (let i = 0; i < STORE_PER_GENERATION; i++) store.push(initial[i])
 		gpuControls.init(initial)
 	}
@@ -201,12 +209,576 @@ async function start(options: {
 
 }
 
+/**
+ * Generate initial random genomes with void gene padding.
+ * Each genome has 4-element genes: [type, arg1, arg2, arg3]
+ * - type 0 = void gene (padding)
+ * - type 1 = node gene [1, index, aggregation, activation]
+ * - type 2 = connection gene [2, from, to, weight]
+ */
 function initialGenomes(count: number, maxNodes: number, maxConnections: number): Float32Array[] {
+	const genomes: Float32Array[] = []
+	
+	for (let i = 0; i < count; i++) {
+		const nodeCount = Math.floor(Math.random() * maxNodes) + 1
+		const connCount = Math.floor(Math.random() * maxConnections) + 1
+		
+		// Create genome with max size, filled with void genes
+		const genome = new Float32Array(MAX_GENES * 4).fill(0)
+		
+		let geneIndex = 0
+		
+		// Add node genes
+		for (let n = 0; n < nodeCount && geneIndex < MAX_GENES; n++, geneIndex++) {
+			genome[geneIndex * 4 + 0] = 1 // node gene type
+			genome[geneIndex * 4 + 1] = n + INNATE_NODES // node index
+			genome[geneIndex * 4 + 2] = Math.floor(Math.random() * AGGREGATIONS.length) // aggregation
+			genome[geneIndex * 4 + 3] = Math.floor(Math.random() * ACTIVATIONS.length) // activation
+		}
+		
+		// Add connection genes
+		for (let c = 0; c < connCount && geneIndex < MAX_GENES; c++, geneIndex++) {
+			// Random from node (can be input or custom node)
+			const fromRand = Math.floor(Math.random() * (nodeCount + 6)) // 6 input nodes
+			const from = fromRand < 6 ? fromRand : fromRand + 3 // skip output nodes (6,7,8)
+			
+			// Random to node (can be output or custom node)
+			const toRand = Math.floor(Math.random() * (nodeCount + 3)) // 3 output nodes
+			const to = toRand < 3 ? toRand + 6 : toRand + 6 // outputs start at 6
+			
+			genome[geneIndex * 4 + 0] = 2 // connection gene type
+			genome[geneIndex * 4 + 1] = from
+			genome[geneIndex * 4 + 2] = to
+			genome[geneIndex * 4 + 3] = Math.floor(Math.random() * (MAX + 1)) // weight 0-255
+		}
+		
+		// Ensure at least one connection to move output
+		if (connCount > 0 && geneIndex > nodeCount) {
+			genome[nodeCount * 4 + 2] = 8 // move ahead output
+		}
+		
+		// Rest of genome is already filled with void genes (0,0,0,0)
+		genomes.push(genome)
+	}
+	
+	return genomes
+}
+
+type World = {
+	size: number
+	food: { x: number; y: number }[]
+}
+
+/**
+ * Create an entity from a genome for JS-side visualization.
+ * Implements the same neural network execution logic as GPU shader.
+ */
+function entityFromGenome(genome: Float32Array, world: World) {
+	// Build graph from genome
+	const graph: Array<{
+		aggregation: (arr: number[]) => number
+		activation: (x: number) => number
+		incoming: [from: number, weight: number][]
+	}> = []
+	
+	let maxNodeIndex = INNATE_NODES - 1
+	
+	// Parse genome to build graph
+	for (let i = 0; i < genome.length; i += 4) {
+		const type = genome[i]
+		
+		if (type === 1) {
+			// Node gene
+			const index = genome[i + 1]
+			const aggregation = AGGREGATIONS[genome[i + 2]]
+			const activation = ACTIVATIONS[genome[i + 3]]
+			
+			maxNodeIndex = Math.max(maxNodeIndex, index)
+			
+			if (graph[index]) {
+				graph[index].activation = activation
+				graph[index].aggregation = aggregation
+			} else {
+				graph[index] = {
+					activation,
+					aggregation,
+					incoming: [],
+				}
+			}
+		}
+	}
+	
+	// Parse connections
+	for (let i = 0; i < genome.length; i += 4) {
+		const type = genome[i]
+		
+		if (type === 2) {
+			// Connection gene
+			const from = genome[i + 1]
+			const to = genome[i + 2]
+			const weight = genome[i + 3]
+			
+			graph[to] ??= {
+				incoming: [],
+				aggregation: AGGREGATIONS[0],
+				activation: ACTIVATIONS[0],
+			}
+			graph[to].incoming.push([from, weight / MAX])
+		}
+	}
+	
+	const memory = new Float32Array(maxNodeIndex + 1).fill(0)
+	const current = new Float32Array(maxNodeIndex + 1).fill(0)
+	
+	const state = {
+		x: WORLD_SIZE / 2,
+		y: WORLD_SIZE / 2,
+		angle: 0,
+		alive: true,
+		score: 0,
+		distance: 0,
+		eaten: new Set<number>(),
+	}
+	
+	function tick(delta: number) {
+		if (!state.alive) return
+		
+		// Check boundaries
+		if (state.x < 0 || state.x > world.size || state.y < 0 || state.y > world.size) {
+			state.alive = false
+			return
+		}
+		
+		// Wrap angle
+		if (state.angle < 0) state.angle = -(-state.angle % (Math.PI * 2)) + Math.PI * 2
+		if (state.angle > Math.PI * 2) state.angle %= Math.PI * 2
+		
+		// Detect walls
+		const angle = -state.angle + Math.PI / 2
+		let has_wall_ahead = false
+		let has_wall_left = false
+		let has_wall_right = false
+		
+		const ahead_x = state.x + Math.sin(angle) * 100
+		const ahead_y = state.y + Math.cos(angle) * 100
+		has_wall_ahead = ahead_x < 0 || ahead_x > world.size || ahead_y < 0 || ahead_y > world.size
+		
+		if (!has_wall_ahead) {
+			const left_x = state.x + Math.sin(angle + Math.PI / 2) * 100
+			const left_y = state.y + Math.cos(angle + Math.PI / 2) * 100
+			has_wall_left = left_x < 0 || left_x > world.size || left_y < 0 || left_y > world.size
+			
+			const right_x = state.x + Math.sin(angle - Math.PI / 2) * 100
+			const right_y = state.y + Math.cos(angle - Math.PI / 2) * 100
+			has_wall_right = right_x < 0 || right_x > world.size || right_y < 0 || right_y > world.size
+		}
+		
+		// Detect food
+		let closest_distance = 100
+		let angle_to_food = 0
+		let has_food_ahead = false
+		let has_food_left = false
+		let has_food_right = false
+		
+		for (let f = 0; f < world.food.length; f++) {
+			if (state.eaten.has(f)) continue
+			
+			const food = world.food[f]
+			const distance = Math.hypot(state.x - food.x, state.y - food.y)
+			
+			if (distance < 20) {
+				state.score += 100 - distance
+				state.eaten.add(f)
+			} else if (distance < closest_distance) {
+				const foodAngle = ((Math.atan2(state.y - food.y, state.x - food.x) + Math.PI * 2) % (Math.PI * 2)) - Math.PI
+				if (foodAngle > -Math.PI / 2 && foodAngle < Math.PI / 2) {
+					closest_distance = distance
+					angle_to_food = foodAngle
+				}
+			}
+		}
+		
+		if (closest_distance < 100) {
+			has_food_ahead = Math.abs(angle_to_food - state.angle) < Math.PI / 5
+			has_food_left = !has_food_ahead && angle_to_food < 0 && angle_to_food > -Math.PI / 2
+			has_food_right = !has_food_ahead && angle_to_food > 0 && angle_to_food < Math.PI / 2
+		}
+		
+		// Execute neural network
+		current.fill(0)
+		const inputs = [+has_food_left, +has_food_ahead, +has_food_right, +has_wall_left, +has_wall_ahead, +has_wall_right]
+		for (let i = 0; i < inputs.length; i++) {
+			// memory[i] = inputs[i]
+			current[i] = inputs[i]
+		}
+		
+		for (let i = 0; i < graph.length; i++) {
+			const node = graph[i]
+			if (!node) continue
+			current[i] = node.activation(node.aggregation(node.incoming.map(([from, weight]) => memory[from] * weight)))
+		}
+		
+		memory.set(current)
+		
+		// Read outputs and update state
+		const rotate = Math.max(0, Math.min(current[7], 10)) - Math.max(0, Math.min(current[6], 10))
+		state.angle += rotate / 100
+		const speed = Math.min(4, Math.max(0, current[8] / MAX))
+		if (speed > 0) {
+			const prevX = state.x
+			const prevY = state.y
+			state.x += Math.cos(state.angle) * speed
+			state.y += Math.sin(state.angle) * speed
+			state.distance += Math.hypot(state.x - prevX, state.y - prevY)
+		}
+	}
+	
+	function draw(ctx: CanvasRenderingContext2D, selected: boolean) {
+		if (!state.alive) return
+		
+		// Draw square at position, rotated by angle
+		ctx.save()
+		ctx.translate(state.x, state.y)
+		ctx.rotate(state.angle)
+		ctx.fillStyle = selected ? "yellow" : "white"
+		ctx.fillRect(-5, -5, 10, 10)
+		ctx.restore()
+		
+		// Draw direction line
+		if (selected) {
+			ctx.save()
+			ctx.translate(state.x, state.y)
+			ctx.rotate(state.angle)
+			ctx.strokeStyle = "red"
+			ctx.lineWidth = 2
+			ctx.beginPath()
+			ctx.moveTo(0, 0)
+			ctx.lineTo(100, 0)
+			ctx.stroke()
+			ctx.restore()
+		}
+	}
+	
+	return {
+		tick,
+		draw,
+		state,
+		memory,
+		genome,
+	}
+}
+
+/**
+ * Create a graph visualization object from a genome.
+ * Adapts GenomeViz logic to work with 4-element gene format.
+ */
+function graphFromGenome(genome: Float32Array) {
+	type Connection = {
+		from: number
+		to: number
+		weight: number
+		normalized: number
+	}
+	
+	type Node = {
+		index: number
+		aggregation: number
+		activation: number
+		incoming: Set<Connection>
+		outgoing: Set<Connection>
+		isInput: boolean
+		isOutput: boolean
+		depth: number
+		name: string
+		deadend: boolean
+	}
+	
+	const connections = new Set<Connection>()
+	const nodes = new Map<number, Node>()
+	
+	// Initialize innate nodes
+	for (let i = 0; i < INNATE_NODES; i++) {
+		const isInput = i < 6
+		const isOutput = i >= 6 && i < INNATE_NODES
+		const depth = isInput ? 0 : isOutput ? Infinity : NaN
+		const name = isInput ? ["food left", "food ahead", "food right", "wall left", "wall ahead", "wall right"][i] : isOutput ? ["rotate left", "rotate right", "move ahead"][i - 6] : ""
+		nodes.set(i, {
+			index: i,
+			aggregation: 0,
+			activation: 0,
+			incoming: new Set(),
+			outgoing: new Set(),
+			isInput,
+			isOutput,
+			depth,
+			name,
+			deadend: false,
+		})
+	}
+	
+	// Parse nodes from genome
+	for (let i = 0; i < genome.length; i += 4) {
+		const type = genome[i]
+		if (type === 1) {
+			// Node gene
+			const index = genome[i + 1]
+			const aggregation = genome[i + 2]
+			const activation = genome[i + 3]
+			nodes.set(index, {
+				index,
+				aggregation,
+				activation,
+				incoming: new Set(),
+				outgoing: new Set(),
+				isInput: false,
+				isOutput: false,
+				depth: NaN,
+				name: "",
+				deadend: false,
+			})
+		}
+	}
+	
+	// Parse connections
+	for (let i = 0; i < genome.length; i += 4) {
+		const type = genome[i]
+		if (type === 2) {
+			// Connection gene
+			const from = genome[i + 1]
+			const to = genome[i + 2]
+			const weight = genome[i + 3]
+			const fromNode = nodes.get(from)
+			const toNode = nodes.get(to)
+			if (fromNode && toNode) {
+				const connection = {
+					from,
+					to,
+					weight,
+					normalized: weight / MAX,
+				}
+				fromNode.outgoing.add(connection)
+				toNode.incoming.add(connection)
+				connections.add(connection)
+			}
+		}
+	}
+	
+	// Resolve dead ends
+	function resolveDeadEnds() {
+		for (const node of nodes.values()) {
+			if (node.isOutput) {
+				node.deadend = node.incoming.size === 0
+				continue
+			}
+			if (node.isInput) {
+				node.deadend = node.outgoing.size === 0
+				continue
+			}
+			if (node.outgoing.size === 0 && node.incoming.size === 0) {
+				node.deadend = true
+			}
+		}
+		let changed = true
+		while (changed) {
+			changed = false
+			for (const node of nodes.values()) {
+				if (node.deadend) continue
+				const noOutgoingUtility =
+					!node.isOutput &&
+					Array.from(node.outgoing).every((conn) => {
+						const to = nodes.get(conn.to)
+						return to?.deadend || to === node
+					})
+				if (noOutgoingUtility) {
+					node.deadend = true
+					changed = true
+					continue
+				}
+				const noIncomingUtility =
+					!node.isInput &&
+					Array.from(node.incoming).every((conn) => {
+						const from = nodes.get(conn.from)
+						return from?.deadend || from === node
+					})
+				if (noIncomingUtility) {
+					node.deadend = true
+					changed = true
+					continue
+				}
+			}
+		}
+	}
+	resolveDeadEnds()
+	
+	// Assign layers
+	function assignLayers() {
+		const visited = new Set<Node>()
+		function dfs(node: Node, depth: number, stack: Set<Node> = new Set()): number {
+			if (node.isInput) return 0
+			if (stack.has(node)) return depth
+			if (visited.has(node)) return node.depth
+			stack.add(node)
+			let maxDepth = depth
+			for (const conn of node.incoming) {
+				const nextNode = nodes.get(conn.from)
+				if (!nextNode) continue
+				const nextDepth = dfs(nextNode, depth + 1, stack)
+				if (nextDepth > maxDepth) {
+					maxDepth = nextDepth
+				}
+			}
+			visited.add(node)
+			node.depth = maxDepth
+			return maxDepth
+		}
+		for (let i = 6; i < INNATE_NODES; i++) {
+			const node = nodes.get(i)
+			if (!node) continue
+			dfs(node, 0)
+		}
+		for (const node of nodes.values()) {
+			if (!visited.has(node)) {
+				dfs(node, 1)
+			}
+		}
+		const maxDepth =
+			Math.max(
+				...Array.from(nodes.values())
+					.map((node) => node.depth)
+					.filter((d) => !isNaN(d))
+					.filter((d) => d !== Infinity),
+			) + 1
+		for (let i = 6; i < INNATE_NODES; i++) {
+			const node = nodes.get(i)
+			if (!node) continue
+			node.depth = maxDepth
+		}
+		
+		// Compact layers
+		let compacted = false
+		while (!compacted) {
+			compacted = true
+			const layers = new Set(Array.from(nodes.values()).map((node) => node.depth))
+			layers.delete(NaN)
+			for (let i = 0; i < layers.size; i++) {
+				if (layers.has(i)) continue
+				compacted = false
+				for (const node of nodes.values()) {
+					if (node.depth >= i) {
+						node.depth -= 1
+					}
+				}
+			}
+		}
+	}
+	assignLayers()
+	
+	function draw(ctx: CanvasRenderingContext2D, entity: ReturnType<typeof entityFromGenome>) {
+		const perLayer = new Map<number, Node[]>()
+		for (const node of nodes.values()) {
+			const layer = node.depth
+			if (!perLayer.has(layer)) {
+				perLayer.set(layer, [])
+			}
+			perLayer.get(layer)!.push(node)
+		}
+		perLayer.delete(NaN)
+		
+		ctx.font = `${16}px sans-serif`
+		const leftOffset = Math.max(...["food left", "food ahead", "food right", "wall left", "wall ahead", "wall right"].map((t) => ctx.measureText(t).width)) + 20
+		const rightOffset = Math.max(...["rotate left", "rotate right", "move ahead"].map((t) => ctx.measureText(t).width)) + 20
+		const topOffset = 20
+		const bottomOffset = 20
+		const layerCount = perLayer.size
+		const layerWidth = (ctx.canvas.width - leftOffset - rightOffset) / layerCount
+		const maxLayerSize = Math.max(...Array.from(perLayer.values()).map((layer) => layer.length))
+		const layerHeight = (ctx.canvas.height - topOffset - bottomOffset) / (maxLayerSize - 1)
+		const nodeSize = 10
+		
+		const getX = (node: Node) => node.depth * layerWidth + leftOffset
+		const getY = (node: Node) => {
+			const layer = perLayer.get(node.depth)
+			if (!layer) return 0
+			const index = layer.indexOf(node)
+			if (index === -1) return 0
+			const y = index * layerHeight + topOffset
+			return y
+		}
+		const getNodeColor = (node: Node) => {
+			const hue = node.isInput ? 240 : node.isOutput ? 0 : 120
+			const saturation = node.deadend ? 50 : 100
+			const lightness = node.deadend ? 25 : 50
+			return `hsl(${hue}, ${saturation}%, ${lightness}%)`
+		}
+		
+		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+		
+		// Draw connections
+		for (const conn of connections) {
+			const fromNode = nodes.get(conn.from)
+			const toNode = nodes.get(conn.to)
+			if (!fromNode || !toNode) continue
+			const isDeadEnd = fromNode.deadend || toNode.deadend
+			ctx.strokeStyle = isDeadEnd ? "hsl(0, 0%, 50%)" : "white"
+			ctx.lineWidth = 0.5 + conn.normalized * 3
+			if (fromNode === toNode) {
+				ctx.setLineDash([5, 5])
+				ctx.beginPath()
+				ctx.arc(getX(fromNode), getY(fromNode) - nodeSize, nodeSize, 0, Math.PI * 2)
+				ctx.stroke()
+				continue
+			}
+			const isBackward = fromNode.depth >= toNode.depth
+			const fromX = getX(fromNode)
+			const fromY = getY(fromNode)
+			const toX = getX(toNode)
+			const toY = getY(toNode)
+			if (isBackward) {
+				ctx.setLineDash([5, 5])
+			} else {
+				ctx.setLineDash([])
+			}
+			ctx.beginPath()
+			ctx.moveTo(fromX + nodeSize, fromY)
+			const dx = layerWidth
+			ctx.bezierCurveTo(fromX + nodeSize + dx / 3, fromY, toX - nodeSize - dx / 3, toY, toX - nodeSize, toY)
+			ctx.stroke()
+		}
+		
+		// Draw nodes
+		for (const node of nodes.values()) {
+			const index = node.index
+			const memo = entity.memory[index]
+			const raw = memo === undefined || isNaN(memo) ? 0 : memo === Infinity || memo === -Infinity ? 100 : Math.abs(memo)
+			const value = Math.min(1, raw)
+			ctx.fillStyle = getNodeColor(node)
+			const size = nodeSize * (0.5 + value * 1.5)
+			ctx.beginPath()
+			const x = getX(node)
+			const y = getY(node)
+			ctx.arc(x, y, size, 0, Math.PI * 2)
+			ctx.fill()
+			
+			if (node.isInput) {
+				ctx.fillStyle = "white"
+				ctx.textBaseline = "middle"
+				ctx.fillText(node.name, 0, y)
+			} else if (node.isOutput) {
+				ctx.fillStyle = "white"
+				ctx.textBaseline = "middle"
+				ctx.fillText(node.name, x + nodeSize + 20, y)
+			}
+		}
+	}
+	
+	return {
+		draw,
+	}
 }
 
 async function setupGPU(
 	controller: AbortController,
-	// onGeneration:
+	onGeneration: (generation: number, genomes: Float32Array[]) => void
 ): Promise<{
 	readonly playing: boolean
 	init: (initialGenomes: Float32Array[]) => void
@@ -228,16 +800,331 @@ async function setupGPU(
 	onAbort(() => device.destroy())
 	device.lost.then((info) => info.reason !== "destroyed" && controller.abort())
 
-	// TODO: setup pipelines, buffers, etc.
-
-	// loop
+	// Load shaders
+	const simulateShaderModule = device.createShaderModule({
+		label: "simulate shader",
+		code: simulateShader,
+	})
+	
+	const breedShaderModule = device.createShaderModule({
+		label: "breed shader",
+		code: breedShader,
+	})
+	
+	// Create buffers
+	const genomeBufferSize = POPULATION * MAX_GENES * 4 * Float32Array.BYTES_PER_ELEMENT
+	const genomesBuffer = device.createBuffer({
+		label: "genomes storage buffer",
+		size: genomeBufferSize,
+		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
+	})
+	onAbort(() => genomesBuffer.destroy())
+	
+	const parentsBuffer = device.createBuffer({
+		label: "parents storage buffer",
+		size: STORE_PER_GENERATION * MAX_GENES * 4 * Float32Array.BYTES_PER_ELEMENT,
+		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+	})
+	onAbort(() => parentsBuffer.destroy())
+	
+	const statesBufferSize = POPULATION * 8 * Float32Array.BYTES_PER_ELEMENT // EntityState struct
+	const statesBuffer = device.createBuffer({
+		label: "entity states storage buffer",
+		size: statesBufferSize,
+		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
+	})
+	onAbort(() => statesBuffer.destroy())
+	
+	const memoryBufferSize = POPULATION * MAX_NODES * Float32Array.BYTES_PER_ELEMENT
+	const memoryBuffer = device.createBuffer({
+		label: "neural network memory buffer",
+		size: memoryBufferSize,
+		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+	})
+	onAbort(() => memoryBuffer.destroy())
+	
+	const currentBuffer = device.createBuffer({
+		label: "neural network current buffer",
+		size: memoryBufferSize,
+		usage: GPUBufferUsage.STORAGE,
+	})
+	onAbort(() => currentBuffer.destroy())
+	
+	const foodBufferSize = FOOD_COUNT * 2 * Float32Array.BYTES_PER_ELEMENT
+	const foodBuffer = device.createBuffer({
+		label: "food positions buffer",
+		size: foodBufferSize,
+		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+	})
+	onAbort(() => foodBuffer.destroy())
+	
+	const eatenFoodBufferSize = Math.ceil((POPULATION * FOOD_COUNT) / 32) * Uint32Array.BYTES_PER_ELEMENT
+	const eatenFoodBuffer = device.createBuffer({
+		label: "eaten food bitset buffer",
+		size: eatenFoodBufferSize,
+		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+	})
+	onAbort(() => eatenFoodBuffer.destroy())
+	
+	const fitnessBuffer = device.createBuffer({
+		label: "fitness scores buffer",
+		size: POPULATION * Float32Array.BYTES_PER_ELEMENT,
+		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+	})
+	onAbort(() => fitnessBuffer.destroy())
+	
+	// Create readback buffers
+	const genomesReadBuffer = device.createBuffer({
+		label: "genomes read buffer",
+		size: genomeBufferSize,
+		usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+	})
+	onAbort(() => genomesReadBuffer.destroy())
+	
+	const fitnessReadBuffer = device.createBuffer({
+		label: "fitness read buffer",
+		size: POPULATION * Float32Array.BYTES_PER_ELEMENT,
+		usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+	})
+	onAbort(() => fitnessReadBuffer.destroy())
+	
+	// Create uniform buffers
+	const simConfigBuffer = device.createBuffer({
+		label: "simulation config uniform buffer",
+		size: 6 * Uint32Array.BYTES_PER_ELEMENT,
+		usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+	})
+	onAbort(() => simConfigBuffer.destroy())
+	
+	const breedConfigBuffer = device.createBuffer({
+		label: "breeding config uniform buffer",
+		size: 4 * Uint32Array.BYTES_PER_ELEMENT,
+		usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+	})
+	onAbort(() => breedConfigBuffer.destroy())
+	
+	// Create bind group layouts
+	const simBindGroupLayout = device.createBindGroupLayout({
+		label: "simulation bind group layout",
+		entries: [
+			{ binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: "uniform" } },
+			{ binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: "read-only-storage" } },
+			{ binding: 2, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } },
+			{ binding: 3, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } },
+			{ binding: 4, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } },
+			{ binding: 5, visibility: GPUShaderStage.COMPUTE, buffer: { type: "read-only-storage" } },
+			{ binding: 6, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } },
+		],
+	})
+	
+	const breedBindGroupLayout = device.createBindGroupLayout({
+		label: "breeding bind group layout",
+		entries: [
+			{ binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: "uniform" } },
+			{ binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: "read-only-storage" } },
+			{ binding: 2, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } },
+		],
+	})
+	
+	// Create pipelines
+	const simulatePipeline = device.createComputePipeline({
+		label: "simulate pipeline",
+		layout: device.createPipelineLayout({
+			bindGroupLayouts: [simBindGroupLayout],
+		}),
+		compute: {
+			module: simulateShaderModule,
+			entryPoint: "main",
+		},
+	})
+	
+	const breedPipeline = device.createComputePipeline({
+		label: "breed pipeline",
+		layout: device.createPipelineLayout({
+			bindGroupLayouts: [breedBindGroupLayout],
+		}),
+		compute: {
+			module: breedShaderModule,
+			entryPoint: "main",
+		},
+	})
+	
+	// Create bind groups
+	const simBindGroup = device.createBindGroup({
+		label: "simulation bind group",
+		layout: simBindGroupLayout,
+		entries: [
+			{ binding: 0, resource: { buffer: simConfigBuffer } },
+			{ binding: 1, resource: { buffer: genomesBuffer } },
+			{ binding: 2, resource: { buffer: statesBuffer } },
+			{ binding: 3, resource: { buffer: memoryBuffer } },
+			{ binding: 4, resource: { buffer: currentBuffer } },
+			{ binding: 5, resource: { buffer: foodBuffer } },
+			{ binding: 6, resource: { buffer: eatenFoodBuffer } },
+		],
+	})
+	
+	const breedBindGroup = device.createBindGroup({
+		label: "breeding bind group",
+		layout: breedBindGroupLayout,
+		entries: [
+			{ binding: 0, resource: { buffer: breedConfigBuffer } },
+			{ binding: 1, resource: { buffer: parentsBuffer } },
+			{ binding: 2, resource: { buffer: genomesBuffer } },
+		],
+	})
+	
+	// State variables
 	let playing = true
-	// TODO: implement loop, dispatching to the GPU to create and sort a new generation
-	// of genomes, reading back the best N genomes to store on the JS side,
-	// and calling onGeneration when a generation is completed.
-
+	let generation = 0
+	let animationFrameId = 0
+	
+	// Helper to run simulation for one generation
+	async function runGeneration() {
+		// Generate random food positions
+		const foodPositions = new Float32Array(FOOD_COUNT * 2)
+		for (let i = 0; i < FOOD_COUNT; i++) {
+			foodPositions[i * 2 + 0] = Math.random() * WORLD_SIZE
+			foodPositions[i * 2 + 1] = Math.random() * WORLD_SIZE
+		}
+		device.queue.writeBuffer(foodBuffer, 0, foodPositions)
+		
+		// Reset states
+		const states = new Float32Array(POPULATION * 8)
+		for (let i = 0; i < POPULATION; i++) {
+			states[i * 8 + 0] = WORLD_SIZE / 2 // x
+			states[i * 8 + 1] = WORLD_SIZE / 2 // y
+			states[i * 8 + 2] = 0 // angle
+			states[i * 8 + 3] = 1 // alive
+			states[i * 8 + 4] = 0 // score
+			states[i * 8 + 5] = 0 // distance
+			states[i * 8 + 6] = WORLD_SIZE / 2 // initialX
+			states[i * 8 + 7] = WORLD_SIZE / 2 // initialY
+		}
+		device.queue.writeBuffer(statesBuffer, 0, states)
+		
+		// Reset memory buffers
+		device.queue.writeBuffer(memoryBuffer, 0, new Float32Array(POPULATION * MAX_NODES))
+		
+		// Reset eaten food
+		device.queue.writeBuffer(eatenFoodBuffer, 0, new Uint32Array(Math.ceil((POPULATION * FOOD_COUNT) / 32)))
+		
+		// Update simulation config
+		const simConfig = new Uint32Array([
+			POPULATION,
+			FOOD_COUNT,
+			0, // placeholder for f32 worldSize
+			MAX_NODES,
+			MAX_GENES,
+			0, // iteration (updated per iteration)
+		])
+		new Float32Array(simConfig.buffer)[2] = WORLD_SIZE
+		device.queue.writeBuffer(simConfigBuffer, 0, simConfig)
+		
+		// Run ITERATIONS simulation steps
+		{
+			const encoder = device.createCommandEncoder()
+			for (let iter = 0; iter < ITERATIONS; iter++) {
+				const pass = encoder.beginComputePass()
+				pass.setPipeline(simulatePipeline)
+				pass.setBindGroup(0, simBindGroup)
+				pass.dispatchWorkgroups(Math.ceil(POPULATION / 64))
+				pass.end()
+			}
+			device.queue.submit([encoder.finish()])
+		}
+		
+		// Compute fitness and read back
+		await device.queue.onSubmittedWorkDone()
+		
+		// Read states to compute fitness on CPU
+		{
+			const encoder = device.createCommandEncoder()
+			encoder.copyBufferToBuffer(statesBuffer, 0, fitnessReadBuffer, 0, POPULATION * Float32Array.BYTES_PER_ELEMENT)
+			device.queue.submit([encoder.finish()])
+		}
+		
+		await fitnessReadBuffer.mapAsync(GPUMapMode.READ)
+		const statesData = new Float32Array(fitnessReadBuffer.getMappedRange())
+		
+		// Compute fitness: score + distance / 100
+		const fitnessScores: { fitness: number; index: number }[] = []
+		for (let i = 0; i < POPULATION; i++) {
+			const score = statesData[i * 8 + 4]
+			const distance = statesData[i * 8 + 5]
+			const fitness = score + distance / 100
+			fitnessScores.push({ fitness, index: i })
+		}
+		fitnessReadBuffer.unmap()
+		
+		// Sort by fitness (descending)
+		fitnessScores.sort((a, b) => b.fitness - a.fitness)
+		
+		// Read back top genomes
+		const readEncoder = device.createCommandEncoder()
+		readEncoder.copyBufferToBuffer(genomesBuffer, 0, genomesReadBuffer, 0, genomeBufferSize)
+		device.queue.submit([readEncoder.finish()])
+		
+		await genomesReadBuffer.mapAsync(GPUMapMode.READ)
+		const genomesData = new Float32Array(genomesReadBuffer.getMappedRange())
+		
+		// Extract top STORE_PER_GENERATION genomes
+		const topGenomes: Float32Array[] = []
+		for (let i = 0; i < STORE_PER_GENERATION; i++) {
+			const index = fitnessScores[i].index
+			const genome = new Float32Array(MAX_GENES * 4)
+			genome.set(genomesData.slice(index * MAX_GENES * 4, (index + 1) * MAX_GENES * 4))
+			topGenomes.push(genome)
+		}
+		genomesReadBuffer.unmap()
+		
+		// Notify generation complete
+		onGeneration(generation, topGenomes)
+		generation++
+		
+		// Upload top genomes as parents for breeding
+		const parentsData = new Float32Array(STORE_PER_GENERATION * MAX_GENES * 4)
+		for (let i = 0; i < STORE_PER_GENERATION; i++) {
+			parentsData.set(topGenomes[i], i * MAX_GENES * 4)
+		}
+		device.queue.writeBuffer(parentsBuffer, 0, parentsData)
+		
+		// Breed new generation
+		const breedConfig = new Uint32Array([
+			POPULATION,
+			MAX_GENES,
+			STORE_PER_GENERATION,
+			Math.floor(Math.random() * 4294967295), // RNG seed
+		])
+		device.queue.writeBuffer(breedConfigBuffer, 0, breedConfig)
+		
+		const breedEncoder = device.createCommandEncoder()
+		const breedPass = breedEncoder.beginComputePass()
+		breedPass.setPipeline(breedPipeline)
+		breedPass.setBindGroup(0, breedBindGroup)
+		breedPass.dispatchWorkgroups(Math.ceil(POPULATION / 64))
+		breedPass.end()
+		device.queue.submit([breedEncoder.finish()])
+		
+		await device.queue.onSubmittedWorkDone()
+	}
+	
+	// Main loop
+	async function loop() {
+		if (!playing) return
+		if (controller.signal.aborted) return
+		
+		await runGeneration()
+		
+		if (playing && !controller.signal.aborted) {
+			animationFrameId = requestAnimationFrame(loop)
+		}
+	}
+	
 	controller.signal.addEventListener("abort", () => {
-		// TODO
+		if (animationFrameId) {
+			cancelAnimationFrame(animationFrameId)
+		}
 	}, { once: true })
 
 	return {
@@ -245,17 +1132,28 @@ async function setupGPU(
 			return playing
 		},
 		init: (initialGenomes: Float32Array[]) => {
-			// TODO
+			// Upload initial genomes
+			const genomesData = new Float32Array(POPULATION * MAX_GENES * 4)
+			for (let i = 0; i < initialGenomes.length; i++) {
+				genomesData.set(initialGenomes[i], i * MAX_GENES * 4)
+			}
+			device.queue.writeBuffer(genomesBuffer, 0, genomesData)
+			
+			// Start loop
+			loop()
 		},
 		play: () => {
 			if (playing) return
 			playing = true
-			// TODO
+			loop()
 		},
 		pause: () => {
 			if (!playing) return
 			playing = false
-			// TODO
+			if (animationFrameId) {
+				cancelAnimationFrame(animationFrameId)
+				animationFrameId = 0
+			}
 		}
 	}
 }
@@ -294,11 +1192,10 @@ function setupViz(
 	function createWorld() {
 		return {
 			size: WORLD_SIZE,
-			food: Array.from({ length: COUNT_BITS_OF_FOOD }, () => ({
+			food: Array.from({ length: FOOD_COUNT }, () => ({
 				x: Math.random() * WORLD_SIZE,
 				y: Math.random() * WORLD_SIZE,
 			})),
-			// todo
 		}
 	}
 
@@ -308,8 +1205,7 @@ function setupViz(
 		for (let i = 0; i < world.food.length; i++) {
 			const food = world.food[i]
 			ctx.fillStyle = entity.state.eaten.has(i) ? "red" : "green"
-			ctx.rect(food.x, food.y, 2, 2)
-			ctx.fill()
+			ctx.fillRect(food.x, food.y, 2, 2)
 		}
 		for (let i = 0; i < entities.length; i++) {
 			const entity = entities[i]
@@ -320,14 +1216,17 @@ function setupViz(
 	}
 	
 	function startViz() {
+		const genIndex = currentGeneration - 1
+		if (genIndex < 0 || genIndex * STORE_PER_GENERATION >= store.length) return
+		
 		onSimulation(currentGeneration)
 
 		selectedIndex = 0
 		world = createWorld()
 		entities = store
-			.slice(currentGeneration * STORE_PER_GENERATION, (currentGeneration + 1) * STORE_PER_GENERATION)
+			.slice(genIndex * STORE_PER_GENERATION, (genIndex + 1) * STORE_PER_GENERATION)
 			.map((genome) => entityFromGenome(genome, world))
-		graph = graphFromGenome(store[currentGeneration * STORE_PER_GENERATION + selectedIndex])
+		graph = graphFromGenome(store[genIndex * STORE_PER_GENERATION + selectedIndex])
 
 		animation = animate({
 			update: (delta) => {
@@ -361,7 +1260,8 @@ function setupViz(
 		}
 		if (closestIndex !== -1 && closestIndex !== selectedIndex) {
 			selectedIndex = closestIndex
-			graph = graphFromGenome(store[currentGeneration * STORE_PER_GENERATION + selectedIndex])
+			const genIndex = currentGeneration - 1
+			graph = graphFromGenome(store[genIndex * STORE_PER_GENERATION + selectedIndex])
 			if (!playing) {
 				draw()
 			}
@@ -388,7 +1288,7 @@ function setupViz(
 		},
 		selectGeneration: (generation: number) => {
 			animation?.stop()
-			currentGeneration = generation - 1
+			currentGeneration = generation
 			startViz()
 		},
 	}
