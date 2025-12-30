@@ -32,6 +32,7 @@ struct EntityState {
 const PI = 3.14159265359;
 const MAX_WEIGHT = 255.0;
 const INNATE_NODES = 9u;
+const VISION_DISTANCE = 20.0;
 
 // Activation functions (28 total)
 fn activation(x: f32, type: u32) -> f32 {
@@ -270,22 +271,22 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 	var has_wall_left = false;
 	var has_wall_right = false;
 	
-	let ahead_x = state.x + sin(angle) * 100.0;
-	let ahead_y = state.y + cos(angle) * 100.0;
+	let ahead_x = state.x + sin(angle) * VISION_DISTANCE;
+	let ahead_y = state.y + cos(angle) * VISION_DISTANCE;
 	has_wall_ahead = ahead_x < 0.0 || ahead_x > config.worldSize || ahead_y < 0.0 || ahead_y > config.worldSize;
 	
 	if (!has_wall_ahead) {
-		let left_x = state.x + sin(angle + PI / 2.0) * 100.0;
-		let left_y = state.y + cos(angle + PI / 2.0) * 100.0;
+		let left_x = state.x + sin(angle + PI / 2.0) * VISION_DISTANCE;
+		let left_y = state.y + cos(angle + PI / 2.0) * VISION_DISTANCE;
 		has_wall_left = left_x < 0.0 || left_x > config.worldSize || left_y < 0.0 || left_y > config.worldSize;
 		
-		let right_x = state.x + sin(angle - PI / 2.0) * 100.0;
-		let right_y = state.y + cos(angle - PI / 2.0) * 100.0;
+		let right_x = state.x + sin(angle - PI / 2.0) * VISION_DISTANCE;
+		let right_y = state.y + cos(angle - PI / 2.0) * VISION_DISTANCE;
 		has_wall_right = right_x < 0.0 || right_x > config.worldSize || right_y < 0.0 || right_y > config.worldSize;
 	}
 	
 	// Detect food
-	var closest_distance = 100.0;
+	var closest_distance = VISION_DISTANCE;
 	var angle_to_food = 0.0;
 	var has_food_ahead = false;
 	var has_food_left = false;
@@ -303,7 +304,7 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 		let food = foodPositions[f];
 		let distance = length(vec2f(state.x, state.y) - food);
 		
-		if (distance < 20.0) {
+		if (distance < 5.0) {
 			state.score += 100.0 - distance;
 			// Mark as eaten
 			eatenFood[arrayIndex] |= (1u << bitOffset);
@@ -316,7 +317,7 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 		}
 	}
 	
-	if (closest_distance < 100.0) {
+	if (closest_distance < VISION_DISTANCE) {
 		has_food_ahead = abs(angle_to_food - state.angle) < PI / 5.0;
 		has_food_left = !has_food_ahead && angle_to_food < 0.0 && angle_to_food > -PI / 2.0;
 		has_food_right = !has_food_ahead && angle_to_food > 0.0 && angle_to_food < PI / 2.0;
@@ -407,7 +408,7 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 	let rotate = rotate_right - rotate_left;
 	state.angle += rotate / 100.0;
 	
-	let speed = min(4.0, max(0.0, current[currOffset + 8u] / MAX_WEIGHT));
+	let speed = min(4.0, max(0.0, current[currOffset + 8u]));
 	if (speed > 0.0) {
 		let prevX = state.x;
 		let prevY = state.y;

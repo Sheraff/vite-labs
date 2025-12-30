@@ -4,7 +4,7 @@ import { Head } from "#components/Head"
 import { use, useEffect, useRef, useState } from "react"
 
 import styles from "./styles.module.css"
-import { ACTIVATIONS, AGGREGATIONS, FOOD_COUNT, INNATE_NODES, ITERATIONS, MAX, MAX_GENES, MAX_NODES, POPULATION, STORE_PER_GENERATION, WORLD_SIZE } from "./constants"
+import { ACTIVATIONS, AGGREGATIONS, BREED_PARENTS, FOOD_COUNT, INNATE_NODES, ITERATIONS, MAX, MAX_GENES, MAX_NODES, POPULATION, STORE_PER_GENERATION, WORLD_SIZE } from "./constants"
 import simulateShader from './simulate.wgsl?raw'
 import breedShader from './breed.wgsl?raw'
 
@@ -340,6 +340,8 @@ function entityFromGenome(genome: Float32Array, world: World) {
 		eaten: new Set<number>(),
 	}
 	
+	const visionDistance = 20
+
 	function tick(delta: number) {
 		if (!state.alive) return
 		
@@ -359,22 +361,22 @@ function entityFromGenome(genome: Float32Array, world: World) {
 		let has_wall_left = false
 		let has_wall_right = false
 		
-		const ahead_x = state.x + Math.sin(angle) * 100
-		const ahead_y = state.y + Math.cos(angle) * 100
+		const ahead_x = state.x + Math.sin(angle) * visionDistance
+		const ahead_y = state.y + Math.cos(angle) * visionDistance
 		has_wall_ahead = ahead_x < 0 || ahead_x > world.size || ahead_y < 0 || ahead_y > world.size
 		
 		if (!has_wall_ahead) {
-			const left_x = state.x + Math.sin(angle + Math.PI / 2) * 100
-			const left_y = state.y + Math.cos(angle + Math.PI / 2) * 100
+			const left_x = state.x + Math.sin(angle + Math.PI / 2) * visionDistance
+			const left_y = state.y + Math.cos(angle + Math.PI / 2) * visionDistance
 			has_wall_left = left_x < 0 || left_x > world.size || left_y < 0 || left_y > world.size
 			
-			const right_x = state.x + Math.sin(angle - Math.PI / 2) * 100
-			const right_y = state.y + Math.cos(angle - Math.PI / 2) * 100
+			const right_x = state.x + Math.sin(angle - Math.PI / 2) * visionDistance
+			const right_y = state.y + Math.cos(angle - Math.PI / 2) * visionDistance
 			has_wall_right = right_x < 0 || right_x > world.size || right_y < 0 || right_y > world.size
 		}
 		
 		// Detect food
-		let closest_distance = 100
+		let closest_distance = visionDistance
 		let angle_to_food = 0
 		let has_food_ahead = false
 		let has_food_left = false
@@ -386,7 +388,7 @@ function entityFromGenome(genome: Float32Array, world: World) {
 			const food = world.food[f]
 			const distance = Math.hypot(state.x - food.x, state.y - food.y)
 			
-			if (distance < 20) {
+			if (distance < 5) {
 				state.score += 100 - distance
 				state.eaten.add(f)
 			} else if (distance < closest_distance) {
@@ -398,7 +400,7 @@ function entityFromGenome(genome: Float32Array, world: World) {
 			}
 		}
 		
-		if (closest_distance < 100) {
+		if (closest_distance < visionDistance) {
 			has_food_ahead = Math.abs(angle_to_food - state.angle) < Math.PI / 5
 			has_food_left = !has_food_ahead && angle_to_food < 0 && angle_to_food > -Math.PI / 2
 			has_food_right = !has_food_ahead && angle_to_food > 0 && angle_to_food < Math.PI / 2
@@ -423,7 +425,7 @@ function entityFromGenome(genome: Float32Array, world: World) {
 		// Read outputs and update state
 		const rotate = Math.max(0, Math.min(current[7], 10)) - Math.max(0, Math.min(current[6], 10))
 		state.angle += rotate / 100
-		const speed = Math.min(4, Math.max(0, current[8] / MAX))
+		const speed = Math.min(4, Math.max(0, current[8]))
 		if (speed > 0) {
 			const prevX = state.x
 			const prevY = state.y
@@ -437,24 +439,31 @@ function entityFromGenome(genome: Float32Array, world: World) {
 		if (!state.alive) return
 		
 		// Draw square at position, rotated by angle
-		ctx.save()
-		ctx.translate(state.x * scale, state.y * scale)
-		ctx.rotate(state.angle)
+		ctx.beginPath()
+		ctx.arc(state.x * scale, state.y * scale, 3, 0, Math.PI * 2)
 		ctx.fillStyle = selected ? "yellow" : "white"
-		ctx.fillRect(-5, -5, 10, 10)
-		ctx.restore()
+		ctx.fill()
 		
-		// Draw direction line
+		// Draw vision cone
 		if (selected) {
 			ctx.save()
 			ctx.translate(state.x * scale, state.y * scale)
 			ctx.rotate(state.angle)
-			ctx.strokeStyle = "red"
-			ctx.lineWidth = 2
+			
+			// Draw cone representing vision distance and food detection angle
+			const detectionAngle = Math.PI / 5 // ±36 degrees
+			
+			ctx.fillStyle = "rgba(255, 255, 0, 0.2)"
+			ctx.strokeStyle = "rgba(255, 255, 0, 0.5)"
+			ctx.lineWidth = 1
+			
 			ctx.beginPath()
 			ctx.moveTo(0, 0)
-			ctx.lineTo(100, 0)
+			ctx.arc(0, 0, visionDistance, -detectionAngle, detectionAngle)
+			ctx.closePath()
+			ctx.fill()
 			ctx.stroke()
+			
 			ctx.restore()
 		}
 	}
@@ -822,7 +831,7 @@ async function setupGPU(
 	
 	const parentsBuffer = device.createBuffer({
 		label: "parents storage buffer",
-		size: STORE_PER_GENERATION * MAX_GENES * 4 * Float32Array.BYTES_PER_ELEMENT,
+		size: BREED_PARENTS * MAX_GENES * 4 * Float32Array.BYTES_PER_ELEMENT,
 		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
 	})
 	onAbort(() => parentsBuffer.destroy())
@@ -1047,12 +1056,25 @@ async function setupGPU(
 		await fitnessReadBuffer.mapAsync(GPUMapMode.READ)
 		const statesData = new Float32Array(fitnessReadBuffer.getMappedRange())
 		
-		// Compute fitness: score + distance / 100
+		// Compute fitness: score + distance / 100 - penalties
 		const fitnessScores: { fitness: number; index: number }[] = []
 		for (let i = 0; i < POPULATION; i++) {
+			const alive = statesData[i * 8 + 3]
 			const score = statesData[i * 8 + 4]
 			const distance = statesData[i * 8 + 5]
-			const fitness = score + distance / 100
+			
+			let fitness = score + distance / 100
+			
+			// Heavy penalty for dying (leaving world), but keep distance credit
+			if (alive === 0) {
+				fitness -= 500
+			}
+			
+			// Penalty for low movement (entities that don't explore)
+			if (distance < 100) {
+				fitness -= (100 - distance) * 2
+			}
+			
 			fitnessScores.push({ fitness, index: i })
 		}
 		fitnessReadBuffer.unmap()
@@ -1068,7 +1090,7 @@ async function setupGPU(
 		await genomesReadBuffer.mapAsync(GPUMapMode.READ)
 		const genomesData = new Float32Array(genomesReadBuffer.getMappedRange())
 		
-		// Extract top STORE_PER_GENERATION genomes
+		// Extract top STORE_PER_GENERATION genomes for visualization
 		const topGenomes: Float32Array[] = []
 		for (let i = 0; i < STORE_PER_GENERATION; i++) {
 			const index = fitnessScores[i].index
@@ -1076,24 +1098,28 @@ async function setupGPU(
 			genome.set(genomesData.slice(index * MAX_GENES * 4, (index + 1) * MAX_GENES * 4))
 			topGenomes.push(genome)
 		}
+		
+		// Extract top BREED_PARENTS genomes for breeding (10% of population)
+		const parentsData = new Float32Array(BREED_PARENTS * MAX_GENES * 4)
+		for (let i = 0; i < BREED_PARENTS; i++) {
+			const index = fitnessScores[i].index
+			const genome = genomesData.slice(index * MAX_GENES * 4, (index + 1) * MAX_GENES * 4)
+			parentsData.set(genome, i * MAX_GENES * 4)
+		}
 		genomesReadBuffer.unmap()
 		
 		// Notify generation complete
 		onGeneration(generation, topGenomes)
 		generation++
 		
-		// Upload top genomes as parents for breeding
-		const parentsData = new Float32Array(STORE_PER_GENERATION * MAX_GENES * 4)
-		for (let i = 0; i < STORE_PER_GENERATION; i++) {
-			parentsData.set(topGenomes[i], i * MAX_GENES * 4)
-		}
+		// Upload parents for breeding
 		device.queue.writeBuffer(parentsBuffer, 0, parentsData)
 		
 		// Breed new generation
 		const breedConfig = new Uint32Array([
 			POPULATION,
 			MAX_GENES,
-			STORE_PER_GENERATION,
+			BREED_PARENTS,
 			Math.floor(Math.random() * 4294967295), // RNG seed
 		])
 		device.queue.writeBuffer(breedConfigBuffer, 0, breedConfig)

@@ -9,7 +9,8 @@ export const FOOD_COUNT = 200
 export const WORLD_SIZE = 300
 export const POPULATION = 1000
 export const ITERATIONS = 2000
-export const STORE_PER_GENERATION = 10
+export const STORE_PER_GENERATION = 10 // Top genomes to store for visualization
+export const BREED_PARENTS = 100 // 10% survival rate for breeding
 
 export const INPUT_NODES = ["food left", "food ahead", "food right", "wall left", "wall ahead", "wall right"]
 export const OUTPUT_NODES = ["rotate left", "rotate right", "move ahead"]
