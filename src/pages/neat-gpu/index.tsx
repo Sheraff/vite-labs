@@ -433,12 +433,12 @@ function entityFromGenome(genome: Float32Array, world: World) {
 		}
 	}
 	
-	function draw(ctx: CanvasRenderingContext2D, selected: boolean) {
+	function draw(ctx: CanvasRenderingContext2D, selected: boolean, scale: number = 1) {
 		if (!state.alive) return
 		
 		// Draw square at position, rotated by angle
 		ctx.save()
-		ctx.translate(state.x, state.y)
+		ctx.translate(state.x * scale, state.y * scale)
 		ctx.rotate(state.angle)
 		ctx.fillStyle = selected ? "yellow" : "white"
 		ctx.fillRect(-5, -5, 10, 10)
@@ -447,7 +447,7 @@ function entityFromGenome(genome: Float32Array, world: World) {
 		// Draw direction line
 		if (selected) {
 			ctx.save()
-			ctx.translate(state.x, state.y)
+			ctx.translate(state.x * scale, state.y * scale)
 			ctx.rotate(state.angle)
 			ctx.strokeStyle = "red"
 			ctx.lineWidth = 2
@@ -1201,17 +1201,22 @@ function setupViz(
 
 	function draw() {
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+		
+		// Calculate scale to fill canvas
+		const scale = ctx.canvas.width / (WORLD_SIZE * devicePixelRatio)
+		
 		const entity = entities[selectedIndex]
 		for (let i = 0; i < world.food.length; i++) {
 			const food = world.food[i]
 			ctx.fillStyle = entity.state.eaten.has(i) ? "red" : "green"
-			ctx.fillRect(food.x, food.y, 2, 2)
+			ctx.fillRect(food.x * scale, food.y * scale, 2, 2)
 		}
 		for (let i = 0; i < entities.length; i++) {
 			const entity = entities[i]
 			const selected = i === selectedIndex
-			entity.draw(ctx, selected)
+			entity.draw(ctx, selected, scale)
 		}
+		
 		graph.draw(vizCtx, entity)
 	}
 	
@@ -1246,8 +1251,9 @@ function setupViz(
 		let closestIndex = -1
 		let closestDist = Infinity
 		const rect = ctx.canvas.getBoundingClientRect()
-		const x = (e.clientX - rect.left) * (ctx.canvas.width / rect.width)
-		const y = (e.clientY - rect.top) * (ctx.canvas.height / rect.height)
+		const scale = ctx.canvas.width / (WORLD_SIZE * devicePixelRatio)
+		const x = ((e.clientX - rect.left) * (ctx.canvas.width / rect.width)) / scale
+		const y = ((e.clientY - rect.top) * (ctx.canvas.height / rect.height)) / scale
 		for (let i = 0; i < entities.length; i++) {
 			const entity = entities[i]
 			const dx = entity.state.x - x

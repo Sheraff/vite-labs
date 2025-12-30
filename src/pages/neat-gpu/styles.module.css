@@ -11,6 +11,13 @@
 	inset: 0;
 	overflow: auto;
 
+	fieldset {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5em;
+		align-items: stretch;
+	}
+
 }
 
 .canvas {
