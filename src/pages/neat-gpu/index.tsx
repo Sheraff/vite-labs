@@ -220,8 +220,8 @@ function initialGenomes(count: number, maxNodes: number, maxConnections: number)
 	const genomes: Float32Array[] = []
 	
 	for (let i = 0; i < count; i++) {
-		const nodeCount = Math.floor(Math.random() * maxNodes) + 1
-		const connCount = Math.floor(Math.random() * maxConnections) + 1
+		const nodeCount = Math.floor(Math.random() * maxNodes) + 2 // At least 2 nodes
+		const connCount = Math.floor(Math.random() * maxConnections) + 5 // At least 5 connections
 		
 		// Create genome with max size, filled with void genes
 		const genome = new Float32Array(MAX_GENES * 4).fill(0)
@@ -236,7 +236,15 @@ function initialGenomes(count: number, maxNodes: number, maxConnections: number)
 			genome[geneIndex * 4 + 3] = Math.floor(Math.random() * ACTIVATIONS.length) // activation
 		}
 		
-		// Add connection genes
+		// Ensure at least one direct connection from each sensor to move output
+		for (let sensor = 0; sensor < 6 && geneIndex < MAX_GENES; sensor++, geneIndex++) {
+			genome[geneIndex * 4 + 0] = 2 // connection gene type
+			genome[geneIndex * 4 + 1] = sensor // from sensor
+			genome[geneIndex * 4 + 2] = 8 // to move output
+			genome[geneIndex * 4 + 3] = Math.floor(Math.random() * (MAX + 1)) // random weight
+		}
+		
+		// Add random connections
 		for (let c = 0; c < connCount && geneIndex < MAX_GENES; c++, geneIndex++) {
 			// Random from node (can be input or custom node)
 			const fromRand = Math.floor(Math.random() * (nodeCount + 6)) // 6 input nodes
@@ -250,11 +258,6 @@ function initialGenomes(count: number, maxNodes: number, maxConnections: number)
 			genome[geneIndex * 4 + 1] = from
 			genome[geneIndex * 4 + 2] = to
 			genome[geneIndex * 4 + 3] = Math.floor(Math.random() * (MAX + 1)) // weight 0-255
-		}
-		
-		// Ensure at least one connection to move output
-		if (connCount > 0 && geneIndex > nodeCount) {
-			genome[nodeCount * 4 + 2] = 8 // move ahead output
 		}
 		
 		// Rest of genome is already filled with void genes (0,0,0,0)
@@ -1063,16 +1066,11 @@ async function setupGPU(
 			const score = statesData[i * 8 + 4]
 			const distance = statesData[i * 8 + 5]
 			
-			let fitness = score + distance / 100
+			let fitness = score + distance / 10 // Increased distance reward
 			
-			// Heavy penalty for dying (leaving world), but keep distance credit
+			// Moderate penalty for dying (leaving world)
 			if (alive === 0) {
-				fitness -= 500
-			}
-			
-			// Penalty for low movement (entities that don't explore)
-			if (distance < 100) {
-				fitness -= (100 - distance) * 2
+				fitness -= 100 // Reduced from 500
 			}
 			
 			fitnessScores.push({ fitness, index: i })

@@ -35,8 +35,8 @@ const INNATE_NODES = 9u;
 const VISION_DISTANCE = 20.0;
 
 // Activation functions (28 total)
-fn activation(x: f32, type: u32) -> f32 {
-	switch type {
+fn activation(x: f32, activationType: u32) -> f32 {
+	switch activationType {
 		case 0u: { return x; } // identity
 		case 1u: { return -x; } // opposite
 		case 2u: { return abs(x); } // abs
@@ -71,10 +71,10 @@ fn activation(x: f32, type: u32) -> f32 {
 }
 
 // Aggregation functions - simplified for GPU (using common ones)
-fn aggregate(values: ptr<function, array<f32, 64>>, count: u32, type: u32) -> f32 {
+fn aggregate(values: ptr<function, array<f32, 64>>, count: u32, aggregationType: u32) -> f32 {
 	if (count == 0u) { return 0.0; }
 	
-	switch type {
+	switch aggregationType {
 		case 0u: { // sum
 			var result = 0.0;
 			for (var i = 0u; i < count; i++) {
@@ -117,14 +117,28 @@ fn aggregate(values: ptr<function, array<f32, 64>>, count: u32, type: u32) -> f3
 			}
 			return result;
 		}
-		case 6u, case 7u: { // median, medianabs - simplified to mean for GPU
+		case 6u: { // median - simplified to mean for GPU
 			var result = 0.0;
 			for (var i = 0u; i < count; i++) {
 				result += abs((*values)[i]);
 			}
 			return result / f32(count);
 		}
-		case 8u, case 9u: { // mode, modeabs - simplified to mean
+		case 7u: { // medianabs - simplified to mean for GPU
+			var result = 0.0;
+			for (var i = 0u; i < count; i++) {
+				result += abs((*values)[i]);
+			}
+			return result / f32(count);
+		}
+		case 8u: { // mode - simplified to mean
+			var result = 0.0;
+			for (var i = 0u; i < count; i++) {
+				result += (*values)[i];
+			}
+			return result / f32(count);
+		}
+		case 9u: { // modeabs - simplified to mean
 			var result = 0.0;
 			for (var i = 0u; i < count; i++) {
 				result += (*values)[i];
@@ -379,12 +393,12 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 		for (var g = 0u; g < config.maxGenes; g++) {
 			let geneType = u32(genomes[genomeOffset + g * 4u]);
 			if (geneType == 2u) { // Connection gene
-				let from = u32(genomes[genomeOffset + g * 4u + 1u]);
-				let to = u32(genomes[genomeOffset + g * 4u + 2u]);
+				let fromNode = u32(genomes[genomeOffset + g * 4u + 1u]);
+				let toNode = u32(genomes[genomeOffset + g * 4u + 2u]);
 				let weight = genomes[genomeOffset + g * 4u + 3u];
 				
-				if (to == nodeIdx && incomingCount < 64u) {
-					incomingValues[incomingCount] = memory[memOffset + from] * (weight / MAX_WEIGHT);
+				if (toNode == nodeIdx && incomingCount < 64u) {
+					incomingValues[incomingCount] = memory[memOffset + fromNode] * (weight / MAX_WEIGHT);
 					incomingCount++;
 				}
 			}

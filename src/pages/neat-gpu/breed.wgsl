@@ -102,14 +102,7 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 		genome[i] = parents[parentOffset + i];
 	}
 	
-	// If this is an elite (first parentsCount), keep as-is
-	if (entityId < config.parentsCount) {
-		for (var i = 0u; i < 120u; i++) {
-			offspring[offspringOffset + i] = genome[i];
-		}
-		return;
-	}
-	
+	// Everyone gets mutations (no elite preservation)
 	// Apply mutations
 	let mutationType = rng_f32(&rng);
 	
@@ -143,14 +136,14 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 		let voidIdx = findVoidGene(&genome);
 		// Random from: input (0-5) or custom node (9+)
 		let fromRand = rng_u32_range(&rng, 6u + nodeCount);
-		let from = select(fromRand + 3u, fromRand, fromRand < 6u); // skip outputs 6,7,8
+		let fromNode = select(fromRand + 3u, fromRand, fromRand < 6u); // skip outputs 6,7,8
 		// Random to: output (6-8) or custom node (9+)
 		let toRand = rng_u32_range(&rng, 3u + nodeCount);
-		let to = toRand + 6u;
+		let toNode = toRand + 6u;
 		
 		genome[voidIdx * 4u + 0u] = 2.0; // connection gene type
-		genome[voidIdx * 4u + 1u] = f32(from);
-		genome[voidIdx * 4u + 2u] = f32(to);
+		genome[voidIdx * 4u + 1u] = f32(fromNode);
+		genome[voidIdx * 4u + 2u] = f32(toNode);
 		genome[voidIdx * 4u + 3u] = f32(rng_u32_range(&rng, 256u));
 	}
 	
@@ -182,13 +175,13 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 		if (rng_f32(&rng) < 0.5) {
 			// Change from
 			let fromRand = rng_u32_range(&rng, 6u + nodeCount);
-			let from = select(fromRand + 3u, fromRand, fromRand < 6u);
-			genome[connIdx * 4u + 1u] = f32(from);
+			let fromNode = select(fromRand + 3u, fromRand, fromRand < 6u);
+			genome[connIdx * 4u + 1u] = f32(fromNode);
 		} else {
 			// Change to
 			let toRand = rng_u32_range(&rng, 3u + nodeCount);
-			let to = toRand + 6u;
-			genome[connIdx * 4u + 2u] = f32(to);
+			let toNode = toRand + 6u;
+			genome[connIdx * 4u + 2u] = f32(toNode);
 		}
 	}
 	
