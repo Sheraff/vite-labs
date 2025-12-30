@@ -232,7 +232,9 @@ async function setupGPU(
 
 	// loop
 	let playing = true
-	// TODO: implement loop
+	// TODO: implement loop, dispatching to the GPU to create and sort a new generation
+	// of genomes, reading back the best N genomes to store on the JS side,
+	// and calling onGeneration when a generation is completed.
 
 	controller.signal.addEventListener("abort", () => {
 		// TODO
