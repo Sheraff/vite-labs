@@ -111,12 +111,13 @@ export default function ParticleLifeGPUPage() {
 						<fieldset>
 							<legend>Controls</legend>
 							<p>Simulating generation {genCount + 1}</p>
+							<p>{POPULATION} entities × {ITERATIONS} iterations</p>
 							<button type="button" aria-pressed={genPlayState} id="generation-play-pause">
 								{genPlayState ? "⏸️ pause" : "▶️ play"}
 							</button>
 							<hr />
 							<label htmlFor="generation-select">Playing generation {currentGeneration} of {genCount}</label>
-							<input type="range" id="generation-select" name="generation-select" min="0" max={genCount} value={currentGeneration} />
+							<input type="range" id="generation-select" name="generation-select" min="0" max={genCount} value={currentGeneration} readOnly />
 							<button type="button" aria-pressed={autoplay} id="simulation-play-pause">
 								{autoplay ? "⏸️ pause" : "▶️ play"}
 							</button>
@@ -725,6 +726,31 @@ function graphFromGenome(genome: Float32Array) {
 		
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
 		
+		// Draw nodes
+		for (const node of nodes.values()) {
+			const index = node.index
+			const memo = entity.memory[index]
+			const raw = memo === undefined || isNaN(memo) ? 0 : memo === Infinity || memo === -Infinity ? 100 : Math.abs(memo)
+			const value = Math.min(1, raw)
+			ctx.fillStyle = getNodeColor(node)
+			const size = nodeSize * (0.5 + value * 1.5)
+			ctx.beginPath()
+			const x = getX(node)
+			const y = getY(node)
+			ctx.arc(x, y, size, 0, Math.PI * 2)
+			ctx.fill()
+			
+			if (node.isInput) {
+				ctx.fillStyle = "white"
+				ctx.textBaseline = "middle"
+				ctx.fillText(node.name, 0, y)
+			} else if (node.isOutput) {
+				ctx.fillStyle = "white"
+				ctx.textBaseline = "middle"
+				ctx.fillText(node.name, x + nodeSize + 20, y)
+			}
+		}
+
 		// Draw connections
 		for (const conn of connections) {
 			const fromNode = nodes.get(conn.from)
@@ -755,31 +781,6 @@ function graphFromGenome(genome: Float32Array) {
 			const dx = layerWidth
 			ctx.bezierCurveTo(fromX + nodeSize + dx / 3, fromY, toX - nodeSize - dx / 3, toY, toX - nodeSize, toY)
 			ctx.stroke()
-		}
-		
-		// Draw nodes
-		for (const node of nodes.values()) {
-			const index = node.index
-			const memo = entity.memory[index]
-			const raw = memo === undefined || isNaN(memo) ? 0 : memo === Infinity || memo === -Infinity ? 100 : Math.abs(memo)
-			const value = Math.min(1, raw)
-			ctx.fillStyle = getNodeColor(node)
-			const size = nodeSize * (0.5 + value * 1.5)
-			ctx.beginPath()
-			const x = getX(node)
-			const y = getY(node)
-			ctx.arc(x, y, size, 0, Math.PI * 2)
-			ctx.fill()
-			
-			if (node.isInput) {
-				ctx.fillStyle = "white"
-				ctx.textBaseline = "middle"
-				ctx.fillText(node.name, 0, y)
-			} else if (node.isOutput) {
-				ctx.fillStyle = "white"
-				ctx.textBaseline = "middle"
-				ctx.fillText(node.name, x + nodeSize + 20, y)
-			}
 		}
 	}
 	
@@ -993,24 +994,28 @@ async function setupGPU(
 	// Helper to run simulation for one generation
 	async function runGeneration() {
 		// Generate random food positions
-		const foodPositions = new Float32Array(FOOD_COUNT * 2)
-		for (let i = 0; i < FOOD_COUNT; i++) {
-			foodPositions[i * 2 + 0] = Math.random() * WORLD_SIZE
-			foodPositions[i * 2 + 1] = Math.random() * WORLD_SIZE
+		{
+			const foodPositions = new Float32Array(FOOD_COUNT * 2)
+			for (let i = 0; i < FOOD_COUNT; i++) {
+				foodPositions[i * 2 + 0] = Math.random() * WORLD_SIZE
+				foodPositions[i * 2 + 1] = Math.random() * WORLD_SIZE
+			}
+			device.queue.writeBuffer(foodBuffer, 0, foodPositions)
 		}
-		device.queue.writeBuffer(foodBuffer, 0, foodPositions)
 		
 		// Reset states
-		const states = new Float32Array(POPULATION * 6)
-		for (let i = 0; i < POPULATION; i++) {
-			states[i * 6 + 0] = WORLD_SIZE / 2 // x
-			states[i * 6 + 1] = WORLD_SIZE / 2 // y
-			states[i * 6 + 2] = 0 // angle
-			states[i * 6 + 3] = 1 // alive
-			states[i * 6 + 4] = 0 // score
-			states[i * 6 + 5] = 0 // distance
+		{
+			const states = new Float32Array(POPULATION * 6)
+			for (let i = 0; i < POPULATION; i++) {
+				states[i * 6 + 0] = WORLD_SIZE / 2 // x
+				states[i * 6 + 1] = WORLD_SIZE / 2 // y
+				states[i * 6 + 2] = 0 // angle
+				states[i * 6 + 3] = 1 // alive
+				states[i * 6 + 4] = 0 // score
+				states[i * 6 + 5] = 0 // distance
+			}
+			device.queue.writeBuffer(statesBuffer, 0, states)
 		}
-		device.queue.writeBuffer(statesBuffer, 0, states)
 		
 		// Reset memory buffers
 		device.queue.writeBuffer(memoryBuffer, 0, new Float32Array(POPULATION * MAX_NODES))
@@ -1019,16 +1024,18 @@ async function setupGPU(
 		device.queue.writeBuffer(eatenFoodBuffer, 0, new Uint32Array(Math.ceil((POPULATION * FOOD_COUNT) / 32)))
 		
 		// Update simulation config
-		const simConfig = new Uint32Array([
-			POPULATION,
-			FOOD_COUNT,
-			0, // placeholder for f32 worldSize
-			MAX_NODES,
-			MAX_GENES,
-			0, // iteration (updated per iteration)
-		])
-		new Float32Array(simConfig.buffer)[2] = WORLD_SIZE
-		device.queue.writeBuffer(simConfigBuffer, 0, simConfig)
+		{
+			const simConfig = new Uint32Array([
+				POPULATION,
+				FOOD_COUNT,
+				0, // placeholder for f32 worldSize
+				MAX_NODES,
+				MAX_GENES,
+				0, // iteration (updated per iteration)
+			])
+			new Float32Array(simConfig.buffer)[2] = WORLD_SIZE
+			device.queue.writeBuffer(simConfigBuffer, 0, simConfig)
+		}
 		
 		// Run ITERATIONS simulation steps
 		{
@@ -1039,101 +1046,107 @@ async function setupGPU(
 				pass.setBindGroup(0, simBindGroup)
 				pass.dispatchWorkgroups(Math.ceil(POPULATION / 64))
 				pass.end()
+				// yield to main thread every 20 iterations
+				if (iter % 20 === 0) await Promise.resolve()
 			}
 			device.queue.submit([encoder.finish()])
+			await device.queue.onSubmittedWorkDone()
+			if(controller.signal.aborted) return
 		}
 		
 		// Compute fitness and read back
-		await device.queue.onSubmittedWorkDone()
-		if(controller.signal.aborted) return
 		
 		// Read states to compute fitness on CPU
 		{
 			const encoder = device.createCommandEncoder()
 			encoder.copyBufferToBuffer(statesBuffer, 0, fitnessReadBuffer, 0, POPULATION * Float32Array.BYTES_PER_ELEMENT)
 			device.queue.submit([encoder.finish()])
+			await fitnessReadBuffer.mapAsync(GPUMapMode.READ)
+			if(controller.signal.aborted) return
 		}
-		
-		await fitnessReadBuffer.mapAsync(GPUMapMode.READ)
-		if(controller.signal.aborted) return
-		const statesData = new Float32Array(fitnessReadBuffer.getMappedRange())
 		
 		// Compute fitness: score + distance / 100 - penalties
-		const fitnessScores = new Array<number>(POPULATION)
 		const indices = new Array<number>(POPULATION)
-		for (let i = 0; i < POPULATION; i++) {
-			const alive = statesData[i * 6 + 3]
-			const score = statesData[i * 6 + 4]
-			const distance = statesData[i * 6 + 5]
-			
-			let fitness = score + distance / 100 // Increased distance reward
-			
-			// Penalty for dying (leaving world)
-			if (alive === 0) {
-				fitness = 0
+		{
+			const statesData = new Float32Array(fitnessReadBuffer.getMappedRange())
+			const fitnessScores = new Array<number>(POPULATION)
+			for (let i = 0; i < POPULATION; i++) {
+				let fitness = 0
+				const alive = statesData[i * 6 + 3]
+				if (alive !== 0) {
+					const score = statesData[i * 6 + 4]
+					const distance = statesData[i * 6 + 5]
+					fitness = score + distance / 10
+				}
+				fitnessScores[i] = fitness
+				indices[i] = i
 			}
+			fitnessReadBuffer.unmap()
 			
-			fitnessScores[i] = fitness
-			indices[i] = i
+			// Sort by fitness (descending)
+			indices.sort((a, b) => fitnessScores[b] - fitnessScores[a])
+			console.log(`Generation ${generation} - Best fitness: ${fitnessScores[indices[0]]}`)
 		}
-		fitnessReadBuffer.unmap()
-		
-		// Sort by fitness (descending)
-		indices.sort((a, b) => fitnessScores[b] - fitnessScores[a])
-		console.log(`Generation ${generation} - Best fitness: ${fitnessScores[indices[0]]}`)
 		
 		// Read back top genomes
-		const readEncoder = device.createCommandEncoder()
-		readEncoder.copyBufferToBuffer(genomesBuffer, 0, genomesReadBuffer, 0, genomeBufferSize)
-		device.queue.submit([readEncoder.finish()])
-		
-		await genomesReadBuffer.mapAsync(GPUMapMode.READ)
-		if(controller.signal.aborted) return
-		const genomesData = new Float32Array(genomesReadBuffer.getMappedRange())
-		
-		// Extract top STORE_PER_GENERATION genomes for visualization
-		const topGenomes: Float32Array[] = []
-		for (let i = 0; i < STORE_PER_GENERATION; i++) {
-			const index = indices[i]
-			const genome = new Float32Array(MAX_GENES * 4)
-			genome.set(genomesData.slice(index * MAX_GENES * 4, (index + 1) * MAX_GENES * 4))
-			topGenomes.push(genome)
+		{
+			const readEncoder = device.createCommandEncoder()
+			readEncoder.copyBufferToBuffer(genomesBuffer, 0, genomesReadBuffer, 0, genomeBufferSize)
+			device.queue.submit([readEncoder.finish()])
+			await genomesReadBuffer.mapAsync(GPUMapMode.READ)
+			if(controller.signal.aborted) return
 		}
 		
-		// Extract top BREED_PARENTS genomes for breeding (10% of population)
-		const parentsData = new Float32Array(BREED_PARENTS * MAX_GENES * 4)
-		for (let i = 0; i < BREED_PARENTS; i++) {
-			const index = indices[i]
-			const genome = genomesData.slice(index * MAX_GENES * 4, (index + 1) * MAX_GENES * 4)
-			parentsData.set(genome, i * MAX_GENES * 4)
+		{
+			const genomesData = new Float32Array(genomesReadBuffer.getMappedRange())
+			
+			// Extract top STORE_PER_GENERATION genomes for visualization
+			const topGenomes: Float32Array[] = []
+			for (let i = 0; i < STORE_PER_GENERATION; i++) {
+				const index = indices[i]
+				const genome = new Float32Array(MAX_GENES * 4)
+				genome.set(genomesData.slice(index * MAX_GENES * 4, (index + 1) * MAX_GENES * 4))
+				topGenomes.push(genome)
+			}
+			
+			// Extract top BREED_PARENTS genomes for breeding (10% of population)
+			const parentsData = new Float32Array(BREED_PARENTS * MAX_GENES * 4)
+			for (let i = 0; i < BREED_PARENTS; i++) {
+				const index = indices[i]
+				const genome = genomesData.slice(index * MAX_GENES * 4, (index + 1) * MAX_GENES * 4)
+				parentsData.set(genome, i * MAX_GENES * 4)
+			}
+			genomesReadBuffer.unmap()
+			
+			// Notify generation complete
+			onGeneration(generation, topGenomes)
+			generation++
+			
+			// Upload parents for breeding
+			device.queue.writeBuffer(parentsBuffer, 0, parentsData)
 		}
-		genomesReadBuffer.unmap()
-		
-		// Notify generation complete
-		onGeneration(generation, topGenomes)
-		generation++
-		
-		// Upload parents for breeding
-		device.queue.writeBuffer(parentsBuffer, 0, parentsData)
 		
 		// Breed new generation
-		const breedConfig = new Uint32Array([
-			POPULATION,
-			MAX_GENES,
-			BREED_PARENTS,
-			Math.floor(Math.random() * 4294967295), // RNG seed
-		])
-		device.queue.writeBuffer(breedConfigBuffer, 0, breedConfig)
+		{
+			const breedConfig = new Uint32Array([
+				POPULATION,
+				MAX_GENES,
+				BREED_PARENTS,
+				Math.floor(Math.random() * 4294967295), // RNG seed
+			])
+			device.queue.writeBuffer(breedConfigBuffer, 0, breedConfig)
+		}
 		
-		const breedEncoder = device.createCommandEncoder()
-		const breedPass = breedEncoder.beginComputePass()
-		breedPass.setPipeline(breedPipeline)
-		breedPass.setBindGroup(0, breedBindGroup)
-		breedPass.dispatchWorkgroups(Math.ceil(POPULATION / 64))
-		breedPass.end()
-		device.queue.submit([breedEncoder.finish()])
-		
-		await device.queue.onSubmittedWorkDone()
+		{
+			const breedEncoder = device.createCommandEncoder()
+			const breedPass = breedEncoder.beginComputePass()
+			breedPass.setPipeline(breedPipeline)
+			breedPass.setBindGroup(0, breedBindGroup)
+			breedPass.dispatchWorkgroups(Math.ceil(POPULATION / 64))
+			breedPass.end()
+			device.queue.submit([breedEncoder.finish()])
+			await device.queue.onSubmittedWorkDone()
+		}
 	}
 	
 	// Main loop

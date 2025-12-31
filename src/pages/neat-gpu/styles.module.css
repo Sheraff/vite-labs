@@ -18,6 +18,9 @@
 		align-items: stretch;
 	}
 
+	p {
+		margin: 0;
+	}
 }
 
 .canvas {
