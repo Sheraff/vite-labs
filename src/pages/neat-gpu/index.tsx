@@ -120,7 +120,7 @@ export default function ParticleLifeGPUPage() {
 								{genPlayState ? "⏸️ pause" : "▶️ play"}
 							</button>
 							<hr />
-							<label htmlFor="generation-select">Playing generation {currentGeneration} of {genCount}</label>
+							<label htmlFor="generation-select">Playing generation {currentGeneration}</label>
 							<FitnessGraph scores={fitnessScores} />
 							<input type="range" id="generation-select" name="generation-select" min="0" max={genCount} value={currentGeneration} readOnly />
 							<button type="button" aria-pressed={autoplay} id="simulation-play-pause">
