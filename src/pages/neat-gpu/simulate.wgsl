@@ -10,22 +10,10 @@ struct Config {
 	iterations: u32,
 }
 
-struct EntityState {
-	x: f32,
-	y: f32,
-	angle: f32,
-	alive: f32, // 1.0 = alive, 0.0 = dead
-	score: f32,
-	distance: f32,
-}
-
 @group(0) @binding(0) var<uniform> config: Config;
 @group(0) @binding(1) var<storage, read> genomes: array<f32>; // population * maxGenes * 4
-@group(0) @binding(2) var<storage, read_write> states: array<EntityState>;
-@group(0) @binding(3) var<storage, read_write> memory: array<f32>; // population * maxNodes
-@group(0) @binding(4) var<storage, read_write> current: array<f32>; // population * maxNodes
-@group(0) @binding(5) var<storage, read> foodPositions: array<vec2f>; // foodCount
-@group(0) @binding(6) var<storage, read_write> eatenFood: array<u32>; // population * foodCount (bitset)
+@group(0) @binding(2) var<storage, read> foodPositions: array<vec2f>; // foodCount
+@group(0) @binding(3) var<storage, read_write> fitness: array<f32>; // population
 
 const PI = 3.14159265359;
 const MAX_WEIGHT = 255.0;
@@ -256,10 +244,11 @@ fn aggregate(values: ptr<function, array<f32, 64>>, count: u32, aggregationType:
 
 fn processNode(
 	genomeOffset: u32,
-	memOffset: u32,
 	nodeIdx: u32,
 	nodeAggr: u32,
-	nodeActiv: u32
+	nodeActiv: u32,
+	memory: ptr<function, array<f32, 39>>,
+	current: ptr<function, array<f32, 39>>
 ) {
 	// Collect incoming connections for this node
 	var incomingValues: array<f32, 64>;
@@ -272,7 +261,7 @@ fn processNode(
 			if (toNode == nodeIdx && incomingCount < 64u) {
 				let weight = genomes[geneIdx + 3u];
 				let fromNode = u32(genomes[geneIdx + 1u]);
-				incomingValues[incomingCount] = memory[memOffset + fromNode] * (weight / MAX_WEIGHT);
+				incomingValues[incomingCount] = (*memory)[fromNode] * (weight / MAX_WEIGHT);
 				incomingCount++;
 			}
 		}
@@ -281,7 +270,7 @@ fn processNode(
 	// Apply aggregation and activation
 	if (incomingCount > 0u) {
 		let aggregated = aggregate(&incomingValues, incomingCount, nodeAggr);
-		current[memOffset + nodeIdx] = activation(aggregated, nodeActiv);
+		(*current)[nodeIdx] = activation(aggregated, nodeActiv);
 	}
 }
 
@@ -290,42 +279,54 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 	let entityId = id.x;
 	if (entityId >= config.population) { return; }
 	
-	// Get entity state
-	var state = states[entityId];
+	// Initialize local state
+	var x = config.worldSize / 2.0;
+	var y = config.worldSize / 2.0;
+	var angle = 0.0;
+	var alive = true;
+	var score = 0.0;
+	var total_distance = 0.0;
+	
+	// Initialize local neural network buffers
+	var memory: array<f32, 39>;
+	var current: array<f32, 39>;
+	
+	// Initialize eaten food bitset (300 food / 32 bits = 10 u32s needed)
+	var eatenFood: array<u32, 10>;
 	
 	// Loop over all iterations
 	for (var iter = 0u; iter < config.iterations; iter++) {
 		// Check boundaries
-		if (state.x < 0.0 || state.x > config.worldSize || state.y < 0.0 || state.y > config.worldSize) {
-			state.alive = 0.0;
+		if (x < 0.0 || x > config.worldSize || y < 0.0 || y > config.worldSize) {
+			alive = false;
 			break;
 		}
 	
 		// Wrap angle
-		if (state.angle < 0.0) {
-			state.angle = -(-state.angle % (2.0 * PI)) + 2.0 * PI;
+		if (angle < 0.0) {
+			angle = -(-(angle) % (2.0 * PI)) + 2.0 * PI;
 		}
-		if (state.angle > 2.0 * PI) {
-			state.angle = state.angle % (2.0 * PI);
+		if (angle > 2.0 * PI) {
+			angle = angle % (2.0 * PI);
 		}
 		
 		// Detect walls
-		let angle = -state.angle + PI / 2.0;
+		let wallAngle = -angle + PI / 2.0;
 		var has_wall_ahead = false;
 		var has_wall_left = false;
 		var has_wall_right = false;
 		
-		let ahead_x = state.x + sin(angle) * VISION_DISTANCE;
-		let ahead_y = state.y + cos(angle) * VISION_DISTANCE;
+		let ahead_x = x + sin(wallAngle) * VISION_DISTANCE;
+		let ahead_y = y + cos(wallAngle) * VISION_DISTANCE;
 		has_wall_ahead = ahead_x < 0.0 || ahead_x > config.worldSize || ahead_y < 0.0 || ahead_y > config.worldSize;
 		
 		if (!has_wall_ahead) {
-			let left_x = state.x + sin(angle + PI / 2.0) * VISION_DISTANCE;
-			let left_y = state.y + cos(angle + PI / 2.0) * VISION_DISTANCE;
+			let left_x = x + sin(wallAngle + PI / 2.0) * VISION_DISTANCE;
+			let left_y = y + cos(wallAngle + PI / 2.0) * VISION_DISTANCE;
 			has_wall_left = left_x < 0.0 || left_x > config.worldSize || left_y < 0.0 || left_y > config.worldSize;
 			
-			let right_x = state.x + sin(angle - PI / 2.0) * VISION_DISTANCE;
-			let right_y = state.y + cos(angle - PI / 2.0) * VISION_DISTANCE;
+			let right_x = x + sin(wallAngle - PI / 2.0) * VISION_DISTANCE;
+			let right_y = y + cos(wallAngle - PI / 2.0) * VISION_DISTANCE;
 			has_wall_right = right_x < 0.0 || right_x > config.worldSize || right_y < 0.0 || right_y > config.worldSize;
 		}
 		
@@ -336,7 +337,7 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 		
 		for (var f = 0u; f < config.foodCount; f++) {
 			// Check if food already eaten (using bitset)
-			let bitIndex = entityId * config.foodCount + f;
+			let bitIndex = f;
 			let arrayIndex = bitIndex / 32u;
 			let bitOffset = bitIndex % 32u;
 			let eaten = (eatenFood[arrayIndex] & (1u << bitOffset)) != 0u;
@@ -344,17 +345,17 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 			if (eaten) { continue; }
 			
 			let food = foodPositions[f];
-			let distance = length(vec2f(state.x, state.y) - food);
+			let distance = length(vec2f(x, y) - food);
 			
 			if (distance < EATING_DISTANCE) {
-				state.score += 100.0;
+				score += 100.0;
 				// Mark as eaten
 				eatenFood[arrayIndex] |= (1u << bitOffset);
 			} else if (distance < VISION_DISTANCE) {
 				// Calculate angle from entity to food
-				let foodAngle = atan2(food.y - state.y, food.x - state.x);
+				let foodAngle = atan2(food.y - y, food.x - x);
 				// Calculate relative angle (difference from entity's heading)
-				var relativeAngle = foodAngle - state.angle;
+				var relativeAngle = foodAngle - angle;
 				// Normalize to [-PI, PI]
 				if (relativeAngle > PI) {
 					relativeAngle -= 2.0 * PI;
@@ -379,27 +380,25 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 		}
 		
 		// Execute neural network
-		let memOffset = entityId * config.maxNodes;
-		
 		// Clear current buffer and set inputs
 		for (var i = 0u; i < config.maxNodes; i++) {
-			current[memOffset + i] = 0.0;
+			current[i] = 0.0;
 		}
 		
 		// Set input nodes
-		current[memOffset + 0u] = select(0.0, 1.0, has_food_left);
-		current[memOffset + 1u] = select(0.0, 1.0, has_food_ahead);
-		current[memOffset + 2u] = select(0.0, 1.0, has_food_right);
-		current[memOffset + 3u] = select(0.0, 1.0, has_wall_left);
-		current[memOffset + 4u] = select(0.0, 1.0, has_wall_ahead);
-		current[memOffset + 5u] = select(0.0, 1.0, has_wall_right);
+		current[0u] = select(0.0, 1.0, has_food_left);
+		current[1u] = select(0.0, 1.0, has_food_ahead);
+		current[2u] = select(0.0, 1.0, has_food_right);
+		current[3u] = select(0.0, 1.0, has_wall_left);
+		current[4u] = select(0.0, 1.0, has_wall_ahead);
+		current[5u] = select(0.0, 1.0, has_wall_right);
 		
-		memory[memOffset + 0u] = current[memOffset + 0u];
-		memory[memOffset + 1u] = current[memOffset + 1u];
-		memory[memOffset + 2u] = current[memOffset + 2u];
-		memory[memOffset + 3u] = current[memOffset + 3u];
-		memory[memOffset + 4u] = current[memOffset + 4u];
-		memory[memOffset + 5u] = current[memOffset + 5u];
+		memory[0u] = current[0u];
+		memory[1u] = current[1u];
+		memory[2u] = current[2u];
+		memory[3u] = current[3u];
+		memory[4u] = current[4u];
+		memory[5u] = current[5u];
 		
 		// Process genome to execute neural network
 		let genomeOffset = entityId * config.maxGenes * 4u;
@@ -415,10 +414,11 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 			
 			processNode(
 				genomeOffset,
-				memOffset,
 				nodeIdx,
 				nodeAggr,
-				nodeActiv
+				nodeActiv,
+				&memory,
+				&current
 			);
 		}
 
@@ -426,37 +426,42 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 		for (var outputIdx = 6u; outputIdx < INNATE_NODES; outputIdx++) {
 			processNode(
 				genomeOffset,
-				memOffset,
 				outputIdx,
 				0u, // sum aggregation
-				0u  // identity activation
+				0u,  // identity activation
+				&memory,
+				&current
 			);
 		}
 		
 		// Copy current to memory
 		for (var i = 0u; i < config.maxNodes; i++) {
-			memory[memOffset + i] = current[memOffset + i];
+			memory[i] = current[i];
 		}
 		
 		// Read outputs and update state
-		let rotate_left = max(0.0, min(current[memOffset + 6u], 10.0));
-		let rotate_right = max(0.0, min(current[memOffset + 7u], 10.0));
+		let rotate_left = max(0.0, min(current[6u], 10.0));
+		let rotate_right = max(0.0, min(current[7u], 10.0));
 		let rotate = rotate_right - rotate_left;
 		let delta = 1000.0 / 120.0; // Fixed timestep: 8.333333ms
-		state.angle += (rotate / 100.0) * (delta / 10.0);
+		angle += (rotate / 100.0) * (delta / 10.0);
 		
-		let speed = min(4.0, max(0.0, current[memOffset + 8u]));
+		let speed = min(4.0, max(0.0, current[8u]));
 		if (speed > 0.0) {
-			let prevX = state.x;
-			let prevY = state.y;
-			state.x += cos(state.angle) * speed * (delta / 100.0);
-			state.y += sin(state.angle) * speed * (delta / 100.0);
-			state.distance += length(vec2f(state.x - prevX, state.y - prevY));
+			let prevX = x;
+			let prevY = y;
+			x += cos(angle) * speed * (delta / 100.0);
+			y += sin(angle) * speed * (delta / 100.0);
+			total_distance += length(vec2f(x - prevX, y - prevY));
 		}
 	
 		// Continue iteration loop
 	}
 	
-	// Update final state after all iterations
-	states[entityId] = state;
+	// Compute and write fitness
+	var final_fitness = 0.0;
+	if (alive) {
+		final_fitness = score + total_distance;
+	}
+	fitness[entityId] = final_fitness;
 }

@@ -841,29 +841,6 @@ async function setupGPU(
 	})
 	onAbort(() => parentsBuffer.destroy())
 	
-	const statesBufferSize = POPULATION * 6 * Float32Array.BYTES_PER_ELEMENT // EntityState struct
-	const statesBuffer = device.createBuffer({
-		label: "entity states storage buffer",
-		size: statesBufferSize,
-		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
-	})
-	onAbort(() => statesBuffer.destroy())
-	
-	const memoryBufferSize = POPULATION * MAX_NODES * Float32Array.BYTES_PER_ELEMENT
-	const memoryBuffer = device.createBuffer({
-		label: "neural network memory buffer",
-		size: memoryBufferSize,
-		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-	})
-	onAbort(() => memoryBuffer.destroy())
-	
-	const currentBuffer = device.createBuffer({
-		label: "neural network current buffer",
-		size: memoryBufferSize,
-		usage: GPUBufferUsage.STORAGE,
-	})
-	onAbort(() => currentBuffer.destroy())
-	
 	const foodBufferSize = FOOD_COUNT * 2 * Float32Array.BYTES_PER_ELEMENT
 	const foodBuffer = device.createBuffer({
 		label: "food positions buffer",
@@ -871,14 +848,6 @@ async function setupGPU(
 		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
 	})
 	onAbort(() => foodBuffer.destroy())
-	
-	const eatenFoodBufferSize = Math.ceil((POPULATION * FOOD_COUNT) / 32) * Uint32Array.BYTES_PER_ELEMENT
-	const eatenFoodBuffer = device.createBuffer({
-		label: "eaten food bitset buffer",
-		size: eatenFoodBufferSize,
-		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-	})
-	onAbort(() => eatenFoodBuffer.destroy())
 	
 	const fitnessBuffer = device.createBuffer({
 		label: "fitness scores buffer",
@@ -923,11 +892,8 @@ async function setupGPU(
 		entries: [
 			{ binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: "uniform" } },
 			{ binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: "read-only-storage" } },
-			{ binding: 2, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } },
+			{ binding: 2, visibility: GPUShaderStage.COMPUTE, buffer: { type: "read-only-storage" } },
 			{ binding: 3, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } },
-			{ binding: 4, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } },
-			{ binding: 5, visibility: GPUShaderStage.COMPUTE, buffer: { type: "read-only-storage" } },
-			{ binding: 6, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } },
 		],
 	})
 	
@@ -970,11 +936,8 @@ async function setupGPU(
 		entries: [
 			{ binding: 0, resource: { buffer: simConfigBuffer } },
 			{ binding: 1, resource: { buffer: genomesBuffer } },
-			{ binding: 2, resource: { buffer: statesBuffer } },
-			{ binding: 3, resource: { buffer: memoryBuffer } },
-			{ binding: 4, resource: { buffer: currentBuffer } },
-			{ binding: 5, resource: { buffer: foodBuffer } },
-			{ binding: 6, resource: { buffer: eatenFoodBuffer } },
+			{ binding: 2, resource: { buffer: foodBuffer } },
+			{ binding: 3, resource: { buffer: fitnessBuffer } },
 		],
 	})
 	
@@ -1004,30 +967,6 @@ async function setupGPU(
 			device.queue.writeBuffer(foodBuffer, 0, foodPositions)
 		}
 		
-		// Reset states
-		{
-			const states = new Float32Array(POPULATION * 6)
-			const initialPositions = WORLD_SIZE / 2
-			const initialState = new Float32Array([
-				initialPositions, // x
-				initialPositions, // y
-				0, // angle
-				1, // alive
-				0, // score
-				0 // distance
-			])
-			for (let i = 0; i < POPULATION; i++) {
-				states.set(initialState, i * 6)
-			}
-			device.queue.writeBuffer(statesBuffer, 0, states)
-		}
-		
-		// Reset memory buffers
-		device.queue.writeBuffer(memoryBuffer, 0, new Float32Array(POPULATION * MAX_NODES))
-		
-		// Reset eaten food
-		device.queue.writeBuffer(eatenFoodBuffer, 0, new Uint32Array(Math.ceil((POPULATION * FOOD_COUNT) / 32)))
-		
 		// Update simulation config
 		{
 			const simConfig = new Uint32Array([
@@ -1055,38 +994,23 @@ async function setupGPU(
 			if(controller.signal.aborted) return
 		}
 		
-		// Compute fitness and read back
-		
-		// Read states to compute fitness on CPU
+		// Read fitness scores
 		{
 			const encoder = device.createCommandEncoder()
-			encoder.copyBufferToBuffer(statesBuffer, 0, fitnessReadBuffer, 0, POPULATION * Float32Array.BYTES_PER_ELEMENT)
+			encoder.copyBufferToBuffer(fitnessBuffer, 0, fitnessReadBuffer, 0, POPULATION * Float32Array.BYTES_PER_ELEMENT)
 			device.queue.submit([encoder.finish()])
 			await fitnessReadBuffer.mapAsync(GPUMapMode.READ)
 			if(controller.signal.aborted) return
 		}
 		
-		// Compute fitness: score + distance / 100 - penalties
-		const indices = new Array<number>(POPULATION)
+		// Get fitness scores and sort indices
+		const indices = Array.from({ length: POPULATION }, (_, i) => i)
 		{
-			const statesData = new Float32Array(fitnessReadBuffer.getMappedRange())
-			const fitnessScores = new Array<number>(POPULATION)
-			for (let i = 0; i < POPULATION; i++) {
-				let fitness = 0
-				const alive = statesData[i * 6 + 3]
-				if (alive !== 0) {
-					const score = statesData[i * 6 + 4]
-					const distance = statesData[i * 6 + 5]
-					fitness = score + distance / 10
-				}
-				fitnessScores[i] = fitness
-				indices[i] = i
-			}
-			fitnessReadBuffer.unmap()
-			
-			// Sort by fitness (descending)
+			const fitnessScores = new Float32Array(fitnessReadBuffer.getMappedRange())
+			// Sort by fitness (descending) - must happen before unmap
 			indices.sort((a, b) => fitnessScores[b] - fitnessScores[a])
-			console.log(`Generation ${generation} - Best fitness: ${fitnessScores[indices[0]]}`)
+			console.log(`Generation ${generation + 1} - Best fitness: ${fitnessScores[indices[0]]}`)
+			fitnessReadBuffer.unmap()
 		}
 		
 		// Read back top genomes
@@ -1096,9 +1020,6 @@ async function setupGPU(
 			device.queue.submit([readEncoder.finish()])
 			await genomesReadBuffer.mapAsync(GPUMapMode.READ)
 			if(controller.signal.aborted) return
-		}
-		
-		{
 			const genomesData = new Float32Array(genomesReadBuffer.getMappedRange())
 			
 			// Extract top STORE_PER_GENERATION genomes for visualization
