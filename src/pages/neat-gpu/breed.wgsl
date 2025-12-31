@@ -9,8 +9,9 @@ struct Config {
 }
 
 @group(0) @binding(0) var<uniform> config: Config;
-@group(0) @binding(1) var<storage, read> parents: array<f32>; // parentsCount * maxGenes * 4
-@group(0) @binding(2) var<storage, read_write> offspring: array<f32>; // population * maxGenes * 4
+@group(0) @binding(1) var<storage, read> sortedIndices: array<u32>; // population sorted by fitness
+@group(0) @binding(2) var<storage, read> genomes: array<f32>; // population * maxGenes * 4 (parents)
+@group(0) @binding(3) var<storage, read_write> offspring: array<f32>; // population * maxGenes * 4
 
 const MAX_WEIGHT = 255.0;
 const INNATE_NODES = 9u;
@@ -91,15 +92,16 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 	var rng: RngState;
 	rng.state = config.rngSeed + entityId;
 	
-	// Select parent
-	let parentId = entityId % config.parentsCount;
-	let parentOffset = parentId * config.maxGenes * 4u;
+	// Select parent by index in sorted fitness array
+	let parentRank = entityId % config.parentsCount;
+	let parentGenomeId = sortedIndices[parentRank];
+	let parentOffset = parentGenomeId * config.maxGenes * 4u;
 	let offspringOffset = entityId * config.maxGenes * 4u;
 	
-	// Copy parent genome to offspring
+	// Copy parent genome
 	var genome: array<f32, 120>; // max 30 genes * 4 elements
 	for (var i = 0u; i < 120u; i++) {
-		genome[i] = parents[parentOffset + i];
+		genome[i] = genomes[parentOffset + i];
 	}
 
 	// Only apply mutations if not an elite (first parentsCount entities are elite)

@@ -834,12 +834,19 @@ async function setupGPU(
 	})
 	onAbort(() => genomesBuffer.destroy())
 	
-	const parentsBuffer = device.createBuffer({
-		label: "parents storage buffer",
-		size: BREED_PARENTS * MAX_GENES * 4 * Float32Array.BYTES_PER_ELEMENT,
+	const offspringBuffer = device.createBuffer({
+		label: "offspring storage buffer",
+		size: genomeBufferSize,
+		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+	})
+	onAbort(() => offspringBuffer.destroy())
+	
+	const indicesBuffer = device.createBuffer({
+		label: "sorted indices buffer",
+		size: POPULATION * Uint32Array.BYTES_PER_ELEMENT,
 		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
 	})
-	onAbort(() => parentsBuffer.destroy())
+	onAbort(() => indicesBuffer.destroy())
 	
 	const foodBufferSize = FOOD_COUNT * 2 * Float32Array.BYTES_PER_ELEMENT
 	const foodBuffer = device.createBuffer({
@@ -859,7 +866,7 @@ async function setupGPU(
 	// Create readback buffers
 	const genomesReadBuffer = device.createBuffer({
 		label: "genomes read buffer",
-		size: genomeBufferSize,
+		size: MAX_GENES * 4 * Float32Array.BYTES_PER_ELEMENT,
 		usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
 	})
 	onAbort(() => genomesReadBuffer.destroy())
@@ -901,8 +908,9 @@ async function setupGPU(
 		label: "breeding bind group layout",
 		entries: [
 			{ binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: "uniform" } },
-			{ binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: "read-only-storage" } },
-			{ binding: 2, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } },
+			{ binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: "read-only-storage" } }, // sorted indices
+			{ binding: 2, visibility: GPUShaderStage.COMPUTE, buffer: { type: "read-only-storage" } }, // genomes
+			{ binding: 3, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } }, // offspring
 		],
 	})
 	
@@ -946,8 +954,9 @@ async function setupGPU(
 		layout: breedBindGroupLayout,
 		entries: [
 			{ binding: 0, resource: { buffer: breedConfigBuffer } },
-			{ binding: 1, resource: { buffer: parentsBuffer } },
+			{ binding: 1, resource: { buffer: indicesBuffer } },
 			{ binding: 2, resource: { buffer: genomesBuffer } },
+			{ binding: 3, resource: { buffer: offspringBuffer } },
 		],
 	})
 	
@@ -1013,40 +1022,31 @@ async function setupGPU(
 			fitnessReadBuffer.unmap()
 		}
 		
-		// Read back top genomes
-		{
+		// Upload sorted indices for breeding
+		device.queue.writeBuffer(indicesBuffer, 0, new Uint32Array(indices))
+	
+		// Read back only top STORE_PER_GENERATION genomes for visualization
+		const topGenomes: Float32Array[] = []
+		for (let i = 0; i < STORE_PER_GENERATION; i++) {
+			const index = indices[i]
+			const genomeSize = MAX_GENES * 4 * Float32Array.BYTES_PER_ELEMENT
+			const genomeOffset = index * genomeSize
+			
 			const readEncoder = device.createCommandEncoder()
-			readEncoder.copyBufferToBuffer(genomesBuffer, 0, genomesReadBuffer, 0, genomeBufferSize)
+			readEncoder.copyBufferToBuffer(genomesBuffer, genomeOffset, genomesReadBuffer, 0, genomeSize)
 			device.queue.submit([readEncoder.finish()])
-			await genomesReadBuffer.mapAsync(GPUMapMode.READ)
+			await genomesReadBuffer.mapAsync(GPUMapMode.READ, 0, genomeSize)
 			if(controller.signal.aborted) return
-			const genomesData = new Float32Array(genomesReadBuffer.getMappedRange())
 			
-			// Extract top STORE_PER_GENERATION genomes for visualization
-			const topGenomes: Float32Array[] = []
-			for (let i = 0; i < STORE_PER_GENERATION; i++) {
-				const index = indices[i]
-				const genome = new Float32Array(MAX_GENES * 4)
-				genome.set(genomesData.slice(index * MAX_GENES * 4, (index + 1) * MAX_GENES * 4))
-				topGenomes.push(genome)
-			}
-			
-			// Extract top BREED_PARENTS genomes for breeding (10% of population)
-			const parentsData = new Float32Array(BREED_PARENTS * MAX_GENES * 4)
-			for (let i = 0; i < BREED_PARENTS; i++) {
-				const index = indices[i]
-				const genome = genomesData.slice(index * MAX_GENES * 4, (index + 1) * MAX_GENES * 4)
-				parentsData.set(genome, i * MAX_GENES * 4)
-			}
+			const genome = new Float32Array(MAX_GENES * 4)
+			genome.set(new Float32Array(genomesReadBuffer.getMappedRange(0, genomeSize)))
 			genomesReadBuffer.unmap()
-			
-			// Notify generation complete
-			onGeneration(generation, topGenomes)
-			generation++
-			
-			// Upload parents for breeding
-			device.queue.writeBuffer(parentsBuffer, 0, parentsData)
+			topGenomes.push(genome)
 		}
+	
+		// Notify generation complete
+		onGeneration(generation, topGenomes)
+		generation++
 		
 		// Breed new generation
 		{
@@ -1066,6 +1066,8 @@ async function setupGPU(
 			breedPass.setBindGroup(0, breedBindGroup)
 			breedPass.dispatchWorkgroups(Math.ceil(POPULATION / 64))
 			breedPass.end()
+			// Copy offspring back to genomes for next generation
+			breedEncoder.copyBufferToBuffer(offspringBuffer, 0, genomesBuffer, 0, genomeBufferSize)
 			device.queue.submit([breedEncoder.finish()])
 			await device.queue.onSubmittedWorkDone()
 		}
