@@ -17,8 +17,6 @@ struct EntityState {
 	alive: f32, // 1.0 = alive, 0.0 = dead
 	score: f32,
 	distance: f32,
-	initialX: f32,
-	initialY: f32,
 }
 
 @group(0) @binding(0) var<uniform> config: Config;

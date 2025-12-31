@@ -839,7 +839,7 @@ async function setupGPU(
 	})
 	onAbort(() => parentsBuffer.destroy())
 	
-	const statesBufferSize = POPULATION * 8 * Float32Array.BYTES_PER_ELEMENT // EntityState struct
+	const statesBufferSize = POPULATION * 6 * Float32Array.BYTES_PER_ELEMENT // EntityState struct
 	const statesBuffer = device.createBuffer({
 		label: "entity states storage buffer",
 		size: statesBufferSize,
@@ -1002,16 +1002,14 @@ async function setupGPU(
 		device.queue.writeBuffer(foodBuffer, 0, foodPositions)
 		
 		// Reset states
-		const states = new Float32Array(POPULATION * 8)
+		const states = new Float32Array(POPULATION * 6)
 		for (let i = 0; i < POPULATION; i++) {
-			states[i * 8 + 0] = WORLD_SIZE / 2 // x
-			states[i * 8 + 1] = WORLD_SIZE / 2 // y
-			states[i * 8 + 2] = 0 // angle
-			states[i * 8 + 3] = 1 // alive
-			states[i * 8 + 4] = 0 // score
-			states[i * 8 + 5] = 0 // distance
-			states[i * 8 + 6] = WORLD_SIZE / 2 // initialX
-			states[i * 8 + 7] = WORLD_SIZE / 2 // initialY
+			states[i * 6 + 0] = WORLD_SIZE / 2 // x
+			states[i * 6 + 1] = WORLD_SIZE / 2 // y
+			states[i * 6 + 2] = 0 // angle
+			states[i * 6 + 3] = 1 // alive
+			states[i * 6 + 4] = 0 // score
+			states[i * 6 + 5] = 0 // distance
 		}
 		device.queue.writeBuffer(statesBuffer, 0, states)
 		
@@ -1065,9 +1063,9 @@ async function setupGPU(
 		const fitnessScores = new Array<number>(POPULATION)
 		const indices = new Array<number>(POPULATION)
 		for (let i = 0; i < POPULATION; i++) {
-			const alive = statesData[i * 8 + 3]
-			const score = statesData[i * 8 + 4]
-			const distance = statesData[i * 8 + 5]
+			const alive = statesData[i * 6 + 3]
+			const score = statesData[i * 6 + 4]
+			const distance = statesData[i * 6 + 5]
 			
 			let fitness = score + distance / 100 // Increased distance reward
 			
