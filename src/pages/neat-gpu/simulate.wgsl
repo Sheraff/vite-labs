@@ -461,7 +461,7 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 	// Compute and write fitness
 	var final_fitness = 0.0;
 	if (alive) {
-		final_fitness = score + total_distance;
+		final_fitness = score + total_distance / 10.0;
 	}
 	fitness[entityId] = final_fitness;
 }
