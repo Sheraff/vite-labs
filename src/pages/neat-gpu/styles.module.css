@@ -28,7 +28,6 @@
 	aspect-ratio: 1;
 	width: 100dvmin;
 	height: 100dvmin;
-	pointer-events: none;
 }
 
 .viz {

@@ -1262,8 +1262,11 @@ function setupViz(
 		let closestDist = Infinity
 		const rect = ctx.canvas.getBoundingClientRect()
 		const scale = ctx.canvas.width / (WORLD_SIZE * devicePixelRatio)
-		const x = ((e.clientX - rect.left) * (ctx.canvas.width / rect.width)) / scale
-		const y = ((e.clientY - rect.top) * (ctx.canvas.height / rect.height)) / scale
+		// Convert click position to world coordinates
+		const canvasX = (e.clientX - rect.left) * (ctx.canvas.width / rect.width)
+		const canvasY = (e.clientY - rect.top) * (ctx.canvas.height / rect.height)
+		const x = canvasX / (scale * devicePixelRatio)
+		const y = canvasY / (scale * devicePixelRatio)
 		for (let i = 0; i < entities.length; i++) {
 			const entity = entities[i]
 			const dx = entity.state.x - x
