@@ -31,6 +31,7 @@ const PI = 3.14159265359;
 const MAX_WEIGHT = 255.0;
 const INNATE_NODES = 9u;
 const VISION_DISTANCE = 20.0;
+const EATING_DISTANCE = 3.0;
 
 // Activation functions (28 total)
 fn activation(x: f32, activationType: u32) -> f32 {
@@ -345,7 +346,7 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 		let food = foodPositions[f];
 		let distance = length(vec2f(state.x, state.y) - food);
 		
-		if (distance < 5.0) {
+		if (distance < EATING_DISTANCE) {
 			state.score += 100.0;
 			// Mark as eaten
 			eatenFood[arrayIndex] |= (1u << bitOffset);

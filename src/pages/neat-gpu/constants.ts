@@ -5,8 +5,8 @@
 export const MAX_GENES = 30 // Maximum genes per genome (120 f32 elements)
 export const INNATE_NODES = 9 // 6 inputs + 3 outputs
 export const MAX_NODES = MAX_GENES + INNATE_NODES // Maximum possible nodes
-export const FOOD_COUNT = 200
-export const WORLD_SIZE = 200
+export const FOOD_COUNT = 300
+export const WORLD_SIZE = 300
 export const POPULATION = 3000
 export const ITERATIONS = 3000
 export const STORE_PER_GENERATION = 10 // Top genomes to store for visualization

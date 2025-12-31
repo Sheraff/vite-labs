@@ -332,6 +332,7 @@ function entityFromGenome(genome: Float32Array, world: World) {
 	}
 	
 	const visionDistance = 20
+	const eatingDistance = 3
 
 	function tick(delta: number) {
 		if (!state.alive) return
@@ -377,7 +378,7 @@ function entityFromGenome(genome: Float32Array, world: World) {
 			const food = world.food[f]
 			const distance = Math.hypot(state.x - food.x, state.y - food.y)
 			
-			if (distance < 5) {
+			if (distance < eatingDistance) {
 				state.score += 100
 				state.eaten.add(f)
 			} else if (distance < visionDistance) {
@@ -438,7 +439,7 @@ function entityFromGenome(genome: Float32Array, world: World) {
 		
 		// Draw square at position, rotated by angle
 		ctx.beginPath()
-		ctx.arc(state.x * scale, state.y * scale, 3, 0, Math.PI * 2)
+		ctx.arc(state.x * scale, state.y * scale, eatingDistance * scale, 0, Math.PI * 2)
 		ctx.fillStyle = selected ? "yellow" : "white"
 		ctx.fill()
 		
