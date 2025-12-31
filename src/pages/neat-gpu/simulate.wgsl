@@ -431,14 +431,15 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 	let rotate_left = max(0.0, min(current[currOffset + 6u], 10.0));
 	let rotate_right = max(0.0, min(current[currOffset + 7u], 10.0));
 	let rotate = rotate_right - rotate_left;
-	state.angle += rotate / 100.0;
+	let delta = 1000.0 / 120.0; // Fixed timestep: 8.333333ms
+	state.angle += (rotate / 100.0) * (delta / 10.0);
 	
 	let speed = min(4.0, max(0.0, current[currOffset + 8u]));
 	if (speed > 0.0) {
 		let prevX = state.x;
 		let prevY = state.y;
-		state.x += cos(state.angle) * speed;
-		state.y += sin(state.angle) * speed;
+		state.x += cos(state.angle) * speed * (delta / 100.0);
+		state.y += sin(state.angle) * speed * (delta / 100.0);
 		state.distance += length(vec2f(state.x - prevX, state.y - prevY));
 	}
 	

@@ -421,13 +421,13 @@ function entityFromGenome(genome: Float32Array, world: World) {
 		
 		// Read outputs and update state
 		const rotate = Math.max(0, Math.min(current[7], 10)) - Math.max(0, Math.min(current[6], 10))
-		state.angle += rotate / 100
+		state.angle += (rotate / 100) * (delta / 10)
 		const speed = Math.min(4, Math.max(0, current[8]))
 		if (speed > 0) {
 			const prevX = state.x
 			const prevY = state.y
-			state.x += Math.cos(state.angle) * speed
-			state.y += Math.sin(state.angle) * speed
+			state.x += Math.cos(state.angle) * speed * (delta / 100)
+			state.y += Math.sin(state.angle) * speed * (delta / 100)
 			state.distance += Math.hypot(state.x - prevX, state.y - prevY)
 		}
 	}
