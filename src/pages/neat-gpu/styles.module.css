@@ -18,8 +18,16 @@
 		align-items: stretch;
 	}
 
+	hr {
+		width: 100%;
+	}
+
 	p {
 		margin: 0;
+	}
+
+	svg {
+		margin: 0 0.5em;
 	}
 }
 

@@ -1,7 +1,7 @@
 import type { RouteMeta } from "#router"
 
 import { Head } from "#components/Head"
-import { use, useEffect, useRef, useState } from "react"
+import { use, useEffect, useMemo, useRef, useState } from "react"
 
 import styles from "./styles.module.css"
 import { ACTIVATIONS, AGGREGATIONS, BREED_PARENTS, FOOD_COUNT, INNATE_NODES, ITERATIONS, MAX, MAX_GENES, MAX_NODES, POPULATION, STORE_PER_GENERATION, WORLD_SIZE } from "./constants"
@@ -61,6 +61,7 @@ export default function ParticleLifeGPUPage() {
 	const vizCanvasRef = useRef<HTMLCanvasElement>(null)
 
 	const [genCount, setGenCount] = useState(0)
+	const [fitnessScores, setFitnessScores] = useState([0])
 	const [genPlayState, setGenPlayState] = useState(true)
 
 	const [currentGeneration, setCurrentGeneration] = useState(0)
@@ -87,7 +88,10 @@ export default function ParticleLifeGPUPage() {
 			ctx,
 			vizCtx,
 			controller,
-			onGeneration: setGenCount,
+			onGeneration: (count, fitness) => {
+				setGenCount(count)
+				setFitnessScores(p => [...p, fitness])
+			},
 			onSimulation: setCurrentGeneration,
 			onPlayState: setAutoplay,
 			onGenState: setGenPlayState,
@@ -117,6 +121,7 @@ export default function ParticleLifeGPUPage() {
 							</button>
 							<hr />
 							<label htmlFor="generation-select">Playing generation {currentGeneration} of {genCount}</label>
+							<FitnessGraph scores={fitnessScores} />
 							<input type="range" id="generation-select" name="generation-select" min="0" max={genCount} value={currentGeneration} readOnly />
 							<button type="button" aria-pressed={autoplay} id="simulation-play-pause">
 								{autoplay ? "⏸️ pause" : "▶️ play"}
@@ -128,6 +133,42 @@ export default function ParticleLifeGPUPage() {
 			</div>
 			{supported && <canvas ref={canvasRef} className={styles.canvas} />}
 		</div>
+	)
+}
+
+function FitnessGraph({scores}: {scores: number[]}) {
+	if (scores.length < 2) return null
+	const width = 300
+	const height = 60
+
+	const points = useMemo(() => {
+		const padding = 0
+		
+		const maxScore = Math.max(...scores)
+		const minScore = Math.min(...scores)
+		const range = maxScore - minScore || 1
+
+		let points = ""
+
+		for (let i = 0; i < scores.length; i++) {
+			const score = scores[i]
+			const x = padding + (i / (scores.length - 1)) * (width - padding * 2)
+			const y = height - padding - ((score - minScore) / range) * (height - padding * 2)
+			points += `${x},${y} `
+		}
+
+		return points
+	}, [scores])
+	
+	return (
+		<svg viewBox={`0 0 ${width} ${height}`}>
+			<polyline
+				points={points}
+				fill="none"
+				stroke="lime"
+				strokeWidth="2"
+			/>
+		</svg>
 	)
 }
 
@@ -150,7 +191,7 @@ async function start(options: {
 	controller: AbortController,
 
 	/** called when a new generation is completed */
-	onGeneration: (generationCount: number) => void
+	onGeneration: (generationCount: number, bestFitness: number) => void
 	/** called when the generation being visualized changes */
 	onSimulation: (index: number) => void
 	/** called when the play state changes */
@@ -167,10 +208,10 @@ async function start(options: {
 }) {
 	const store = [] as Float32Array[]
 
-	const gpuControls = await setupGPU(options.controller, (generation, genomes) => {
+	const gpuControls = await setupGPU(options.controller, (generation, genomes, bestFitness) => {
 		// Store top genomes
 		store.push(...genomes)
-		options.onGeneration(generation + 1)
+		options.onGeneration(generation + 1, bestFitness)
 	})
 	const vizControls = setupViz(options.controller, options.ctx, options.vizCtx, store, options.onSimulation)
 
@@ -792,7 +833,7 @@ function graphFromGenome(genome: Float32Array) {
 
 async function setupGPU(
 	controller: AbortController,
-	onGeneration: (generation: number, genomes: Float32Array[]) => void
+	onGeneration: (generation: number, genomes: Float32Array[], bestFitness: number) => void
 ): Promise<{
 	readonly playing: boolean
 	init: (initialGenomes: Float32Array[]) => void
@@ -1013,12 +1054,15 @@ async function setupGPU(
 		}
 		
 		// Get fitness scores and sort indices
-		const indices = Array.from({ length: POPULATION }, (_, i) => i)
+		// const indices = Array.from({ length: POPULATION }, (_, i) => i)
+		let indices: number[]
+		let bestFitness: number
 		{
 			const fitnessScores = new Float32Array(fitnessReadBuffer.getMappedRange())
+			indices = Array.from({ length: fitnessScores.length }, (_, i) => i)
 			// Sort by fitness (descending) - must happen before unmap
 			indices.sort((a, b) => fitnessScores[b] - fitnessScores[a])
-			console.log(`Generation ${generation + 1} - Best fitness: ${fitnessScores[indices[0]]}`)
+			bestFitness = fitnessScores[indices[0]]
 			fitnessReadBuffer.unmap()
 		}
 		
@@ -1045,7 +1089,7 @@ async function setupGPU(
 		}
 	
 		// Notify generation complete
-		onGeneration(generation, topGenomes)
+		onGeneration(generation, topGenomes, bestFitness)
 		generation++
 		
 		// Breed new generation
