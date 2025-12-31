@@ -408,7 +408,7 @@ function entityFromGenome(genome: Float32Array, world: World) {
 		current.fill(0)
 		const inputs = [+has_food_left, +has_food_ahead, +has_food_right, +has_wall_left, +has_wall_ahead, +has_wall_right]
 		for (let i = 0; i < inputs.length; i++) {
-			// memory[i] = inputs[i]
+			memory[i] = inputs[i]
 			current[i] = inputs[i]
 		}
 		
@@ -1006,13 +1006,17 @@ async function setupGPU(
 		// Reset states
 		{
 			const states = new Float32Array(POPULATION * 6)
+			const initialPositions = WORLD_SIZE / 2
+			const initialState = new Float32Array([
+				initialPositions, // x
+				initialPositions, // y
+				0, // angle
+				1, // alive
+				0, // score
+				0 // distance
+			])
 			for (let i = 0; i < POPULATION; i++) {
-				states[i * 6 + 0] = WORLD_SIZE / 2 // x
-				states[i * 6 + 1] = WORLD_SIZE / 2 // y
-				states[i * 6 + 2] = 0 // angle
-				states[i * 6 + 3] = 1 // alive
-				states[i * 6 + 4] = 0 // score
-				states[i * 6 + 5] = 0 // distance
+				states.set(initialState, i * 6)
 			}
 			device.queue.writeBuffer(statesBuffer, 0, states)
 		}
@@ -1040,11 +1044,12 @@ async function setupGPU(
 		// Run ITERATIONS simulation steps
 		{
 			const encoder = device.createCommandEncoder()
+			const workgroupCountX = Math.ceil(POPULATION / 64)
 			for (let iter = 0; iter < ITERATIONS; iter++) {
 				const pass = encoder.beginComputePass()
 				pass.setPipeline(simulatePipeline)
 				pass.setBindGroup(0, simBindGroup)
-				pass.dispatchWorkgroups(Math.ceil(POPULATION / 64))
+				pass.dispatchWorkgroups(workgroupCountX)
 				pass.end()
 				// yield to main thread every 20 iterations
 				if (iter % 20 === 0) await Promise.resolve()
@@ -1151,11 +1156,9 @@ async function setupGPU(
 	
 	// Main loop
 	async function loop() {
-		if (!playing) return
-		if (controller.signal.aborted) return
-		
-		await runGeneration()
-		loop()
+		while (playing && !controller.signal.aborted) {
+			await runGeneration()
+		}
 	}
 
 	return {
