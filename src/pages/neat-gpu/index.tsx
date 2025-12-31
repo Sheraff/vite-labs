@@ -366,7 +366,6 @@ function entityFromGenome(genome: Float32Array, world: World) {
 		}
 		
 		// Detect food
-		let closest_distance = visionDistance
 		let has_food_ahead = false
 		let has_food_left = false
 		let has_food_right = false
@@ -380,7 +379,7 @@ function entityFromGenome(genome: Float32Array, world: World) {
 			if (distance < 5) {
 				state.score += 100
 				state.eaten.add(f)
-			} else if (distance < closest_distance) {
+			} else if (distance < visionDistance) {
 				// Calculate angle from entity to food
 				const foodAngle = Math.atan2(food.y - state.y, food.x - state.x)
 				// Calculate relative angle (difference from entity's heading)
@@ -392,7 +391,6 @@ function entityFromGenome(genome: Float32Array, world: World) {
 				// Check if food is within vision cone (±36 degrees)
 				const visionAngle = Math.PI / 5
 				if (Math.abs(relativeAngle) < visionAngle) {
-					closest_distance = distance
 					// Determine if food is left, ahead, or right
 					if (Math.abs(relativeAngle) < visionAngle / 3) {
 						has_food_ahead = true
@@ -1076,13 +1074,14 @@ async function setupGPU(
 				fitness = 0
 			}
 			
-			fitnessScores.push(fitness)
-			indices.push(i)
+			fitnessScores[i] = fitness
+			indices[i] = i
 		}
 		fitnessReadBuffer.unmap()
 		
 		// Sort by fitness (descending)
 		indices.sort((a, b) => fitnessScores[b] - fitnessScores[a])
+		console.log(`Generation ${generation} - Best fitness: ${fitnessScores[indices[0]]}`)
 		
 		// Read back top genomes
 		const readEncoder = device.createCommandEncoder()

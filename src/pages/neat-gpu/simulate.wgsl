@@ -300,7 +300,6 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 	}
 	
 	// Detect food
-	var closest_distance = VISION_DISTANCE;
 	var has_food_ahead = false;
 	var has_food_left = false;
 	var has_food_right = false;
@@ -321,7 +320,7 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 			state.score += 100.0;
 			// Mark as eaten
 			eatenFood[arrayIndex] |= (1u << bitOffset);
-		} else if (distance < closest_distance) {
+		} else if (distance < VISION_DISTANCE) {
 			// Calculate angle from entity to food
 			let foodAngle = atan2(food.y - state.y, food.x - state.x);
 			// Calculate relative angle (difference from entity's heading)
@@ -337,7 +336,6 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 			// Check if food is within vision cone (±36 degrees)
 			let visionAngle = PI / 5.0;
 			if (abs(relativeAngle) < visionAngle) {
-				closest_distance = distance;
 				// Determine if food is left, ahead, or right
 				if (abs(relativeAngle) < visionAngle / 3.0) {
 					has_food_ahead = true;
