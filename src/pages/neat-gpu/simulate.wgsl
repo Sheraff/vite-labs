@@ -253,6 +253,37 @@ fn aggregate(values: ptr<function, array<f32, 64>>, count: u32, aggregationType:
 	}
 }
 
+fn processNode(
+	genomeOffset: u32,
+	memOffset: u32,
+	nodeIdx: u32,
+	nodeAggr: u32,
+	nodeActiv: u32
+) {
+	// Collect incoming connections for this node
+	var incomingValues: array<f32, 64>;
+	var incomingCount = 0u;
+	
+	for (var g = 0u; g < config.maxGenes; g++) {
+		let geneIdx = genomeOffset + g * 4u;
+		if (u32(genomes[geneIdx]) == 2u) { // Connection gene
+			let toNode = u32(genomes[geneIdx + 2u]);
+			if (toNode == nodeIdx && incomingCount < 64u) {
+				let weight = genomes[geneIdx + 3u];
+				let fromNode = u32(genomes[geneIdx + 1u]);
+				incomingValues[incomingCount] = memory[memOffset + fromNode] * (weight / MAX_WEIGHT);
+				incomingCount++;
+			}
+		}
+	}
+	
+	// Apply aggregation and activation
+	if (incomingCount > 0u) {
+		let aggregated = aggregate(&incomingValues, incomingCount, nodeAggr);
+		current[memOffset + nodeIdx] = activation(aggregated, nodeActiv);
+	}
+}
+
 @compute @workgroup_size(64)
 fn main(@builtin(global_invocation_id) id: vec3u) {
 	let entityId = id.x;
@@ -348,91 +379,72 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 	
 	// Execute neural network
 	let memOffset = entityId * config.maxNodes;
-	let currOffset = entityId * config.maxNodes;
 	
 	// Clear current buffer and set inputs
 	for (var i = 0u; i < config.maxNodes; i++) {
-		current[currOffset + i] = 0.0;
+		current[memOffset + i] = 0.0;
 	}
 	
 	// Set input nodes
-	current[currOffset + 0u] = select(0.0, 1.0, has_food_left);
-	current[currOffset + 1u] = select(0.0, 1.0, has_food_ahead);
-	current[currOffset + 2u] = select(0.0, 1.0, has_food_right);
-	current[currOffset + 3u] = select(0.0, 1.0, has_wall_left);
-	current[currOffset + 4u] = select(0.0, 1.0, has_wall_ahead);
-	current[currOffset + 5u] = select(0.0, 1.0, has_wall_right);
+	current[memOffset + 0u] = select(0.0, 1.0, has_food_left);
+	current[memOffset + 1u] = select(0.0, 1.0, has_food_ahead);
+	current[memOffset + 2u] = select(0.0, 1.0, has_food_right);
+	current[memOffset + 3u] = select(0.0, 1.0, has_wall_left);
+	current[memOffset + 4u] = select(0.0, 1.0, has_wall_ahead);
+	current[memOffset + 5u] = select(0.0, 1.0, has_wall_right);
 	
-	memory[memOffset + 0u] = current[currOffset + 0u];
-	memory[memOffset + 1u] = current[currOffset + 1u];
-	memory[memOffset + 2u] = current[currOffset + 2u];
-	memory[memOffset + 3u] = current[currOffset + 3u];
-	memory[memOffset + 4u] = current[currOffset + 4u];
-	memory[memOffset + 5u] = current[currOffset + 5u];
+	memory[memOffset + 0u] = current[memOffset + 0u];
+	memory[memOffset + 1u] = current[memOffset + 1u];
+	memory[memOffset + 2u] = current[memOffset + 2u];
+	memory[memOffset + 3u] = current[memOffset + 3u];
+	memory[memOffset + 4u] = current[memOffset + 4u];
+	memory[memOffset + 5u] = current[memOffset + 5u];
 	
 	// Process genome to execute neural network
 	let genomeOffset = entityId * config.maxGenes * 4u;
 	
-	// First pass: process all nodes
-	for (var nodeIdx = 0u; nodeIdx < config.maxNodes; nodeIdx++) {
-		// Find node definition in genome
-		var nodeAggr = 0u;
-		var nodeActiv = 0u;
-		var foundNode = false;
+	// Process each gene
+	for (var i = 0u; i < config.maxGenes; i++) {
+		let geneIdx = genomeOffset + i * 4u;
 		
-		for (var g = 0u; g < config.maxGenes; g++) {
-			let geneType = u32(genomes[genomeOffset + g * 4u]);
-			if (geneType == 1u) { // Node gene
-				let nodeIndex = u32(genomes[genomeOffset + g * 4u + 1u]);
-				if (nodeIndex == nodeIdx) {
-					nodeAggr = u32(genomes[genomeOffset + g * 4u + 2u]);
-					nodeActiv = u32(genomes[genomeOffset + g * 4u + 3u]);
-					foundNode = true;
-					break;
-				}
-			}
-		}
+		if (u32(genomes[geneIdx]) != 1u) { continue; } // not a Node gene
+		let nodeIdx = u32(genomes[geneIdx + 1u]);
+		let nodeAggr = u32(genomes[geneIdx + 2u]);
+		let nodeActiv = u32(genomes[geneIdx + 3u]);
 		
-		if (!foundNode && nodeIdx >= INNATE_NODES) { continue; }
-		
-		// Collect incoming connections
-		var incomingValues: array<f32, 64>;
-		var incomingCount = 0u;
-		
-		for (var g = 0u; g < config.maxGenes; g++) {
-			let geneType = u32(genomes[genomeOffset + g * 4u]);
-			if (geneType == 2u) { // Connection gene
-				let fromNode = u32(genomes[genomeOffset + g * 4u + 1u]);
-				let toNode = u32(genomes[genomeOffset + g * 4u + 2u]);
-				let weight = genomes[genomeOffset + g * 4u + 3u];
-				
-				if (toNode == nodeIdx && incomingCount < 64u) {
-					incomingValues[incomingCount] = memory[memOffset + fromNode] * (weight / MAX_WEIGHT);
-					incomingCount++;
-				}
-			}
-		}
-		
-		// Apply aggregation and activation
-		if (incomingCount > 0u) {
-			let aggregated = aggregate(&incomingValues, incomingCount, nodeAggr);
-			current[currOffset + nodeIdx] = activation(aggregated, nodeActiv);
-		}
+		processNode(
+			genomeOffset,
+			memOffset,
+			nodeIdx,
+			nodeAggr,
+			nodeActiv
+		);
+	}
+
+	// process output nodes (6,7,8) that don't have a gene
+	for (var outputIdx = 6u; outputIdx < INNATE_NODES; outputIdx++) {
+		processNode(
+			genomeOffset,
+			memOffset,
+			outputIdx,
+			0u, // sum aggregation
+			0u  // identity activation
+		);
 	}
 	
 	// Copy current to memory
 	for (var i = 0u; i < config.maxNodes; i++) {
-		memory[memOffset + i] = current[currOffset + i];
+		memory[memOffset + i] = current[memOffset + i];
 	}
 	
 	// Read outputs and update state
-	let rotate_left = max(0.0, min(current[currOffset + 6u], 10.0));
-	let rotate_right = max(0.0, min(current[currOffset + 7u], 10.0));
+	let rotate_left = max(0.0, min(current[memOffset + 6u], 10.0));
+	let rotate_right = max(0.0, min(current[memOffset + 7u], 10.0));
 	let rotate = rotate_right - rotate_left;
 	let delta = 1000.0 / 120.0; // Fixed timestep: 8.333333ms
 	state.angle += (rotate / 100.0) * (delta / 10.0);
 	
-	let speed = min(4.0, max(0.0, current[currOffset + 8u]));
+	let speed = min(4.0, max(0.0, current[memOffset + 8u]));
 	if (speed > 0.0) {
 		let prevX = state.x;
 		let prevY = state.y;
