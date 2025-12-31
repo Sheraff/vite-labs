@@ -989,7 +989,6 @@ async function setupGPU(
 	// State variables
 	let playing = true
 	let generation = 0
-	let animationFrameId = 0
 	
 	// Helper to run simulation for one generation
 	async function runGeneration() {
@@ -1145,12 +1144,6 @@ async function setupGPU(
 		await runGeneration()
 		loop()
 	}
-	
-	controller.signal.addEventListener("abort", () => {
-		if (animationFrameId) {
-			cancelAnimationFrame(animationFrameId)
-		}
-	}, { once: true })
 
 	return {
 		get playing() {
@@ -1175,10 +1168,6 @@ async function setupGPU(
 		pause: () => {
 			if (!playing) return
 			playing = false
-			if (animationFrameId) {
-				cancelAnimationFrame(animationFrameId)
-				animationFrameId = 0
-			}
 		}
 	}
 }
