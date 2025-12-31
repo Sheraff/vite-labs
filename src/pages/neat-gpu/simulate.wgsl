@@ -462,6 +462,7 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 	var final_fitness = 0.0;
 	if (alive) {
 		final_fitness = score + total_distance / 10.0;
+		final_fitness /= f32(config.iterations) * f32(config.foodCount) * f32(config.worldSize) / 10000000.0; // Normalize
 	}
 	fitness[entityId] = final_fitness;
 }
