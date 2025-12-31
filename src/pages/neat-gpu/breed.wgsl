@@ -111,9 +111,52 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 		let voidCount = countVoidGenes(&genome);
 		let nodeCount = countGenes(&genome, 1u);
 		let connCount = countGenes(&genome, 2u);
+
+		let probabilities = array<f32, 9>(
+			0.1, // Add node
+			0.1, // Remove node
+			0.2, // Add connection
+			0.1, // Remove connection
+			0.1, // Change node aggregation
+			0.1, // Change node activation
+			0.1, // Change connection from
+			0.1, // Change connection to
+			0.1  // Change connection weight
+		);
+
+		let conditions = array<u32, 9>(
+			u32(voidCount > 0u), // Add node
+			u32(nodeCount > 0u), // Remove node
+			u32(voidCount > 0u), // Add connection
+			u32(connCount > 0u), // Remove connection
+			u32(nodeCount > 0u), // Change node aggregation
+			u32(nodeCount > 0u), // Change node activation
+			u32(connCount > 0u), // Change connection from
+			u32(connCount > 0u), // Change connection to
+			u32(connCount > 0u)  // Change connection weight
+		);
+
+		var cumulative = 0.0;
+		for (var i = 0; i < 10; i++) {
+			if (conditions[i] != 0u) {
+				cumulative += probabilities[i];
+			}
+		}
+
+		let thresholds = array<f32, 9>();
+		var sum = 0.0;
+		for (var i = 0; i < 9; i++) {
+			if (conditions[i] != 0u) {
+				let p = probabilities[i] / cumulative;
+				sum += p;
+				thresholds[i] = sum;
+			} else {
+				thresholds[i] = 0.0;
+			}
+		}
 		
-		// Mutation 0-0.1: Add node (only if void genes available)
-		if (mutationType < 0.1 && voidCount > 0u) {
+		// Add node (only if void genes available)
+		if (mutationType < thresholds[0]) {
 			let voidIdx = findVoidGene(&genome);
 			let nodeIndex = nodeCount + INNATE_NODES;
 			genome[voidIdx * 4u + 0u] = 1.0; // node gene type
@@ -122,8 +165,8 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 			genome[voidIdx * 4u + 3u] = f32(rng_u32_range(&rng, ACTIVATION_COUNT));
 		}
 		
-		// Mutation 0.1-0.2: Remove node (only if nodes exist)
-		else if (mutationType < 0.2 && nodeCount > 0u) {
+		// Remove node (only if nodes exist)
+		else if (mutationType < thresholds[1]) {
 			let nodeIdx = findNthGene(&genome, 1u, rng_u32_range(&rng, nodeCount));
 			// Convert to void gene
 			genome[nodeIdx * 4u + 0u] = 0.0;
@@ -132,8 +175,8 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 			genome[nodeIdx * 4u + 3u] = 0.0;
 		}
 		
-		// Mutation 0.2-0.4: Add connection (only if void genes available)
-		else if (mutationType < 0.4 && voidCount > 0u) {
+		// Add connection (only if void genes available)
+		else if (mutationType < thresholds[2]) {
 			let voidIdx = findVoidGene(&genome);
 			// Random from: input (0-5) or custom node (9+)
 			let fromRand = rng_u32_range(&rng, 6u + nodeCount);
@@ -148,8 +191,8 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 			genome[voidIdx * 4u + 3u] = f32(rng_u32_range(&rng, 256u));
 		}
 		
-		// Mutation 0.4-0.5: Remove connection (only if connections exist)
-		else if (mutationType < 0.5 && connCount > 0u) {
+		// Remove connection (only if connections exist)
+		else if (mutationType < thresholds[3]) {
 			let connIdx = findNthGene(&genome, 2u, rng_u32_range(&rng, connCount));
 			// Convert to void gene
 			genome[connIdx * 4u + 0u] = 0.0;
@@ -158,36 +201,36 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 			genome[connIdx * 4u + 3u] = 0.0;
 		}
 		
-		// Mutation 0.5-0.6: Change node aggregation (only if nodes exist)
-		else if (mutationType < 0.6 && nodeCount > 0u) {
+		// Change node aggregation (only if nodes exist)
+		else if (mutationType < thresholds[4]) {
 			let nodeIdx = findNthGene(&genome, 1u, rng_u32_range(&rng, nodeCount));
 			genome[nodeIdx * 4u + 2u] = f32(rng_u32_range(&rng, AGGREGATION_COUNT));
 		}
 		
-		// Mutation 0.6-0.7: Change node activation (only if nodes exist)
-		else if (mutationType < 0.7 && nodeCount > 0u) {
+		// Change node activation (only if nodes exist)
+		else if (mutationType < thresholds[5]) {
 			let nodeIdx = findNthGene(&genome, 1u, rng_u32_range(&rng, nodeCount));
 			genome[nodeIdx * 4u + 3u] = f32(rng_u32_range(&rng, ACTIVATION_COUNT));
 		}
 		
-		// Mutation 0.7-0.9: Change connection endpoints (only if connections exist)
-		else if (mutationType < 0.9 && connCount > 0u) {
+		// Change connection from (only if connections exist)
+		else if (mutationType < thresholds[6]) {
 			let connIdx = findNthGene(&genome, 2u, rng_u32_range(&rng, connCount));
-			if (rng_f32(&rng) < 0.5) {
-				// Change from
-				let fromRand = rng_u32_range(&rng, 6u + nodeCount);
-				let fromNode = select(fromRand + 3u, fromRand, fromRand < 6u);
-				genome[connIdx * 4u + 1u] = f32(fromNode);
-			} else {
-				// Change to
-				let toRand = rng_u32_range(&rng, 3u + nodeCount);
-				let toNode = toRand + 6u;
-				genome[connIdx * 4u + 2u] = f32(toNode);
-			}
+			let fromRand = rng_u32_range(&rng, 6u + nodeCount);
+			let fromNode = select(fromRand + 3u, fromRand, fromRand < 6u);
+			genome[connIdx * 4u + 1u] = f32(fromNode);
+		}
+		
+		// Change connection to (only if connections exist)
+		else if (mutationType < thresholds[7]) {
+			let connIdx = findNthGene(&genome, 2u, rng_u32_range(&rng, connCount));
+			let toRand = rng_u32_range(&rng, 3u + nodeCount);
+			let toNode = toRand + 6u;
+			genome[connIdx * 4u + 2u] = f32(toNode);
 		}
 	
-		// Mutation 0.9-1.0: Change connection weight (only if connections exist)
-		else if (connCount > 0u) {
+		// Change connection weight (only if connections exist)
+		else if (mutationType < thresholds[8]) {
 			let connIdx = findNthGene(&genome, 2u, rng_u32_range(&rng, connCount));
 			genome[connIdx * 4u + 3u] = f32(rng_u32_range(&rng, 256u));
 		}
