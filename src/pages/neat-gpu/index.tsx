@@ -1048,6 +1048,7 @@ async function setupGPU(
 		
 		// Compute fitness and read back
 		await device.queue.onSubmittedWorkDone()
+		if(controller.signal.aborted) return
 		
 		// Read states to compute fitness on CPU
 		{
@@ -1057,6 +1058,7 @@ async function setupGPU(
 		}
 		
 		await fitnessReadBuffer.mapAsync(GPUMapMode.READ)
+		if(controller.signal.aborted) return
 		const statesData = new Float32Array(fitnessReadBuffer.getMappedRange())
 		
 		// Compute fitness: score + distance / 100 - penalties
@@ -1089,6 +1091,7 @@ async function setupGPU(
 		device.queue.submit([readEncoder.finish()])
 		
 		await genomesReadBuffer.mapAsync(GPUMapMode.READ)
+		if(controller.signal.aborted) return
 		const genomesData = new Float32Array(genomesReadBuffer.getMappedRange())
 		
 		// Extract top STORE_PER_GENERATION genomes for visualization
