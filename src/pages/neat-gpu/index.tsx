@@ -116,7 +116,7 @@ export default function ParticleLifeGPUPage() {
 							</button>
 							<hr />
 							<label htmlFor="generation-select">Playing generation {currentGeneration} of {genCount}</label>
-							<input type="range" id="generation-select" name="generation-select" min="1" max={genCount} value={currentGeneration} />
+							<input type="range" id="generation-select" name="generation-select" min="0" max={genCount} value={currentGeneration} />
 							<button type="button" aria-pressed={autoplay} id="simulation-play-pause">
 								{autoplay ? "⏸️ pause" : "▶️ play"}
 							</button>
@@ -170,11 +170,6 @@ async function start(options: {
 		// Store top genomes
 		store.push(...genomes)
 		options.onGeneration(generation + 1)
-		
-		// Auto-start visualization of first generation
-		if (generation === 0) {
-			vizControls.selectGeneration(1)
-		}
 	})
 	const vizControls = setupViz(options.controller, options.ctx, options.vizCtx, store, options.onSimulation)
 
@@ -182,13 +177,13 @@ async function start(options: {
 		const initial = initialGenomes(POPULATION, 10, 20)
 		for (let i = 0; i < STORE_PER_GENERATION; i++) store.push(initial[i])
 		gpuControls.init(initial)
+		vizControls.selectGeneration(0)
 	}
 
 	options.generationSelector.addEventListener("input", (e) => {
 		const target = e.target as HTMLInputElement
 		const generation = Number(target.value)
 		vizControls.selectGeneration(generation)
-		options.onSimulation(generation)
 	}, { signal: options.controller.signal })
 	options.simulationPlayPause.addEventListener("click", () => {
 		if (vizControls.playing) {
@@ -234,14 +229,6 @@ function initialGenomes(count: number, maxNodes: number, maxConnections: number)
 			genome[geneIndex * 4 + 1] = n + INNATE_NODES // node index
 			genome[geneIndex * 4 + 2] = Math.floor(Math.random() * AGGREGATIONS.length) // aggregation
 			genome[geneIndex * 4 + 3] = Math.floor(Math.random() * ACTIVATIONS.length) // activation
-		}
-		
-		// Ensure at least one direct connection from each sensor to move output
-		for (let sensor = 0; sensor < 6 && geneIndex < MAX_GENES; sensor++, geneIndex++) {
-			genome[geneIndex * 4 + 0] = 2 // connection gene type
-			genome[geneIndex * 4 + 1] = sensor // from sensor
-			genome[geneIndex * 4 + 2] = 8 // to move output
-			genome[geneIndex * 4 + 3] = Math.floor(Math.random() * (MAX + 1)) // random weight
 		}
 		
 		// Add random connections
@@ -1060,25 +1047,27 @@ async function setupGPU(
 		const statesData = new Float32Array(fitnessReadBuffer.getMappedRange())
 		
 		// Compute fitness: score + distance / 100 - penalties
-		const fitnessScores: { fitness: number; index: number }[] = []
+		const fitnessScores = new Array<number>(POPULATION)
+		const indices = new Array<number>(POPULATION)
 		for (let i = 0; i < POPULATION; i++) {
 			const alive = statesData[i * 8 + 3]
 			const score = statesData[i * 8 + 4]
 			const distance = statesData[i * 8 + 5]
 			
-			let fitness = score + distance / 10 // Increased distance reward
+			let fitness = score + distance / 100 // Increased distance reward
 			
-			// Moderate penalty for dying (leaving world)
+			// Penalty for dying (leaving world)
 			if (alive === 0) {
-				fitness -= 100 // Reduced from 500
+				fitness = 0
 			}
 			
-			fitnessScores.push({ fitness, index: i })
+			fitnessScores.push(fitness)
+			indices.push(i)
 		}
 		fitnessReadBuffer.unmap()
 		
 		// Sort by fitness (descending)
-		fitnessScores.sort((a, b) => b.fitness - a.fitness)
+		indices.sort((a, b) => fitnessScores[b] - fitnessScores[a])
 		
 		// Read back top genomes
 		const readEncoder = device.createCommandEncoder()
@@ -1091,7 +1080,7 @@ async function setupGPU(
 		// Extract top STORE_PER_GENERATION genomes for visualization
 		const topGenomes: Float32Array[] = []
 		for (let i = 0; i < STORE_PER_GENERATION; i++) {
-			const index = fitnessScores[i].index
+			const index = indices[i]
 			const genome = new Float32Array(MAX_GENES * 4)
 			genome.set(genomesData.slice(index * MAX_GENES * 4, (index + 1) * MAX_GENES * 4))
 			topGenomes.push(genome)
@@ -1100,7 +1089,7 @@ async function setupGPU(
 		// Extract top BREED_PARENTS genomes for breeding (10% of population)
 		const parentsData = new Float32Array(BREED_PARENTS * MAX_GENES * 4)
 		for (let i = 0; i < BREED_PARENTS; i++) {
-			const index = fitnessScores[i].index
+			const index = indices[i]
 			const genome = genomesData.slice(index * MAX_GENES * 4, (index + 1) * MAX_GENES * 4)
 			parentsData.set(genome, i * MAX_GENES * 4)
 		}
@@ -1139,10 +1128,7 @@ async function setupGPU(
 		if (controller.signal.aborted) return
 		
 		await runGeneration()
-		
-		if (playing && !controller.signal.aborted) {
-			animationFrameId = requestAnimationFrame(loop)
-		}
+		loop()
 	}
 	
 	controller.signal.addEventListener("abort", () => {
@@ -1245,7 +1231,7 @@ function setupViz(
 	}
 	
 	function startViz() {
-		const genIndex = currentGeneration - 1
+		const genIndex = currentGeneration
 		if (genIndex < 0 || genIndex * STORE_PER_GENERATION >= store.length) return
 		
 		onSimulation(currentGeneration)
@@ -1290,7 +1276,7 @@ function setupViz(
 		}
 		if (closestIndex !== -1 && closestIndex !== selectedIndex) {
 			selectedIndex = closestIndex
-			const genIndex = currentGeneration - 1
+			const genIndex = currentGeneration
 			graph = graphFromGenome(store[genIndex * STORE_PER_GENERATION + selectedIndex])
 			if (!playing) {
 				draw()

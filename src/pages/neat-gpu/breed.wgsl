@@ -101,8 +101,7 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 	for (var i = 0u; i < 120u; i++) {
 		genome[i] = parents[parentOffset + i];
 	}
-	
-	// Everyone gets mutations (no elite preservation)
+
 	// Apply mutations
 	let mutationType = rng_f32(&rng);
 	
