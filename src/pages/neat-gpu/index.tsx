@@ -1036,25 +1036,20 @@ async function setupGPU(
 				0, // placeholder for f32 worldSize
 				MAX_NODES,
 				MAX_GENES,
-				0, // iteration (updated per iteration)
+				ITERATIONS, // total iterations to run
 			])
 			new Float32Array(simConfig.buffer)[2] = WORLD_SIZE
 			device.queue.writeBuffer(simConfigBuffer, 0, simConfig)
 		}
 		
-		// Run ITERATIONS simulation steps
+		// Run simulation (shader loops internally over ITERATIONS)
 		{
 			const encoder = device.createCommandEncoder()
-			const workgroupCountX = Math.ceil(POPULATION / 64)
-			for (let iter = 0; iter < ITERATIONS; iter++) {
-				const pass = encoder.beginComputePass()
-				pass.setPipeline(simulatePipeline)
-				pass.setBindGroup(0, simBindGroup)
-				pass.dispatchWorkgroups(workgroupCountX)
-				pass.end()
-				// yield to main thread every 20 iterations
-				if (iter % 20 === 0) await Promise.resolve()
-			}
+			const pass = encoder.beginComputePass()
+			pass.setPipeline(simulatePipeline)
+			pass.setBindGroup(0, simBindGroup)
+			pass.dispatchWorkgroups(Math.ceil(POPULATION / 64))
+			pass.end()
 			device.queue.submit([encoder.finish()])
 			await device.queue.onSubmittedWorkDone()
 			if(controller.signal.aborted) return
