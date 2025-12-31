@@ -113,15 +113,15 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 		let connCount = countGenes(&genome, 2u);
 
 		let probabilities = array<f32, 9>(
-			0.1, // Add node
-			0.1, // Remove node
-			0.2, // Add connection
-			0.1, // Remove connection
-			0.1, // Change node aggregation
-			0.1, // Change node activation
-			0.1, // Change connection from
-			0.1, // Change connection to
-			0.1  // Change connection weight
+			1.0, // Add node
+			1.0, // Remove node
+			2.0, // Add connection
+			1.0, // Remove connection
+			1.0, // Change node aggregation
+			1.0, // Change node activation
+			1.0, // Change connection from
+			1.0, // Change connection to
+			1.0  // Change connection weight
 		);
 
 		let conditions = array<u32, 9>(
@@ -137,102 +137,137 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 		);
 
 		var cumulative = 0.0;
-		for (var i = 0; i < 10; i++) {
+		for (var i = 0u; i < 9u; i++) {
 			if (conditions[i] != 0u) {
 				cumulative += probabilities[i];
 			}
 		}
+		if (cumulative == 0.0) {
+			cumulative = 1.0;
+		}
 
-		let thresholds = array<f32, 9>();
-		var sum = 0.0;
-		for (var i = 0; i < 9; i++) {
-			if (conditions[i] != 0u) {
-				let p = probabilities[i] / cumulative;
-				sum += p;
-				thresholds[i] = sum;
-			} else {
-				thresholds[i] = 0.0;
+		var threshold = 0.0;
+		var mutated = false;
+
+		if (!mutated && conditions[0] != 0u) {
+			threshold += probabilities[0] / cumulative;
+			if (mutationType < threshold) {
+				mutated = true;
+				
+				let voidIdx = findVoidGene(&genome);
+				let nodeIndex = nodeCount + INNATE_NODES;
+				genome[voidIdx * 4u + 0u] = 1.0; // node gene type
+				genome[voidIdx * 4u + 1u] = f32(nodeIndex);
+				genome[voidIdx * 4u + 2u] = f32(rng_u32_range(&rng, AGGREGATION_COUNT));
+				genome[voidIdx * 4u + 3u] = f32(rng_u32_range(&rng, ACTIVATION_COUNT));
 			}
 		}
-		
-		// Add node (only if void genes available)
-		if (mutationType < thresholds[0]) {
-			let voidIdx = findVoidGene(&genome);
-			let nodeIndex = nodeCount + INNATE_NODES;
-			genome[voidIdx * 4u + 0u] = 1.0; // node gene type
-			genome[voidIdx * 4u + 1u] = f32(nodeIndex);
-			genome[voidIdx * 4u + 2u] = f32(rng_u32_range(&rng, AGGREGATION_COUNT));
-			genome[voidIdx * 4u + 3u] = f32(rng_u32_range(&rng, ACTIVATION_COUNT));
+
+		if (!mutated && conditions[1] != 0u) {
+			threshold += probabilities[1] / cumulative;
+			if (mutationType < threshold) {
+				mutated = true;
+				
+				let nodeIdx = findNthGene(&genome, 1u, rng_u32_range(&rng, nodeCount));
+				// Convert to void gene
+				genome[nodeIdx * 4u + 0u] = 0.0;
+				genome[nodeIdx * 4u + 1u] = 0.0;
+				genome[nodeIdx * 4u + 2u] = 0.0;
+				genome[nodeIdx * 4u + 3u] = 0.0;
+			}
 		}
-		
-		// Remove node (only if nodes exist)
-		else if (mutationType < thresholds[1]) {
-			let nodeIdx = findNthGene(&genome, 1u, rng_u32_range(&rng, nodeCount));
-			// Convert to void gene
-			genome[nodeIdx * 4u + 0u] = 0.0;
-			genome[nodeIdx * 4u + 1u] = 0.0;
-			genome[nodeIdx * 4u + 2u] = 0.0;
-			genome[nodeIdx * 4u + 3u] = 0.0;
+
+		if (!mutated && conditions[2] != 0u) {
+			threshold += probabilities[2] / cumulative;
+			if (mutationType < threshold) {
+				mutated = true;
+				
+				let voidIdx = findVoidGene(&genome);
+				// Random from: input (0-5) or custom node (9+)
+				let fromRand = rng_u32_range(&rng, 6u + nodeCount);
+				let fromNode = select(fromRand + 3u, fromRand, fromRand < 6u); // skip outputs 6,7,8
+				// Random to: output (6-8) or custom node (9+)
+				let toRand = rng_u32_range(&rng, 3u + nodeCount);
+				let toNode = toRand + 6u;
+				
+				genome[voidIdx * 4u + 0u] = 2.0; // connection gene type
+				genome[voidIdx * 4u + 1u] = f32(fromNode);
+				genome[voidIdx * 4u + 2u] = f32(toNode);
+				genome[voidIdx * 4u + 3u] = f32(rng_u32_range(&rng, 256u));
+			}
 		}
-		
-		// Add connection (only if void genes available)
-		else if (mutationType < thresholds[2]) {
-			let voidIdx = findVoidGene(&genome);
-			// Random from: input (0-5) or custom node (9+)
-			let fromRand = rng_u32_range(&rng, 6u + nodeCount);
-			let fromNode = select(fromRand + 3u, fromRand, fromRand < 6u); // skip outputs 6,7,8
-			// Random to: output (6-8) or custom node (9+)
-			let toRand = rng_u32_range(&rng, 3u + nodeCount);
-			let toNode = toRand + 6u;
-			
-			genome[voidIdx * 4u + 0u] = 2.0; // connection gene type
-			genome[voidIdx * 4u + 1u] = f32(fromNode);
-			genome[voidIdx * 4u + 2u] = f32(toNode);
-			genome[voidIdx * 4u + 3u] = f32(rng_u32_range(&rng, 256u));
+
+		if (!mutated && conditions[3] != 0u) {
+			threshold += probabilities[3] / cumulative;
+			if (mutationType < threshold) {
+				mutated = true;
+				
+				let connIdx = findNthGene(&genome, 2u, rng_u32_range(&rng, connCount));
+				// Convert to void gene
+				genome[connIdx * 4u + 0u] = 0.0;
+				genome[connIdx * 4u + 1u] = 0.0;
+				genome[connIdx * 4u + 2u] = 0.0;
+				genome[connIdx * 4u + 3u] = 0.0;
+			}
 		}
-		
-		// Remove connection (only if connections exist)
-		else if (mutationType < thresholds[3]) {
-			let connIdx = findNthGene(&genome, 2u, rng_u32_range(&rng, connCount));
-			// Convert to void gene
-			genome[connIdx * 4u + 0u] = 0.0;
-			genome[connIdx * 4u + 1u] = 0.0;
-			genome[connIdx * 4u + 2u] = 0.0;
-			genome[connIdx * 4u + 3u] = 0.0;
+
+		if (!mutated && conditions[4] != 0u) {
+			threshold += probabilities[4] / cumulative;
+			if (mutationType < threshold) {
+				mutated = true;
+				// Change node aggregation
+
+				let nodeIdx = findNthGene(&genome, 1u, rng_u32_range(&rng, nodeCount));
+				genome[nodeIdx * 4u + 2u] = f32(rng_u32_range(&rng, AGGREGATION_COUNT));
+			}
 		}
-		
-		// Change node aggregation (only if nodes exist)
-		else if (mutationType < thresholds[4]) {
-			let nodeIdx = findNthGene(&genome, 1u, rng_u32_range(&rng, nodeCount));
-			genome[nodeIdx * 4u + 2u] = f32(rng_u32_range(&rng, AGGREGATION_COUNT));
+
+		if (!mutated && conditions[5] != 0u) {
+			threshold += probabilities[5] / cumulative;
+			if (mutationType < threshold) {
+				mutated = true;
+				
+				// Change node activation
+				let nodeIdx = findNthGene(&genome, 1u, rng_u32_range(&rng, nodeCount));
+				genome[nodeIdx * 4u + 3u] = f32(rng_u32_range(&rng, ACTIVATION_COUNT));
+			}
 		}
-		
-		// Change node activation (only if nodes exist)
-		else if (mutationType < thresholds[5]) {
-			let nodeIdx = findNthGene(&genome, 1u, rng_u32_range(&rng, nodeCount));
-			genome[nodeIdx * 4u + 3u] = f32(rng_u32_range(&rng, ACTIVATION_COUNT));
+
+		if (!mutated && conditions[6] != 0u) {
+			threshold += probabilities[6] / cumulative;
+			if (mutationType < threshold) {
+				mutated = true;
+				
+				// Change connection from
+				let connIdx = findNthGene(&genome, 2u, rng_u32_range(&rng, connCount));
+				let fromRand = rng_u32_range(&rng, 6u + nodeCount);
+				let fromNode = select(fromRand + 3u, fromRand, fromRand < 6u);
+				genome[connIdx * 4u + 1u] = f32(fromNode);
+			}
 		}
-		
-		// Change connection from (only if connections exist)
-		else if (mutationType < thresholds[6]) {
-			let connIdx = findNthGene(&genome, 2u, rng_u32_range(&rng, connCount));
-			let fromRand = rng_u32_range(&rng, 6u + nodeCount);
-			let fromNode = select(fromRand + 3u, fromRand, fromRand < 6u);
-			genome[connIdx * 4u + 1u] = f32(fromNode);
+
+		if (!mutated && conditions[7] != 0u) {
+			threshold += probabilities[7] / cumulative;
+			if (mutationType < threshold) {
+				mutated = true;
+				
+				// Change connection to
+				let connIdx = findNthGene(&genome, 2u, rng_u32_range(&rng, connCount));
+				let toRand = rng_u32_range(&rng, 3u + nodeCount);
+				let toNode = toRand + 6u;
+				genome[connIdx * 4u + 2u] = f32(toNode);
+			}
 		}
-		
-		// Change connection to (only if connections exist)
-		else if (mutationType < thresholds[7]) {
-			let connIdx = findNthGene(&genome, 2u, rng_u32_range(&rng, connCount));
-			let toRand = rng_u32_range(&rng, 3u + nodeCount);
-			let toNode = toRand + 6u;
-			genome[connIdx * 4u + 2u] = f32(toNode);
-		}
-	
-		// Change connection weight (only if connections exist)
-		else if (mutationType < thresholds[8]) {
-			let connIdx = findNthGene(&genome, 2u, rng_u32_range(&rng, connCount));
-			genome[connIdx * 4u + 3u] = f32(rng_u32_range(&rng, 256u));
+
+		if (!mutated && conditions[8] != 0u) {
+			threshold += probabilities[8] / cumulative;
+			if (mutationType < threshold) {
+				mutated = true;
+				
+				// Change connection weight
+				let connIdx = findNthGene(&genome, 2u, rng_u32_range(&rng, connCount));
+				genome[connIdx * 4u + 3u] = f32(rng_u32_range(&rng, 256u));
+			}
 		}
 	}
 	

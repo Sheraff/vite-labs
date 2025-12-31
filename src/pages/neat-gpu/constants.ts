@@ -7,10 +7,10 @@ export const INNATE_NODES = 9 // 6 inputs + 3 outputs
 export const MAX_NODES = MAX_GENES + INNATE_NODES // Maximum possible nodes
 export const FOOD_COUNT = 300
 export const WORLD_SIZE = 300
-export const POPULATION = 3000
+export const POPULATION = 1000
 export const ITERATIONS = 3000
-export const STORE_PER_GENERATION = 10 // Top genomes to store for visualization
-export const BREED_PARENTS = 300 // 10% survival rate for breeding
+export const STORE_PER_GENERATION = 4 // Top genomes to store for visualization
+export const BREED_PARENTS = Math.round(POPULATION * 0.1) // 10% survival rate for breeding
 
 export const INPUT_NODES = ["food left", "food ahead", "food right", "wall left", "wall ahead", "wall right"]
 export const OUTPUT_NODES = ["rotate left", "rotate right", "move ahead"]

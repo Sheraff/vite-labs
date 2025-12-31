@@ -177,7 +177,7 @@ async function start(options: {
 	{
 		const initial = initialGenomes(POPULATION, 10, 20)
 		for (let i = 0; i < STORE_PER_GENERATION; i++) store.push(initial[i])
-		gpuControls.init(initial)
+		setTimeout(() => gpuControls.init(initial))
 		vizControls.selectGeneration(0)
 	}
 
@@ -989,7 +989,7 @@ async function setupGPU(
 	})
 	
 	// State variables
-	let playing = true
+	let playing = false
 	let generation = 0
 	
 	// Helper to run simulation for one generation
@@ -1162,6 +1162,7 @@ async function setupGPU(
 			return playing
 		},
 		init: (initialGenomes: Float32Array[]) => {
+			if (controller.signal.aborted) return
 			// Upload initial genomes
 			const genomesData = new Float32Array(POPULATION * MAX_GENES * 4)
 			for (let i = 0; i < initialGenomes.length; i++) {
@@ -1170,6 +1171,7 @@ async function setupGPU(
 			device.queue.writeBuffer(genomesBuffer, 0, genomesData)
 			
 			// Start loop
+			playing = true
 			loop()
 		},
 		play: () => {
