@@ -301,7 +301,6 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 	
 	// Detect food
 	var closest_distance = VISION_DISTANCE;
-	var angle_to_food = 0.0;
 	var has_food_ahead = false;
 	var has_food_left = false;
 	var has_food_right = false;
@@ -319,22 +318,36 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 		let distance = length(vec2f(state.x, state.y) - food);
 		
 		if (distance < 5.0) {
-			state.score += 100.0 - distance;
+			state.score += 100.0;
 			// Mark as eaten
 			eatenFood[arrayIndex] |= (1u << bitOffset);
 		} else if (distance < closest_distance) {
-			let foodAngle = ((atan2(state.y - food.y, state.x - food.x) + 2.0 * PI) % (2.0 * PI)) - PI;
-			if (foodAngle > -PI / 2.0 && foodAngle < PI / 2.0) {
+			// Calculate angle from entity to food
+			let foodAngle = atan2(food.y - state.y, food.x - state.x);
+			// Calculate relative angle (difference from entity's heading)
+			var relativeAngle = foodAngle - state.angle;
+			// Normalize to [-PI, PI]
+			if (relativeAngle > PI) {
+				relativeAngle -= 2.0 * PI;
+			}
+			if (relativeAngle < -PI) {
+				relativeAngle += 2.0 * PI;
+			}
+			
+			// Check if food is within vision cone (±36 degrees)
+			let visionAngle = PI / 5.0;
+			if (abs(relativeAngle) < visionAngle) {
 				closest_distance = distance;
-				angle_to_food = foodAngle;
+				// Determine if food is left, ahead, or right
+				if (abs(relativeAngle) < visionAngle / 3.0) {
+					has_food_ahead = true;
+				} else if (relativeAngle < 0.0) {
+					has_food_left = true;
+				} else {
+					has_food_right = true;
+				}
 			}
 		}
-	}
-	
-	if (closest_distance < VISION_DISTANCE) {
-		has_food_ahead = abs(angle_to_food - state.angle) < PI / 5.0;
-		has_food_left = !has_food_ahead && angle_to_food < 0.0 && angle_to_food > -PI / 2.0;
-		has_food_right = !has_food_ahead && angle_to_food > 0.0 && angle_to_food < PI / 2.0;
 	}
 	
 	// Execute neural network

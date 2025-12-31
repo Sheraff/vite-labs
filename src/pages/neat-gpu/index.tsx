@@ -367,7 +367,6 @@ function entityFromGenome(genome: Float32Array, world: World) {
 		
 		// Detect food
 		let closest_distance = visionDistance
-		let angle_to_food = 0
 		let has_food_ahead = false
 		let has_food_left = false
 		let has_food_right = false
@@ -379,21 +378,31 @@ function entityFromGenome(genome: Float32Array, world: World) {
 			const distance = Math.hypot(state.x - food.x, state.y - food.y)
 			
 			if (distance < 5) {
-				state.score += 100 - distance
+				state.score += 100
 				state.eaten.add(f)
 			} else if (distance < closest_distance) {
-				const foodAngle = ((Math.atan2(state.y - food.y, state.x - food.x) + Math.PI * 2) % (Math.PI * 2)) - Math.PI
-				if (foodAngle > -Math.PI / 2 && foodAngle < Math.PI / 2) {
+				// Calculate angle from entity to food
+				const foodAngle = Math.atan2(food.y - state.y, food.x - state.x)
+				// Calculate relative angle (difference from entity's heading)
+				let relativeAngle = foodAngle - state.angle
+				// Normalize to [-PI, PI]
+				while (relativeAngle > Math.PI) relativeAngle -= Math.PI * 2
+				while (relativeAngle < -Math.PI) relativeAngle += Math.PI * 2
+				
+				// Check if food is within vision cone (±36 degrees)
+				const visionAngle = Math.PI / 5
+				if (Math.abs(relativeAngle) < visionAngle) {
 					closest_distance = distance
-					angle_to_food = foodAngle
+					// Determine if food is left, ahead, or right
+					if (Math.abs(relativeAngle) < visionAngle / 3) {
+						has_food_ahead = true
+					} else if (relativeAngle < 0) {
+						has_food_left = true
+					} else {
+						has_food_right = true
+					}
 				}
 			}
-		}
-		
-		if (closest_distance < visionDistance) {
-			has_food_ahead = Math.abs(angle_to_food - state.angle) < Math.PI / 5
-			has_food_left = !has_food_ahead && angle_to_food < 0 && angle_to_food > -Math.PI / 2
-			has_food_right = !has_food_ahead && angle_to_food > 0 && angle_to_food < Math.PI / 2
 		}
 		
 		// Execute neural network
@@ -449,9 +458,15 @@ function entityFromGenome(genome: Float32Array, world: World) {
 			
 			ctx.beginPath()
 			ctx.moveTo(0, 0)
-			ctx.arc(0, 0, visionDistance, -detectionAngle, detectionAngle)
+			ctx.arc(0, 0, visionDistance * scale, -detectionAngle, detectionAngle)
 			ctx.closePath()
 			ctx.fill()
+			ctx.stroke()
+
+			ctx.beginPath()
+			ctx.moveTo(0, 0)
+			ctx.arc(0, 0, visionDistance * scale, -detectionAngle / 3, detectionAngle / 3)
+			ctx.closePath()
 			ctx.stroke()
 			
 			ctx.restore()
