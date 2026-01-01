@@ -330,10 +330,10 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 			has_wall_right = right_x < 0.0 || right_x > config.worldSize || right_y < 0.0 || right_y > config.worldSize;
 		}
 		
-		// Detect food
-		var has_food_ahead = false;
-		var has_food_left = false;
-		var has_food_right = false;
+		// Detect food (0.0 means no food, gradually increasing to 1.0 when in vision range, 1.0 means eating range)
+		var food_ahead_dist = 0.0;
+		var food_left_dist = 0.0;
+		var food_right_dist = 0.0;
 		
 		for (var f = 0u; f < config.foodCount; f++) {
 			// Check if food already eaten (using bitset)
@@ -367,13 +367,14 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 				// Check if food is within vision cone (±36 degrees)
 				let visionAngle = PI / 3.0;
 				if (abs(relativeAngle) < visionAngle) {
+					let normalizedDistance = (VISION_DISTANCE - distance) / (VISION_DISTANCE - EATING_DISTANCE);
 					// Determine if food is left, ahead, or right
 					if (abs(relativeAngle) < visionAngle / 3.0) {
-						has_food_ahead = true;
+						food_ahead_dist = max(food_ahead_dist, normalizedDistance);
 					} else if (relativeAngle < 0.0) {
-						has_food_left = true;
+						food_left_dist = max(food_left_dist, normalizedDistance);
 					} else {
-						has_food_right = true;
+						food_right_dist = max(food_right_dist, normalizedDistance);
 					}
 				}
 			}
@@ -386,9 +387,9 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 		}
 		
 		// Set input nodes
-		current[0u] = select(0.0, 1.0, has_food_left);
-		current[1u] = select(0.0, 1.0, has_food_ahead);
-		current[2u] = select(0.0, 1.0, has_food_right);
+		current[0u] = food_left_dist;
+		current[1u] = food_ahead_dist;
+		current[2u] = food_right_dist;
 		current[3u] = select(0.0, 1.0, has_wall_left);
 		current[4u] = select(0.0, 1.0, has_wall_ahead);
 		current[5u] = select(0.0, 1.0, has_wall_right);

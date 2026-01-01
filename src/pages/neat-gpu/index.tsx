@@ -408,10 +408,10 @@ function entityFromGenome(genome: Float32Array, world: World) {
 			has_wall_right = right_x < 0 || right_x > world.size || right_y < 0 || right_y > world.size
 		}
 		
-		// Detect food
-		let has_food_ahead = false
-		let has_food_left = false
-		let has_food_right = false
+		// Detect food (0.0 means no food, gradually increasing to 1.0 when in vision range, 1.0 means eating range)
+		let food_ahead_dist = 0
+		let food_left_dist = 0
+		let food_right_dist = 0
 		
 		for (let f = 0; f < world.food.length; f++) {
 			if (state.eaten.has(f)) continue
@@ -434,13 +434,14 @@ function entityFromGenome(genome: Float32Array, world: World) {
 				// Check if food is within vision cone (±36 degrees)
 				const visionAngle = Math.PI / 3
 				if (Math.abs(relativeAngle) < visionAngle) {
+					const normalizedDistance = (visionDistance - distance) / (visionDistance - eatingDistance)
 					// Determine if food is left, ahead, or right
 					if (Math.abs(relativeAngle) < visionAngle / 3) {
-						has_food_ahead = true
+						food_ahead_dist = Math.max(food_ahead_dist, normalizedDistance)
 					} else if (relativeAngle < 0) {
-						has_food_left = true
+						food_left_dist = Math.max(food_left_dist, normalizedDistance)
 					} else {
-						has_food_right = true
+						food_right_dist = Math.max(food_right_dist, normalizedDistance)
 					}
 				}
 			}
@@ -448,7 +449,7 @@ function entityFromGenome(genome: Float32Array, world: World) {
 		
 		// Execute neural network
 		current.fill(0)
-		const inputs = [+has_food_left, +has_food_ahead, +has_food_right, +has_wall_left, +has_wall_ahead, +has_wall_right]
+		const inputs = [food_left_dist, food_ahead_dist, food_right_dist, +has_wall_left, +has_wall_ahead, +has_wall_right]
 		for (let i = 0; i < inputs.length; i++) {
 			memory[i] = inputs[i]
 			current[i] = inputs[i]
