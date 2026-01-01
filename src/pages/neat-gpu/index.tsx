@@ -27,8 +27,8 @@ export const meta: RouteMeta = {
  *   - 5: wall right
  * - outputs:
  *   - 6: rotate left
- *   - 7: rotate right
- *   - 8: move ahead
+ *   - 7: move ahead
+ *   - 8: rotate right
  *
  * VOID GENE: 0 - 0 - 0 - 0
  * NODE GENE: 1 - index - aggregation - activation
@@ -468,9 +468,9 @@ function entityFromGenome(genome: Float32Array, world: World) {
 		memory.set(current)
 		
 		// Read outputs and update state
-		const rotate = Math.max(0, Math.min(current[7], 10)) - Math.max(0, Math.min(current[6], 10))
+		const rotate = Math.max(0, Math.min(current[8], 10)) - Math.max(0, Math.min(current[6], 10))
 		state.angle += (rotate / 100) * (delta / 10)
-		const speed = Math.min(4, Math.max(0, current[8]))
+		const speed = Math.min(4, Math.max(0, current[7]))
 		if (speed > 0) {
 			const prevX = state.x
 			const prevY = state.y
@@ -561,7 +561,7 @@ function graphFromGenome(genome: Float32Array) {
 		const isInput = i < 6
 		const isOutput = i >= 6 && i < INNATE_NODES
 		const depth = isInput ? 0 : isOutput ? Infinity : NaN
-		const name = isInput ? ["food left", "food ahead", "food right", "wall left", "wall ahead", "wall right"][i] : isOutput ? ["rotate left", "rotate right", "move ahead"][i - 6] : ""
+		const name = isInput ? ["food left", "food ahead", "food right", "wall left", "wall ahead", "wall right"][i] : isOutput ? ["rotate left", "move ahead", "rotate right"][i - 6] : ""
 		nodes.set(i, {
 			index: i,
 			aggregation: 0,

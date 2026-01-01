@@ -459,12 +459,12 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 		
 		// Read outputs and update state
 		let rotate_left = max(0.0, min(current[6u], 10.0));
-		let rotate_right = max(0.0, min(current[7u], 10.0));
+		let rotate_right = max(0.0, min(current[8u], 10.0));
 		let rotate = rotate_right - rotate_left;
 		let delta = 1000.0 / 120.0; // Fixed timestep: 8.333333ms
 		angle += (rotate / 100.0) * (delta / 10.0);
 		
-		let speed = min(4.0, max(0.0, current[8u]));
+		let speed = min(4.0, max(0.0, current[7u]));
 		if (speed > 0.0) {
 			let prevX = x;
 			let prevY = y;
