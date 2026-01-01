@@ -773,9 +773,11 @@ function graphFromGenome(genome: Float32Array) {
 		for (const node of nodes.values()) {
 			const index = node.index
 			const memo = entity.memory[index]
-			const raw = memo === undefined || isNaN(memo) ? 0 : memo === Infinity || memo === -Infinity ? 100 : Math.abs(memo)
-			const value = Math.min(1, raw)
+			// Use tanh to compress any value range to [-1, 1], handles infinity gracefully
+			// For typical activation outputs (0-1 or -1 to 1), this provides good visual variation
+			const value = memo === undefined || isNaN(memo) ? 0 : Math.abs(Math.tanh(memo))
 			ctx.fillStyle = getNodeColor(node)
+			// Size varies from 0.5x to 2x nodeSize based on activation
 			const size = nodeSize * (0.5 + value * 1.5)
 			ctx.beginPath()
 			const x = getX(node)
