@@ -1267,10 +1267,11 @@ function setupViz(
 		const scale = ctx.canvas.width / (WORLD_SIZE * devicePixelRatio)
 		
 		const entity = entities[selectedIndex]
+		const foodSize = 1 * scale
 		for (let i = 0; i < world.food.length; i++) {
 			const food = world.food[i]
 			ctx.fillStyle = entity.state.eaten.has(i) ? "red" : "green"
-			ctx.fillRect(food.x * scale, food.y * scale, 2, 2)
+			ctx.fillRect(food.x * scale - foodSize / 2, food.y * scale - foodSize / 2, foodSize, foodSize)
 		}
 		for (let i = 0; i < entities.length; i++) {
 			const entity = entities[i]
