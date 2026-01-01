@@ -270,7 +270,24 @@ fn processNode(
 	// Apply aggregation and activation
 	if (incomingCount > 0u) {
 		let aggregated = aggregate(&incomingValues, incomingCount, nodeAggr);
-		(*current)[nodeIdx] = activation(aggregated, nodeActiv);
+		// Safeguard against Infinity/NaN from aggregation
+		var safeAggregated = aggregated;
+		if (safeAggregated != safeAggregated) { // NaN check
+			safeAggregated = 0.0;
+		} else if (abs(safeAggregated) > 1e30) { // Infinity check
+			safeAggregated = select(-1e30, 1e30, safeAggregated > 0.0);
+		}
+		
+		let activated = activation(safeAggregated, nodeActiv);
+		// Safeguard against Infinity/NaN from activation
+		var safeActivated = activated;
+		if (safeActivated != safeActivated) { // NaN check
+			safeActivated = 0.0;
+		} else if (abs(safeActivated) > 1e30) { // Infinity check
+			safeActivated = select(-1e30, 1e30, safeActivated > 0.0);
+		}
+		
+		(*current)[nodeIdx] = safeActivated;
 	}
 }
 

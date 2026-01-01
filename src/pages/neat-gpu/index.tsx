@@ -458,7 +458,11 @@ function entityFromGenome(genome: Float32Array, world: World) {
 		for (let i = 0; i < graph.length; i++) {
 			const node = graph[i]
 			if (!node) continue
-			current[i] = node.activation(node.aggregation(node.incoming.map(([from, weight]) => memory[from] * weight)))
+			const total = node.aggregation(node.incoming.map(([from, weight]) => memory[from] * weight))
+			const safeTotal = total === Infinity ? Number.MAX_SAFE_INTEGER : total === -Infinity ? -Number.MAX_SAFE_INTEGER : isNaN(total) ? 0 : total
+			const result = node.activation(safeTotal)
+			const safeResult = result === Infinity ? Number.MAX_SAFE_INTEGER : result === -Infinity ? -Number.MAX_SAFE_INTEGER : isNaN(result) ? 0 : result
+			current[i] = safeResult
 		}
 		
 		memory.set(current)
