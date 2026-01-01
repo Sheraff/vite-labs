@@ -115,15 +115,15 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 		let connCount = countGenes(&genome, 2u);
 
 		let probabilities = array<f32, 9>(
-			1.0, // Add node
-			1.0, // Remove node
-			2.0, // Add connection
-			1.0, // Remove connection
-			1.0, // Change node aggregation
-			1.0, // Change node activation
-			1.0, // Change connection from
-			1.0, // Change connection to
-			1.0  // Change connection weight
+			1.0,  // Add node
+			0.5,  // Remove node (reduced)
+			3.0,  // Add connection (increased)
+			0.5,  // Remove connection (reduced)
+			1.5,  // Change node aggregation
+			1.5,  // Change node activation
+			1.0,  // Change connection from
+			1.0,  // Change connection to
+			4.0   // Change connection weight (most common)
 		);
 
 		let conditions = array<u32, 9>(
@@ -268,7 +268,11 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 				
 				// Change connection weight
 				let connIdx = findNthGene(&genome, 2u, rng_u32_range(&rng, connCount));
-				genome[connIdx * 4u + 3u] = f32(rng_u32_range(&rng, 256u));
+				let currentWeight = genome[connIdx * 4u + 3u];
+				// Small random adjustment (-25 to +25)
+				let adjustment = f32(rng_u32_range(&rng, 51u)) - 25.0;
+				let newWeight = clamp(currentWeight + adjustment, 0.0, MAX_WEIGHT);
+				genome[connIdx * 4u + 3u] = newWeight;
 			}
 		}
 	}
