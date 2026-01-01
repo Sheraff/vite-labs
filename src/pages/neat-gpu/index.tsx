@@ -432,7 +432,7 @@ function entityFromGenome(genome: Float32Array, world: World) {
 				while (relativeAngle < -Math.PI) relativeAngle += Math.PI * 2
 				
 				// Check if food is within vision cone (±36 degrees)
-				const visionAngle = Math.PI / 5
+				const visionAngle = Math.PI / 3
 				if (Math.abs(relativeAngle) < visionAngle) {
 					// Determine if food is left, ahead, or right
 					if (Math.abs(relativeAngle) < visionAngle / 3) {
@@ -491,7 +491,7 @@ function entityFromGenome(genome: Float32Array, world: World) {
 			ctx.rotate(state.angle)
 			
 			// Draw cone representing vision distance and food detection angle
-			const detectionAngle = Math.PI / 5 // ±36 degrees
+			const detectionAngle = Math.PI / 3 // ±36 degrees
 			
 			ctx.fillStyle = "rgba(255, 255, 0, 0.2)"
 			ctx.strokeStyle = "rgba(255, 255, 0, 0.5)"

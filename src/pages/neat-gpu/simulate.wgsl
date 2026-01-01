@@ -365,7 +365,7 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 				}
 				
 				// Check if food is within vision cone (±36 degrees)
-				let visionAngle = PI / 5.0;
+				let visionAngle = PI / 3.0;
 				if (abs(relativeAngle) < visionAngle) {
 					// Determine if food is left, ahead, or right
 					if (abs(relativeAngle) < visionAngle / 3.0) {
