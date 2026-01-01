@@ -116,14 +116,14 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 
 		let probabilities = array<f32, 9>(
 			1.0,  // Add node
-			0.5,  // Remove node (reduced)
-			3.0,  // Add connection (increased)
-			0.5,  // Remove connection (reduced)
+			0.5,  // Remove node
+			3.0,  // Add connection
+			0.5,  // Remove connection
 			1.5,  // Change node aggregation
 			1.5,  // Change node activation
 			1.0,  // Change connection from
 			1.0,  // Change connection to
-			4.0   // Change connection weight (most common)
+			4.0   // Change connection weight
 		);
 
 		let conditions = array<u32, 9>(
