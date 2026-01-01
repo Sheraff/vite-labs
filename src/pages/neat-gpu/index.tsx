@@ -121,7 +121,7 @@ export default function ParticleLifeGPUPage() {
 							</button>
 							<hr />
 							<label htmlFor="generation-select">Playing generation {currentGeneration}</label>
-							<FitnessGraph scores={fitnessScores} />
+							<FitnessGraph scores={fitnessScores} index={currentGeneration} />
 							<input type="range" id="generation-select" name="generation-select" min="0" max={genCount} value={currentGeneration} readOnly />
 							<button type="button" aria-pressed={autoplay} id="simulation-play-pause">
 								{autoplay ? "⏸️ pause" : "▶️ play"}
@@ -136,7 +136,7 @@ export default function ParticleLifeGPUPage() {
 	)
 }
 
-function FitnessGraph({scores}: {scores: number[]}) {
+function FitnessGraph({scores, index}: {scores: number[], index: number}) {
 	if (scores.length < 2) return null
 	const width = 300
 	const height = 60
@@ -159,6 +159,8 @@ function FitnessGraph({scores}: {scores: number[]}) {
 
 		return points
 	}, [scores])
+
+	const indexX = (index / (scores.length - 1)) * width
 	
 	return (
 		<svg viewBox={`0 0 ${width} ${height}`}>
@@ -167,6 +169,15 @@ function FitnessGraph({scores}: {scores: number[]}) {
 				fill="none"
 				stroke="lime"
 				strokeWidth="2"
+				strokeLinejoin="round"
+			/>
+			<line
+				x1={indexX}
+				y1="0"
+				x2={indexX}
+				y2={height}
+				stroke="red"
+				strokeWidth="1"
 			/>
 		</svg>
 	)
