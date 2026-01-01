@@ -624,54 +624,46 @@ function graphFromGenome(genome: Float32Array) {
 	}
 	
 	// Resolve dead ends
-	function resolveDeadEnds() {
+	{
 		for (const node of nodes.values()) {
-			if (node.isOutput) {
-				node.deadend = node.incoming.size === 0
+			if (node.deadend) continue
+			if (node.isOutput && node.incoming.size === 0) {
+				node.deadend = true
 				continue
 			}
-			if (node.isInput) {
-				node.deadend = node.outgoing.size === 0
+			if (node.isInput && node.outgoing.size === 0) {
+				node.deadend = true
 				continue
 			}
 			if (node.outgoing.size === 0 && node.incoming.size === 0) {
 				node.deadend = true
+				continue
 			}
-		}
-		let changed = true
-		while (changed) {
-			changed = false
-			for (const node of nodes.values()) {
-				if (node.deadend) continue
-				const noOutgoingUtility =
-					!node.isOutput &&
-					Array.from(node.outgoing).every((conn) => {
-						const to = nodes.get(conn.to)
-						return to?.deadend || to === node
-					})
-				if (noOutgoingUtility) {
-					node.deadend = true
-					changed = true
-					continue
+			const seen = new Set<Node>()
+			const stack = [node]
+			let isDeadEnd = true
+			while (stack.length > 0) {
+				const current = stack.pop()!
+				seen.add(current)
+				if (current.isOutput) {
+					isDeadEnd = false
+					break
 				}
-				const noIncomingUtility =
-					!node.isInput &&
-					Array.from(node.incoming).every((conn) => {
-						const from = nodes.get(conn.from)
-						return from?.deadend || from === node
-					})
-				if (noIncomingUtility) {
-					node.deadend = true
-					changed = true
-					continue
+				for (const conn of current.outgoing) {
+					const next = nodes.get(conn.to)
+					if (next && !seen.has(next) && !next.deadend) {
+						stack.push(next)
+					}
 				}
+			}
+			if (isDeadEnd) {
+				node.deadend = true
 			}
 		}
 	}
-	resolveDeadEnds()
 	
 	// Assign layers
-	function assignLayers() {
+	{
 		const visited = new Set<Node>()
 		function dfs(node: Node, depth: number, stack: Set<Node> = new Set()): number {
 			if (node.isInput) return 0
@@ -731,7 +723,6 @@ function graphFromGenome(genome: Float32Array) {
 			}
 		}
 	}
-	assignLayers()
 	
 	function draw(ctx: CanvasRenderingContext2D, entity: ReturnType<typeof entityFromGenome>) {
 		const perLayer = new Map<number, Node[]>()
