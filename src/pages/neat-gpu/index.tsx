@@ -551,6 +551,7 @@ function graphFromGenome(genome: Float32Array) {
 		depth: number
 		name: string
 		deadend: boolean
+		layerOrder: number
 	}
 	
 	const connections = new Set<Connection>()
@@ -573,6 +574,7 @@ function graphFromGenome(genome: Float32Array) {
 			depth,
 			name,
 			deadend: false,
+			layerOrder: NaN,
 		})
 	}
 	
@@ -595,6 +597,7 @@ function graphFromGenome(genome: Float32Array) {
 				depth: NaN,
 				name: "",
 				deadend: false,
+				layerOrder: NaN,
 			})
 		}
 	}
@@ -662,7 +665,7 @@ function graphFromGenome(genome: Float32Array) {
 		}
 	}
 	
-	// Assign layers
+	// Assign layers (x depth)
 	{
 		const visited = new Set<Node>()
 		function dfs(node: Node, depth: number, stack: Set<Node> = new Set()): number {
@@ -673,7 +676,7 @@ function graphFromGenome(genome: Float32Array) {
 			let maxDepth = depth
 			for (const conn of node.incoming) {
 				const nextNode = nodes.get(conn.from)
-				if (!nextNode) continue
+				if (!nextNode || nextNode === node) continue
 				const nextDepth = dfs(nextNode, depth + 1, stack)
 				if (nextDepth > maxDepth) {
 					maxDepth = nextDepth
@@ -723,6 +726,78 @@ function graphFromGenome(genome: Float32Array) {
 			}
 		}
 	}
+
+
+	// Assign layer order (y position within layer)
+	{
+		const layers = new Array<Node[]>()
+		for (const node of nodes.values()) {
+			const layer = node.depth
+			if (!layers[layer]) {
+				layers[layer] = []
+			}
+			layers[layer]!.push(node)
+		}
+		const maxLayerSize = Math.max(...layers.map((layer) => layer.length))
+		
+		// Iterate over layers from both ends towards the center
+		for (let j = 0; j < layers.length; j++) {
+			const i = j % 2 === 0 ? j / 2 : layers.length - 1 - Math.floor(j / 2)
+			const layer = layers[i]!
+			
+			// input / output layers are already ordered
+			if (i === 0 || i === layers.length - 1) {
+				for (let k = 0; k < layer.length; k++) {
+					layer[k]!.layerOrder = k
+				}
+				continue
+			}
+
+			// Calculate ideal positions based on connections
+			const idealPositions = new Map<Node, number>()
+			for (const node of layer) {
+				let total = 0
+				let count = 0
+				for (const conn of node.incoming) {
+					const fromNode = nodes.get(conn.from)
+					if (fromNode && fromNode !== node && !Number.isNaN(fromNode.layerOrder)) {
+						total += fromNode.layerOrder
+						count++
+					}
+				}
+				for (const conn of node.outgoing) {
+					const toNode = nodes.get(conn.to)
+					if (toNode && toNode !== node && !Number.isNaN(toNode.layerOrder)) {
+						total += toNode.layerOrder
+						count++
+					}
+				}
+				if (count > 0) {
+					idealPositions.set(node, total / count)
+				}
+			}
+
+			// Sort layer based on ideal positions
+			layer.sort((a, b) => {
+				const aIdeal = idealPositions.get(a)!
+				const bIdeal = idealPositions.get(b)!
+				return aIdeal - bIdeal
+			})
+
+			const avg = layer.reduce((sum, n) => {
+				const ideal = idealPositions.get(n)
+				return ideal === undefined ? sum : sum + ideal
+			}, 0) / layer.reduce((count, n) => {
+				const ideal = idealPositions.get(n)
+				return ideal === undefined ? count : count + 1
+			}, 0)
+
+			const first = Math.min(Math.max(0, Math.floor(avg - layer.length / 2)), maxLayerSize - layer.length)
+			for (let k = 0; k < layer.length; k++) {
+				layer[k]!.layerOrder = first + k
+			}
+		}
+	}
 	
 	function draw(ctx: CanvasRenderingContext2D, entity: ReturnType<typeof entityFromGenome>) {
 		const perLayer = new Map<number, Node[]>()
@@ -747,14 +822,7 @@ function graphFromGenome(genome: Float32Array) {
 		const nodeSize = 10
 		
 		const getX = (node: Node) => node.depth * layerWidth + leftOffset
-		const getY = (node: Node) => {
-			const layer = perLayer.get(node.depth)
-			if (!layer) return 0
-			const index = layer.indexOf(node)
-			if (index === -1) return 0
-			const y = index * layerHeight + topOffset
-			return y
-		}
+		const getY = (node: Node) => node.layerOrder * layerHeight + topOffset
 		const getNodeColor = (node: Node) => {
 			const hue = node.isInput ? 240 : node.isOutput ? 0 : 120
 			const saturation = node.deadend ? 50 : 100
