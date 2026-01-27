@@ -21,12 +21,14 @@ export const meta: RouteMeta = {
 
 export default function BoidsGPUPage() {
 	const canvasRef = useRef<HTMLCanvasElement>(null)
+	const formRef = useRef<HTMLFormElement>(null)
 	const [supported] = useState(() => Boolean(navigator.gpu))
 	const [fps, setFps] = useState(0)
 
 	useEffect(() => {
 		if (!supported) return
 		const canvas = canvasRef.current!
+		const form = formRef.current!
 		const controller = new AbortController()
 
 		canvas.width = window.innerWidth * devicePixelRatio * 2
@@ -36,8 +38,8 @@ export default function BoidsGPUPage() {
 		start({
 			controller,
 			canvas,
+			form,
 			onFrame: (dt) => setFps(Math.round(frameCounter(dt / 1000))),
-			controls: {},
 		})
 
 		return () => {
@@ -53,13 +55,29 @@ export default function BoidsGPUPage() {
 				<Head />
 				{!supported && <pre>Your browser does not support WebGPU.</pre>}
 				{supported && (
-					<>
-						<pre>
-							{numberFormat.format(particleCount)} boids, {fps} fps
-						</pre>
-					</>
+					<pre>
+						{numberFormat.format(particleCount)} boids, {fps} fps
+					</pre>
 				)}
 			</div>
+			{supported && (
+				<form ref={formRef} className={styles.form}>
+					<fieldset>
+						<legend>Controls</legend>
+						<label htmlFor="sight">Sight:</label>
+						<input type="range" id="sight" name="sight" min="20" max="200" defaultValue={60} step="5" />
+						<label htmlFor="spacing">Spacing:</label>
+						<input type="range" id="spacing" name="spacing" min="5" max="100" defaultValue={25} step="5" />
+						<hr />
+						<label htmlFor="alignment">Alignment:</label>
+						<input type="range" id="alignment" name="alignment" min="0" max="5" defaultValue={1} step="0.1" />
+						<label htmlFor="cohesion">Cohesion:</label>
+						<input type="range" id="cohesion" name="cohesion" min="0" max="5" defaultValue={1} step="0.1" />
+						<label htmlFor="separation">Separation:</label>
+						<input type="range" id="separation" name="separation" min="0" max="10" defaultValue={2} step="0.1" />
+					</fieldset>
+				</form>
+			)}
 			<canvas ref={canvasRef} />
 		</div>
 	)
@@ -68,13 +86,13 @@ export default function BoidsGPUPage() {
 async function start({
 	controller,
 	canvas,
+	form,
 	onFrame,
-	controls,
 }: {
 	controller: AbortController
 	canvas: HTMLCanvasElement
+	form: HTMLFormElement
 	onFrame: (dt: number) => void
-	controls: object
 }) {
 	const onAbort = (cb: () => void) => {
 		if (controller.signal.aborted) return
@@ -107,17 +125,33 @@ async function start({
 
 	console.log('width', width, 'height', height, 'depth', depth)
 
-	// Boids simulation parameters
-	const visionRange = 60
-	const separationRange = 25
-	const separationStrength = 2.0
-	const alignmentStrength = 1.0
-	const cohesionStrength = 1.0
-	const maxSpeed = 200
-	const minSpeed = 50
+	// Boids simulation parameters (mutable via form)
+	const params = {
+		visionRange: 60,
+		separationRange: 25,
+		separationStrength: 2.0,
+		alignmentStrength: 1.0,
+		cohesionStrength: 1.0,
+		maxSpeed: 200,
+		minSpeed: 50,
+	}
+
+	// Read initial values from form
+	const readFormValues = () => {
+		const getValue = (name: string) => {
+			const el = form.elements.namedItem(name) as HTMLInputElement | null
+			return el ? el.valueAsNumber : null
+		}
+		params.visionRange = getValue("sight") ?? params.visionRange
+		params.separationRange = getValue("spacing") ?? params.separationRange
+		params.alignmentStrength = getValue("alignment") ?? params.alignmentStrength
+		params.cohesionStrength = getValue("cohesion") ?? params.cohesionStrength
+		params.separationStrength = getValue("separation") ?? params.separationStrength
+	}
+	readFormValues()
 
 	// Spatial binning setup (2D only - z is checked in update shader)
-	const cellSize = visionRange
+	const cellSize = params.visionRange
 	const widthDivisions = Math.ceil(width / cellSize)
 	const heightDivisions = Math.ceil(height / cellSize)
 	const toBinX = widthDivisions / width
@@ -156,7 +190,7 @@ async function start({
 			// Random initial direction
 			const theta = Math.random() * Math.PI * 2
 			const phi = Math.acos(2 * Math.random() - 1)
-			const speed = minSpeed + Math.random() * (maxSpeed - minSpeed)
+			const speed = params.minSpeed + Math.random() * (params.maxSpeed - params.minSpeed)
 			arr[i * 4 + 0] = Math.sin(phi) * Math.cos(theta) * speed
 			arr[i * 4 + 1] = Math.sin(phi) * Math.sin(theta) * speed
 			arr[i * 4 + 2] = Math.cos(phi) * speed
@@ -377,13 +411,13 @@ async function start({
 		asFloat32[2] = depth
 		asUint32[3] = particleCount
 		// Boids parameters
-		asFloat32[4] = visionRange
-		asFloat32[5] = separationRange
-		asFloat32[6] = separationStrength
-		asFloat32[7] = alignmentStrength
-		asFloat32[8] = cohesionStrength
-		asFloat32[9] = maxSpeed
-		asFloat32[10] = minSpeed
+		asFloat32[4] = params.visionRange
+		asFloat32[5] = params.separationRange
+		asFloat32[6] = params.separationStrength
+		asFloat32[7] = params.alignmentStrength
+		asFloat32[8] = params.cohesionStrength
+		asFloat32[9] = params.maxSpeed
+		asFloat32[10] = params.minSpeed
 		// Binning info (2D only)
 		asFloat32[11] = toBinX
 		asFloat32[12] = toBinY
@@ -602,6 +636,40 @@ async function start({
 		device.queue.submit([encoder.finish()])
 	}
 
+	// Function to update config buffer when form values change
+	function syncConfigToGPU() {
+		const configData = new ArrayBuffer(16 * 4)
+		const asFloat32 = new Float32Array(configData)
+		const asUint32 = new Uint32Array(configData)
+		asFloat32[0] = width
+		asFloat32[1] = height
+		asFloat32[2] = depth
+		asUint32[3] = particleCount
+		asFloat32[4] = params.visionRange
+		asFloat32[5] = params.separationRange
+		asFloat32[6] = params.separationStrength
+		asFloat32[7] = params.alignmentStrength
+		asFloat32[8] = params.cohesionStrength
+		asFloat32[9] = params.maxSpeed
+		asFloat32[10] = params.minSpeed
+		asFloat32[11] = toBinX
+		asFloat32[12] = toBinY
+		asUint32[13] = widthDivisions
+		asUint32[14] = heightDivisions
+		asUint32[15] = 0
+		device.queue.writeBuffer(updateConfigBuffer, 0, configData)
+	}
+
+	// Listen for form input changes
+	form.addEventListener(
+		"input",
+		() => {
+			readFormValues()
+			syncConfigToGPU()
+		},
+		{ signal: controller.signal },
+	)
+
 	// Animation loop
 	let frameCount = 0
 	let playing = document.visibilityState === "visible"
@@ -639,5 +707,4 @@ async function start({
 		},
 		{ signal: controller.signal },
 	)
-
 }

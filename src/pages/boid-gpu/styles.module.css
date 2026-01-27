@@ -27,3 +27,32 @@
 	user-select: none;
 	width: fit-content;
 }
+
+.form {
+	position: relative;
+	z-index: 1;
+	width: fit-content;
+	margin-top: 1em;
+
+	fieldset {
+		margin: 0;
+		border-style: solid;
+		background: rgba(0, 0, 0, 0.5);
+	}
+
+	input[type="range"],
+	select {
+		width: 100%;
+	}
+
+	hr {
+		margin: 1em -0.75em;
+		border-style: solid;
+		border-color: threedface;
+	}
+
+	label {
+		margin: 0;
+		display: block;
+	}
+}
