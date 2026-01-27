@@ -12,6 +12,7 @@ struct Config {
 	cohesionStrength: f32,
 	maxSpeed: f32,
 	minSpeed: f32,
+	edgeAvoidance: f32,
 	// Binning info (2D)
 	binWidth: f32,
 	binHeight: f32,
@@ -125,6 +126,41 @@ fn update(
 		}
 	}
 
+	// Edge avoidance - steer away from edges
+	let edgeMargin = config.visionRange;
+	let edgeStrength = config.edgeAvoidance * dt;
+	
+	// Left edge
+	if (position.x < edgeMargin) {
+		let factor = 1.0 - position.x / edgeMargin;
+		velocity.x += edgeStrength * factor;
+	}
+	// Right edge
+	if (position.x > config.width - edgeMargin) {
+		let factor = 1.0 - (config.width - position.x) / edgeMargin;
+		velocity.x -= edgeStrength * factor;
+	}
+	// Top edge
+	if (position.y < edgeMargin) {
+		let factor = 1.0 - position.y / edgeMargin;
+		velocity.y += edgeStrength * factor;
+	}
+	// Bottom edge
+	if (position.y > config.height - edgeMargin) {
+		let factor = 1.0 - (config.height - position.y) / edgeMargin;
+		velocity.y -= edgeStrength * factor;
+	}
+	// Front edge (z near)
+	if (position.z < edgeMargin) {
+		let factor = 1.0 - position.z / edgeMargin;
+		velocity.z += edgeStrength * factor;
+	}
+	// Back edge (z far)
+	if (position.z > config.depth - edgeMargin) {
+		let factor = 1.0 - (config.depth - position.z) / edgeMargin;
+		velocity.z -= edgeStrength * factor;
+	}
+
 	// Clamp speed
 	let speed = length(velocity);
 	if (speed > config.maxSpeed) {
@@ -136,28 +172,10 @@ fn update(
 	// Update position
 	position += velocity * dt;
 
-	// Wrap around edges (x and y only)
-	if (position.x < 0.0) {
-		position.x += config.width;
-	}
-	if (position.x >= config.width) {
-		position.x -= config.width;
-	}
-	if (position.y < 0.0) {
-		position.y += config.height;
-	}
-	if (position.y >= config.height) {
-		position.y -= config.height;
-	}
-	// Bounce on z axis
-	if (position.z < 0.0) {
-		position.z = -position.z;
-		velocity.z = -velocity.z;
-	}
-	if (position.z >= config.depth) {
-		position.z = 2.0 * config.depth - position.z;
-		velocity.z = -velocity.z;
-	}
+	// Clamp to bounds
+	position.x = clamp(position.x, 0.0, config.width);
+	position.y = clamp(position.y, 0.0, config.height);
+	position.z = clamp(position.z, 0.0, config.depth);
 
 	boidPositions[i] = vec4f(position, 0.0);
 	boidVelocities[i] = vec4f(velocity, length(velocity));

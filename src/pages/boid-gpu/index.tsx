@@ -75,6 +75,9 @@ export default function BoidsGPUPage() {
 						<input type="range" id="cohesion" name="cohesion" min="0" max="5" defaultValue={1} step="0.1" />
 						<label htmlFor="separation">Separation:</label>
 						<input type="range" id="separation" name="separation" min="0" max="10" defaultValue={2} step="0.1" />
+						<hr />
+						<label htmlFor="edge_avoidance">Edge Avoidance:</label>
+						<input type="range" id="edge_avoidance" name="edge_avoidance" min="0" max="500" defaultValue={100} step="10" />
 					</fieldset>
 				</form>
 			)}
@@ -134,6 +137,7 @@ async function start({
 		cohesionStrength: 1.0,
 		maxSpeed: 200,
 		minSpeed: 50,
+		edgeAvoidance: 100,
 	}
 
 	// Read initial values from form
@@ -147,6 +151,7 @@ async function start({
 		params.alignmentStrength = getValue("alignment") ?? params.alignmentStrength
 		params.cohesionStrength = getValue("cohesion") ?? params.cohesionStrength
 		params.separationStrength = getValue("separation") ?? params.separationStrength
+		params.edgeAvoidance = getValue("edge_avoidance") ?? params.edgeAvoidance
 	}
 	readFormValues()
 
@@ -418,12 +423,12 @@ async function start({
 		asFloat32[8] = params.cohesionStrength
 		asFloat32[9] = params.maxSpeed
 		asFloat32[10] = params.minSpeed
+		asFloat32[11] = params.edgeAvoidance
 		// Binning info (2D only)
-		asFloat32[11] = toBinX
-		asFloat32[12] = toBinY
-		asUint32[13] = widthDivisions
-		asUint32[14] = heightDivisions
-		asUint32[15] = 0 // padding
+		asFloat32[12] = toBinX
+		asFloat32[13] = toBinY
+		asUint32[14] = widthDivisions
+		asUint32[15] = heightDivisions
 		updateConfigBuffer.unmap()
 		onAbort(() => updateConfigBuffer.destroy())
 	}
@@ -652,11 +657,11 @@ async function start({
 		asFloat32[8] = params.cohesionStrength
 		asFloat32[9] = params.maxSpeed
 		asFloat32[10] = params.minSpeed
-		asFloat32[11] = toBinX
-		asFloat32[12] = toBinY
-		asUint32[13] = widthDivisions
-		asUint32[14] = heightDivisions
-		asUint32[15] = 0
+		asFloat32[11] = params.edgeAvoidance
+		asFloat32[12] = toBinX
+		asFloat32[13] = toBinY
+		asUint32[14] = widthDivisions
+		asUint32[15] = heightDivisions
 		device.queue.writeBuffer(updateConfigBuffer, 0, configData)
 	}
 
