@@ -1,0 +1,134 @@
+.main {
+	margin: 0;
+	background: #051016;
+	color: white;
+	touch-action: none;
+	width: 100vw;
+	height: 100svh;
+	padding: 1em;
+
+	position: fixed;
+	inset: 0;
+	overflow: auto;
+}
+
+.head {
+	position: relative;
+	z-index: 1;
+	user-select: none;
+	width: fit-content;
+}
+
+.game {
+	--side: 4;
+	--gap: 16px;
+	--time: 150ms;
+	display: grid;
+	grid-template-columns: repeat(var(--side), minmax(0, 1fr));
+	grid-template-rows: repeat(var(--side), minmax(0, 1fr));
+	gap: var(--gap);
+	position: relative;
+	z-index: 0;
+	max-width: 400px;
+	margin: auto;
+}
+
+.spot, .tile {
+	aspect-ratio: 1;
+	border-radius: 16px;
+	corner-shape: squircle;
+}
+
+.spot {
+	background-color: lch(17.74% 0.96 19.42);
+	&:first-child {
+		grid-area: 1 / 1 / 2 / 2;
+	}
+	box-shadow: inset 2px 2px 4px black;
+}
+
+.tile {
+	grid-area: 1 / 1 / 2 / 2;
+	position: relative;
+	z-index: var(--z);
+	translate:
+		calc(var(--x) * (100% + var(--gap)))
+		calc(var(--y) * (100% + var(--gap)))
+	;
+	display: grid;
+	align-items: center;
+	justify-content: center;
+	--min-hue: 100;
+	--max-hue: 24.65;
+	--max-value: 11;
+	--hue: calc((var(--min-hue) - var(--max-hue)) * (var(--max-value) - var(--value)) / var(--max-value) + var(--max-hue));
+	background-color: oklch(0.56 0.21 var(--hue));
+	font-size: 30px;
+
+	transition: translate calc(var(--dist) * var(--time)) ease;
+
+	&[data-state="new"] {
+		animation: pop-in calc(var(--time) * 2) ease calc(var(--dist) * var(--time)) backwards;
+	}
+	&[data-state="merge-away"] {
+		animation: merge-away calc(var(--time) * 2) ease calc(var(--dist) * var(--time));
+	}
+
+	&::before {
+		content: attr(data-prev);
+		grid-area: 1 / 1 / 2 / 2;
+	}
+	&::after {
+		content: attr(data-value);
+		grid-area: 1 / 1 / 2 / 2;
+	}
+
+	&[data-state="merge-grow"] {
+		animation: merge-grow calc(var(--time) * 2) ease calc((var(--dist) - 1) * var(--time));
+		&::before {
+			animation: merge-grow-before calc(var(--time) * 2) ease calc((var(--dist) - 1) * var(--time)) forwards;
+		}
+		&::after {
+			animation: merge-grow-after calc(var(--time) * 2) ease calc((var(--dist) - 1) * var(--time)) backwards;
+		}
+	}
+}
+
+@keyframes pop-in {
+	from {
+		scale: 0;
+	}	to {
+		scale: 1;
+	}
+}
+
+@keyframes merge-away {
+	to {
+		scale: 0.7;
+		opacity: 0.7;
+	}
+}
+
+@keyframes merge-grow {
+	0% {
+		scale: 1;
+		--hue: calc((var(--min-hue) - var(--max-hue)) * (var(--max-value) - var(--prev)) / var(--max-value) + var(--max-hue));
+		background-color: oklch(0.56 0.21 var(--hue));
+	}
+	50% { scale: 1.2; }
+	100% {
+		scale: 1;
+		--hue: calc((var(--min-hue) - var(--max-hue)) * (var(--max-value) - var(--value)) / var(--max-value) + var(--max-hue));
+		background-color: oklch(0.56 0.21 var(--hue));
+	}
+}
+@keyframes merge-grow-before {
+	to {
+		opacity: 0;
+	}
+}
+@keyframes merge-grow-after {
+	from {
+		opacity: 0;
+	}
+}
