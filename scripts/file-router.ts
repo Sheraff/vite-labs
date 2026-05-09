@@ -123,7 +123,7 @@ type Context = {
 const IMAGES = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".ico", ".bmp", ".tiff", ".avif"]
 
 function fileNameToJSVariable(name: string) {
-	return name.replace(/[^a-zA-Z0-9]/g, "_")
+	return name.replace(/[^a-zA-Z0-9]/g, "_").replace(/^(\d)/, "_$1")
 }
 
 function getPropertyKey(prop: any) {
