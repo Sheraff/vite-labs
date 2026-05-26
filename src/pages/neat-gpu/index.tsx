@@ -10,7 +10,7 @@ import breedShader from './breed.wgsl?raw'
 
 export const meta: RouteMeta = {
 	title: "N.E.A.T. GPU",
-	tags: ["simulation", "genetic algorithm", "neural network", "webgpu"],
+	tags: ["simulation", "genetic algorithm", "neural network", "webgpu", "wip"],
 	image: "./screen.png",
 }
 
